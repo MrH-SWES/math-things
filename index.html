@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Things. | NBT Braid</title>
+    <title>Math Things. | Curriculum Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,7 +13,7 @@
             --text-gray: #7A7D8A;
             --text-light: #A5A8B6;
             
-            /* The Four Strands */
+            /* The Four Strands (NBT) */
             --strand-1: #7B00FF; /* Unitizing */
             --strand-2: #DC143C; /* Notation */
             --strand-3: #4CBB17; /* Additive */
@@ -30,6 +30,12 @@
             --milled-track:
                 inset 2px 2px 4px rgba(166, 171, 189, 0.6), 
                 inset -1px -1px 2px rgba(255, 255, 255, 0.9);
+
+            --hub-radius: 240px;
+        }
+
+        @media (max-width: 768px) {
+            :root { --hub-radius: 140px; }
         }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -37,8 +43,8 @@
         body {
             font-family: 'Lexend', sans-serif;
             background: var(--alum-base); color: var(--text-main);
-            min-height: 100vh; display: flex; flex-direction: column;
-            -webkit-font-smoothing: antialiased; overflow-x: hidden;
+            height: 100vh; display: flex; flex-direction: column;
+            -webkit-font-smoothing: antialiased; overflow: hidden;
         }
 
         /* ── HEADER ── */
@@ -48,78 +54,149 @@
             height: 70px; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.02); border-bottom: 1px solid rgba(255,255,255,0.5);
         }
-        .logo { display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); }
+        .logo { display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default; }
         .logo-bead {
             width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
             background: linear-gradient(135deg, #fff 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
             box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
         }
 
-        /* ── LAYOUT ── */
-        .board-container {
-            display: flex; max-width: 1200px; margin: 70px auto 0; width: 100%; position: relative;
+        /* ── VIEW ROUTING ── */
+        main { flex: 1; position: relative; margin-top: 70px; }
+        
+        .view {
+            position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+            padding: 40px 24px; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            opacity: 0; pointer-events: none; transform: scale(0.95);
+            scrollbar-width: none; /* Hide scrollbar for hardware feel */
+        }
+        .view::-webkit-scrollbar { display: none; }
+        .view.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
+        .view.zoom-out { transform: scale(1.1); opacity: 0; }
+        .view.zoom-in { transform: scale(0.9); opacity: 0; }
+
+        /* =========================================
+           VIEW 0: HARDWARE HUB
+           ========================================= */
+        .hub-wrapper {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            min-height: 600px;
+        }
+        .spoke {
+            position: absolute; bottom: 50%; left: 50%; width: 6px; height: var(--hub-radius);
+            transform-origin: bottom center; transform: translateX(-50%) rotate(var(--angle));
+            background: var(--alum-base); box-shadow: var(--milled-track); border-radius: 3px; z-index: 1;
+        }
+        .hub-center {
+            position: absolute; z-index: 10; width: 180px; height: 180px; border-radius: 50%;
+            background: var(--alum-base); box-shadow: var(--raised);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; padding: 20px;
+        }
+        .hub-center:active { box-shadow: var(--depressed); transform: scale(0.96); }
+        .hub-center .logo-bead {
+            width: 32px; height: 32px; border-radius: 50%; margin-bottom: 12px;
+            background: radial-gradient(circle at 33% 28%, #fff 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #fff 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.8), inset -2px -2px 4px rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .hub-center-title { font-weight: 900; font-size: 1.1rem; letter-spacing: -0.04em; }
+        .hub-center-sub { font-size: 0.65rem; color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+        .hub-node {
+            position: absolute; z-index: 5; width: 120px; height: 120px; border-radius: 50%;
+            background: var(--alum-base); box-shadow: var(--raised);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: rotate(var(--angle)) translateY(calc(var(--hub-radius) * -1)) rotate(calc(var(--angle) * -1));
+        }
+        .hub-node:active:not(.disabled) {
+            box-shadow: var(--depressed);
+            transform: rotate(var(--angle)) translateY(calc(var(--hub-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(0.95);
+        }
+        .hub-node.disabled { opacity: 0.6; cursor: not-allowed; }
+        .hub-node.disabled:active { transform: rotate(var(--angle)) translateY(calc(var(--hub-radius) * -1)) rotate(calc(var(--angle) * -1)); }
+
+        .node-icon { font-size: 2rem; margin-bottom: 4px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
+        .node-title { font-size: 0.8rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-main); }
+        .node-code { font-size: 0.6rem; color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .hub-center { width: 140px; height: 140px; }
+            .hub-node { width: 90px; height: 90px; }
+            .node-icon { font-size: 1.5rem; }
+            .node-title { font-size: 0.7rem; }
         }
 
-        /* ── LOGARITHMIC LENS (LEFT RAIL) ── */
-        .lens-rail {
-            width: 120px; position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+        /* =========================================
+           VIEW 1: MISSION / OVERVIEW
+           ========================================= */
+        .detail-container { max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
+        
+        .hardware-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--text-gray);
+            background: var(--alum-base); box-shadow: var(--raised); border: none; border-radius: 20px;
+            padding: 12px 24px; cursor: pointer; transition: all 0.2s; margin-bottom: 32px;
         }
+        .hardware-btn:active { box-shadow: var(--depressed); transform: scale(0.96); }
+
+        .detail-title { font-size: 3rem; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 8px; color: var(--text-main); text-shadow: 1px 1px 0 #fff; }
+        .detail-subtitle { font-size: 1.1rem; color: var(--text-gray); margin-bottom: 48px; font-weight: 600; }
+
+        .mission-statement {
+            background: var(--alum-base); box-shadow: var(--depressed); border-radius: 24px; padding: 40px; text-align: center;
+        }
+        .mission-statement h2 { font-size: 2rem; font-weight: 900; margin-bottom: 24px; letter-spacing: -0.04em; }
+        .mission-statement p { font-size: 1.2rem; line-height: 1.6; color: var(--text-gray); font-weight: 400; margin-bottom: 16px; }
+
+
+        /* =========================================
+           VIEW 2: NBT BRAID
+           ========================================= */
+        .board-container { display: flex; max-width: 1200px; margin: 0 auto; width: 100%; position: relative; }
+
+        /* The Logarithmic Lens */
+        .lens-rail { width: 120px; position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
         .lens-sticky {
-            position: sticky; top: 120px; width: 80px; height: 80px; border-radius: 50%;
+            position: sticky; top: 40px; width: 80px; height: 80px; border-radius: 50%;
             background: var(--alum-base); box-shadow: var(--raised); display: flex; align-items: center; justify-content: center;
             font-size: 2rem; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .lens-sticky::after {
             content: 'ZOOM'; position: absolute; bottom: -24px; font-size: 0.6rem; font-weight: 800; color: var(--text-gray); letter-spacing: 2px;
         }
-        .lens-icon {
-            transition: transform 0.3s ease, opacity 0.3s ease; position: absolute;
-        }
+        .lens-icon { transition: transform 0.3s ease, opacity 0.3s ease; position: absolute; }
 
-        /* ── THE BRAID (RIGHT CONTENT) ── */
-        .braid-content {
-            flex: 1; padding: 40px 20px 120px; position: relative;
-        }
+        /* Braid Content */
+        .braid-content { flex: 1; padding: 0 20px 120px; position: relative; }
         
-        /* The Background Tracks */
-        .track-bg {
-            position: absolute; top: 0; bottom: 0; width: 100%; pointer-events: none; z-index: 0;
-        }
+        /* Milled Tracks */
+        .track-bg { position: absolute; top: 0; bottom: 0; width: 100%; pointer-events: none; z-index: 0; }
         .milled-line {
             position: absolute; top: 0; bottom: 180px; width: 6px; border-radius: 3px;
             background: var(--alum-base); box-shadow: var(--milled-track);
         }
-        /* Positions of the 4 strands */
         .line-1 { left: 15%; }
         .line-2 { left: 38%; }
         .line-3 { left: 61%; }
         .line-4 { left: 84%; }
 
-        /* The SVG Convergence Graphic at the bottom */
-        .convergence-svg {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 180px;
-        }
+        .convergence-svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 180px; }
 
-        /* ── CONTENT ZONES ── */
-        .grade-section {
-            position: relative; z-index: 10; margin-bottom: 120px;
-        }
-        .grade-header {
-            font-size: 2.5rem; font-weight: 900; letter-spacing: -0.05em; color: var(--text-main); margin-bottom: 8px; text-shadow: 1px 1px 0 #fff;
-        }
+        /* Grades */
+        .grade-section { position: relative; z-index: 10; margin-bottom: 120px; }
+        .grade-header { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.05em; color: var(--text-main); margin-bottom: 8px; text-shadow: 1px 1px 0 #fff; }
         .grade-sub { font-size: 1rem; color: var(--text-gray); font-weight: 600; margin-bottom: 40px; }
 
-        /* ── HARDWARE APPS ── */
-        .app-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; position: relative;
-        }
-
+        /* App Cards */
+        .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; position: relative; }
         .app-btn {
             background: var(--alum-base); box-shadow: var(--raised); border-radius: 20px;
             padding: 24px 16px; text-decoration: none; display: flex; flex-direction: column; align-items: center; text-align: center;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; outline: none;
         }
-        .app-btn:hover { transform: translateY(-4px); box-shadow: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.8); }
+        .app-btn:hover, .app-btn:focus { transform: translateY(-4px); box-shadow: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.8); }
         .app-btn:active { transform: scale(0.96); box-shadow: var(--depressed); }
         
         .app-icon {
@@ -130,24 +207,19 @@
         .app-title { font-size: 0.9rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
         .app-code { font-size: 0.65rem; color: var(--text-gray); font-weight: 800; letter-spacing: 1px; }
 
-        /* Strand Alignment Classes */
-        /* Span 1 */
+        /* Layout Positions */
         .pos-1 { grid-column: 1 / 2; }
         .pos-2 { grid-column: 2 / 3; }
         .pos-3 { grid-column: 3 / 4; }
         .pos-4 { grid-column: 4 / 5; }
-        
-        /* Span 2 (Bridging) */
         .span-1-2 { grid-column: 1 / 3; }
         .span-2-3 { grid-column: 2 / 4; }
         .span-3-4 { grid-column: 3 / 5; }
-
-        /* Span 4 (The Knot) */
         .span-all { grid-column: 1 / -1; max-width: 600px; margin: 0 auto; width: 100%; flex-direction: row; text-align: left; padding: 20px 32px;}
         .span-all .app-icon { margin-bottom: 0; margin-right: 20px; width: 64px; height: 64px; font-size: 2rem;}
 
         @media (max-width: 900px) {
-            .lens-rail { display: none; } /* Hide lens on small screens */
+            .lens-rail { display: none; }
             .app-grid { display: flex; flex-direction: column; }
             .track-bg { display: none; }
         }
@@ -159,126 +231,230 @@
         <div class="logo">Math Things<span class="logo-bead"></span></div>
     </header>
 
-    <div class="board-container">
-        
-        <div class="lens-rail">
-            <div class="lens-sticky" id="lens">
-                <span class="lens-icon" id="icon-k">🧊</span>
-                <span class="lens-icon" id="icon-2" style="opacity:0; transform: scale(0.5);">🗂️</span>
-                <span class="lens-icon" id="icon-4" style="opacity:0; transform: scale(0.5);">📐</span>
-                <span class="lens-icon" id="icon-5" style="opacity:0; transform: scale(0.5);">🔍</span>
+    <main>
+        <div class="view active" id="view-hub">
+            <div class="hub-wrapper">
+                
+                <div class="spoke" style="--angle: 0deg;"></div>
+                <div class="spoke" style="--angle: 60deg;"></div>
+                <div class="spoke" style="--angle: 120deg;"></div>
+                <div class="spoke" style="--angle: 180deg;"></div>
+                <div class="spoke" style="--angle: 240deg;"></div>
+                <div class="spoke" style="--angle: 300deg;"></div>
+
+                <div class="hub-node" style="--angle: 0deg;" onclick="openView('view-nbt')">
+                    <div class="node-icon">🧊</div>
+                    <div class="node-code">NBT</div>
+                    <div class="node-title">Base Ten</div>
+                </div>
+
+                <div class="hub-node disabled" style="--angle: 60deg;">
+                    <div class="node-icon">⚖️</div>
+                    <div class="node-code">OA</div>
+                    <div class="node-title">Algebra</div>
+                </div>
+
+                <div class="hub-node disabled" style="--angle: 120deg;">
+                    <div class="node-icon">🍕</div>
+                    <div class="node-code">NF</div>
+                    <div class="node-title">Fractions</div>
+                </div>
+
+                <div class="hub-node disabled" style="--angle: 180deg;">
+                    <div class="node-icon">📏</div>
+                    <div class="node-code">MD</div>
+                    <div class="node-title">Measurement</div>
+                </div>
+
+                <div class="hub-node disabled" style="--angle: 240deg;">
+                    <div class="node-icon">📐</div>
+                    <div class="node-code">G</div>
+                    <div class="node-title">Geometry</div>
+                </div>
+
+                <div class="hub-node disabled" style="--angle: 300deg;">
+                    <div class="node-icon">➗</div>
+                    <div class="node-code">RP</div>
+                    <div class="node-title">Ratios</div>
+                </div>
+
+                <div class="hub-center" onclick="openView('view-mission')">
+                    <div class="logo-bead"></div>
+                    <div class="hub-center-title">Math Things.</div>
+                    <div class="hub-center-sub">Curriculum Hub</div>
+                </div>
+
             </div>
         </div>
 
-        <div class="braid-content">
-            
-            <div class="track-bg">
-                <div class="milled-line line-1"></div>
-                <div class="milled-line line-2"></div>
-                <div class="milled-line line-3"></div>
-                <div class="milled-line line-4"></div>
+        <div class="view" id="view-mission">
+            <div class="detail-container">
+                <button class="hardware-btn" onclick="openView('view-hub', true)">← Back to Hub</button>
+                <div class="detail-title">Math, in your hands.</div>
+                <div class="detail-subtitle">The Pedagogy of Physicality</div>
                 
-                <svg class="convergence-svg" preserveAspectRatio="none" viewBox="0 0 1000 180">
-                    <defs>
-                        <filter id="mill" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="rgba(166,171,189,0.5)"/>
-                            <feDropShadow dx="-1" dy="-1" stdDeviation="1" flood-color="rgba(255,255,255,0.9)"/>
-                        </filter>
-                    </defs>
-                    <path d="M150,0 C150,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
-                    <path d="M380,0 C380,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
-                    <path d="M610,0 C610,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
-                    <path d="M840,0 C840,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
-                </svg>
-            </div>
-
-            <div class="grade-section" id="sec-k">
-                <div class="grade-header">Grades K–1</div>
-                <div class="grade-sub">Foundations: Discrete Objects & Bundles</div>
-                
-                <div class="app-grid">
-                    <a href="ten-frame.html" class="app-btn pos-1">
-                        <div class="app-icon" style="background: var(--strand-1);">📦</div>
-                        <div class="app-title">The Ten-Packer</div>
-                        <div class="app-code">K.NBT.1 (Unitizing)</div>
-                    </a>
-
-                    <a href="number-line.html" class="app-btn span-3-4">
-                        <div class="app-icon" style="background: var(--strand-3);">🧱</div>
-                        <div class="app-title">Place Value Blocks</div>
-                        <div class="app-code">1.NBT.4 (Combining)</div>
-                    </a>
+                <div class="mission-statement">
+                    <h2>Zero Instructions. Total Intuition.</h2>
+                    <p>Math Things. is a suite of hardware-inspired digital manipulatives designed for the Resource Room and the Homeschool desk.</p>
+                    <p>We believe that mathematics is not a set of abstract rules to be memorized, but a physical reality to be experienced. Our tools enforce a "No Words, No Directions" policy. The boundaries of the interface dictate the boundaries of the math.</p>
+                    <p>If a student has to read a paragraph of text to understand a tool, we aren't testing their math—we're testing their executive function. Math Things bypasses the reading barrier entirely, allowing the student to touch the math directly.</p>
                 </div>
             </div>
+        </div>
 
-            <div class="grade-section" id="sec-2">
-                <div class="grade-header">Grades 2–3</div>
-                <div class="grade-sub">The Map: Zooming out to Hundreds & Thousands</div>
+        <div class="view" id="view-nbt">
+            <div class="board-container">
                 
-                <div class="app-grid">
-                    <a href="place-value-cards.html" class="app-btn pos-2">
-                        <div class="app-icon" style="background: var(--strand-2);">🗂️</div>
-                        <div class="app-title">Arrow Cards</div>
-                        <div class="app-code">2.NBT.3 (Expanded Form)</div>
-                    </a>
-
-                    <a href="rounding-waves.html" class="app-btn span-3-4">
-                        <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-2), var(--strand-4));">🌊</div>
-                        <div class="app-title">Rounding Waves</div>
-                        <div class="app-code">3.NBT.1 (Estimation)</div>
-                    </a>
+                <div class="lens-rail">
+                    <button class="hardware-btn" onclick="openView('view-hub', true)" style="margin-bottom: 20px; white-space: nowrap; width: auto; padding: 8px 16px;">← Hub</button>
+                    <div class="lens-sticky" id="lens">
+                        <span class="lens-icon" id="icon-k">🧊</span>
+                        <span class="lens-icon" id="icon-2" style="opacity:0; transform: scale(0.5);">🗂️</span>
+                        <span class="lens-icon" id="icon-4" style="opacity:0; transform: scale(0.5);">📐</span>
+                        <span class="lens-icon" id="icon-5" style="opacity:0; transform: scale(0.5);">🔍</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="grade-section" id="sec-4">
-                <div class="grade-header">Grade 4</div>
-                <div class="grade-sub">The System: 10x Relationships & Area Models</div>
-                
-                <div class="app-grid">
-                    <a href="place-value-slider.html" class="app-btn span-1-2">
-                        <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-1), var(--strand-2));">🎚️</div>
-                        <div class="app-title">Magnitude Slider</div>
-                        <div class="app-code">4.NBT.1 (10x Shift)</div>
-                    </a>
-
-                    <a href="array-architect.html" class="app-btn span-3-4">
-                        <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-3), var(--strand-4));">📐</div>
-                        <div class="app-title">Area Architect</div>
-                        <div class="app-code">4.NBT.5 (Partial Products)</div>
-                    </a>
-                </div>
-            </div>
-
-            <div class="grade-section" id="sec-5" style="margin-bottom: 40px;">
-                <div class="grade-header">Grade 5</div>
-                <div class="grade-sub">Fluent Execution: The Standard Algorithm</div>
-                
-                <div class="app-grid" style="row-gap: 40px; margin-top: 60px;">
+                <div class="braid-content">
                     
-                    <a href="area-excavator.html" class="app-btn span-all">
-                        <div class="app-icon" style="background: #2D2D35;">⛏️</div>
-                        <div class="app-details">
-                            <div class="app-title">Area Excavator</div>
-                            <div class="app-code">5.NBT.6 (Conceptual Division)</div>
-                        </div>
-                    </a>
+                    <button class="hardware-btn mobile-back-btn" onclick="openView('view-hub', true)" style="display: none; margin-bottom: 32px;">← Back to Hub</button>
+                    
+                    <div class="track-bg">
+                        <div class="milled-line line-1"></div>
+                        <div class="milled-line line-2"></div>
+                        <div class="milled-line line-3"></div>
+                        <div class="milled-line line-4"></div>
+                        
+                        <svg class="convergence-svg" preserveAspectRatio="none" viewBox="0 0 1000 180">
+                            <defs>
+                                <filter id="mill" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="rgba(166,171,189,0.5)"/>
+                                    <feDropShadow dx="-1" dy="-1" stdDeviation="1" flood-color="rgba(255,255,255,0.9)"/>
+                                </filter>
+                            </defs>
+                            <path d="M150,0 C150,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
+                            <path d="M380,0 C380,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
+                            <path d="M610,0 C610,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
+                            <path d="M840,0 C840,90 500,90 500,180" fill="none" stroke="var(--alum-base)" stroke-width="6" filter="url(#mill)"/>
+                        </svg>
+                    </div>
 
-                    <a href="long-division-buddy.html" class="app-btn span-all">
-                        <div class="app-icon" style="background: #2D2D35;">🌉</div>
-                        <div class="app-details">
-                            <div class="app-title">Division Bridge</div>
-                            <div class="app-code">5.NBT.6 (The Procedural Algorithm)</div>
+                    <div class="grade-section" id="sec-k">
+                        <div class="grade-header">Grades K–1</div>
+                        <div class="grade-sub">Foundations: Discrete Objects & Bundles</div>
+                        
+                        <div class="app-grid">
+                            <a href="ten-frame.html" class="app-btn pos-1">
+                                <div class="app-icon" style="background: var(--strand-1);">📦</div>
+                                <div class="app-title">The Ten-Packer</div>
+                                <div class="app-code">K.NBT.1 (Unitizing)</div>
+                            </a>
+
+                            <a href="number-line.html" class="app-btn span-3-4">
+                                <div class="app-icon" style="background: var(--strand-3);">🧱</div>
+                                <div class="app-title">Place Value Blocks</div>
+                                <div class="app-code">1.NBT.4 (Combining)</div>
+                            </a>
                         </div>
-                    </a>
+                    </div>
+
+                    <div class="grade-section" id="sec-2">
+                        <div class="grade-header">Grades 2–3</div>
+                        <div class="grade-sub">The Map: Zooming out to Hundreds & Thousands</div>
+                        
+                        <div class="app-grid">
+                            <a href="place-value-cards.html" class="app-btn pos-2">
+                                <div class="app-icon" style="background: var(--strand-2);">🗂️</div>
+                                <div class="app-title">Arrow Cards</div>
+                                <div class="app-code">2.NBT.3 (Expanded Form)</div>
+                            </a>
+
+                            <a href="rounding-waves.html" class="app-btn span-3-4">
+                                <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-2), var(--strand-4));">🌊</div>
+                                <div class="app-title">Rounding Waves</div>
+                                <div class="app-code">3.NBT.1 (Estimation)</div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="grade-section" id="sec-4">
+                        <div class="grade-header">Grade 4</div>
+                        <div class="grade-sub">The System: 10x Relationships & Area Models</div>
+                        
+                        <div class="app-grid">
+                            <a href="place-value-slider.html" class="app-btn span-1-2">
+                                <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-1), var(--strand-2));">🎚️</div>
+                                <div class="app-title">Magnitude Slider</div>
+                                <div class="app-code">4.NBT.1 (10x Shift)</div>
+                            </a>
+
+                            <a href="array-architect.html" class="app-btn span-3-4">
+                                <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-3), var(--strand-4));">📐</div>
+                                <div class="app-title">Area Architect</div>
+                                <div class="app-code">4.NBT.5 (Partial Products)</div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="grade-section" id="sec-5" style="margin-bottom: 40px;">
+                        <div class="grade-header">Grade 5</div>
+                        <div class="grade-sub">Fluent Execution: The Standard Algorithm</div>
+                        
+                        <div class="app-grid" style="row-gap: 40px; margin-top: 60px;">
+                            <a href="area-excavator.html" class="app-btn span-all">
+                                <div class="app-icon" style="background: #2D2D35;">⛏️</div>
+                                <div class="app-details">
+                                    <div class="app-title">Area Excavator</div>
+                                    <div class="app-code">5.NBT.6 (Conceptual Division)</div>
+                                </div>
+                            </a>
+
+                            <a href="long-division-buddy.html" class="app-btn span-all">
+                                <div class="app-icon" style="background: #2D2D35;">🌉</div>
+                                <div class="app-details">
+                                    <div class="app-title">Division Bridge</div>
+                                    <div class="app-code">5.NBT.6 (The Procedural Algorithm)</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
 
                 </div>
             </div>
-
         </div>
-    </div>
+
+    </main>
+
+    <style>
+        @media (max-width: 900px) {
+            .mobile-back-btn { display: inline-flex !important; }
+        }
+    </style>
 
     <script>
-        // Logarithmic Lens Observer
+        let currentView = 'view-hub';
+
+        function openView(targetId, isBack = false) {
+            const outgoing = document.getElementById(currentView);
+            const incoming = document.getElementById(targetId);
+
+            outgoing.classList.remove('active');
+            if (isBack) {
+                outgoing.classList.add('zoom-out');
+                incoming.classList.remove('zoom-in');
+                incoming.classList.remove('zoom-out');
+            } else {
+                outgoing.classList.add('zoom-in');
+                incoming.classList.remove('zoom-out');
+                incoming.classList.remove('zoom-in');
+            }
+
+            incoming.classList.add('active');
+            incoming.scrollTo(0, 0); // Scroll specifically the view container
+            currentView = targetId;
+        }
+
+        // Logarithmic Lens Observer - attached specifically to the scrollable view-nbt
         const sections = [
             { id: 'sec-k', iconId: 'icon-k' },
             { id: 'sec-2', iconId: 'icon-2' },
@@ -286,34 +462,36 @@
             { id: 'sec-5', iconId: 'icon-5' }
         ];
 
+        // The root must be the scrollable container for sticky/intersection to align perfectly
         const observerOptions = {
-            root: null,
-            rootMargin: '-30% 0px -50% 0px', // Triggers when section is roughly in the middle of screen
+            root: document.getElementById('view-nbt'),
+            rootMargin: '-30% 0px -50% 0px', 
             threshold: 0
         };
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    // Hide all icons
                     sections.forEach(sec => {
                         const icon = document.getElementById(sec.iconId);
-                        icon.style.opacity = '0';
-                        icon.style.transform = 'scale(0.5)';
+                        if (icon) {
+                            icon.style.opacity = '0';
+                            icon.style.transform = 'scale(0.5)';
+                        }
                     });
                     
-                    // Show active icon
                     const activeSec = sections.find(s => s.id === entry.target.id);
                     if (activeSec) {
                         const activeIcon = document.getElementById(activeSec.iconId);
-                        activeIcon.style.opacity = '1';
-                        activeIcon.style.transform = 'scale(1)';
+                        if (activeIcon) {
+                            activeIcon.style.opacity = '1';
+                            activeIcon.style.transform = 'scale(1)';
+                        }
                     }
                 }
             });
         }, observerOptions);
 
-        // Attach observer to sections
         sections.forEach(sec => {
             const el = document.getElementById(sec.id);
             if(el) observer.observe(el);
