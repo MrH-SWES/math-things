@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Things. | Curriculum Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Math Things Brand System */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --border: rgba(0,0,0,0.05);
+            --shadow-soft: 0 4px 24px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+            --shadow-hover: 0 12px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+            
+            /* Grade Level Magnitude Mapping */
+            --grade-k: #7B00FF; /* 0.1 */
+            --grade-1: #DC143C; /* 1 */
+            --grade-2: #4169E1; /* 10 */
+            --grade-3: #FFD700; /* 100 */
+            --grade-4: #4CBB17; /* 1000 */
+            --grade-5: #FF7F00; /* 10000 */
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg); color: var(--text-main);
+            min-height: 100vh; display: flex; flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border); padding: 0 32px; height: 60px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .logo { display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default; }
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+        }
+
+        main { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* ── VIEW TRANSITIONS ── */
+        .view {
+            position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+            padding: 40px 24px; transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            opacity: 0; pointer-events: none; transform: scale(0.95);
+        }
+        .view.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10;}
+        .view.zoom-out { transform: scale(1.05); }
+
+        /* ── HOME DASHBOARD (GRID) ── */
+        .dashboard-container { max-width: 1000px; margin: 0 auto; width: 100%; }
+        .page-title { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 8px; text-align: center; }
+        .page-subtitle { font-size: 1rem; color: var(--text-gray); margin-bottom: 48px; text-align: center; font-weight: 600;}
+
+        .domain-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;
+        }
+
+        .domain-card {
+            background: var(--surface); border-radius: 28px; padding: 32px;
+            box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .domain-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); border-color: rgba(0,0,0,0.1); }
+        .domain-card:active { transform: translateY(0) scale(0.98); }
+
+        .domain-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.8;}
+        .domain-title { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+        .domain-desc { font-size: 0.85rem; color: var(--text-gray); line-height: 1.5; }
+
+        .domain-card.disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        .domain-card.disabled:hover { transform: none; box-shadow: var(--shadow-soft); border-color: var(--border); }
+
+        /* ── DETAIL VIEW (SPIRAL) ── */
+        .detail-container { max-width: 700px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
+        
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem;
+            color: var(--text-gray); background: transparent; border: none; cursor: pointer;
+            padding: 8px 16px; margin-bottom: 24px; border-radius: 20px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .back-btn:hover { background: rgba(0,0,0,0.05); color: var(--text-main); }
+
+        .detail-title { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 8px; }
+        .detail-subtitle { font-size: 1rem; color: var(--text-light); margin-bottom: 48px; font-weight: 600;}
+
+        /* Concept Block */
+        .concept-block { margin-bottom: 64px; }
+        .concept-header { font-size: 1.25rem; font-weight: 800; border-bottom: 2px solid var(--border); padding-bottom: 12px; margin-bottom: 24px; }
+
+        /* Standard Item */
+        .standard-item {
+            background: var(--surface); border-radius: 16px; padding: 20px;
+            border: 1px solid var(--border); margin-bottom: 12px; position: relative;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        }
+        .std-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        
+        .grade-tag {
+            padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 1px; color: white;
+        }
+        .std-code { font-size: 0.85rem; font-weight: 800; color: var(--text-gray); }
+        .std-text { font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+
+        /* Connectors */
+        .flow-container { display: flex; flex-direction: column; align-items: center; margin: 16px 0; }
+        .connector-line { width: 2px; height: 32px; background: var(--border); }
+        
+        .flow-merge { display: flex; justify-content: center; width: 100%; position: relative; height: 32px; margin: 8px 0; }
+        .merge-line-h { position: absolute; top: 0; width: 50%; height: 2px; background: var(--border); }
+        .merge-line-v { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: var(--border); transform: translateX(-50%); }
+
+        /* App Card */
+        .app-link { text-decoration: none; display: block; width: 100%; }
+        .app-card {
+            background: #FAFAFA; border-radius: 20px; padding: 20px;
+            border: 2px solid rgba(0,0,0,0.08); display: flex; align-items: center; gap: 16px;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .app-card:hover { background: var(--surface); border-color: var(--text-main); transform: scale(1.02); box-shadow: var(--shadow-soft); }
+        .app-icon {
+            width: 48px; height: 48px; background: var(--text-main); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; flex-shrink: 0;
+        }
+        .app-details { flex: 1; }
+        .app-name { font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
+        .app-desc { font-size: 0.8rem; color: var(--text-gray); font-weight: 600; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+    </header>
+
+    <main>
+        <div class="view active" id="view-home">
+            <div class="dashboard-container">
+                <div class="page-title">Curriculum Hub</div>
+                <div class="page-subtitle">Interactive Standards Explorer</div>
+
+                <div class="domain-grid">
+                    <div class="domain-card" onclick="openDomain('nbt')">
+                        <div class="domain-icon">🧊</div>
+                        <div class="domain-title">Base Ten (NBT)</div>
+                        <div class="domain-desc">Numbers & Operations in Base Ten</div>
+                    </div>
+
+                    <div class="domain-card disabled">
+                        <div class="domain-icon">⚖️</div>
+                        <div class="domain-title">Algebraic Thinking</div>
+                        <div class="domain-desc">Operations & Algebraic Thinking (OA)</div>
+                    </div>
+
+                    <div class="domain-card disabled">
+                        <div class="domain-icon">🍕</div>
+                        <div class="domain-title">Fractions</div>
+                        <div class="domain-desc">Numbers & Operations — Fractions (NF)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="view" id="view-nbt">
+            <div class="detail-container">
+                <button class="back-btn" onclick="goHome()">← Back to Domains</button>
+                <div class="detail-title">Base Ten (NBT)</div>
+                <div class="detail-subtitle">Vertical K-5 Curriculum Spiral</div>
+
+                <div class="concept-block">
+                    <div class="concept-header">1. Foundations of Place Value</div>
+                    
+                    <div class="standard-item">
+                        <div class="std-header">
+                            <span class="grade-tag" style="background: var(--grade-k)">Grade K</span>
+                            <span class="std-code">K.NBT.1</span>
+                        </div>
+                        <div class="std-text">Compose and decompose numbers from 11 to 19 into ten ones and some further ones.</div>
+                    </div>
+                    <div class="flow-container">
+                        <div class="connector-line"></div>
+                        <a href="ten-packer.html" class="app-link">
+                            <div class="app-card">
+                                <div class="app-icon" style="background: var(--grade-k)">📦</div>
+                                <div class="app-details">
+                                    <div class="app-name">The Ten-Packer</div>
+                                    <div class="app-desc">Unitizing and Teen Numbers</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="connector-line" style="margin: 32px auto;"></div>
+
+                    <div class="standard-item">
+                        <div class="std-header">
+                            <span class="grade-tag" style="background: var(--grade-1)">Grade 1</span>
+                            <span class="std-code">1.NBT.2</span>
+                        </div>
+                        <div class="std-text">Understand that the two digits of a two-digit number represent amounts of tens and ones.</div>
+                    </div>
+                    <div class="flow-container">
+                        <div class="connector-line"></div>
+                        <a href="index.html" class="app-link"> <div class="app-card">
+                                <div class="app-icon" style="background: var(--grade-1)">🧱</div>
+                                <div class="app-details">
+                                    <div class="app-name">Place Value Blocks</div>
+                                    <div class="app-desc">Discrete Base-10 Modeling</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="concept-block">
+                    <div class="concept-header">2. Magnitude & Expanded Form</div>
+                    
+                    <div class="standard-item">
+                        <div class="std-header">
+                            <span class="grade-tag" style="background: var(--grade-2)">Grade 2</span>
+                            <span class="std-code">2.NBT.3</span>
+                        </div>
+                        <div class="std-text">Read and write numbers to 1000 using base-ten numerals, number names, and expanded form.</div>
+                    </div>
+                    <div class="flow-container">
+                        <div class="connector-line"></div>
+                        <a href="arrow-cards.html" class="app-link">
+                            <div class="app-card">
+                                <div class="app-icon" style="background: var(--grade-2)">🗂️</div>
+                                <div class="app-details">
+                                    <div class="app-name">Arrow Cards</div>
+                                    <div class="app-desc">Overlapping Expanded Notation</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="connector-line" style="margin: 32px auto;"></div>
+
+                    <div class="standard-item">
+                        <div class="std-header">
+                            <span class="grade-tag" style="background: var(--grade-4)">Grade 4</span>
+                            <span class="std-code">4.NBT.1</span>
+                        </div>
+                        <div class="std-text">Recognize that in a multi-digit whole number, a digit in one place represents ten times what it represents in the place to its right.</div>
+                    </div>
+                    <div class="flow-container">
+                        <div class="connector-line"></div>
+                        <a href="place-value-slider.html" class="app-link">
+                            <div class="app-card">
+                                <div class="app-icon" style="background: var(--grade-4)">🎚️</div>
+                                <div class="app-details">
+                                    <div class="app-name">Magnitude Slider</div>
+                                    <div class="app-desc">Dynamic x10 / ÷10 Shifts</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="concept-block">
+                    <div class="concept-header">3. Multi-Digit Multiplication</div>
+                    
+                    <div style="display:flex; gap: 16px;">
+                        <div class="standard-item" style="flex:1; margin:0;">
+                            <div class="std-header">
+                                <span class="grade-tag" style="background: var(--grade-4)">Grade 4</span>
+                                <span class="std-code">4.NBT.5</span>
+                            </div>
+                            <div class="std-text">Multiply up to four digits by one digit, and two two-digit numbers, using area models.</div>
+                        </div>
+                        <div class="standard-item" style="flex:1; margin:0;">
+                            <div class="std-header">
+                                <span class="grade-tag" style="background: var(--grade-5)">Grade 5</span>
+                                <span class="std-code">5.NBT.5</span>
+                            </div>
+                            <div class="std-text">Fluently multiply multi-digit whole numbers using the standard algorithm.</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-merge">
+                        <div class="merge-line-h"></div>
+                        <div class="merge-line-v"></div>
+                    </div>
+
+                    <a href="area-architect.html" class="app-link">
+                        <div class="app-card" style="border-color: var(--text-light)">
+                            <div class="app-icon" style="background: linear-gradient(135deg, var(--grade-4), var(--grade-5))">📐</div>
+                            <div class="app-details">
+                                <div class="app-name">Area Architect</div>
+                                <div class="app-desc">Partial Products & Algorithm Scaffolding</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="concept-block">
+                    <div class="concept-header">4. Multi-Digit Division</div>
+                    
+                    <div style="display:flex; gap: 16px;">
+                        <div class="standard-item" style="flex:1; margin:0;">
+                            <div class="std-header">
+                                <span class="grade-tag" style="background: var(--grade-4)">Grade 4</span>
+                                <span class="std-code">4.NBT.6</span>
+                            </div>
+                            <div class="std-text">Find whole-number quotients and remainders with up to four-digit dividends.</div>
+                        </div>
+                        <div class="standard-item" style="flex:1; margin:0;">
+                            <div class="std-header">
+                                <span class="grade-tag" style="background: var(--grade-5)">Grade 5</span>
+                                <span class="std-code">5.NBT.6</span>
+                            </div>
+                            <div class="std-text">Find whole-number quotients with up to four-digit dividends and two-digit divisors.</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-merge">
+                        <div class="merge-line-h"></div>
+                        <div class="merge-line-v"></div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <a href="area-excavator.html" class="app-link">
+                            <div class="app-card">
+                                <div class="app-icon" style="background: linear-gradient(135deg, var(--grade-4), var(--grade-5))">⛏️</div>
+                                <div class="app-details">
+                                    <div class="app-name">Area Excavator</div>
+                                    <div class="app-desc">Conceptual: Partial Quotients</div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="division-bridge.html" class="app-link">
+                            <div class="app-card">
+                                <div class="app-icon" style="background: linear-gradient(135deg, var(--grade-4), var(--grade-5))">🌉</div>
+                                <div class="app-details">
+                                    <div class="app-name">Division Bridge</div>
+                                    <div class="app-desc">Conceptual-to-Procedural Link</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const viewHome = document.getElementById('view-home');
+        const viewNbt = document.getElementById('view-nbt');
+
+        function openDomain(domainId) {
+            // Animate home out
+            viewHome.classList.remove('active');
+            viewHome.classList.add('zoom-out');
+
+            // Animate target in
+            if (domainId === 'nbt') {
+                viewNbt.classList.add('active');
+                window.scrollTo(0,0);
+            }
+        }
+
+        function goHome() {
+            // Animate detail out
+            viewNbt.classList.remove('active');
+            
+            // Animate home in
+            viewHome.classList.remove('zoom-out');
+            viewHome.classList.add('active');
+        }
+    </script>
+</body>
+</html>
