@@ -31,20 +31,18 @@
                 inset 2px 2px 4px rgba(166, 171, 189, 0.6), 
                 inset -1px -1px 2px rgba(255, 255, 255, 0.9);
 
-            --hub-radius: 240px;
+            /* Scale factor for responsive constellation */
+            --scale: 1;
         }
 
-        @media (max-width: 768px) {
-            :root { --hub-radius: 140px; }
-        }
+        @media (max-width: 900px) { :root { --scale: 0.75; } }
+        @media (max-width: 600px) { :root { --scale: 0.55; } }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Lexend', sans-serif;
-            background: var(--alum-base); color: var(--text-main);
-            height: 100vh; display: flex; flex-direction: column;
-            -webkit-font-smoothing: antialiased; overflow: hidden;
+            font-family: 'Lexend', sans-serif; background: var(--alum-base); color: var(--text-main);
+            height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; overflow: hidden;
         }
 
         /* ── HEADER ── */
@@ -67,8 +65,7 @@
         .view {
             position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
             padding: 40px 24px; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            opacity: 0; pointer-events: none; transform: scale(0.95);
-            scrollbar-width: none; /* Hide scrollbar for hardware feel */
+            opacity: 0; pointer-events: none; transform: scale(0.95); scrollbar-width: none;
         }
         .view::-webkit-scrollbar { display: none; }
         .view.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
@@ -76,77 +73,73 @@
         .view.zoom-in { transform: scale(0.9); opacity: 0; }
 
         /* =========================================
-           VIEW 0: HARDWARE HUB
+           VIEW 0: ASYMMETRIC HARDWARE HUB
            ========================================= */
         .hub-wrapper {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-            min-height: 600px;
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; min-height: 600px;
         }
+
+        /* Dynamic Spoke */
         .spoke {
-            position: absolute; bottom: 50%; left: 50%; width: 6px; height: var(--hub-radius);
+            position: absolute; bottom: 50%; left: 50%; width: 6px; 
+            height: calc(var(--radius) * var(--scale)); /* Scaled dynamically */
             transform-origin: bottom center; transform: translateX(-50%) rotate(var(--angle));
             background: var(--alum-base); box-shadow: var(--milled-track); border-radius: 3px; z-index: 1;
         }
+
+        /* Central Mission Button */
         .hub-center {
-            position: absolute; z-index: 10; width: 180px; height: 180px; border-radius: 50%;
+            position: absolute; z-index: 10; 
+            width: calc(180px * var(--scale)); height: calc(180px * var(--scale)); border-radius: 50%;
             background: var(--alum-base); box-shadow: var(--raised);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; padding: 20px;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center;
         }
         .hub-center:active { box-shadow: var(--depressed); transform: scale(0.96); }
         .hub-center .logo-bead {
-            width: 32px; height: 32px; border-radius: 50%; margin-bottom: 12px;
+            width: calc(32px * var(--scale)); height: calc(32px * var(--scale)); border-radius: 50%; margin-bottom: 8px;
             background: radial-gradient(circle at 33% 28%, #fff 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #fff 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
             box-shadow: inset 2px 2px 4px rgba(255,255,255,0.8), inset -2px -2px 4px rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.15);
         }
-        .hub-center-title { font-weight: 900; font-size: 1.1rem; letter-spacing: -0.04em; }
-        .hub-center-sub { font-size: 0.65rem; color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .hub-center-title { font-weight: 900; font-size: calc(1.1rem * var(--scale)); letter-spacing: -0.04em; }
+        .hub-center-sub { font-size: calc(0.65rem * var(--scale)); color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
+        /* Dynamic Nodes */
         .hub-node {
-            position: absolute; z-index: 5; width: 120px; height: 120px; border-radius: 50%;
+            position: absolute; z-index: 5; 
+            width: calc(120px * var(--scale)); height: calc(120px * var(--scale)); border-radius: 50%;
             background: var(--alum-base); box-shadow: var(--raised);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform: rotate(var(--angle)) translateY(calc(var(--hub-radius) * -1)) rotate(calc(var(--angle) * -1));
+            /* Trigonometry positioning baked into CSS! */
+            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1));
         }
         .hub-node:active:not(.disabled) {
             box-shadow: var(--depressed);
-            transform: rotate(var(--angle)) translateY(calc(var(--hub-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(0.95);
+            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) scale(0.95);
         }
         .hub-node.disabled { opacity: 0.6; cursor: not-allowed; }
-        .hub-node.disabled:active { transform: rotate(var(--angle)) translateY(calc(var(--hub-radius) * -1)) rotate(calc(var(--angle) * -1)); }
+        .hub-node.disabled:active { transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)); }
 
-        .node-icon { font-size: 2rem; margin-bottom: 4px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
-        .node-title { font-size: 0.8rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-main); }
-        .node-code { font-size: 0.6rem; color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .node-icon { font-size: calc(2rem * var(--scale)); margin-bottom: 4px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
+        .node-title { font-size: calc(0.8rem * var(--scale)); font-weight: 800; letter-spacing: -0.02em; color: var(--text-main); }
+        .node-code { font-size: calc(0.6rem * var(--scale)); color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
-        @media (max-width: 768px) {
-            .hub-center { width: 140px; height: 140px; }
-            .hub-node { width: 90px; height: 90px; }
-            .node-icon { font-size: 1.5rem; }
-            .node-title { font-size: 0.7rem; }
-        }
 
         /* =========================================
            VIEW 1: MISSION / OVERVIEW
            ========================================= */
         .detail-container { max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
-        
         .hardware-btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--text-gray);
-            background: var(--alum-base); box-shadow: var(--raised); border: none; border-radius: 20px;
-            padding: 12px 24px; cursor: pointer; transition: all 0.2s; margin-bottom: 32px;
+            display: inline-flex; align-items: center; gap: 8px; font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--text-gray);
+            background: var(--alum-base); box-shadow: var(--raised); border: none; border-radius: 20px; padding: 12px 24px; cursor: pointer; transition: all 0.2s; margin-bottom: 32px;
         }
         .hardware-btn:active { box-shadow: var(--depressed); transform: scale(0.96); }
 
         .detail-title { font-size: 3rem; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 8px; color: var(--text-main); text-shadow: 1px 1px 0 #fff; }
         .detail-subtitle { font-size: 1.1rem; color: var(--text-gray); margin-bottom: 48px; font-weight: 600; }
-
-        .mission-statement {
-            background: var(--alum-base); box-shadow: var(--depressed); border-radius: 24px; padding: 40px; text-align: center;
-        }
+        .mission-statement { background: var(--alum-base); box-shadow: var(--depressed); border-radius: 24px; padding: 40px; text-align: center; }
         .mission-statement h2 { font-size: 2rem; font-weight: 900; margin-bottom: 24px; letter-spacing: -0.04em; }
         .mission-statement p { font-size: 1.2rem; line-height: 1.6; color: var(--text-gray); font-weight: 400; margin-bottom: 16px; }
 
@@ -163,9 +156,7 @@
             background: var(--alum-base); box-shadow: var(--raised); display: flex; align-items: center; justify-content: center;
             font-size: 2rem; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .lens-sticky::after {
-            content: 'ZOOM'; position: absolute; bottom: -24px; font-size: 0.6rem; font-weight: 800; color: var(--text-gray); letter-spacing: 2px;
-        }
+        .lens-sticky::after { content: 'ZOOM'; position: absolute; bottom: -24px; font-size: 0.6rem; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; }
         .lens-icon { transition: transform 0.3s ease, opacity 0.3s ease; position: absolute; }
 
         /* Braid Content */
@@ -173,15 +164,8 @@
         
         /* Milled Tracks */
         .track-bg { position: absolute; top: 0; bottom: 0; width: 100%; pointer-events: none; z-index: 0; }
-        .milled-line {
-            position: absolute; top: 0; bottom: 180px; width: 6px; border-radius: 3px;
-            background: var(--alum-base); box-shadow: var(--milled-track);
-        }
-        .line-1 { left: 15%; }
-        .line-2 { left: 38%; }
-        .line-3 { left: 61%; }
-        .line-4 { left: 84%; }
-
+        .milled-line { position: absolute; top: 0; bottom: 180px; width: 6px; border-radius: 3px; background: var(--alum-base); box-shadow: var(--milled-track); }
+        .line-1 { left: 15%; } .line-2 { left: 38%; } .line-3 { left: 61%; } .line-4 { left: 84%; }
         .convergence-svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 180px; }
 
         /* Grades */
@@ -208,13 +192,8 @@
         .app-code { font-size: 0.65rem; color: var(--text-gray); font-weight: 800; letter-spacing: 1px; }
 
         /* Layout Positions */
-        .pos-1 { grid-column: 1 / 2; }
-        .pos-2 { grid-column: 2 / 3; }
-        .pos-3 { grid-column: 3 / 4; }
-        .pos-4 { grid-column: 4 / 5; }
-        .span-1-2 { grid-column: 1 / 3; }
-        .span-2-3 { grid-column: 2 / 4; }
-        .span-3-4 { grid-column: 3 / 5; }
+        .pos-1 { grid-column: 1 / 2; } .pos-2 { grid-column: 2 / 3; } .pos-3 { grid-column: 3 / 4; } .pos-4 { grid-column: 4 / 5; }
+        .span-1-2 { grid-column: 1 / 3; } .span-2-3 { grid-column: 2 / 4; } .span-3-4 { grid-column: 3 / 5; }
         .span-all { grid-column: 1 / -1; max-width: 600px; margin: 0 auto; width: 100%; flex-direction: row; text-align: left; padding: 20px 32px;}
         .span-all .app-icon { margin-bottom: 0; margin-right: 20px; width: 64px; height: 64px; font-size: 2rem;}
 
@@ -222,6 +201,7 @@
             .lens-rail { display: none; }
             .app-grid { display: flex; flex-direction: column; }
             .track-bg { display: none; }
+            .mobile-back-btn { display: inline-flex !important; }
         }
     </style>
 </head>
@@ -235,48 +215,48 @@
         <div class="view active" id="view-hub">
             <div class="hub-wrapper">
                 
-                <div class="spoke" style="--angle: 0deg;"></div>
-                <div class="spoke" style="--angle: 60deg;"></div>
-                <div class="spoke" style="--angle: 120deg;"></div>
-                <div class="spoke" style="--angle: 180deg;"></div>
-                <div class="spoke" style="--angle: 240deg;"></div>
-                <div class="spoke" style="--angle: 300deg;"></div>
-
-                <div class="hub-node" style="--angle: 0deg;" onclick="openView('view-nbt')">
+                <div class="spoke" style="--angle: 30deg; --radius: 260px;"></div>
+                <div class="hub-node" style="--angle: 30deg; --radius: 260px;" onclick="openView('view-nbt')">
                     <div class="node-icon">🧊</div>
                     <div class="node-code">NBT</div>
                     <div class="node-title">Base Ten</div>
                 </div>
 
-                <div class="hub-node disabled" style="--angle: 60deg;">
-                    <div class="node-icon">⚖️</div>
-                    <div class="node-code">OA</div>
-                    <div class="node-title">Algebra</div>
-                </div>
-
-                <div class="hub-node disabled" style="--angle: 120deg;">
+                <div class="spoke" style="--angle: 80deg; --radius: 200px;"></div>
+                <div class="hub-node disabled" style="--angle: 80deg; --radius: 200px;">
                     <div class="node-icon">🍕</div>
                     <div class="node-code">NF</div>
                     <div class="node-title">Fractions</div>
                 </div>
 
-                <div class="hub-node disabled" style="--angle: 180deg;">
+                <div class="spoke" style="--angle: 150deg; --radius: 240px;"></div>
+                <div class="hub-node disabled" style="--angle: 150deg; --radius: 240px;">
                     <div class="node-icon">📏</div>
                     <div class="node-code">MD</div>
                     <div class="node-title">Measurement</div>
                 </div>
 
-                <div class="hub-node disabled" style="--angle: 240deg;">
+                <div class="spoke" style="--angle: 210deg; --radius: 220px;"></div>
+                <div class="hub-node disabled" style="--angle: 210deg; --radius: 220px;">
                     <div class="node-icon">📐</div>
                     <div class="node-code">G</div>
                     <div class="node-title">Geometry</div>
                 </div>
 
-                <div class="hub-node disabled" style="--angle: 300deg;">
-                    <div class="node-icon">➗</div>
-                    <div class="node-code">RP</div>
-                    <div class="node-title">Ratios</div>
+                <div class="spoke" style="--angle: 280deg; --radius: 140px;"></div>
+                <div class="hub-node disabled" style="--angle: 280deg; --radius: 140px;">
+                    <div class="node-icon">🍎</div>
+                    <div class="node-code">CC</div>
+                    <div class="node-title">Counting</div>
                 </div>
+
+                <div class="spoke" style="--angle: 330deg; --radius: 250px;"></div>
+                <div class="hub-node disabled" style="--angle: 330deg; --radius: 250px;">
+                    <div class="node-icon">⚖️</div>
+                    <div class="node-code">OA</div>
+                    <div class="node-title">Algebra</div>
+                </div>
+
 
                 <div class="hub-center" onclick="openView('view-mission')">
                     <div class="logo-bead"></div>
@@ -349,7 +329,6 @@
                                 <div class="app-title">The Ten-Packer</div>
                                 <div class="app-code">K.NBT.1 (Unitizing)</div>
                             </a>
-
                             <a href="number-line.html" class="app-btn span-3-4">
                                 <div class="app-icon" style="background: var(--strand-3);">🧱</div>
                                 <div class="app-title">Place Value Blocks</div>
@@ -368,7 +347,6 @@
                                 <div class="app-title">Arrow Cards</div>
                                 <div class="app-code">2.NBT.3 (Expanded Form)</div>
                             </a>
-
                             <a href="rounding-waves.html" class="app-btn span-3-4">
                                 <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-2), var(--strand-4));">🌊</div>
                                 <div class="app-title">Rounding Waves</div>
@@ -387,7 +365,6 @@
                                 <div class="app-title">Magnitude Slider</div>
                                 <div class="app-code">4.NBT.1 (10x Shift)</div>
                             </a>
-
                             <a href="array-architect.html" class="app-btn span-3-4">
                                 <div class="app-icon" style="background: linear-gradient(135deg, var(--strand-3), var(--strand-4));">📐</div>
                                 <div class="app-title">Area Architect</div>
@@ -408,7 +385,6 @@
                                     <div class="app-code">5.NBT.6 (Conceptual Division)</div>
                                 </div>
                             </a>
-
                             <a href="long-division-buddy.html" class="app-btn span-all">
                                 <div class="app-icon" style="background: #2D2D35;">🌉</div>
                                 <div class="app-details">
@@ -424,12 +400,6 @@
         </div>
 
     </main>
-
-    <style>
-        @media (max-width: 900px) {
-            .mobile-back-btn { display: inline-flex !important; }
-        }
-    </style>
 
     <script>
         let currentView = 'view-hub';
@@ -450,11 +420,11 @@
             }
 
             incoming.classList.add('active');
-            incoming.scrollTo(0, 0); // Scroll specifically the view container
+            incoming.scrollTo(0, 0); 
             currentView = targetId;
         }
 
-        // Logarithmic Lens Observer - attached specifically to the scrollable view-nbt
+        // Logarithmic Lens Observer
         const sections = [
             { id: 'sec-k', iconId: 'icon-k' },
             { id: 'sec-2', iconId: 'icon-2' },
@@ -462,7 +432,6 @@
             { id: 'sec-5', iconId: 'icon-5' }
         ];
 
-        // The root must be the scrollable container for sticky/intersection to align perfectly
         const observerOptions = {
             root: document.getElementById('view-nbt'),
             rootMargin: '-30% 0px -50% 0px', 
