@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math Things. | Rounding Waves</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+ /* Math Things Brand System */
+ --bg: #F5F5F7;
+ --glass: rgba(245,245,247,0.85);
+ --surface: #FFFFFF;
+ --text-main: #1D1D1F;
+ --text-gray: #86868B;
+ --text-light: #AEAEB2;
+ --border: rgba(0,0,0,0.05);
+ --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+ 
+ /* Dynamic Active Color */
+ --active-color: #1D1D1F;
+ --active-rgb: 29, 29, 31;
+}
+
+html, body { height: 100%; }
+
+body {
+ font-family: 'Lexend', sans-serif;
+ background: var(--bg);
+ color: var(--text-main);
+ display: flex;
+ flex-direction: column;
+ -webkit-font-smoothing: antialiased;
+ -webkit-user-select: none;
+ user-select: none;
+ touch-action: manipulation;
+}
+
+/* ── HEADER ── */
+header {
+ position: sticky; top: 0; z-index: 100;
+ background: var(--glass);
+ backdrop-filter: blur(40px);
+ -webkit-backdrop-filter: blur(40px);
+ border-bottom: 1px solid var(--border);
+ padding: 0 32px; height: 60px;
+ display: flex; align-items: center; justify-content: center;
+ flex-shrink: 0;
+}
+
+.logo {
+ display: inline-flex; align-items: baseline;
+ font-weight: 900; font-size: 1.5rem;
+ letter-spacing: -0.05em; color: var(--text-main);
+ cursor: default;
+}
+
+.logo-bead {
+ width: 0.22em; height: 0.22em;
+ margin-left: 0.04em; margin-bottom: 0.08em;
+ flex-shrink: 0; border-radius: 50%;
+ display: inline-block;
+ background:
+   radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+   radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+   linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+ box-shadow:
+   inset 1px 1px 2px rgba(255,255,255,0.8),
+   inset -1px -1px 2px rgba(0,0,0,0.2),
+   0 2px 5px rgba(0,0,0,0.22);
+ transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+/* ── MAIN LAYOUT ── */
+main {
+ flex: 1;
+ max-width: 900px; width: 100%;
+ margin: 0 auto; padding: 40px 24px;
+ display: flex; flex-direction: column;
+}
+
+.section-label {
+ font-size: 0.68rem; font-weight: 800;
+ letter-spacing: 2.5px; text-transform: uppercase;
+ color: var(--text-light);
+ margin-bottom: 16px; padding-left: 2px;
+}
+
+.card {
+ background: var(--surface);
+ border-radius: 28px;
+ padding: 40px;
+ box-shadow: var(--shadow-soft);
+ border: 1px solid var(--border);
+ display: flex; flex-direction: column;
+ flex: 1; position: relative;
+ overflow: hidden;
+}
+
+/* ── BACKGROUND WIND ── */
+.wind-layer {
+ position: absolute; inset: 0;
+ pointer-events: none; z-index: 0; overflow: hidden;
+}
+.wl {
+ position: absolute; height: 1px; border-radius: 1px;
+ background: linear-gradient(90deg, transparent, rgba(var(--active-rgb), 0.15), transparent);
+ animation: wblow linear infinite;
+}
+.wl:nth-child(1)  { top: 8%;  width:55px; animation-duration:4.1s; animation-delay:0.0s; }
+.wl:nth-child(2)  { top:15%;  width:38px; animation-duration:3.4s; animation-delay:0.8s; }
+.wl:nth-child(3)  { top:22%;  width:62px; animation-duration:4.6s; animation-delay:1.5s; }
+.wl:nth-child(4)  { top:30%;  width:44px; animation-duration:3.8s; animation-delay:0.3s; }
+.wl:nth-child(5)  { top:38%;  width:70px; animation-duration:3.2s; animation-delay:2.2s; }
+.wl:nth-child(6)  { top:46%;  width:36px; animation-duration:4.3s; animation-delay:1.0s; }
+.wl:nth-child(7)  { top:54%;  width:58px; animation-duration:3.7s; animation-delay:0.5s; }
+@keyframes wblow {
+ 0%   { left: -80px;  opacity: 0; }
+ 15%  { opacity: 1; }
+ 85%  { opacity: 1; }
+ 100% { left: calc(100% + 80px); opacity: 0; }
+}
+
+/* ── CONTROLS ── */
+.controls {
+ position: relative; z-index: 10;
+ display: flex; flex-direction: column;
+ align-items: center; gap: 16px;
+ margin-bottom: 20px;
+}
+
+.top-row {
+ display: flex; align-items: center;
+ gap: 16px; justify-content: center;
+}
+
+.num-input {
+ font-family: 'Lexend', sans-serif;
+ font-size: 3rem; font-weight: 800;
+ letter-spacing: -0.04em;
+ width: 220px; text-align: center;
+ padding: 10px;
+ border: none;
+ border-bottom: 3px solid rgba(0,0,0,0.08);
+ background: transparent;
+ color: var(--text-main);
+ outline: none;
+ transition: border-color 0.3s ease;
+}
+.num-input:focus { border-bottom-color: var(--active-color); }
+.num-input::placeholder { color: var(--text-light); opacity: 0.5; }
+
+.drop-btn {
+ font-family: 'Lexend', sans-serif;
+ font-size: 1rem; font-weight: 800;
+ padding: 16px 24px;
+ background: var(--active-color); color: white;
+ border: none; border-radius: 20px;
+ cursor: pointer;
+ display: flex; align-items: center; gap: 8px;
+ box-shadow: 0 4px 12px rgba(var(--active-rgb), 0.3);
+ position: relative; top: 0;
+ transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.drop-btn:active:not(:disabled) {
+ transform: scale(0.95);
+ box-shadow: 0 2px 4px rgba(var(--active-rgb), 0.2);
+}
+.drop-btn:disabled {
+ background: var(--text-light);
+ box-shadow: none; cursor: default;
+ opacity: 0.5;
+}
+
+.pv-row {
+ display: flex; gap: 8px; flex-wrap: wrap;
+ justify-content: center;
+}
+
+.pv-btn {
+ font-family: 'Lexend', sans-serif;
+ display: flex; flex-direction: column;
+ align-items: center; gap: 4px;
+ padding: 8px 12px;
+ border-radius: 12px;
+ border: 1.5px solid rgba(0,0,0,0.08);
+ background: var(--surface); color: var(--text-gray);
+ cursor: pointer; transition: all 0.2s;
+ min-width: 64px;
+}
+.pv-btn:active { transform: scale(0.96); }
+.pv-btn.active {
+ background: var(--active-color); color: white;
+ border-color: var(--active-color);
+ box-shadow: 0 4px 12px rgba(var(--active-rgb), 0.25);
+}
+.pv-btn.active svg path,
+.pv-btn.active svg text { stroke: rgba(255,255,255,0.9); fill: rgba(255,255,255,0.9); }
+.pv-label-text {
+ font-size: 0.65rem; font-weight: 700;
+ letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+/* ── CANVAS WRAPPER ── */
+.canvas-wrap {
+ flex: 1; position: relative; z-index: 1;
+ overflow: hidden; min-height: 300px;
+ border-radius: 16px;
+ background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(var(--active-rgb), 0.03) 100%);
+}
+canvas {
+ display: block; position: absolute; inset: 0;
+ width: 100%; height: 100%; cursor: pointer;
+}
+
+/* ── RESULT OVERLAY ── */
+.result-overlay {
+ position: absolute; bottom: 24px; left: 0; right: 0;
+ display: flex; flex-direction: column;
+ align-items: center; gap: 8px;
+ pointer-events: none; z-index: 20;
+}
+.result-eq {
+ font-size: 2rem; font-weight: 900;
+ letter-spacing: -0.04em; color: var(--text-main);
+ opacity: 0; transform: translateY(12px);
+ transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+ background: rgba(255,255,255,0.9);
+ backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+ padding: 12px 32px; border-radius: 40px;
+ border: 1px solid var(--border);
+ box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.result-eq.show { opacity: 1; transform: translateY(0); }
+.result-sub {
+ font-size: 0.85rem; font-weight: 600; color: var(--text-gray);
+ opacity: 0; transition: opacity 0.5s ease 0.2s;
+}
+.result-sub.show { opacity: 1; }
+
+/* ── MIDPOINT GUST LAYER ── */
+.gust-layer {
+ position: absolute; inset: 0;
+ pointer-events: none; z-index: 5;
+ opacity: 0; transition: opacity 0.3s;
+}
+.gust-layer.active { opacity: 1; }
+.gl {
+ position: absolute; height: 2px;
+ background: linear-gradient(90deg, transparent, rgba(var(--active-rgb), 0.6), transparent);
+ border-radius: 2px;
+ animation: gblow 0.45s ease-in-out infinite;
+}
+.gl:nth-child(1) { top:35%; left:15%; width:90px;  animation-delay:0.00s; }
+.gl:nth-child(2) { top:42%; left:25%; width:110px; animation-delay:0.07s; }
+.gl:nth-child(3) { top:49%; left:18%; width:78px;  animation-delay:0.16s; }
+.gl:nth-child(4) { top:56%; left:30%; width:96px;  animation-delay:0.05s; }
+@keyframes gblow {
+ 0%   { transform: translateX(-20px); opacity: 0; }
+ 50%  { opacity: 1; }
+ 100% { transform: translateX(80px);  opacity: 0; }
+}
+
+/* ── FOOTER ── */
+footer {
+ text-align: center; padding: 24px;
+ font-size: 0.65rem; font-weight: 700;
+ letter-spacing: 1.5px; text-transform: uppercase;
+ color: var(--text-light); flex-shrink: 0;
+}
+.fbead {
+ display: inline-block; width: 0.22em; height: 0.22em;
+ border-radius: 50%; vertical-align: baseline;
+ margin-left: 0.04em; margin-bottom: 0.08em;
+ background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="logo">Math Things<span class="logo-bead"></span></div>
+</header>
+
+<main>
+ <p class="section-label">Rounding Engine</p>
+ <div class="card" id="appCard">
+   
+   <div class="wind-layer" aria-hidden="true">
+     <div class="wl"></div><div class="wl"></div><div class="wl"></div>
+     <div class="wl"></div><div class="wl"></div><div class="wl"></div>
+   </div>
+
+   <div class="controls">
+     <div class="top-row">
+       <input type="text" inputmode="decimal" class="num-input" id="numInput" placeholder="0" autocomplete="off" autocorrect="off" spellcheck="false">
+       <button class="drop-btn" id="dropBtn" disabled>Drop ↓</button>
+     </div>
+     <div class="pv-row" id="pvRow"></div>
+   </div>
+
+   <div class="canvas-wrap" id="canvasWrap">
+     <div class="gust-layer" id="gustLayer" aria-hidden="true">
+       <div class="gl"></div><div class="gl"></div><div class="gl"></div><div class="gl"></div>
+     </div>
+     <canvas id="waveCanvas"></canvas>
+     <div class="result-overlay">
+       <div class="result-eq" id="resultEq"></div>
+       <div class="result-sub" id="resultSub"></div>
+     </div>
+   </div>
+
+ </div>
+</main>
+
+<footer>
+ Math Things<span class="fbead"></span>  |  Math, in your hands<span class="fbead"></span>
+</footer>
+
+<script>
+const canvas    = document.getElementById('waveCanvas');
+const ctx       = canvas.getContext('2d');
+const numInput  = document.getElementById('numInput');
+const dropBtn   = document.getElementById('dropBtn');
+const pvRow     = document.getElementById('pvRow');
+const resultEq  = document.getElementById('resultEq');
+const resultSub = document.getElementById('resultSub');
+const gustLayer = document.getElementById('gustLayer');
+const wrap      = document.getElementById('canvasWrap');
+const appCard   = document.getElementById('appCard');
+
+// ── Math Things Master Palette ──
+const PALETTE = {
+ 1000:  { hex: '#4CBB17', rgb: '76, 187, 23' },   // Thousands (Cool)
+ 100:   { hex: '#FFD700', rgb: '255, 215, 0' },   // Hundreds (Warm)
+ 10:    { hex: '#4169E1', rgb: '65, 105, 225' },  // Tens (Cool)
+ 1:     { hex: '#DC143C', rgb: '220, 20, 60' },   // Ones (Warm Anchor)
+ 0.1:   { hex: '#7B00FF', rgb: '123, 0, 255' },   // Tenths (Cool)
+ 0.01:  { hex: '#FF9F0A', rgb: '255, 159, 10' },  // Hundredths (Warm)
+ 0.001: { hex: '#64D2FF', rgb: '100, 210, 255' }  // Thousandths (Cool)
+};
+
+const WAVE_PERIOD = 10; 
+const PAD_X       = 40; 
+
+let W = 0, H = 0, dpr = 1;
+let baseline = 0;  
+let amp = 0;       
+let ballHoverY = 0;
+
+function geom() {
+ W = canvas.width  / dpr;
+ H = canvas.height / dpr;
+ const activePeriod = wavePeriodOverride !== null ? wavePeriodOverride : WAVE_PERIOD;
+ const periodPx = (W - PAD_X * 2) / ((camR - camL) / activePeriod);
+ amp = periodPx / 7;
+ baseline = H * 0.82 - amp;
+ const peakY = baseline - amp;
+ ballHoverY = Math.min(H * 0.18, peakY - H * 0.08);
+}
+
+let camL = 0, camR = 100;
+let currentNum  = null;
+let selectedPV  = null;
+let availPVs    = [];
+let ball        = null;
+let trail       = [];
+let busy        = false;
+let rafId       = null;
+let wavePeriodOverride = null; 
+
+const PV_DEFS = [
+ { name:'Thousands', word:'Thousands', v:1000 },
+ { name:'Hundreds',  word:'Hundreds',  v:100  },
+ { name:'Tens',      word:'Tens',      v:10   },
+ { name:'Ones',      word:'Ones',      v:1    },
+ { name:'Tenths',    word:'Tenths',    v:0.1  },
+ { name:'Hundredths',word:'Hundredths',v:0.01 }
+];
+
+function v2x(rv) { return PAD_X + ((rv - camL) / (camR - camL)) * (W - PAD_X * 2); }
+function waveY(rv) {
+ const period = wavePeriodOverride !== null ? wavePeriodOverride : WAVE_PERIOD;
+ return baseline + amp * Math.cos((rv / period) * 2 * Math.PI);
+}
+
+function roundInfo(num, pv) {
+ const lower = Math.floor(num / pv + 1e-9) * pv;
+ const upper = lower + pv;
+ const frac  = Math.max(0, Math.min(1, (num - lower) / pv));
+ return { lower, upper, frac, posNorm: frac * 10 };
+}
+
+function fmtN(v, pv) {
+ if (pv >= 1)    return String(Math.round(v));
+ if (pv >= 0.1)  return v.toFixed(1);
+ if (pv >= 0.01) return v.toFixed(2);
+ return v.toFixed(3);
+}
+
+function getAvailPVs(num, rawStr) {
+ if (num === null || isNaN(num) || num < 0) return [];
+ const dec = (rawStr || '').includes('.') ? rawStr.split('.')[1].length : 0;
+ return PV_DEFS.filter(p => {
+   if (p.v === 1000)  return num >= 100;
+   if (p.v === 100)   return num >= 10;
+   if (p.v === 10)    return num >= 1;
+   if (p.v === 1)     return dec > 0;
+   if (p.v === 0.1)   return dec >= 2;
+   if (p.v === 0.01)  return dec >= 3;
+   return false;
+ });
+}
+
+function camDefault(num) {
+ if (num === null)  return { l: 0, r: 100  };
+ if (num < 1)       return { l: 0, r: 1    };
+ if (num < 10)      return { l: 0, r: 10   };
+ if (num < 100)     return { l: 0, r: 100  };
+ if (num < 1000)    return { l: 0, r: 1000 };
+ return             { l: 0, r: 10000 };
+}
+
+function camForPV(pv, num) {
+ const info  = roundInfo(num, pv);
+ const extra = pv * 0.30;
+ const l = Math.max(0, info.lower - extra);
+ const r = info.upper + extra;
+ return { l, r };
+}
+
+function defaultPV(num) {
+ if (num >= 1000) return PV_DEFS.find(p => p.v === 1000);
+ if (num >= 100)  return PV_DEFS.find(p => p.v === 100);
+ if (num >= 1)    return PV_DEFS.find(p => p.v === 10);
+ if (num >= 0.1)  return PV_DEFS.find(p => p.v === 1);
+ return PV_DEFS.find(p => p.v === 0.1);
+}
+
+function resize() {
+ dpr = window.devicePixelRatio || 1;
+ const rect = wrap.getBoundingClientRect();
+ canvas.width  = rect.width  * dpr;
+ canvas.height = rect.height * dpr;
+ canvas.style.width  = rect.width  + 'px';
+ canvas.style.height = rect.height + 'px';
+ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+ geom();
+ if (!busy) draw();
+}
+
+function getActiveRGB() {
+ if(!selectedPV) return '134, 134, 139'; // text-gray default
+ return PALETTE[selectedPV.v].rgb;
+}
+
+function draw() {
+ geom(); 
+ ctx.clearRect(0, 0, W, H);
+
+ const span = camR - camL;
+ const pxPerUnit   = (W - PAD_X * 2) / span;
+ const pxPerPeriod = pxPerUnit * WAVE_PERIOD;
+ const hasNum      = currentNum !== null;
+ const activeRGB   = getActiveRGB();
+
+ // ── Wave fill ──
+ ctx.beginPath();
+ ctx.moveTo(0, H);
+ for (let px = 0; px <= W; px++) {
+   const rv = camL + ((px - PAD_X) / (W - PAD_X * 2)) * span;
+   ctx.lineTo(px, waveY(rv) + 14);
+ }
+ ctx.lineTo(W, H);
+ ctx.closePath();
+ const wfg = ctx.createLinearGradient(0, baseline - amp, 0, H);
+ wfg.addColorStop(0,   `rgba(${activeRGB}, 0.12)`);
+ wfg.addColorStop(0.5, `rgba(${activeRGB}, 0.05)`);
+ wfg.addColorStop(1,   `rgba(${activeRGB}, 0.0)`);
+ ctx.fillStyle = wfg;
+ ctx.fill();
+
+ // ── Wave line ──
+ ctx.beginPath();
+ for (let px = 0; px <= W; px++) {
+   const rv = camL + ((px - PAD_X) / (W - PAD_X * 2)) * span;
+   const y  = waveY(rv);
+   px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
+ }
+ ctx.strokeStyle = hasNum ? `rgba(${activeRGB}, 0.85)` : 'rgba(134,134,139,0.3)';
+ ctx.lineWidth   = 3;
+ ctx.lineCap     = 'round';
+ ctx.lineJoin    = 'round';
+ ctx.stroke();
+
+ // ── Markers ──
+ const activePeriod = wavePeriodOverride !== null ? wavePeriodOverride : WAVE_PERIOD;
+ const labelStride = pxPerPeriod > 55 ? 1 : pxPerPeriod > 25 ? 2 : pxPerPeriod > 12 ? 5 : 10;
+ const n0 = Math.floor(camL / activePeriod) - 1;
+ const n1 = Math.ceil( camR / activePeriod) + 1;
+
+ for (let n = n0; n <= n1; n++) {
+   const vv = n * activePeriod;
+   const pv = vv + activePeriod / 2;
+
+   // Valley
+   const vx = v2x(vv);
+   if (vx > PAD_X - 4 && vx < W - PAD_X + 4) {
+     const vy = waveY(vv);
+     ctx.beginPath();
+     ctx.moveTo(vx, vy - 7); ctx.lineTo(vx, vy + 7);
+     ctx.strokeStyle = hasNum ? `rgba(${activeRGB}, 0.6)` : 'rgba(134,134,139,0.2)';
+     ctx.lineWidth = 2; ctx.stroke();
+
+     if (hasNum && pxPerPeriod > 14 && n % labelStride === 0) {
+       const lbl = fmtLabel(vv);
+       const fs  = Math.min(26, Math.max(16, pxPerPeriod * 0.4));
+       ctx.font      = `800 ${fs}px 'Lexend'`;
+       ctx.fillStyle = 'rgba(29,29,31,0.5)';
+       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+       ctx.fillText(lbl, vx, vy + 12);
+     }
+   }
+
+   // Peak
+   const px2 = v2x(pv);
+   if (px2 > PAD_X - 4 && px2 < W - PAD_X + 4) {
+     const py2 = waveY(pv);
+     ctx.beginPath();
+     ctx.moveTo(px2, py2 - 4); ctx.lineTo(px2, py2 + 4);
+     ctx.strokeStyle = hasNum ? `rgba(${activeRGB}, 0.3)` : 'rgba(134,134,139,0.1)';
+     ctx.lineWidth = 1.5; ctx.stroke();
+
+     if (hasNum && pxPerPeriod > 65) {
+       const lbl = fmtLabel(pv);
+       const fs  = Math.min(20, Math.max(14, pxPerPeriod * 0.3));
+       ctx.font      = `600 ${fs}px 'Lexend'`;
+       ctx.fillStyle = 'rgba(29,29,31,0.3)';
+       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+       ctx.fillText(lbl, px2, py2 + 10);
+     }
+   }
+ }
+
+ // ── Trail ──
+ for (let i = 0; i < trail.length; i++) {
+   const a = (i / trail.length) * 0.18;
+   const r = 5  * (i / trail.length);
+   ctx.beginPath();
+   ctx.arc(trail[i].x, trail[i].y, r, 0, Math.PI * 2);
+   ctx.fillStyle = `rgba(134,134,139,${a})`;
+   ctx.fill();
+ }
+
+ // ── Ball (Brushed Aluminum Bead) ──
+ if (ball) {
+   const bx   = v2x(ball.rv);
+   const surY = waveY(ball.rv);
+
+   let by;
+   if (ball.phase === 'hover') {
+     by = ballHoverY;
+     if (ball.pulsePhase !== undefined) {
+       by += Math.sin(ball.pulsePhase * Math.PI) * 6;
+     }
+   } else if (ball.phase === 'drop') {
+     by = ball.airY;
+   } else {
+     by = surY - 15; 
+   }
+
+   const shadowAlpha = ball.phase === 'hover' ? 0.04 : 0.12;
+   ctx.beginPath();
+   ctx.ellipse(bx, surY + 5, 12, 3.5, 0, 0, Math.PI * 2);
+   ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+   ctx.fill();
+
+   const br = ball.phase === 'hover' ? 18 : 16;
+
+   const gr = ctx.createRadialGradient(bx - 5, by - 6, 2, bx, by, br);
+   gr.addColorStop(0,    'rgba(255,255,255,0.92)');
+   gr.addColorStop(0.40, 'rgba(255,255,255,0.3)');
+   gr.addColorStop(0.65, 'transparent');
+   
+   const baseGr = ctx.createLinearGradient(bx - br, by - br, bx + br, by + br);
+   baseGr.addColorStop(0, '#efefef');
+   baseGr.addColorStop(0.25, '#d0d0d0');
+   baseGr.addColorStop(0.5, '#a8a8a8');
+   baseGr.addColorStop(0.75, '#c0c0c0');
+   baseGr.addColorStop(1, '#e0e0e0');
+
+   ctx.beginPath();
+   ctx.arc(bx, by, br, 0, Math.PI * 2);
+   ctx.fillStyle = baseGr;
+   ctx.fill();
+   ctx.fillStyle = gr;
+   ctx.fill();
+
+   ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+   ctx.lineWidth   = 1;
+   ctx.stroke();
+
+   ctx.beginPath();
+   ctx.arc(bx + 4, by + 4, br * 0.8, 0, Math.PI * 2);
+   ctx.fillStyle = 'rgba(0,0,0,0.05)';
+   ctx.fill();
+
+   if (ball.label) {
+     const l  = ball.label;
+     const fs = l.length > 5 ? 7 : l.length > 4 ? 8 : l.length > 3 ? 9 : 11;
+     ctx.font = `800 ${fs}px 'Lexend'`;
+     ctx.fillStyle    = '#1D1D1F';
+     ctx.textAlign    = 'center';
+     ctx.textBaseline = 'middle';
+     ctx.fillText(l, bx, by + 0.5);
+   }
+ }
+}
+
+function fmtLabel(v) {
+ const r = Math.round(v * 1e6) / 1e6;
+ if (Math.abs(r - Math.round(r)) < 0.00005) return String(Math.round(r));
+ return r.toFixed(4).replace(/\.?0+$/, '');
+}
+
+function eio(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
+
+function zoomTo(newL, newR, ms, onDone) {
+ if (rafId) cancelAnimationFrame(rafId);
+ const oldL = camL, oldR = camR;
+ const t0   = performance.now();
+ function frame(now) {
+   const t = Math.min((now - t0) / ms, 1);
+   const e = eio(t);
+   camL = oldL + (newL - oldL) * e;
+   camR = oldR + (newR - oldR) * e;
+   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+   draw();
+   if (t < 1) { rafId = requestAnimationFrame(frame); }
+   else {
+     camL = newL; camR = newR; draw();
+     rafId = null; if (onDone) onDone();
+   }
+ }
+ rafId = requestAnimationFrame(frame);
+}
+
+function doPulse(onDone) {
+ const PULSE_MS = 600;
+ const t0 = performance.now();
+ function frame(now) {
+   const t = Math.min((now - t0) / PULSE_MS, 1);
+   ball.pulsePhase = t; 
+   draw();
+   if (t < 1) { rafId = requestAnimationFrame(frame); }
+   else {
+     ball.pulsePhase = 0; draw();
+     rafId = null; if (onDone) onDone();
+   }
+ }
+ rafId = requestAnimationFrame(frame);
+}
+
+numInput.addEventListener('focus', () => { setTimeout(() => numInput.select(), 0); });
+numInput.addEventListener('input', onInput);
+
+function onInput() {
+ const raw = numInput.value.trim();
+ resultEq.classList.remove('show');
+ resultSub.classList.remove('show');
+ gustLayer.classList.remove('active');
+
+ if (!raw || raw === '.' || raw === '-') {
+   currentNum = null; availPVs = []; selectedPV = null;
+   ball = null; trail = [];
+   dropBtn.disabled = true;
+   appCard.style.setProperty('--active-color', '#1D1D1F');
+   appCard.style.setProperty('--active-rgb', '29, 29, 31');
+   buildPVButtons(); 
+   if (!busy) zoomTo(0, 100, 600);
+   return;
+ }
+
+ const val = parseFloat(raw);
+ if (isNaN(val) || val < 0) { dropBtn.disabled = true; return; }
+
+ wavePeriodOverride = null;
+ currentNum = val;
+ availPVs   = getAvailPVs(val, raw);
+
+ const prevName = selectedPV ? selectedPV.name : null;
+ const samePV   = availPVs.find(p => p.name === prevName);
+ selectedPV     = samePV || defaultPV(val) || availPVs[0] || null;
+
+ if(selectedPV) {
+   appCard.style.setProperty('--active-color', PALETTE[selectedPV.v].hex);
+   appCard.style.setProperty('--active-rgb', PALETTE[selectedPV.v].rgb);
+ }
+
+ ball = { rv: val, phase: 'hover', airY: null, pulsePhase: 0, label: String(currentNum) };
+ trail = [];
+
+ buildPVButtons(); 
+
+ busy = true;
+ dropBtn.disabled = true;
+ const tgt = selectedPV ? camForPV(selectedPV.v, val) : camDefault(val);
+ zoomTo(tgt.l, tgt.r, 700, () => {
+   doPulse(() => {
+     busy = false;
+     dropBtn.disabled = (selectedPV === null);
+   });
+ });
+}
+
+function buildPVButtons() {
+ pvRow.innerHTML = '';
+ if (availPVs.length === 0) return;
+
+ availPVs.forEach(p => {
+   const btn = document.createElement('button');
+   btn.className = 'pv-btn' + (selectedPV === p ? ' active' : '');
+   const lo = 0;
+   const hi = fmtN(p.v, p.v);
+   btn.innerHTML = `
+     ${miniWaveSVG(lo, hi, selectedPV === p, p.v)}
+     <span class="pv-label-text">${p.word}</span>
+   `;
+   btn.addEventListener('click', () => selectPV(p));
+   pvRow.appendChild(btn);
+ });
+}
+
+function miniWaveSVG(lo, hi, active, pvVal) {
+ const rgb = active ? '255,255,255' : PALETTE[pvVal].rgb;
+ const c = `rgba(${rgb}, ${active ? 0.9 : 0.8})`;
+ const tc = active ? 'rgba(255,255,255,0.9)' : 'rgba(134,134,139,0.7)';
+ return `<svg width="52" height="28" viewBox="0 0 52 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+   <path d="M0,22 Q13,22 16,22" stroke="${c}" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+   <path d="M4,22 Q26,2 48,22" stroke="${c}" stroke-width="2" stroke-linecap="round" fill="none"/>
+   <path d="M48,22 Q50,22 52,22" stroke="${c}" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+   <circle cx="4"  cy="22" r="2" fill="${c}" opacity="0.9"/>
+   <circle cx="48" cy="22" r="2" fill="${c}" opacity="0.9"/>
+   <text x="4"  y="27.5" font-family="Lexend" font-size="7" font-weight="800" fill="${tc}" text-anchor="middle">${lo}</text>
+   <text x="48" y="27.5" font-family="Lexend" font-size="7" font-weight="800" fill="${tc}" text-anchor="middle">${hi}</text>
+ </svg>`;
+}
+
+function selectPV(p) {
+ if (busy || currentNum === null) return;
+
+ const prevPV = selectedPV;
+ selectedPV = p;
+ 
+ appCard.style.setProperty('--active-color', PALETTE[p.v].hex);
+ appCard.style.setProperty('--active-rgb', PALETTE[p.v].rgb);
+
+ buildPVButtons(); 
+
+ ball  = { rv: currentNum, phase: 'hover', airY: null, pulsePhase: 0, label: String(currentNum) };
+ trail = [];
+ resultEq.classList.remove('show');
+ resultSub.classList.remove('show');
+ gustLayer.classList.remove('active');
+ dropBtn.disabled = true;
+ busy = true;
+
+ if (!prevPV || prevPV === p) {
+   const tgt = camForPV(p.v, currentNum);
+   wavePeriodOverride = null;
+   zoomTo(tgt.l, tgt.r, 800, () => {
+     busy = false; dropBtn.disabled = false; draw();
+   });
+   return;
+ }
+
+ const swellOutL = 0;
+ const swellOutR = p.v; 
+
+ wavePeriodOverride = null; 
+ zoomTo(swellOutL, swellOutR, 900, () => {
+   const swellStart  = performance.now();
+   const SWELL_MS    = 1100;
+   const fromPeriod  = WAVE_PERIOD;
+   const toPeriod    = p.v;
+
+   function swellFrame(now) {
+     const t = Math.min((now - swellStart) / SWELL_MS, 1);
+     const e = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
+     wavePeriodOverride = fromPeriod + (toPeriod - fromPeriod) * e;
+     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+     draw();
+     if (t < 1) {
+       rafId = requestAnimationFrame(swellFrame);
+     } else {
+       wavePeriodOverride = p.v;
+       busy = false;
+       dropBtn.disabled = false;
+       draw();
+     }
+   }
+   rafId = requestAnimationFrame(swellFrame);
+ });
+}
+
+dropBtn.addEventListener('click', triggerDrop);
+numInput.addEventListener('keydown', e => {
+ if (e.key === 'Enter' && !busy && !dropBtn.disabled) triggerDrop();
+});
+
+canvas.addEventListener('click', e => {
+ if (!ball || busy || dropBtn.disabled) return;
+ const rect = canvas.getBoundingClientRect();
+ const cx   = (e.clientX - rect.left);
+ const cy   = (e.clientY - rect.top);
+ const bx   = v2x(ball.rv);
+ const by   = ball.phase === 'hover' ? ballHoverY : ball.airY || waveY(ball.rv) - 14;
+ const dist = Math.hypot(cx - bx, cy - by);
+ if (dist < 40) triggerDrop(); 
+});
+
+function triggerDrop() {
+ if (busy || currentNum === null || !selectedPV) return;
+ const info = roundInfo(currentNum, selectedPV.v);
+
+ if (Math.abs(info.frac) < 0.0005 || Math.abs(info.frac - 1) < 0.0005) {
+   resultEq.textContent  = `${currentNum} = ${fmtN(info.lower, selectedPV.v)}`;
+   resultSub.textContent = 'Already resting in the valley.';
+   resultEq.classList.add('show');
+   resultSub.classList.add('show');
+   return;
+ }
+
+ busy = true;
+ dropBtn.disabled = true;
+ trail = [];
+
+ const rv    = currentNum;
+ const surY  = waveY(rv);
+ const airY0 = ballHoverY;
+
+ ball = { rv, phase: 'drop', airY: airY0, label: String(currentNum) };
+
+ const FALL_MS  = 900;
+ const fallT0   = performance.now();
+
+ function fallFrame(now) {
+   const t    = Math.min((now - fallT0) / FALL_MS, 1);
+   const ease = t * t; 
+   ball.airY  = airY0 + (surY - airY0) * ease;
+   draw();
+   if (t < 1) { rafId = requestAnimationFrame(fallFrame); }
+   else {
+     ball.phase = 'roll'; ball.airY = null; draw();
+     setTimeout(() => doRoll(info), 180);
+   }
+ }
+ rafId = requestAnimationFrame(fallFrame);
+}
+
+function doRoll(info) {
+ const pv       = selectedPV.v;
+ const isExact5 = Math.abs(info.posNorm - 5) < 0.15;
+ const goRight  = info.posNorm >= 5;
+ const target   = goRight ? info.upper : info.lower;
+
+ if (isExact5) { gustLayer.classList.add('active'); }
+
+ const origin   = currentNum;
+ const ROLL_MS  = 2200; 
+ const rollT0   = performance.now();
+
+ function rollFrame(now) {
+   const t = Math.min((now - rollT0) / ROLL_MS, 1);
+   const e = t*t*t*(t*(t*6 - 15) + 10);
+   ball.rv = origin + (target - origin) * e;
+   trail.push({ x: v2x(ball.rv), y: waveY(ball.rv) - amp * 0.22 });
+   if (trail.length > 50) trail.shift();
+   draw();
+
+   if (t < 1) { rafId = requestAnimationFrame(rollFrame); }
+   else {
+     ball.rv    = target;
+     ball.phase = 'settled';
+     ball.label = fmtN(target, pv);
+     draw();
+
+     setTimeout(() => {
+       resultEq.innerHTML =
+         `<span style="color:var(--text-gray)">${currentNum}</span>`
+         + `<span style="margin:0 12px;color:var(--active-color)">→</span>`
+         + `<span style="color:var(--text-main)">${fmtN(target, pv)}</span>`;
+       resultSub.textContent = isExact5
+         ? `Pushed forward by the breeze.`
+         : `Fell to the closest valley.`;
+       resultEq.classList.add('show');
+       resultSub.classList.add('show');
+       gustLayer.classList.remove('active');
+       busy = false;
+       draw();
+     }, 350);
+   }
+ }
+ rafId = requestAnimationFrame(rollFrame);
+}
+
+window.addEventListener('resize', () => { if (!busy) resize(); });
+
+resize();
+camL = 0; camR = 100;
+draw();
+</script>
+</body>
+</html>

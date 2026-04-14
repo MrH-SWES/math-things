@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Things. | Division Scaffold</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Math Things Brand System */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF; /* Active focus color */
+            --error: #DC143C;
+            --success: #4CBB17;
+            --border: rgba(0,0,0,0.05);
+            --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+            --shadow-block: inset 2px 2px 0 rgba(255,255,255,0.4), inset -2px -2px 0 rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.12), 1px -1px 0 rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo {
+            display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em;
+            color: var(--text-main); cursor: default;
+        }
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        /* ── MAIN LAYOUT ── */
+        main {
+            flex: 1; max-width: 800px; width: 100%; margin: 0 auto;
+            padding: 40px 24px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .section-label {
+            font-size: 0.68rem; font-weight: 800; letter-spacing: 2.5px;
+            text-transform: uppercase; color: var(--text-light); margin-bottom: 16px; padding-left: 2px;
+        }
+        .card {
+            background: var(--surface); border-radius: 28px; padding: 48px 40px;
+            box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; gap: 32px;
+        }
+
+        /* ── SETUP SCREEN (THE HOUSE) ── */
+        #setupScreen { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        
+        .house-container {
+            display: flex; align-items: stretch; justify-content: center;
+            font-size: 3rem; font-weight: 800; color: var(--text-main);
+        }
+        
+        .house-input {
+            font-family: 'Lexend', sans-serif; font-size: 3rem; font-weight: 800;
+            text-align: center; color: var(--text-main);
+            border: none; background: transparent; outline: none;
+            transition: color 0.2s;
+        }
+        .house-input::placeholder { color: var(--border); }
+        .house-input:focus { color: var(--accent); }
+        .house-input::-webkit-inner-spin-button, .house-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        #houseDivisor { width: 120px; margin-right: 12px; }
+        #houseDividend { width: 220px; }
+        
+        .house-bracket {
+            border-left: 6px solid var(--text-main);
+            border-top: 6px solid var(--text-main);
+            border-top-left-radius: 16px;
+            padding: 12px 16px 12px 16px;
+        }
+
+        .btn-start {
+            font-family: 'Lexend', sans-serif; font-size: 1.1rem; font-weight: 800;
+            padding: 16px 40px; background: var(--text-main); color: white;
+            border: none; border-radius: 20px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 24px;
+        }
+        .btn-start:active { transform: scale(0.95); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.2); }
+
+        /* ── PROBLEM SCREEN ── */
+        #problemScreen { display: none; width: 100%; flex-direction: column; align-items: center; }
+        
+        .division-board {
+            font-size: 2.5rem; font-weight: 800; color: var(--text-main);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .row { display: flex; min-height: 3rem; align-items: center; }
+        .q-row { margin-left: 90px; margin-bottom: 8px; }
+        
+        .house-row { display: flex; align-items: stretch; }
+        .board-divisor {
+            padding: 8px 16px; margin-right: 8px; font-weight: 800;
+            transition: color 0.3s;
+        }
+        .board-bracket {
+            border-left: 6px solid var(--text-main);
+            border-top: 6px solid var(--text-main);
+            border-top-left-radius: 12px;
+            padding: 8px 12px 8px 12px;
+            display: flex;
+        }
+
+        .digit-cell {
+            width: 1.4em; text-align: center; position: relative;
+            transition: color 0.3s;
+        }
+        
+        /* Highlight states */
+        .hl-active { color: var(--accent); }
+        .hl-success { color: var(--success); }
+        .hl-brought { color: var(--text-main); }
+        .hl-fade { color: var(--text-light); }
+
+        .work-area { margin-top: 8px; margin-left: 90px; }
+        .work-row { display: flex; min-height: 3rem; align-items: center; position: relative; }
+        
+        .sub-sign {
+            position: absolute; left: -1.2em; color: var(--text-gray); font-weight: 800;
+        }
+        .work-line {
+            border-bottom: 4px solid var(--text-main);
+            margin: 4px 0; height: 4px; width: 100%;
+        }
+
+        /* The Bead (Bring Down) */
+        .drop-bead {
+            position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
+            width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1.5px 1.5px 3px rgba(255,255,255,0.8), inset -1.5px -1.5px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.2);
+            animation: float 2s ease-in-out infinite; z-index: 10;
+        }
+        .drop-bead:active { transform: translateX(-50%) scale(0.9); box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); }
+        @keyframes float { 0%, 100% { bottom: -35px; } 50% { bottom: -45px; } }
+
+        /* ── PROMPT AREA (No Words) ── */
+        .action-area {
+            margin-top: 40px; background: var(--bg); border-radius: 20px;
+            padding: 24px 40px; display: flex; align-items: center; justify-content: center; gap: 16px;
+            font-size: 2rem; font-weight: 800; color: var(--text-gray);
+            height: 100px;
+        }
+
+        .math-prompt { color: var(--text-main); }
+        
+        .action-input {
+            width: 80px; padding: 8px; font-family: 'Lexend', sans-serif;
+            font-size: 2rem; font-weight: 800; text-align: center;
+            border: 3px solid var(--border); border-radius: 12px;
+            background: var(--surface); color: var(--accent); outline: none;
+            transition: all 0.2s;
+        }
+        .action-input:focus { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,122,255,0.15); }
+        .action-input::-webkit-inner-spin-button, .action-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: var(--error) !important; color: var(--error) !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+
+        /* ── COMPLETION ── */
+        #completion { display: none; flex-direction: column; align-items: center; text-align: center; width: 100%; }
+        .final-eq { font-size: 3rem; font-weight: 900; color: var(--text-main); margin-bottom: 24px; letter-spacing: -0.04em; }
+        .remainder { color: var(--error); font-size: 2rem; margin-left: 12px; }
+        
+        /* ── FOOTER ── */
+        footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); }
+        .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+    </header>
+
+    <main>
+        <p class="section-label">Algorithm Scaffold</p>
+        <div class="card">
+            
+            <div id="setupScreen">
+                <div class="house-container">
+                    <input type="number" id="houseDivisor" class="house-input" placeholder="÷" min="2" max="99">
+                    <div class="house-bracket">
+                        <input type="number" id="houseDividend" class="house-input" placeholder="000" min="10" max="99999">
+                    </div>
+                </div>
+                <button class="btn-start" id="startBtn">Begin</button>
+            </div>
+
+            <div id="problemScreen">
+                <div class="division-board">
+                    <div class="row q-row" id="quotientRow"></div>
+                    
+                    <div class="house-row">
+                        <div class="board-divisor" id="boardDivisor"></div>
+                        <div class="board-bracket" id="boardDividend"></div>
+                    </div>
+                    
+                    <div class="work-area" id="workRows"></div>
+                </div>
+
+                <div class="action-area" id="actionArea">
+                    </div>
+            </div>
+
+            <div id="completion">
+                <div class="final-eq" id="finalEq"></div>
+                <button class="btn-start" onclick="resetApp()">New Problem</button>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+
+    <script>
+        // State
+        let divisor = 0;
+        let dividendDigits = [];
+        let quotientDigits = [];
+        let currentPosition = 0;
+        let currentNumber = 0;
+        let workRows = [];
+        let step = 'divide'; 
+        let currentQuotientDigit = 0;
+
+        // DOM
+        const setupScreen = document.getElementById('setupScreen');
+        const problemScreen = document.getElementById('problemScreen');
+        const completionScreen = document.getElementById('completion');
+        const actionArea = document.getElementById('actionArea');
+
+        document.getElementById('startBtn').addEventListener('click', startProblem);
+        ['houseDivisor', 'houseDividend'].forEach(id => {
+            document.getElementById(id).addEventListener('keypress', e => { if(e.key === 'Enter') startProblem(); });
+        });
+
+        function startProblem() {
+            const divInput = document.getElementById('houseDivisor').value;
+            const dvdInput = document.getElementById('houseDividend').value;
+            
+            divisor = parseInt(divInput);
+            const dividend = parseInt(dvdInput);
+
+            if (!divisor || divisor < 1) { document.getElementById('houseDivisor').focus(); return; }
+            if (!dividend || dividend < 10) { document.getElementById('houseDividend').focus(); return; }
+
+            dividendDigits = dividend.toString().split('').map(Number);
+            quotientDigits = new Array(dividendDigits.length).fill(null);
+            currentPosition = 0;
+            currentNumber = dividendDigits[0];
+            workRows = [];
+            step = 'divide';
+
+            setupScreen.style.display = 'none';
+            problemScreen.style.display = 'flex';
+            
+            renderBoard();
+            nextStep();
+        }
+
+        function renderBoard() {
+            // Divisor
+            const divEl = document.getElementById('boardDivisor');
+            divEl.textContent = divisor;
+            divEl.className = 'board-divisor';
+            if (step === 'divide' || step === 'multiply') divEl.classList.add('hl-active');
+
+            // Dividend
+            const dvdEl = document.getElementById('boardDividend');
+            dvdEl.innerHTML = '';
+            dividendDigits.forEach((d, i) => {
+                const span = document.createElement('span');
+                span.className = 'digit-cell';
+                span.textContent = d;
+                
+                if (i > currentPosition) span.classList.add('hl-fade');
+                if (i === currentPosition && step === 'divide') span.classList.add('hl-active');
+
+                // Bead for drop down
+                if (step === 'drop' && i === currentPosition) {
+                    const bead = document.createElement('div');
+                    bead.className = 'drop-bead';
+                    bead.onclick = executeDrop;
+                    span.appendChild(bead);
+                }
+                dvdEl.appendChild(span);
+            });
+
+            // Quotient
+            const qEl = document.getElementById('quotientRow');
+            qEl.innerHTML = '';
+            quotientDigits.forEach((d, i) => {
+                const span = document.createElement('span');
+                span.className = 'digit-cell';
+                span.textContent = d !== null ? d : ' ';
+                if (i === currentPosition && step === 'multiply') span.classList.add('hl-active');
+                qEl.appendChild(span);
+            });
+
+            // Work Rows
+            const wEl = document.getElementById('workRows');
+            wEl.innerHTML = '';
+            
+            workRows.forEach(row => {
+                if (row.type === 'line') {
+                    const div = document.createElement('div');
+                    div.className = 'work-line';
+                    
+                    // Width logic to align line properly
+                    const totalWidth = dividendDigits.length * 1.4;
+                    div.style.width = `${(row.position + 1) * 1.4}em`;
+                    wEl.appendChild(div);
+                    return;
+                }
+
+                const div = document.createElement('div');
+                div.className = 'work-row';
+                if (row.type === 'subtract') {
+                    const sign = document.createElement('span');
+                    sign.className = 'sub-sign';
+                    sign.textContent = '−';
+                    div.appendChild(sign);
+                }
+
+                const digitsStr = row.value.toString().split('');
+                const totalSlots = dividendDigits.length;
+                const startPos = row.position - digitsStr.length + 1;
+                
+                for (let i = 0; i < startPos; i++) {
+                    const sp = document.createElement('span');
+                    sp.className = 'digit-cell';
+                    div.appendChild(sp);
+                }
+
+                digitsStr.forEach((d, i) => {
+                    const sp = document.createElement('span');
+                    sp.className = 'digit-cell';
+                    sp.textContent = d;
+                    
+                    if (row.type === 'result') {
+                        if (step === 'divide' && currentPosition === row.position) sp.classList.add('hl-active');
+                        if (row.bringDown && i === digitsStr.length - 1) sp.classList.add('hl-brought');
+                    }
+                    div.appendChild(sp);
+                });
+                
+                wEl.appendChild(div);
+            });
+        }
+
+        function nextStep() {
+            renderBoard();
+            actionArea.innerHTML = '';
+
+            switch (step) {
+                case 'divide': promptDivide(); break;
+                case 'multiply': promptMultiply(); break;
+                case 'subtract': promptSubtract(); break;
+                case 'drop': promptDrop(); break;
+            }
+        }
+
+        function createInput(handler) {
+            const inp = document.createElement('input');
+            inp.type = 'number';
+            inp.className = 'action-input';
+            inp.onkeydown = (e) => { if(e.key === 'Enter') handler(inp); };
+            setTimeout(() => inp.focus(), 50);
+            return inp;
+        }
+
+        function triggerError(input) {
+            input.classList.remove('shake');
+            void input.offsetWidth; // trigger reflow
+            input.classList.add('shake');
+            input.value = '';
+        }
+
+        // 1. DIVIDE
+        function promptDivide() {
+            actionArea.innerHTML = `<span class="math-prompt">${currentNumber} ÷ ${divisor} = </span>`;
+            const inp = createInput(handleDivide);
+            actionArea.appendChild(inp);
+        }
+
+        function handleDivide(input) {
+            const ans = parseInt(input.value);
+            const correct = Math.floor(currentNumber / divisor);
+            
+            if (ans === correct) {
+                currentQuotientDigit = ans;
+                quotientDigits[currentPosition] = ans;
+                
+                if (ans === 0) {
+                    // Skip mult/sub if 0, go straight to drop
+                    if (currentPosition === dividendDigits.length - 1) { finishProblem(); }
+                    else { step = 'drop'; nextStep(); }
+                } else {
+                    step = 'multiply'; 
+                    nextStep();
+                }
+            } else {
+                triggerError(input);
+            }
+        }
+
+        // 2. MULTIPLY
+        function promptMultiply() {
+            actionArea.innerHTML = `<span class="math-prompt">${divisor} × ${currentQuotientDigit} = </span>`;
+            const inp = createInput(handleMultiply);
+            actionArea.appendChild(inp);
+        }
+
+        function handleMultiply(input) {
+            const ans = parseInt(input.value);
+            const correct = divisor * currentQuotientDigit;
+            
+            if (ans === correct) {
+                workRows.push({ type: 'subtract', value: correct, position: currentPosition });
+                step = 'subtract';
+                nextStep();
+            } else {
+                triggerError(input);
+            }
+        }
+
+        // 3. SUBTRACT
+        function promptSubtract() {
+            const product = divisor * currentQuotientDigit;
+            actionArea.innerHTML = `<span class="math-prompt">${currentNumber} − ${product} = </span>`;
+            const inp = createInput(handleSubtract);
+            actionArea.appendChild(inp);
+        }
+
+        function handleSubtract(input) {
+            const ans = parseInt(input.value);
+            const product = divisor * currentQuotientDigit;
+            const correct = currentNumber - product;
+            
+            if (ans === correct) {
+                workRows.push({ type: 'line', position: currentPosition });
+                workRows.push({ type: 'result', value: correct, position: currentPosition, bringDown: false });
+                currentNumber = correct;
+                
+                if (currentPosition === dividendDigits.length - 1) {
+                    finishProblem();
+                } else {
+                    step = 'drop';
+                    nextStep();
+                }
+            } else {
+                triggerError(input);
+            }
+        }
+
+        // 4. DROP
+        function promptDrop() {
+            currentPosition++;
+            actionArea.innerHTML = ''; // Empty. Wait for bead click.
+            renderBoard();
+        }
+
+        function executeDrop() {
+            const brought = dividendDigits[currentPosition];
+            
+            if (workRows.length > 0 && workRows[workRows.length - 1].type === 'result') {
+                const last = workRows[workRows.length - 1];
+                const newVal = parseInt(last.value.toString() + brought.toString());
+                workRows[workRows.length - 1] = { ...last, value: newVal, position: currentPosition, bringDown: true };
+                currentNumber = newVal;
+            } else {
+                currentNumber = currentNumber * 10 + brought;
+            }
+            
+            step = 'divide';
+            nextStep();
+        }
+
+        function finishProblem() {
+            problemScreen.style.display = 'none';
+            completionScreen.style.display = 'flex';
+            
+            const fullDividend = parseInt(dividendDigits.join(''));
+            const fullQuotient = parseInt(quotientDigits.join(''));
+            const remainder = currentNumber;
+
+            let eq = `${fullDividend} ÷ ${divisor} = ${fullQuotient}`;
+            if (remainder > 0) {
+                eq += `<span class="remainder">R${remainder}</span>`;
+            }
+            
+            document.getElementById('finalEq').innerHTML = eq;
+        }
+
+        function resetApp() {
+            completionScreen.style.display = 'none';
+            setupScreen.style.display = 'flex';
+            document.getElementById('houseDividend').value = '';
+            document.getElementById('houseDivisor').value = '';
+            document.getElementById('houseDivisor').focus();
+        }
+
+    </script>
+</body>
+</html>

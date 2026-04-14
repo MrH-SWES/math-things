@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Things. | Zooming Number Line</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Math Things Brand System */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.05);
+            --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+            --shadow-block:
+                inset 2px 2px 0 rgba(255,255,255,0.4),
+                inset -2px -2px 0 rgba(0,0,0,0.12),
+                0 8px 20px rgba(0,0,0,0.12),
+                1px -1px 0 rgba(0,0,0,0.08);
+
+            /* Master Palette — Alternating Warm/Cool */
+            --millions:          #FF00FF; /* Warm / Magenta */
+            --hundred-thousands: #6B3FA0; /* Cool / Purple */
+            --ten-thousands:     #FF7F00; /* Warm / Orange */
+            --thousands:         #4CBB17; /* Cool / Green */
+            --hundreds:          #FFD700; /* Warm / Yellow */
+            --tens:              #4169E1; /* Cool / Blue */
+            --ones:              #DC143C; /* Warm / Red - Anchor */
+            --tenths:            #7B00FF; /* Cool / Indigo */
+            --hundredths:        #FF9F0A; /* Warm / Orange */
+            --thousandths:       #64D2FF; /* Cool / Ice */
+            --ten-thousandths:   #E57373; /* Warm / Rose */
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            user-select: none;
+            cursor: default;
+        }
+
+        .logo-bead {
+            width: 0.22em;
+            height: 0.22em;
+            margin-left: 0.04em;
+            margin-bottom: 0.08em;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: inline-block;
+            background:
+                radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow:
+                inset 1px 1px 2px rgba(255,255,255,0.8),
+                inset -1px -1px 2px rgba(0,0,0,0.2),
+                0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .logo:hover .logo-bead {
+            transform: scale(1.4) translateY(-0.04em);
+        }
+
+        /* ── MAIN LAYOUT ── */
+        main {
+            flex: 1;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 16px;
+            padding-left: 2px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 28px;
+            padding: 48px 40px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border);
+        }
+
+        /* ── ZOOM CONTROLS ── */
+        .zoom-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .zoom-level-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-gray);
+        }
+
+        .zoom-level-label strong {
+            color: var(--active-color, var(--text-main));
+            font-weight: 800;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+        }
+
+        .zoom-bar-container {
+            margin-bottom: 48px;
+            padding: 10px 0;
+            cursor: pointer;
+        }
+
+        .zoom-bar {
+            position: relative;
+            height: 8px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+
+        /* The Bead as the Zoom Indicator */
+        .zoom-indicator {
+            position: absolute;
+            top: 50%;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            background:
+                radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow:
+                inset 1.5px 1.5px 3px rgba(255,255,255,0.8),
+                inset -1.5px -1.5px 3px rgba(0,0,0,0.2),
+                0 4px 12px rgba(0,0,0,0.2);
+            transition: left 0.1s ease-out;
+            z-index: 2;
+            cursor: grab;
+        }
+        
+        .zoom-indicator:active {
+            cursor: grabbing;
+        }
+
+        .zoom-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            user-select: none;
+        }
+
+        /* ── VALUE INPUT ── */
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            font-size: 3.5rem;
+            font-family: 'Lexend', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: var(--text-main);
+            border: none;
+            border-bottom: 3px solid rgba(0,0,0,0.08);
+            text-align: center;
+            background: transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-bottom-color: var(--dot-color, var(--accent));
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        /* ── NUMBER LINE ── */
+        .number-line-container {
+            position: relative;
+            margin: 20px 0 60px;
+            min-height: 120px;
+            cursor: ns-resize;
+            user-select: none;
+        }
+
+        .number-line {
+            width: 100%;
+            height: 60px;
+            position: relative;
+            background: linear-gradient(to bottom, transparent 49%, var(--border) 49%, var(--border) 51%, transparent 51%);
+        }
+
+        .tick {
+            position: absolute;
+            top: 25%;
+            width: 2px;
+            height: 50%;
+            background: rgba(0,0,0,0.1);
+            transform: translateX(-50%);
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .tick.major {
+            top: 15%;
+            width: 2px;
+            height: 70%;
+            background: var(--text-gray);
+        }
+
+        .tick-label {
+            position: absolute;
+            top: 75px;
+            transform: translateX(-50%);
+            font-family: 'Lexend', sans-serif;
+            font-weight: 300;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .tick-label.major {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* ── THE GHOST DOT (HERO MANIPULATIVE) ── */
+        .ghost-dot {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: var(--dot-color, var(--ones));
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-shadow: var(--shadow-block);
+            transition: left 0.15s ease-out, background 0.4s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .ghost-dot:active {
+            transform: translate(-50%, -46%) scale(0.95);
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .dot-label {
+            position: absolute;
+            top: -46px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dot-color, var(--ones));
+            color: white;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: background 0.4s ease;
+        }
+
+        .dot-label::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid var(--dot-color, var(--ones));
+            transition: border-top-color 0.4s ease;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+        }
+
+        footer .footer-bead {
+            display: inline-block;
+            width: 0.22em;
+            height: 0.22em;
+            border-radius: 50%;
+            margin-bottom: 0.08em;
+            background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .card { padding: 32px 20px; }
+            input[type="number"] { font-size: 2.5rem; padding: 8px; }
+            .zoom-labels { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+    </header>
+
+    <main>
+        <p class="section-label">Place Value Visualizer</p>
+        <div class="card" id="appCard">
+            
+            <div class="zoom-header">
+                <div class="zoom-level-label">
+                    Scale: <strong id="zoomLevelName">Ones</strong>
+                </div>
+            </div>
+
+            <div class="zoom-bar-container" id="zoomContainer">
+                <div class="zoom-bar" id="zoomBar">
+                    <div class="zoom-indicator" id="zoomIndicator" title="Drag to zoom"></div>
+                </div>
+                <div class="zoom-labels">
+                    <span>.0001</span>
+                    <span>.001</span>
+                    <span>.01</span>
+                    <span>.1</span>
+                    <span>1</span>
+                    <span>10</span>
+                    <span>100</span>
+                    <span>1K</span>
+                    <span>10K</span>
+                    <span>100K</span>
+                    <span>1M</span>
+                </div>
+            </div>
+            
+            <div class="input-wrapper">
+                <input type="number" id="numberInput" step="any" value="30" placeholder="0" min="0">
+            </div>
+            
+            <div class="number-line-container" id="numberLineContainer" title="Scroll or pinch to zoom">
+                <div class="number-line" id="numberLine"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+    
+    <script>
+        const ZOOM_LEVELS = [
+            { name: 'Ten Thousandths', step: 0.0001, decimals: 5, color: 'var(--ten-thousandths)' },
+            { name: 'Thousandths', step: 0.001, decimals: 4, color: 'var(--thousandths)' },
+            { name: 'Hundredths', step: 0.01, decimals: 3, color: 'var(--hundredths)' },
+            { name: 'Tenths', step: 0.1, decimals: 2, color: 'var(--tenths)' },
+            { name: 'Ones', step: 1, decimals: 1, color: 'var(--ones)' },
+            { name: 'Tens', step: 10, decimals: 0, color: 'var(--tens)' },
+            { name: 'Hundreds', step: 100, decimals: 0, color: 'var(--hundreds)' },
+            { name: 'Thousands', step: 1000, decimals: 0, color: 'var(--thousands)' },
+            { name: 'Ten Thousands', step: 10000, decimals: 0, color: 'var(--ten-thousands)' },
+            { name: 'Hundred Thousands', step: 100000, decimals: 0, color: 'var(--hundred-thousands)' },
+            { name: 'Millions', step: 1000000, decimals: 0, color: 'var(--millions)' }
+        ];
+        
+        let currentZoomIndex = 4; // Default to 'Ones'
+        let currentValue = 30;
+        let lastTouchDistance = null;
+        
+        const appCard = document.getElementById('appCard');
+        const numberInput = document.getElementById('numberInput');
+        const numberLine = document.getElementById('numberLine');
+        const numberLineContainer = document.getElementById('numberLineContainer');
+        const zoomIndicator = document.getElementById('zoomIndicator');
+        const zoomLevelName = document.getElementById('zoomLevelName');
+        const zoomContainer = document.getElementById('zoomContainer');
+        const zoomBar = document.getElementById('zoomBar');
+        
+        // Helper function to assign color based on the number's magnitude
+        function getMagnitudeColor(val) {
+            if (val === 0) return 'var(--text-gray)';
+            const absVal = Math.abs(val);
+            if (absVal >= 1000000) return 'var(--millions)';
+            if (absVal >= 100000) return 'var(--hundred-thousands)';
+            if (absVal >= 10000) return 'var(--ten-thousands)';
+            if (absVal >= 1000) return 'var(--thousands)';
+            if (absVal >= 100) return 'var(--hundreds)';
+            if (absVal >= 10) return 'var(--tens)';
+            if (absVal >= 1) return 'var(--ones)';
+            if (absVal >= 0.1) return 'var(--tenths)';
+            if (absVal >= 0.01) return 'var(--hundredths)';
+            if (absVal >= 0.001) return 'var(--thousandths)';
+            return 'var(--ten-thousandths)';
+        }
+
+        numberInput.addEventListener('input', () => {
+            const val = parseFloat(numberInput.value);
+            if (val >= 0 || numberInput.value === '') {
+                currentValue = val || 0;
+                updateNumberLine();
+            } else {
+                numberInput.value = currentValue;
+            }
+        });
+
+        // --- BEAD DRAGGING LOGIC ---
+        let isDragging = false;
+
+        function handleZoomDrag(e) {
+            const rect = zoomBar.getBoundingClientRect();
+            let clientX = e.clientX;
+            
+            // Handle touch events
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+            }
+
+            let x = clientX - rect.left;
+            x = Math.max(0, Math.min(x, rect.width));
+            
+            const percentage = x / rect.width;
+            const index = Math.round(percentage * (ZOOM_LEVELS.length - 1));
+            
+            if (index !== currentZoomIndex) {
+                currentZoomIndex = index;
+                updateNumberLine();
+            }
+        }
+
+        zoomContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            zoomIndicator.style.transition = 'none';
+            handleZoomDrag(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) handleZoomDrag(e);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                zoomIndicator.style.transition = 'left 0.1s ease-out';
+            }
+        });
+
+        zoomContainer.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            zoomIndicator.style.transition = 'none';
+            handleZoomDrag(e);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                handleZoomDrag(e);
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            if (isDragging) {
+                isDragging = false;
+                zoomIndicator.style.transition = 'left 0.1s ease-out';
+            }
+        });
+        
+        // --- SCROLL TO ZOOM LOGIC ---
+        numberLineContainer.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0 && currentZoomIndex < ZOOM_LEVELS.length - 1) {
+                    currentZoomIndex++;
+                    updateNumberLine();
+                } else if (e.deltaY > 0 && currentZoomIndex > 0) {
+                    currentZoomIndex--;
+                    updateNumberLine();
+                }
+            }
+        });
+        
+        // --- PINCH TO ZOOM LOGIC ---
+        numberLineContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                lastTouchDistance = getTouchDistance(e.touches);
+            }
+        });
+        
+        numberLineContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && lastTouchDistance) {
+                e.preventDefault();
+                const currentDistance = getTouchDistance(e.touches);
+                const delta = currentDistance - lastTouchDistance;
+                
+                if (Math.abs(delta) > 15) {
+                    if (delta > 0 && currentZoomIndex < ZOOM_LEVELS.length - 1) {
+                        currentZoomIndex++;
+                        updateNumberLine();
+                    } else if (delta < 0 && currentZoomIndex > 0) {
+                        currentZoomIndex--;
+                        updateNumberLine();
+                    }
+                    lastTouchDistance = currentDistance;
+                }
+            }
+        });
+        
+        numberLineContainer.addEventListener('touchend', () => {
+            lastTouchDistance = null;
+        });
+        
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        // --- FORMATTING & RENDER ---
+        function formatNumber(value, decimals) {
+            if (decimals <= 1) {
+                if (Math.abs(value) >= 1000) {
+                    return Math.round(value).toLocaleString();
+                }
+                return Math.round(value).toString();
+            }
+            return value.toFixed(decimals - 1);
+        }
+        
+        function updateNumberLine() {
+            numberLine.innerHTML = '';
+            
+            const zoom = ZOOM_LEVELS[currentZoomIndex];
+            const step = zoom.step;
+            const decimals = zoom.decimals;
+            const visibleRange = step * 10;
+            
+            // Set the active color (for the camera scale text)
+            appCard.style.setProperty('--active-color', zoom.color);
+            
+            // Set the dot color based on the magnitude of the number typed
+            const dotColor = getMagnitudeColor(currentValue);
+            appCard.style.setProperty('--dot-color', dotColor);
+            
+            const indicatorPosition = (currentZoomIndex / (ZOOM_LEVELS.length - 1)) * 100;
+            zoomIndicator.style.left = `${indicatorPosition}%`;
+            
+            zoomLevelName.textContent = zoom.name;
+            
+            let min = currentValue - (visibleRange / 2);
+            let max = currentValue + (visibleRange / 2);
+            
+            if (min < 0) {
+                min = 0;
+                max = visibleRange;
+            }
+            
+            const dotPosition = ((currentValue - min) / visibleRange) * 100;
+            
+            for (let i = 0; i <= 10; i++) {
+                const position = (i / 10) * 100;
+                const isMajor = i === 0 || i === 5 || i === 10;
+                
+                const tick = document.createElement('div');
+                tick.className = `tick ${isMajor ? 'major' : ''}`;
+                tick.style.left = position + '%';
+                numberLine.appendChild(tick);
+
+                if (isMajor) {
+                    const tickValue = min + (visibleRange * (i / 10));
+                    const label = document.createElement('div');
+                    label.className = 'tick-label major';
+                    label.style.left = position + '%';
+                    label.textContent = formatNumber(tickValue, decimals);
+                    numberLine.appendChild(label);
+                }
+            }
+            
+            const ghostDot = document.createElement('div');
+            ghostDot.className = 'ghost-dot';
+            ghostDot.style.left = dotPosition + '%';
+            
+            const dotLabel = document.createElement('div');
+            dotLabel.className = 'dot-label';
+            dotLabel.textContent = formatNumber(currentValue, decimals);
+            
+            ghostDot.appendChild(dotLabel);
+            numberLine.appendChild(ghostDot);
+        }
+        
+        updateNumberLine();
+    </script>
+</body>
+</html>

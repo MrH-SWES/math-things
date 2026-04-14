@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Things. | Ten-Frame Sandbox</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Math Things Brand System (Light Mode Restored) */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --border: rgba(0,0,0,0.05);
+            
+            /* Manipulative Colors */
+            --coin-red: #DC143C;
+            --coin-bead-text: #636366; /* Deep metallic gray for the equation text */
+            
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --coin-size: 48px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* ── HEADER ── */
+        header {
+            flex-shrink: 0; position: relative; z-index: 100;
+            background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border); height: 50px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+        }
+        .logo {
+            display: inline-flex; align-items: baseline;
+            font-weight: 900; font-size: 1.25rem; letter-spacing: -0.05em;
+            color: var(--text-main); cursor: default;
+        }
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+        .header-label { font-size: 1rem; font-weight: 600; color: var(--text-gray); letter-spacing: -0.01em; }
+
+        /* ── MAIN LAYOUT ── */
+        main {
+            flex: 1; width: 100%; max-width: 900px; margin: 0 auto;
+            padding: 20px 24px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+
+        /* ── DYNAMIC EQUATION ── */
+        .equation-display {
+            font-size: 5.5rem; font-weight: 900; letter-spacing: -0.04em;
+            color: var(--text-main); margin-bottom: 4vh; line-height: 1;
+            display: flex; align-items: center; gap: 16px;
+            transition: transform 0.2s var(--spring);
+            text-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        }
+        .equation-display.pop { transform: scale(1.08); }
+        .eq-red { color: var(--coin-red); }
+        .eq-bead { color: var(--coin-bead-text); } 
+        .eq-operator { color: var(--text-light); font-weight: 300; font-size: 4.5rem; }
+
+        /* ── THE DESK (Frames) ── */
+        .desk-container {
+            display: flex; gap: 32px; width: 100%; justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* The Aluminum Carton */
+        .ten-frame {
+            background: linear-gradient(135deg, #e5e5ea 0%, #d1d1d6 50%, #e5e5ea 100%);
+            border-radius: 20px; padding: 16px;
+            box-shadow: 
+                inset 1px 1px 2px rgba(255,255,255,0.8), 
+                inset -1px -1px 4px rgba(0,0,0,0.1),
+                0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 12px; position: relative;
+        }
+
+        /* Round Dimples */
+        .dimple {
+            width: calc(var(--coin-size) + 6px); height: calc(var(--coin-size) + 6px);
+            border-radius: 50%; background: rgba(0,0,0,0.06);
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.12), 0 1px 1px rgba(255,255,255,0.6);
+            position: relative; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .dimple::after {
+            content: '+'; position: absolute; font-size: 1.5rem; font-weight: 800;
+            color: rgba(0,0,0,0.1); transition: color 0.2s; pointer-events: none;
+        }
+        .dimple:hover::after { color: rgba(220, 20, 60, 0.3); }
+        .dimple.has-coin::after { display: none; }
+
+        /* ── MANIPULATIVES (Coins & Beads) ── */
+        .coin {
+            width: var(--coin-size); height: var(--coin-size);
+            border-radius: 50%; position: absolute;
+            cursor: pointer; transform: rotateX(15deg);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10; transition: transform 0.2s var(--spring), box-shadow 0.2s;
+        }
+
+        /* 3D Physical Properties: Red Counter */
+        .coin.red { 
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 30%, transparent 60%),
+                        linear-gradient(135deg, #FF3B30 0%, var(--coin-red) 50%, #8B0000 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.4), inset -1px -1px 3px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.15);
+        }
+        
+        /* 3D Physical Properties: Signature Bead */
+        .coin.bead { 
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 3px rgba(255,255,255,0.9), inset -1.5px -1.5px 3px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .coin:active {
+            transform: scale(0.9) translateY(2px) rotateX(10deg);
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* ── CONTROLS (Coin Selectors) ── */
+        .controls {
+            margin-top: 56px; display: flex; align-items: center; gap: 48px;
+        }
+        
+        .coin-toggles {
+            display: flex; gap: 24px; padding: 12px 24px;
+            background: var(--surface); border-radius: 99px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid var(--border);
+        }
+
+        .selector {
+            width: 56px; height: 56px; border-radius: 50%; cursor: pointer;
+            transition: all 0.3s var(--spring);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.6; filter: grayscale(50%); transform: scale(0.9);
+        }
+        
+        .selector.red { 
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 30%, transparent 60%),
+                        linear-gradient(135deg, #FF3B30 0%, var(--coin-red) 50%, #8B0000 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.4), inset -1px -1px 3px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .selector.bead { 
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 3px rgba(255,255,255,0.9), inset -1.5px -1.5px 3px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* The Active Highlight State */
+        .selector.active {
+            opacity: 1; filter: grayscale(0%); transform: scale(1.15);
+        }
+        .selector.red.active {
+            box-shadow: 
+                0 0 0 4px rgba(220, 20, 60, 0.15), /* Soft outer ring */
+                0 8px 16px rgba(220, 20, 60, 0.2), /* Colored drop shadow */
+                inset 1px 1px 2px rgba(255,255,255,0.5), inset -1px -1px 3px rgba(0,0,0,0.4);
+        }
+        .selector.bead.active {
+            box-shadow: 
+                0 0 0 4px rgba(0, 0, 0, 0.05), 
+                0 8px 16px rgba(0,0,0,0.1), 
+                inset 1px 1px 3px rgba(255,255,255,0.9), inset -1.5px -1.5px 3px rgba(0,0,0,0.3);
+        }
+
+        .btn-clear {
+            font-family: 'Lexend', sans-serif; font-size: 0.95rem; font-weight: 700;
+            padding: 16px 32px; border-radius: 99px; border: 1px solid rgba(0,0,0,0.1);
+            background: linear-gradient(180deg, #ffffff 0%, #f2f2f7 100%); color: var(--text-main); cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04); transition: all 0.2s var(--spring);
+        }
+        .btn-clear:hover { transform: scale(1.02); color: var(--coin-red); border-color: rgba(220, 20, 60, 0.3); }
+        .btn-clear:active { transform: scale(0.95); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* ── FOOTER ── */
+        footer {
+            flex-shrink: 0; text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light);
+            border-top: 1px solid var(--border);
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em;
+        }
+
+        /* ── ANIMATION ── */
+        .pop-in { animation: popIn 0.3s var(--spring) forwards; }
+        @keyframes popIn {
+            0% { transform: scale(0.3) rotateX(15deg); opacity: 0; }
+            100% { transform: scale(1) rotateX(15deg); opacity: 1; }
+        }
+        .pop-out { animation: popOut 0.15s ease-in forwards; }
+        @keyframes popOut {
+            0% { transform: scale(1) rotateX(15deg); opacity: 1; }
+            100% { transform: scale(0) rotateX(15deg); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .desk-container { gap: 16px; flex-direction: column; }
+            .equation-display { font-size: 4rem; }
+            .controls { margin-top: 32px; flex-direction: column; gap: 24px; }
+            :root { --coin-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+        <div class="header-label">Ten-Frame Sandbox</div>
+        <div style="width:130px"></div>
+    </header>
+
+    <main>
+        <div class="equation-display" id="equationDisplay">0</div>
+
+        <div class="desk-container">
+            <div class="ten-frame">
+                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
+                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
+            </div>
+            
+            <div class="ten-frame">
+                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
+                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="coin-toggles">
+                <div class="selector red active" data-color="red"></div>
+                <div class="selector bead" data-color="bead"></div>
+            </div>
+            <button class="btn-clear" id="clearBtn">Clear Desk</button>
+        </div>
+    </main>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+
+    <script>
+        let activeColor = 'red';
+        const equationDisplay = document.getElementById('equationDisplay');
+        const dimples = document.querySelectorAll('.dimple');
+        const selectors = document.querySelectorAll('.selector');
+
+        // Glowing Coin Toggle Logic
+        selectors.forEach(selector => {
+            selector.addEventListener('click', (e) => {
+                selectors.forEach(sel => sel.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                activeColor = e.currentTarget.dataset.color;
+            });
+        });
+
+        // Board Reading Engine
+        function updateEquation() {
+            const redCount = document.querySelectorAll('.coin.red:not(.pop-out)').length;
+            const beadCount = document.querySelectorAll('.coin.bead:not(.pop-out)').length;
+            const total = redCount + beadCount;
+
+            let eqHTML = '';
+
+            if (redCount > 0 && beadCount > 0) {
+                // Both manipulatives are on the board
+                eqHTML = `
+                    <span class="eq-red">${redCount}</span>
+                    <span class="eq-operator">+</span>
+                    <span class="eq-bead">${beadCount}</span>
+                    <span class="eq-operator">=</span>
+                    <span style="color:var(--text-main)">${total}</span>
+                `;
+            } else if (redCount > 0) {
+                eqHTML = `<span class="eq-red">${total}</span>`;
+            } else if (beadCount > 0) {
+                eqHTML = `<span class="eq-bead">${total}</span>`;
+            } else {
+                eqHTML = `0`;
+            }
+
+            equationDisplay.innerHTML = eqHTML;
+            
+            // Trigger physical pop animation
+            equationDisplay.classList.remove('pop');
+            void equationDisplay.offsetWidth; // Force reflow
+            equationDisplay.classList.add('pop');
+        }
+
+        // Coin Placement Logic
+        dimples.forEach(dimple => {
+            dimple.addEventListener('click', () => {
+                // If dimple has a coin, pluck it out
+                if (dimple.classList.contains('has-coin')) {
+                    const coin = dimple.querySelector('.coin');
+                    if (coin) {
+                        coin.classList.remove('pop-in');
+                        coin.classList.add('pop-out');
+                        setTimeout(() => {
+                            coin.remove();
+                            dimple.classList.remove('has-coin');
+                        }, 150); // Matches animation duration
+                        
+                        // Update equation immediately so UI feels responsive
+                        setTimeout(updateEquation, 10);
+                    }
+                    return;
+                }
+
+                // If dimple is empty, spawn a coin of the active color
+                const coin = document.createElement('div');
+                coin.className = `coin pop-in ${activeColor}`;
+                dimple.appendChild(coin);
+                dimple.classList.add('has-coin');
+                
+                updateEquation();
+            });
+        });
+
+        // Clear Desk Logic
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            dimples.forEach(d => {
+                const coin = d.querySelector('.coin');
+                if (coin) {
+                    coin.classList.remove('pop-in');
+                    coin.classList.add('pop-out');
+                    setTimeout(() => {
+                        coin.remove();
+                        d.classList.remove('has-coin');
+                    }, 150);
+                }
+            });
+            setTimeout(updateEquation, 160);
+        });
+
+    </script>
+</body>
+</html>

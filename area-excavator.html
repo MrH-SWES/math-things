@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Things. | Division Bridge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Math Things Brand System */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --error: #DC143C;
+            --success: #4CBB17;
+            --border: rgba(0,0,0,0.05);
+            --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+            --shadow-block: inset 2px 2px 0 rgba(255,255,255,0.4), inset -2px -2px 0 rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.12), 1px -1px 0 rgba(0,0,0,0.08);
+
+            /* Master Palette */
+            --thousands: #4CBB17;
+            --hundreds: #FFD700;
+            --tens: #4169E1;
+            --ones: #DC143C;
+            --remainder: #AEAEB2;
+            
+            /* Dynamic Blueprint Grid */
+            --grid-size: 10px; 
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lexend', sans-serif; background: var(--bg); color: var(--text-main);
+            min-height: 100vh; display: flex; flex-direction: column;
+            -webkit-font-smoothing: antialiased; user-select: none; touch-action: manipulation;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border); padding: 0 32px; height: 60px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .logo { display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default; }
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+        }
+
+        /* ── MAIN LAYOUT ── */
+        main {
+            flex: 1; max-width: 1200px; width: 100%; margin: 0 auto;
+            padding: 40px 24px; display: flex; flex-direction: column;
+        }
+        .section-label {
+            font-size: 0.68rem; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--text-light); margin-bottom: 16px; padding-left: 2px;
+        }
+        .card {
+            background: var(--surface); border-radius: 28px; padding: 40px;
+            box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; min-height: 500px;
+        }
+
+        /* ── UNIVERSAL EQUATION INPUT ── */
+        .eq-header {
+            display: flex; align-items: center; justify-content: center; gap: 16px;
+            font-size: 3rem; font-weight: 900; color: var(--text-gray); margin-bottom: 40px;
+            letter-spacing: -0.04em;
+        }
+        .factor-input {
+            font-family: 'Lexend', sans-serif; font-size: 3.5rem; font-weight: 900;
+            width: 160px; text-align: center; border: none; border-bottom: 4px solid var(--border);
+            background: transparent; color: var(--text-main); outline: none;
+            transition: border-color 0.2s, color 0.2s; padding-bottom: 4px;
+        }
+        .factor-input:focus { border-bottom-color: var(--accent); }
+        .factor-input::-webkit-inner-spin-button, .factor-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        #divInput { width: 120px; }
+
+        /* ── SPLIT VIEW ── */
+        .split-view {
+            display: flex; width: 100%; gap: 40px; align-items: flex-start;
+        }
+        .pane { flex: 1; display: flex; flex-direction: column; align-items: center; width: 50%; }
+        .pane-divider { width: 2px; background: var(--border); border-radius: 1px; align-self: stretch; }
+        .pane-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light); margin-bottom: 24px; }
+
+        /* =========================================
+           LEFT PANE: AREA EXCAVATOR
+        ========================================= */
+        .blueprint-stage {
+            position: relative; width: 100%; max-width: 500px; height: 160px;
+            display: flex; align-items: flex-start; justify-content: flex-start; margin-bottom: 24px;
+        }
+        .main-block-container { position: relative; height: 120px; width: 100%; margin-top: 24px; display: none; }
+        
+        .ex-bracket {
+            position: absolute; left: -24px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1.5rem; color: var(--text-main); border-right: 4px solid var(--text-main); padding-right: 8px;
+        }
+        .active-block {
+            position: absolute; left: 0; top: 0; height: 100%; width: 100%; background-color: #E5E5EA; 
+            background-image: linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+            background-size: var(--grid-size) var(--grid-size); background-position: top left;
+            border-radius: 8px; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center; transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;
+        }
+        .active-block.is-remainder {
+            background-color: var(--remainder); color: white; box-shadow: var(--shadow-block);
+            background-image: linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+        }
+        .block-label {
+            background: rgba(255,255,255,0.85); color: var(--text-gray); font-size: 2rem; font-weight: 900;
+            padding: 4px 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); backdrop-filter: blur(4px);
+        }
+        .active-block.is-remainder .block-label { background: rgba(0,0,0,0.2); color: white; box-shadow: none; }
+
+        .slice-track {
+            position: absolute; top: -20px; left: 0; height: 20px; width: 100%; cursor: ew-resize; z-index: 20;
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .slice-bead {
+            position: absolute; width: 24px; height: 24px; border-radius: 50%;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1.5px 1.5px 3px rgba(255,255,255,0.8), inset -1.5px -1.5px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.2);
+            pointer-events: none; top: 0; transform: translateX(-50%); animation: pulseH 2s infinite;
+        }
+        @keyframes pulseH { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.15); box-shadow: 0 4px 16px rgba(0,122,255,0.4); } }
+        .slice-line-v {
+            position: absolute; width: 3px; top: 20px; height: 120px; transform: translateX(-50%);
+            border-left: 3px dashed var(--accent); opacity: 0; transition: opacity 0.2s; pointer-events: none;
+        }
+        .slice-track:hover .slice-line-v, .slice-track:active .slice-line-v { opacity: 1; }
+        .slice-label {
+            position: absolute; top: -36px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1rem; color: var(--accent); pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity 0.2s;
+            background: var(--surface); padding: 4px 8px; border-radius: 8px; border: 2px solid var(--accent);
+        }
+        .slice-track:hover .slice-label, .slice-track:active .slice-label { opacity: 1; }
+        .slice-track.snapped .slice-bead { animation: none; box-shadow: 0 2px 5px rgba(0,0,0,0.22); border: 2px solid var(--accent); }
+        .slice-track.snapped .slice-line-v { border-style: solid; opacity: 1; }
+        .slice-track.snapped .slice-label { opacity: 1; background: var(--accent); color: white; }
+
+        .chunk {
+            position: absolute; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-block); z-index: 10;
+            background-image: linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+            background-size: var(--grid-size) var(--grid-size); background-position: top left;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; white-space: nowrap;
+        }
+        .chunk .block-label { background: rgba(0,0,0,0.25); color: white; font-size: 1.5rem; padding: 2px 10px; box-shadow: none; border: 1px solid rgba(255,255,255,0.2); }
+        .chunk-q { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); font-size: 1rem; font-weight: 900; color: var(--text-main); }
+
+        .assembly-stage { width: 100%; display: none; flex-direction: column; align-items: center; margin-top: 10px; opacity: 0; transition: opacity 0.5s; }
+        .ex-alg-container { display: flex; flex-direction: column; align-items: flex-end; font-size: 2rem; font-weight: 800; color: var(--text-main); position: relative; }
+        .ex-alg-row { display: flex; justify-content: flex-end; gap: 6px; width: 100%; margin-bottom: 4px; }
+        .ex-alg-cell { width: 32px; text-align: center; }
+        .ex-add-line { height: 4px; width: 100%; background: var(--text-main); margin: 6px 0; border-radius: 2px; }
+        .ex-add-op { position: absolute; left: -30px; bottom: 64px; color: var(--text-light); }
+        .ex-ans-input {
+            width: 32px; height: 40px; text-align: center; font-family: 'Lexend', sans-serif;
+            font-size: 1.8rem; font-weight: 900; border: 3px solid var(--border); border-radius: 8px;
+            color: var(--accent); background: var(--surface); outline: none; transition: all 0.2s;
+        }
+        .ex-ans-input:focus { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,122,255,0.15); }
+        .ex-ans-input.solved { border-color: transparent; background: transparent; color: var(--text-main); pointer-events: none; }
+        .ex-ans-input::-webkit-inner-spin-button, .ex-ans-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .victory-ans { font-size: 2rem; font-weight: 900; color: var(--accent); margin-top: 16px; opacity: 0; transition: opacity 0.5s; text-align: center;}
+        .victory-ans.show { opacity: 1; }
+        .victory-r { color: var(--remainder); font-size: 1.2rem; margin-left: 8px;}
+
+        /* =========================================
+           RIGHT PANE: ALGORITHM SCAFFOLD
+        ========================================= */
+        #algScreen { display: none; width: 100%; flex-direction: column; align-items: center; }
+        .division-board { font-size: 2.2rem; font-weight: 800; color: var(--text-main); display: flex; flex-direction: column; align-items: center; }
+        .row { display: flex; min-height: 2.5rem; align-items: center; }
+        .q-row { margin-left: 70px; margin-bottom: 6px; }
+        
+        .house-row { display: flex; align-items: stretch; }
+        .board-divisor { padding: 6px 12px; margin-right: 6px; font-weight: 800; transition: color 0.3s; }
+        .board-bracket { border-left: 5px solid var(--text-main); border-top: 5px solid var(--text-main); border-top-left-radius: 12px; padding: 6px 10px; display: flex; }
+
+        .digit-cell { width: 1.2em; text-align: center; position: relative; transition: color 0.3s; }
+        .hl-active { color: var(--accent); }
+        .hl-success { color: var(--success); }
+        .hl-brought { color: var(--text-main); }
+        .hl-fade { color: var(--text-light); }
+
+        .work-area { margin-top: 6px; margin-left: 70px; }
+        .work-row { display: flex; min-height: 2.5rem; align-items: center; position: relative; }
+        .sub-sign { position: absolute; left: -1.2em; color: var(--text-gray); font-weight: 800; }
+        .work-line { border-bottom: 4px solid var(--text-main); margin: 4px 0; height: 4px; width: 100%; }
+
+        .drop-bead {
+            position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
+            width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1.5px 1.5px 3px rgba(255,255,255,0.8), inset -1.5px -1.5px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.2);
+            animation: float 2s ease-in-out infinite; z-index: 10;
+        }
+        .drop-bead:active { transform: translateX(-50%) scale(0.9); box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); }
+        @keyframes float { 0%, 100% { bottom: -25px; } 50% { bottom: -32px; } }
+
+        .action-area {
+            margin-top: 32px; background: rgba(0,0,0,0.02); border-radius: 20px;
+            padding: 16px 32px; display: flex; align-items: center; justify-content: center; gap: 12px;
+            font-size: 1.8rem; font-weight: 800; color: var(--text-gray); height: 80px; border: 1px solid var(--border);
+        }
+        .math-prompt { color: var(--text-main); }
+        
+        .action-input {
+            width: 70px; padding: 6px; font-family: 'Lexend', sans-serif;
+            font-size: 1.8rem; font-weight: 800; text-align: center;
+            border: 3px solid var(--border); border-radius: 12px;
+            background: var(--surface); color: var(--accent); outline: none; transition: all 0.2s;
+        }
+        .action-input:focus { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,122,255,0.15); }
+        .action-input::-webkit-inner-spin-button, .action-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: var(--error) !important; color: var(--error) !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+
+        /* ── FOOTER ── */
+        footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); }
+        .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em; }
+
+        @media (max-width: 900px) {
+            .split-view { flex-direction: column; }
+            .pane { width: 100%; }
+            .pane-divider { width: 100%; height: 2px; margin: 24px 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+    </header>
+
+    <main>
+        <p class="section-label">Division Bridge</p>
+        <div class="card">
+            
+            <div class="eq-header">
+                <input type="number" id="divdInput" class="factor-input" placeholder="Total" min="10" max="99999">
+                <span>÷</span>
+                <input type="number" id="divInput" class="factor-input" placeholder="Div" min="2" max="99">
+            </div>
+
+            <div class="split-view">
+                
+                <div class="pane">
+                    <div class="pane-title">Conceptual (Area Model)</div>
+                    
+                    <div class="blueprint-stage" id="blueprintStage">
+                        <div class="main-block-container" id="mainBlockContainer">
+                            <div class="ex-bracket" id="exDivisor"></div>
+                            <div class="active-block" id="activeBlock"></div>
+                            <div class="slice-track" id="sliceTrack">
+                                <div class="slice-line-v" id="sliceLine"></div>
+                                <div class="slice-bead" id="sliceBead"></div>
+                                <div class="slice-label" id="sliceLabel">Drag</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="assembly-stage" id="assemblyStage"></div>
+                    <div class="victory-ans" id="exVictory"></div>
+                </div>
+
+                <div class="pane-divider"></div>
+
+                <div class="pane">
+                    <div class="pane-title">Procedural (Standard Algorithm)</div>
+                    
+                    <div id="algScreen">
+                        <div class="division-board">
+                            <div class="row q-row" id="quotientRow"></div>
+                            <div class="house-row">
+                                <div class="board-divisor" id="boardDivisor"></div>
+                                <div class="board-bracket" id="boardDividend"></div>
+                            </div>
+                            <div class="work-area" id="workRows"></div>
+                        </div>
+                        <div class="action-area" id="actionArea"></div>
+                        <div class="victory-ans" id="algVictory"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+
+    <script>
+        // GLOBAL STATE
+        const divdInput = document.getElementById('divdInput');
+        const divInput = document.getElementById('divInput');
+        
+        let GLOBAL_DIVIDEND = 0;
+        let GLOBAL_DIVISOR = 0;
+
+        function shakeElement(el) {
+            el.classList.remove('shake');
+            void el.offsetWidth; 
+            el.classList.add('shake');
+        }
+
+        function initProblem() {
+            GLOBAL_DIVIDEND = parseInt(divdInput.value);
+            GLOBAL_DIVISOR = parseInt(divInput.value);
+
+            if (isNaN(GLOBAL_DIVIDEND) || isNaN(GLOBAL_DIVISOR) || GLOBAL_DIVIDEND < 1 || GLOBAL_DIVISOR < 1 || GLOBAL_DIVIDEND < GLOBAL_DIVISOR) {
+                resetExcavator();
+                resetAlgorithm();
+                return;
+            }
+
+            initExcavator();
+            initAlgorithm();
+        }
+
+        [divdInput, divInput].forEach(inp => {
+            inp.addEventListener('change', initProblem);
+            inp.addEventListener('keydown', (e) => { if(e.key === 'Enter') initProblem(); });
+        });
+
+        // ==============================================================
+        // ENGINE 1: AREA EXCAVATOR (Conceptual)
+        // ==============================================================
+        const mainBlockContainer = document.getElementById('mainBlockContainer');
+        const activeBlock = document.getElementById('activeBlock');
+        const exDivisor = document.getElementById('exDivisor');
+        const sliceTrack = document.getElementById('sliceTrack');
+        const sliceBead = document.getElementById('sliceBead');
+        const sliceLine = document.getElementById('sliceLine');
+        const sliceLabel = document.getElementById('sliceLabel');
+        const assemblyStage = document.getElementById('assemblyStage');
+        const exVictory = document.getElementById('exVictory');
+
+        let exCurrentDividend = 0;
+        let exPartialQuotients = [];
+        const FRIENDLY_NUMBERS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+
+        function getMagnitudeColor(q) {
+            if (q >= 1000) return 'var(--thousands)';
+            if (q >= 100) return 'var(--hundreds)';
+            if (q >= 10) return 'var(--tens)';
+            return 'var(--ones)';
+        }
+
+        function resetExcavator() {
+            mainBlockContainer.style.display = 'none';
+            assemblyStage.style.display = 'none';
+            assemblyStage.style.opacity = '0';
+            assemblyStage.innerHTML = '';
+            exVictory.classList.remove('show');
+            activeBlock.className = 'active-block';
+            document.querySelectorAll('.chunk').forEach(el => el.remove());
+            exPartialQuotients = [];
+            sliceTrack.style.display = 'block';
+        }
+
+        function initExcavator() {
+            resetExcavator();
+            exCurrentDividend = GLOBAL_DIVIDEND;
+            exDivisor.textContent = GLOBAL_DIVISOR;
+            
+            let unitPx = 120 / GLOBAL_DIVISOR;
+            let gridSize = unitPx;
+            if (gridSize < 3) gridSize = unitPx * 10; 
+            if (gridSize < 3) gridSize = unitPx * 100;
+            document.documentElement.style.setProperty('--grid-size', `${gridSize}px`);
+
+            activeBlock.innerHTML = `<div class="block-label">${exCurrentDividend}</div>`;
+            activeBlock.style.width = '100%';
+            sliceTrack.style.width = '100%';
+            mainBlockContainer.style.display = 'block';
+
+            updateSlicerBounds();
+        }
+
+        let exIsDragging = false;
+        let exCurrentSnapQ = null;
+
+        function updateSlicerBounds() {
+            if (exCurrentDividend < GLOBAL_DIVISOR) {
+                sliceTrack.style.display = 'none';
+                activeBlock.classList.add('is-remainder');
+                setTimeout(buildAssemblyStage, 800);
+                return;
+            }
+
+            const maxQ = Math.floor(exCurrentDividend / GLOBAL_DIVISOR);
+            const validSnaps = FRIENDLY_NUMBERS.filter(n => n <= maxQ);
+            
+            const updatePos = (clientX) => {
+                const rect = sliceTrack.getBoundingClientRect();
+                let x = clientX - rect.left;
+                x = Math.max(0, Math.min(x, rect.width));
+                const pct = x / rect.width;
+                
+                let closestSnap = null;
+                let minDiff = Infinity;
+
+                validSnaps.forEach(q => {
+                    const area = q * GLOBAL_DIVISOR;
+                    const snapPct = area / exCurrentDividend;
+                    const diff = Math.abs(pct - snapPct);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestSnap = { q, area, pct: snapPct };
+                    }
+                });
+
+                if (minDiff < 0.15 && closestSnap) {
+                    exCurrentSnapQ = closestSnap;
+                    sliceTrack.classList.add('snapped');
+                    const visualPct = closestSnap.pct * 100;
+                    sliceBead.style.left = `${visualPct}%`;
+                    sliceLine.style.left = `${visualPct}%`;
+                    sliceLabel.style.left = `${visualPct}%`;
+                    sliceLabel.innerHTML = `${GLOBAL_DIVISOR} × ${closestSnap.q} = <strong>${closestSnap.area}</strong>`;
+                } else {
+                    exCurrentSnapQ = null;
+                    sliceTrack.classList.remove('snapped');
+                    const visualPct = pct * 100;
+                    sliceBead.style.left = `${visualPct}%`;
+                    sliceLine.style.left = `${visualPct}%`;
+                    sliceLabel.style.left = `${visualPct}%`;
+                    sliceLabel.innerHTML = `Drag`;
+                }
+            };
+
+            const startDrag = (e) => { exIsDragging = true; let cX = e.touches ? e.touches[0].clientX : e.clientX; updatePos(cX); };
+            const onDrag = (e) => { if (!exIsDragging) return; e.preventDefault(); let cX = e.touches ? e.touches[0].clientX : e.clientX; updatePos(cX); };
+            const stopDrag = () => { 
+                if (!exIsDragging) return; exIsDragging = false; 
+                if (exCurrentSnapQ) executeSlice(exCurrentSnapQ);
+                else { sliceBead.style.left = '50%'; sliceLine.style.left = '50%'; sliceLabel.style.left = '50%'; sliceLabel.innerHTML = "Drag"; }
+            };
+
+            const newTrack = sliceTrack.cloneNode(true);
+            sliceTrack.parentNode.replaceChild(newTrack, sliceTrack);
+            const st = document.getElementById('sliceTrack');
+            const sb = document.getElementById('sliceBead');
+            const sl = document.getElementById('sliceLine');
+            const slabel = document.getElementById('sliceLabel');
+            
+            st.addEventListener('mousedown', startDrag); st.addEventListener('touchstart', startDrag, {passive: false});
+            window.addEventListener('mousemove', onDrag); window.addEventListener('touchmove', onDrag, {passive: false});
+            window.addEventListener('mouseup', stopDrag); window.addEventListener('touchend', stopDrag);
+
+            Object.assign(window, { sliceTrack: st, sliceBead: sb, sliceLine: sl, sliceLabel: slabel });
+            sb.style.left = '50%'; sl.style.left = '50%'; slabel.style.left = '50%'; slabel.innerHTML = "<span style='color:var(--accent); font-weight:800'>Drag</span>";
+            st.classList.remove('snapped'); exCurrentSnapQ = null;
+        }
+
+        function executeSlice(snapData) {
+            sliceTrack.style.display = 'none';
+            const { area, q } = snapData;
+            
+            const containerWidth = mainBlockContainer.clientWidth;
+            const pctOfTotal = area / GLOBAL_DIVIDEND;
+            const chunkPixelWidth = containerWidth * pctOfTotal;
+
+            const chunk = document.createElement('div');
+            chunk.className = 'chunk';
+            chunk.style.width = `${chunkPixelWidth}px`;
+            chunk.style.backgroundColor = getMagnitudeColor(q);
+            chunk.innerHTML = `<div class="block-label">${area}</div> <div class="chunk-q">${q}</div>`;
+            
+            const currentActivePct = exCurrentDividend / GLOBAL_DIVIDEND;
+            const activePixelWidth = containerWidth * currentActivePct;
+            
+            const startLeft = containerWidth - activePixelWidth; 
+            chunk.style.left = `${startLeft}px`; chunk.style.top = `0px`;
+
+            mainBlockContainer.appendChild(chunk);
+            exPartialQuotients.push(q);
+
+            exCurrentDividend -= area;
+            const newActivePct = (exCurrentDividend / GLOBAL_DIVIDEND) * 100;
+            activeBlock.style.width = `${newActivePct}%`;
+            activeBlock.style.left = `${100 - newActivePct}%`; 
+            activeBlock.innerHTML = `<div class="block-label">${exCurrentDividend}</div>`;
+            
+            sliceTrack.style.width = `${newActivePct}%`; sliceTrack.style.left = `${100 - newActivePct}%`;
+
+            setTimeout(() => {
+                const chunkIndex = exPartialQuotients.length - 1;
+                chunk.style.top = `${140 + (chunkIndex * 15)}px`; 
+                chunk.style.transform = `scale(0.85)`;
+                chunk.style.zIndex = 5 - chunkIndex;
+            }, 50);
+
+            setTimeout(() => { sliceTrack.style.display = 'block'; updateSlicerBounds(); }, 500);
+        }
+
+        function buildAssemblyStage() {
+            if (exPartialQuotients.length === 0) return;
+            const sum = exPartialQuotients.reduce((a, b) => a + b, 0);
+            const sumStr = sum.toString();
+            const maxCols = sumStr.length;
+
+            let html = `<div class="ex-alg-container">`;
+            exPartialQuotients.forEach((p, idx) => {
+                const digits = p.toString().split('');
+                const pad = maxCols - digits.length;
+                html += `<div class="ex-alg-row">`;
+                if (idx === exPartialQuotients.length - 1) html += `<div class="ex-add-op">+</div>`;
+                for (let c = 0; c < pad; c++) html += `<div class="ex-alg-cell"></div>`;
+                digits.forEach(d => { html += `<div class="ex-alg-cell">${d}</div>`; });
+                html += `</div>`;
+            });
+            html += `<div class="ex-add-line"></div>`;
+
+            html += `<div class="ex-alg-row">`;
+            for (let c = 0; c < maxCols; c++) {
+                html += `<div class="ex-alg-cell"><input type="number" class="ex-ans-input" data-ans="${sumStr[c]}" data-col="${c}"></div>`;
+            }
+            html += `</div></div>`;
+
+            assemblyStage.innerHTML = html;
+            assemblyStage.style.display = 'flex';
+            void assemblyStage.offsetWidth;
+            assemblyStage.style.opacity = '1';
+
+            const ansInputs = Array.from(assemblyStage.querySelectorAll('.ex-ans-input')).reverse();
+            ansInputs.forEach((inp, idx) => {
+                inp.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        if (inp.value === inp.dataset.ans) {
+                            inp.classList.add('solved');
+                            if (idx + 1 < ansInputs.length) ansInputs[idx + 1].focus();
+                            else {
+                                let finalHtml = `${sum}`;
+                                if (exCurrentDividend > 0) finalHtml += `<span class="victory-r">R${exCurrentDividend}</span>`;
+                                exVictory.innerHTML = finalHtml;
+                                exVictory.classList.add('show');
+                            }
+                        } else { shakeElement(inp); inp.value = ''; }
+                    }
+                });
+            });
+            setTimeout(() => { if(ansInputs.length > 0) ansInputs[0].focus(); }, 500);
+        }
+
+
+        // ==============================================================
+        // ENGINE 2: ALGORITHM SCAFFOLD (Procedural)
+        // ==============================================================
+        const algScreen = document.getElementById('algScreen');
+        const actionArea = document.getElementById('actionArea');
+        const algVictory = document.getElementById('algVictory');
+        
+        let algDividendDigits = [];
+        let algQuotientDigits = [];
+        let algPos = 0;
+        let algCurrentNum = 0;
+        let algWorkRows = [];
+        let algStep = 'divide'; 
+        let algQDigit = 0;
+
+        function resetAlgorithm() {
+            algScreen.style.display = 'none';
+            actionArea.innerHTML = '';
+            algVictory.classList.remove('show');
+            algWorkRows = [];
+        }
+
+        function initAlgorithm() {
+            resetAlgorithm();
+            algDividendDigits = GLOBAL_DIVIDEND.toString().split('').map(Number);
+            algQuotientDigits = new Array(algDividendDigits.length).fill(null);
+            algPos = 0;
+            algCurrentNum = algDividendDigits[0];
+            algStep = 'divide';
+            
+            algScreen.style.display = 'flex';
+            renderAlgBoard();
+            nextAlgStep();
+        }
+
+        function renderAlgBoard() {
+            const divEl = document.getElementById('boardDivisor');
+            divEl.textContent = GLOBAL_DIVISOR;
+            divEl.className = 'board-divisor';
+            if (algStep === 'divide' || algStep === 'multiply') divEl.classList.add('hl-active');
+
+            const dvdEl = document.getElementById('boardDividend');
+            dvdEl.innerHTML = '';
+            algDividendDigits.forEach((d, i) => {
+                const span = document.createElement('span');
+                span.className = 'digit-cell';
+                span.textContent = d;
+                if (i > algPos) span.classList.add('hl-fade');
+                if (i === algPos && algStep === 'divide') span.classList.add('hl-active');
+                if (algStep === 'drop' && i === algPos) {
+                    const bead = document.createElement('div');
+                    bead.className = 'drop-bead';
+                    bead.onclick = executeAlgDrop;
+                    span.appendChild(bead);
+                }
+                dvdEl.appendChild(span);
+            });
+
+            const qEl = document.getElementById('quotientRow');
+            qEl.innerHTML = '';
+            algQuotientDigits.forEach((d, i) => {
+                const span = document.createElement('span');
+                span.className = 'digit-cell';
+                span.textContent = d !== null ? d : ' ';
+                if (i === algPos && algStep === 'multiply') span.classList.add('hl-active');
+                qEl.appendChild(span);
+            });
+
+            const wEl = document.getElementById('workRows');
+            wEl.innerHTML = '';
+            algWorkRows.forEach(row => {
+                if (row.type === 'line') {
+                    const div = document.createElement('div');
+                    div.className = 'work-line';
+                    div.style.width = `${(row.position + 1) * 1.2}em`;
+                    wEl.appendChild(div);
+                    return;
+                }
+                const div = document.createElement('div');
+                div.className = 'work-row';
+                if (row.type === 'subtract') {
+                    const sign = document.createElement('span');
+                    sign.className = 'sub-sign'; sign.textContent = '−'; div.appendChild(sign);
+                }
+                const digitsStr = row.value.toString().split('');
+                const startPos = row.position - digitsStr.length + 1;
+                for (let i = 0; i < startPos; i++) {
+                    const sp = document.createElement('span'); sp.className = 'digit-cell'; div.appendChild(sp);
+                }
+                digitsStr.forEach((d, i) => {
+                    const sp = document.createElement('span');
+                    sp.className = 'digit-cell'; sp.textContent = d;
+                    if (row.type === 'result') {
+                        if (algStep === 'divide' && algPos === row.position) sp.classList.add('hl-active');
+                        if (row.bringDown && i === digitsStr.length - 1) sp.classList.add('hl-brought');
+                    }
+                    div.appendChild(sp);
+                });
+                wEl.appendChild(div);
+            });
+        }
+
+        function createAlgInput(handler) {
+            const inp = document.createElement('input');
+            inp.type = 'number'; inp.className = 'action-input';
+            inp.onkeydown = (e) => { if(e.key === 'Enter') handler(inp); };
+            setTimeout(() => inp.focus(), 50);
+            return inp;
+        }
+
+        function nextAlgStep() {
+            renderAlgBoard();
+            actionArea.innerHTML = '';
+            switch (algStep) {
+                case 'divide': promptAlgDivide(); break;
+                case 'multiply': promptAlgMultiply(); break;
+                case 'subtract': promptAlgSubtract(); break;
+                case 'drop': promptAlgDrop(); break;
+            }
+        }
+
+        function promptAlgDivide() {
+            actionArea.innerHTML = `<span class="math-prompt">${algCurrentNum} ÷ ${GLOBAL_DIVISOR} = </span>`;
+            actionArea.appendChild(createAlgInput((inp) => {
+                const ans = parseInt(inp.value);
+                const correct = Math.floor(algCurrentNum / GLOBAL_DIVISOR);
+                if (ans === correct) {
+                    algQDigit = ans;
+                    algQuotientDigits[algPos] = ans;
+                    if (ans === 0) {
+                        if (algPos === algDividendDigits.length - 1) finishAlgProblem();
+                        else { algStep = 'drop'; nextAlgStep(); }
+                    } else { algStep = 'multiply'; nextAlgStep(); }
+                } else { shakeElement(inp); inp.value = ''; }
+            }));
+        }
+
+        function promptAlgMultiply() {
+            actionArea.innerHTML = `<span class="math-prompt">${GLOBAL_DIVISOR} × ${algQDigit} = </span>`;
+            actionArea.appendChild(createAlgInput((inp) => {
+                const ans = parseInt(inp.value);
+                const correct = GLOBAL_DIVISOR * algQDigit;
+                if (ans === correct) {
+                    algWorkRows.push({ type: 'subtract', value: correct, position: algPos });
+                    algStep = 'subtract'; nextAlgStep();
+                } else { shakeElement(inp); inp.value = ''; }
+            }));
+        }
+
+        function promptAlgSubtract() {
+            const product = GLOBAL_DIVISOR * algQDigit;
+            actionArea.innerHTML = `<span class="math-prompt">${algCurrentNum} − ${product} = </span>`;
+            actionArea.appendChild(createAlgInput((inp) => {
+                const ans = parseInt(inp.value);
+                const correct = algCurrentNum - product;
+                if (ans === correct) {
+                    algWorkRows.push({ type: 'line', position: algPos });
+                    algWorkRows.push({ type: 'result', value: correct, position: algPos, bringDown: false });
+                    algCurrentNum = correct;
+                    if (algPos === algDividendDigits.length - 1) finishAlgProblem();
+                    else { algStep = 'drop'; nextAlgStep(); }
+                } else { shakeElement(inp); inp.value = ''; }
+            }));
+        }
+
+        function promptAlgDrop() {
+            algPos++; actionArea.innerHTML = ''; renderAlgBoard();
+        }
+
+        function executeAlgDrop() {
+            const brought = algDividendDigits[algPos];
+            if (algWorkRows.length > 0 && algWorkRows[algWorkRows.length - 1].type === 'result') {
+                const last = algWorkRows[algWorkRows.length - 1];
+                const newVal = parseInt(last.value.toString() + brought.toString());
+                algWorkRows[algWorkRows.length - 1] = { ...last, value: newVal, position: algPos, bringDown: true };
+                algCurrentNum = newVal;
+            } else { algCurrentNum = algCurrentNum * 10 + brought; }
+            algStep = 'divide'; nextAlgStep();
+        }
+
+        function finishAlgProblem() {
+            actionArea.innerHTML = `<span style="color:var(--success)">Complete!</span>`;
+            const fullQuotient = parseInt(algQuotientDigits.join(''));
+            let eq = `${fullQuotient}`;
+            if (algCurrentNum > 0) eq += `<span class="victory-r">R${algCurrentNum}</span>`;
+            algVictory.innerHTML = eq;
+            algVictory.classList.add('show');
+        }
+
+    </script>
+</body>
+</html>

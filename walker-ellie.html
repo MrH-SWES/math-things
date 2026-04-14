@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Math Things. | Coordinate Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Math Things Brand System */
+    --bg: #F5F5F7;
+    --glass: rgba(245,245,247,0.85);
+    --surface: #FFFFFF;
+    --text-main: #1D1D1F;
+    --text-gray: #86868B;
+    --text-light: #AEAEB2;
+    --accent: #007AFF;
+    --border: rgba(0,0,0,0.05);
+    --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+    
+    /* Canvas Colors */
+    --sky: #EAF2FA;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lexend', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .logo {
+    display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default;
+  }
+  .logo-bead {
+    width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    flex: 1; max-width: 1000px; width: 100%; margin: 0 auto;
+    padding: 24px; display: flex; flex-direction: column;
+  }
+  .section-label {
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--text-light); margin-bottom: 16px; padding-left: 2px;
+  }
+  .card {
+    background: var(--surface); border-radius: 28px;
+    box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+    display: flex; flex-direction: column; flex: 1; overflow: hidden;
+  }
+
+  /* ── TOP NAV ── */
+  .view-tabs {
+    display: flex; background: rgba(0,0,0,0.02); padding: 12px; gap: 8px;
+    border-bottom: 1px solid var(--border); justify-content: center;
+  }
+  .tab-btn {
+    padding: 10px 24px; border-radius: 16px; font-family: 'Lexend', sans-serif;
+    font-size: 0.85rem; font-weight: 800; color: var(--text-gray);
+    background: transparent; border: none; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn.active {
+    background: var(--surface); color: var(--text-main);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .tab-btn:active { transform: scale(0.95); }
+
+  /* ── CANVAS WRAPPER ── */
+  .canvas-wrap {
+    flex: 1; position: relative; background: var(--sky);
+    border-bottom: 1px solid var(--border);
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+
+  /* ── DASHBOARD ── */
+  .dashboard {
+    height: 140px; background: var(--surface);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; flex-shrink: 0;
+  }
+
+  /* D-PAD */
+  .d-pad {
+    display: grid; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px);
+    gap: 8px;
+  }
+  .d-btn {
+    background: var(--surface); border: 1.5px solid rgba(0,0,0,0.06); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s;
+    color: var(--text-main); box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .d-btn svg { width: 22px; height: 22px; fill: currentColor; opacity: 0.8; }
+  .d-btn:active:not(:disabled) { transform: scale(0.92); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.1); background: #F5F5F7; }
+  .d-btn:disabled { opacity: 0.3; cursor: default; background: var(--bg); box-shadow: none; }
+  
+  .d-up { grid-column: 2; grid-row: 1; }
+  .d-left { grid-column: 1; grid-row: 2; }
+  .d-right { grid-column: 3; grid-row: 2; }
+  .d-down { grid-column: 2; grid-row: 3; }
+  
+  .d-home {
+    grid-column: 2; grid-row: 2; background: transparent; border: none;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .d-home .bead {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    box-shadow: inset 1.5px 1.5px 3px rgba(255,255,255,0.8), inset -1.5px -1.5px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+  }
+  .d-home:active .bead { transform: scale(0.85); box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); }
+
+  /* READOUT */
+  .readout {
+    font-size: 3.5rem; font-weight: 800; letter-spacing: -0.04em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-variant-numeric: tabular-nums; min-width: 200px;
+  }
+  .readout .bracket { color: var(--text-light); font-weight: 300; }
+  .readout .val { color: var(--text-main); }
+  .readout .comma { color: var(--text-light); font-weight: 300; padding: 0 4px; }
+
+  /* ACTIONS */
+  .actions { display: flex; gap: 12px; }
+  .action-btn {
+    width: 56px; height: 56px; border-radius: 18px;
+    background: var(--surface); border: 1.5px solid rgba(0,0,0,0.06);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; color: var(--text-main);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .action-btn svg { width: 24px; height: 24px; fill: currentColor; opacity: 0.8; }
+  .action-btn:active { transform: scale(0.92); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.1); background: #F5F5F7; }
+  
+  .action-btn.primary { background: var(--text-main); color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 1.5rem; }
+  .action-btn.primary:active { transform: scale(0.92); box-shadow: inset 2px 2px 8px rgba(0,0,0,0.4); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); flex-shrink: 0;
+  }
+  .footer-bead {
+    display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+    margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em;
+  }
+
+  @media (max-width: 768px) {
+    main { padding: 12px; }
+    .dashboard { padding: 16px; height: auto; flex-wrap: wrap; gap: 20px; justify-content: center; }
+    .readout { font-size: 2.8rem; width: 100%; order: -1; }
+    .d-pad { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 42px); }
+    .action-btn { width: 48px; height: 48px; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+  </header>
+
+  <main>
+    <p class="section-label">Coordinate Explorer</p>
+    <div class="card">
+      
+      <div class="view-tabs">
+        <button class="tab-btn active" id="btnStreet" onclick="setMode('street')">↔ X-Axis</button>
+        <button class="tab-btn" id="btnElevator" onclick="setMode('elevator')">↕ Y-Axis</button>
+        <button class="tab-btn" id="btnBoth" onclick="setMode('both')">✛ Both</button>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <div class="dashboard">
+        <div class="d-pad">
+          <button class="d-btn d-up" id="upBtn" onclick="pressUp()">
+            <svg viewBox="0 0 24 24"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>
+          </button>
+          <button class="d-btn d-left" id="leftBtn" onclick="pressLeft()">
+            <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+          </button>
+          <button class="d-home" onclick="goHome()" title="Return to Origin"><div class="bead"></div></button>
+          <button class="d-btn d-right" id="rightBtn" onclick="pressRight()">
+            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+          </button>
+          <button class="d-btn d-down" id="downBtn" onclick="pressDown()">
+            <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </button>
+        </div>
+
+        <div class="readout" id="readout">
+          <span class="bracket">(</span>
+          <span id="valX" class="val">0</span>
+          <span class="comma" id="comma">,</span>
+          <span id="valY" class="val" style="display:none;">0</span>
+          <span class="bracket">)</span>
+        </div>
+
+        <div class="actions">
+          <button class="action-btn" onclick="zoom(-1)" title="Zoom In">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+          <button class="action-btn" onclick="zoom(1)" title="Zoom Out">
+            <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+          </button>
+          
+          <button class="action-btn primary" id="btnPegamole" onclick="spawnPegamole()" style="display:none;" title="Find Pegamole">
+            <svg viewBox="0 0 32 32" width="28" height="28">
+              <g transform="translate(1, 3)">
+                <path d="M12 12 C 8 2, 2 4, 6 10 Z" fill="#D4C5A9"/>
+                <ellipse cx="14" cy="14" rx="9" ry="6" fill="#6B4226"/>
+                <path d="M20 10 Q 28 10, 29 14 Q 24 16, 20 18 Z" fill="#4E3525"/>
+                <circle cx="29" cy="14" r="2.5" fill="#F0908A"/>
+                <circle cx="19" cy="12" r="1.5" fill="#000"/>
+                <path d="M14 14 C 10 2, 0 6, 8 14 Z" fill="#FFFFFF" stroke="#EAEAEA" stroke-width="1"/>
+              </g>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+
+<script>
+const HARD_LIMIT = 100;
+const MIN_RANGE = 3;
+const MAX_RANGE = 24;
+
+const C = {
+  sky: '#EAF2FA', 
+  ground: '#D4B886', 
+  road: '#E5E5EA', 
+  dash: '#FFFFFF',
+  pos: '#1D1D1F', 
+  neg: '#DC143C', 
+  houseWall: '#F5F5F7', 
+  houseStroke: '#AEAEB2', 
+  roof: '#DC143C', 
+  window: '#64D2FF',
+  floorUp: '#F5F5F7', 
+  floorUpStroke: '#AEAEB2', 
+  floorDown: '#EAEAEA', 
+  floorDownStroke: '#AEAEB2',
+  walker: '#FFFFFF', 
+  walkerStroke: '#1D1D1F', 
+  ellie: '#FFD700',
+  ellieStroke: '#1D1D1F',
+  pegamole: '#6B4226', 
+  pegamoleWing: '#D4C5A9'
+};
+
+const state = {
+  mode: 'street',
+  zoom: { street: 10, elevator: 10, bothX: 10, bothY: 10 },
+  walker: { pos:0, animPos:0, animating:false, stepPhase:0, lastDir:1 },
+  ellie:  { pos:0, animPos:0, animating:false },
+  pegamole: { active: false, x: 0, y: 0, found: false, celebrating: false, celebrateStart: 0, wingPhase: 0 }
+};
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvasWrap');
+let wingAnimFrame = null;
+
+function axl(n){ return '' + n; }
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+function resize(){
+  const r = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = r.width * dpr;
+  canvas.height = r.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function setMode(mode){
+  state.mode = mode;
+  document.getElementById('btnStreet').classList.toggle('active', mode === 'street');
+  document.getElementById('btnElevator').classList.toggle('active', mode === 'elevator');
+  document.getElementById('btnBoth').classList.toggle('active', mode === 'both');
+  
+  document.getElementById('btnPegamole').style.display = mode === 'both' ? 'flex' : 'none';
+  
+  const valX = document.getElementById('valX');
+  const valY = document.getElementById('valY');
+  const comma = document.getElementById('comma');
+  
+  if (mode === 'street') {
+      valX.style.display = ''; valY.style.display = 'none'; comma.style.display = 'none';
+  } else if (mode === 'elevator') {
+      valX.style.display = 'none'; valY.style.display = ''; comma.style.display = 'none';
+  } else {
+      valX.style.display = ''; valY.style.display = ''; comma.style.display = '';
+  }
+
+  refreshArrowState();
+  updatePanelText();
+  draw();
+}
+
+function refreshArrowState(){
+  const xEnabled = state.mode !== 'elevator';
+  const yEnabled = state.mode !== 'street';
+  document.getElementById('leftBtn').disabled = !xEnabled;
+  document.getElementById('rightBtn').disabled = !xEnabled;
+  document.getElementById('upBtn').disabled = !yEnabled;
+  document.getElementById('downBtn').disabled = !yEnabled;
+}
+
+function animateTo(ch, target){
+  if (ch.animating) return;
+  const start = Math.round(ch.animPos);
+  const dist = Math.abs(target - start);
+  if (dist === 0) { ch.animPos = target; draw(); checkPegamoleFound(); return; }
+
+  ch.animating = true;
+  if ('lastDir' in ch) ch.lastDir = target > start ? 1 : -1;
+  const dir = target > start ? 1 : -1;
+  let currentStep = 0;
+
+  function walkOneStep(){
+    if (currentStep >= dist){
+      ch.animPos = target; ch.animating = false;
+      if ('stepPhase' in ch) ch.stepPhase = 0;
+      draw(); checkPegamoleFound(); return;
+    }
+    const from = start + currentStep * dir;
+    const to = from + dir;
+    const stepStart = performance.now();
+    const stepDur = 300;
+
+    function tick(now){
+      const t = Math.min((now - stepStart) / stepDur, 1);
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      ch.animPos = from + dir * ease;
+      if ('stepPhase' in ch) ch.stepPhase = Math.sin(t * Math.PI);
+      draw();
+      if (t < 1) requestAnimationFrame(tick);
+      else {
+        ch.animPos = to;
+        if ('stepPhase' in ch) ch.stepPhase = 0;
+        currentStep++; setTimeout(walkOneStep, 60);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  walkOneStep();
+}
+
+function nudge(ch, dir){
+  if (ch.animating) return;
+  const next = ch.pos + dir;
+  if (next < -HARD_LIMIT || next > HARD_LIMIT) return;
+  ch.animating = true; ch.pos = next;
+  if ('lastDir' in ch) ch.lastDir = dir;
+  updatePanelText();
+  const start = ch.animPos;
+  const end = next;
+  const t0 = performance.now();
+  const dur = 300;
+  function step(now){
+    const t = Math.min((now - t0) / dur, 1);
+    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    ch.animPos = start + (end - start) * e;
+    if ('stepPhase' in ch) ch.stepPhase = Math.sin(t * Math.PI);
+    draw();
+    if (t < 1) requestAnimationFrame(step);
+    else {
+      ch.animPos = end; ch.animating = false;
+      if ('stepPhase' in ch) ch.stepPhase = 0;
+      draw(); checkPegamoleFound();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function pressLeft(){ if (state.mode !== 'elevator') nudge(state.walker, -1); }
+function pressRight(){ if (state.mode !== 'elevator') nudge(state.walker, +1); }
+function pressUp(){ if (state.mode !== 'street') nudge(state.ellie, +1); }
+function pressDown(){ if (state.mode !== 'street') nudge(state.ellie, -1); }
+
+function goHome(){
+  animateTo(state.walker, 0);
+  animateTo(state.ellie, 0);
+  state.walker.pos = 0; state.ellie.pos = 0;
+  updatePanelText();
+}
+
+function zoom(dir){
+  if (state.mode === 'street') state.zoom.street = clamp(state.zoom.street + dir, MIN_RANGE, MAX_RANGE);
+  else if (state.mode === 'elevator') state.zoom.elevator = clamp(state.zoom.elevator + dir, MIN_RANGE, MAX_RANGE);
+  else { state.zoom.bothX = clamp(state.zoom.bothX + dir, MIN_RANGE, MAX_RANGE); state.zoom.bothY = clamp(state.zoom.bothY + dir, MIN_RANGE, MAX_RANGE); }
+  draw();
+}
+
+// ========== PEGAMOLE ==========
+function spawnPegamole(){
+  const pm = state.pegamole;
+  const rx = state.zoom.bothX, ry = state.zoom.bothY;
+  let px, py;
+  do { px = Math.floor(Math.random() * (rx * 2 + 1)) - rx; py = Math.floor(Math.random() * (ry * 2 + 1)) - ry; } 
+  while (px === state.walker.pos && py === state.ellie.pos);
+
+  pm.x = px; pm.y = py; pm.active = true; pm.found = false; pm.celebrating = false;
+  startWingAnim(); draw();
+}
+
+function startWingAnim(){
+  if (wingAnimFrame) return;
+  function flap(){
+    state.pegamole.wingPhase = (performance.now() / 200) % (Math.PI * 2);
+    draw();
+    if (state.pegamole.active) wingAnimFrame = requestAnimationFrame(flap);
+    else wingAnimFrame = null;
+  }
+  wingAnimFrame = requestAnimationFrame(flap);
+}
+
+function checkPegamoleFound(){
+  const pm = state.pegamole;
+  if (!pm.active || pm.found) return;
+  if (state.walker.pos === pm.x && state.ellie.pos === pm.y) {
+    pm.found = true; pm.celebrating = true; pm.celebrateStart = performance.now();
+    setTimeout(() => { pm.celebrating = false; pm.active = false; draw(); }, 2500);
+  }
+}
+
+function updatePanelText(){
+  document.getElementById('valX').textContent = state.walker.pos;
+  document.getElementById('valY').textContent = state.ellie.pos;
+}
+
+// ========== DRAWING ==========
+
+function drawSkyGround(w, h, horizonY){
+  ctx.fillStyle = C.sky; ctx.fillRect(0, 0, w, horizonY);
+  ctx.fillStyle = C.ground; ctx.fillRect(0, horizonY, w, h - horizonY);
+}
+
+function drawHouseWithRoof(x, y, w, h){
+  ctx.fillStyle = C.houseWall; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = C.houseStroke; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+  const roofH = h * 0.35;
+  ctx.fillStyle = C.roof;
+  ctx.beginPath(); ctx.moveTo(x - w * 0.1, y); ctx.lineTo(x + w / 2, y - roofH); ctx.lineTo(x + w * 1.1, y); ctx.closePath(); ctx.fill();
+}
+
+function drawGroundFloor(x, y, w, h){
+  ctx.fillStyle = C.houseWall; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = C.houseStroke; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+}
+
+function drawStreetWorld(cx, roadY, unit, range, showLabels){
+  const roadH = unit;
+  ctx.fillStyle = C.road; ctx.fillRect(0, roadY, canvas.width / (window.devicePixelRatio||1), roadH);
+  ctx.fillStyle = C.dash;
+  for (let i = -range; i <= range; i++){
+    if (i === 0 || Math.abs(i) % 2 !== 0) continue;
+    const x = cx + i * unit - unit / 2;
+    ctx.fillRect(x + unit * 0.08, roadY + roadH * 0.43, unit * 0.84, roadH * 0.14);
+  }
+  drawHouseWithRoof(cx - unit / 2, roadY, unit, roadH);
+  
+  if (showLabels){
+    ctx.font = `900 ${Math.max(12, unit * 0.4)}px Lexend`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = C.ground; 
+
+    for (let i = -range; i <= range; i++){
+      if (i === 0) continue;
+      const lx = cx + i * unit;
+      const ly = roadY + roadH + 6;
+      ctx.strokeText(axl(i), lx, ly);
+      ctx.fillStyle = i > 0 ? C.pos : C.neg;
+      ctx.fillText(axl(i), lx, ly);
+    }
+  }
+}
+
+function drawElevatorWorld(cx, cy, unit, range, showLabels){
+  const shaftX = cx - unit / 2;
+  for (let i = -range; i <= range; i++){
+    if (i === 0) continue;
+    const fy = cy - i * unit - unit / 2;
+    if (i > 0){
+      ctx.fillStyle = C.floorUp; ctx.fillRect(shaftX, fy, unit, unit);
+      ctx.strokeStyle = C.floorUpStroke; ctx.lineWidth = 1.5; ctx.strokeRect(shaftX, fy, unit, unit);
+      const ws = unit * 0.25;
+      ctx.fillStyle = C.window; ctx.fillRect(shaftX + unit/2 - ws/2, fy + unit*0.35, ws, ws);
+    } else {
+      ctx.fillStyle = C.floorDown; ctx.fillRect(shaftX, fy, unit, unit);
+      ctx.strokeStyle = C.floorDownStroke; ctx.lineWidth = 1.5; ctx.strokeRect(shaftX, fy, unit, unit);
+    }
+    
+    if (showLabels){
+      ctx.font = `900 ${Math.max(12, unit*0.38)}px Lexend`;
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 4;
+
+      const labelX = i > 0 ? shaftX + unit + 8 : shaftX - 8;
+      ctx.textAlign = i > 0 ? 'left' : 'right';
+      ctx.strokeStyle = i > 0 ? C.sky : C.ground;
+      
+      ctx.strokeText(axl(i), labelX, fy + unit/2);
+      ctx.fillStyle = i > 0 ? C.pos : C.neg;
+      ctx.fillText(axl(i), labelX, fy + unit/2);
+    }
+  }
+  const topY = cy - range * unit - unit / 2;
+  ctx.fillStyle = C.roof;
+  ctx.beginPath(); ctx.moveTo(shaftX - unit*0.12, topY); ctx.lineTo(cx, topY - unit*0.4); ctx.lineTo(shaftX + unit*1.12, topY); ctx.closePath(); ctx.fill();
+  drawGroundFloor(shaftX, cy - unit/2, unit, unit);
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 2;
+  const bottomY = cy + range * unit + unit / 2;
+  ctx.beginPath(); ctx.moveTo(shaftX+3, topY); ctx.lineTo(shaftX+3, bottomY); ctx.moveTo(shaftX+unit-3, topY); ctx.lineTo(shaftX+unit-3, bottomY); ctx.stroke();
+  return shaftX;
+}
+
+function drawWalker(cx, cy, unit, phase, dir){
+  const s = unit * 0.9;
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.fillStyle = C.walker; 
+  ctx.strokeStyle = C.walkerStroke; 
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const headR = s*0.12, headY = -s*0.42;
+  ctx.beginPath(); ctx.arc(0, headY, headR, 0, Math.PI*2); ctx.fill(); ctx.lineWidth = Math.max(2, s*0.04); ctx.stroke();
+
+  // Nose
+  ctx.beginPath(); ctx.moveTo(headR*0.95, headY - headR*0.15); ctx.lineTo(headR + s*0.16, headY); ctx.lineTo(headR*0.95, headY + headR*0.15); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  const shoulderY = headY + headR + s*0.04;
+  const hipY = -s*0.08;
+  ctx.lineWidth = Math.max(3, s*0.09);
+  ctx.beginPath(); ctx.moveTo(0, shoulderY); ctx.lineTo(0, hipY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, shoulderY+s*0.02); ctx.lineTo(-s*0.13, shoulderY+s*0.14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, shoulderY+s*0.04); ctx.lineTo(s*0.18, shoulderY+s*0.18); ctx.stroke();
+
+  const swing = phase * s * 0.11 * dir;
+  ctx.beginPath(); ctx.moveTo(0, hipY); ctx.lineTo(s*0.23+swing, s*0.2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, hipY); ctx.lineTo(-s*0.2-swing*0.55, s*0.24); ctx.stroke();
+  ctx.restore();
+}
+
+function drawEllie(cx, cy, unit){
+  const s = unit * 0.88;
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.fillStyle = C.ellie; 
+  ctx.strokeStyle = C.ellieStroke; 
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const headR = s*0.11, headY = -s*0.42;
+  ctx.beginPath(); ctx.arc(0, headY, headR, 0, Math.PI*2); ctx.fill(); ctx.lineWidth = Math.max(2, s*0.04); ctx.stroke();
+
+  const shoulderY = headY + headR + s*0.03;
+  const hemY = s*0.1;
+  const sw = s*0.11, hw = s*0.24;
+  ctx.beginPath(); ctx.moveTo(-sw, shoulderY); ctx.lineTo(sw, shoulderY); ctx.lineTo(hw, hemY); ctx.lineTo(-hw, hemY); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  ctx.lineWidth = Math.max(3, s*0.08);
+  ctx.beginPath(); ctx.moveTo(-sw, shoulderY+s*0.01); ctx.lineTo(-s*0.2, shoulderY+s*0.18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sw, shoulderY+s*0.01); ctx.lineTo(s*0.2, shoulderY+s*0.18); ctx.stroke();
+
+  ctx.lineWidth = Math.max(3, s*0.09);
+  ctx.beginPath(); ctx.moveTo(-s*0.07, hemY); ctx.lineTo(-s*0.08, hemY+s*0.26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(s*0.07, hemY); ctx.lineTo(s*0.08, hemY+s*0.26); ctx.stroke();
+  ctx.restore();
+}
+
+function drawPegamole(pcx, pcy, unit, wingPhase, celebrating){
+  const s = unit * 0.82;
+  ctx.save(); ctx.translate(pcx, pcy);
+
+  let bounce = 0;
+  if (celebrating) { const t = (performance.now() - state.pegamole.celebrateStart) / 300; bounce = Math.abs(Math.sin(t * Math.PI * 2)) * s * 0.18; }
+  ctx.translate(0, -bounce);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, s * 0.36 + bounce, s * 0.3, s * 0.045, 0, 0, Math.PI * 2); ctx.fill();
+
+  const wingFlap = Math.sin(wingPhase) * 0.55;
+  function drawPegasusWing(xOff, yOff, baseAngle, flapAmt, isFar){
+    ctx.save(); ctx.translate(xOff, yOff); ctx.rotate(baseAngle - flapAmt); const opacity = isFar ? 0.85 : 1;
+    ctx.fillStyle = `rgba(255,255,255,${opacity})`; ctx.strokeStyle = `rgba(200,200,210,${opacity})`; ctx.lineWidth = Math.max(1, s * 0.02);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-s*0.15, -s*0.35, -s*0.05, -s*0.55); ctx.quadraticCurveTo(s*0.02, -s*0.58, s*0.08, -s*0.5); ctx.quadraticCurveTo(s*0.12, -s*0.42, s*0.1, -s*0.32); ctx.quadraticCurveTo(s*0.08, -s*0.2, 0, 0); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  drawPegasusWing(-s * 0.08, -s * 0.14, -0.3, wingFlap * 0.8, true);
+  drawPegasusWing(-s * 0.02, -s * 0.16, -0.15, wingFlap, false);
+
+  // Body
+  ctx.fillStyle = '#3E2A1A'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.33, s * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#4E3828'; ctx.beginPath(); ctx.ellipse(0, -s * 0.04, s * 0.3, s * 0.12, 0, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#6B5540'; ctx.beginPath(); ctx.ellipse(s * 0.02, s * 0.08, s * 0.2, s * 0.1, 0, 0, Math.PI); ctx.fill();
+
+  // Tail
+  ctx.fillStyle = '#4E3828'; ctx.beginPath(); ctx.ellipse(-s * 0.34, -s * 0.01, s * 0.055, s * 0.03, -0.2, 0, Math.PI * 2); ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#3E2A1A'; ctx.beginPath(); ctx.ellipse(s * 0.26, -s * 0.02, s * 0.17, s * 0.15, -0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#4E3525'; ctx.beginPath(); ctx.moveTo(s * 0.36, -s * 0.11); ctx.quadraticCurveTo(s * 0.56, -s * 0.1, s * 0.58, -s * 0.05); ctx.quadraticCurveTo(s * 0.54, 0, s * 0.36, s * 0.02); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#F0908A'; ctx.beginPath(); ctx.arc(s * 0.58, -s * 0.04, s * 0.05, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#F8B0A8'; ctx.beginPath(); ctx.arc(s * 0.575, -s * 0.055, s * 0.02, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(s * 0.32, -s * 0.08, s * 0.018, s * 0.012, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Paws
+  ctx.fillStyle = '#5A4030'; ctx.beginPath(); ctx.ellipse(s * 0.18, s * 0.22, s * 0.13, s * 0.065, 0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#DDD'; ctx.lineWidth = Math.max(1.5, s * 0.03); ctx.lineCap = 'round';
+  [{x:s*0.28,y:s*0.18,dx:s*0.07,dy:-s*0.01}, {x:s*0.3,y:s*0.22,dx:s*0.07,dy:s*0.02}, {x:s*0.28,y:s*0.26,dx:s*0.06,dy:s*0.04}].forEach(cl => { ctx.beginPath(); ctx.moveTo(cl.x, cl.y); ctx.lineTo(cl.x+cl.dx, cl.y+cl.dy); ctx.stroke(); });
+
+  if (celebrating){
+    const ct = (performance.now() - state.pegamole.celebrateStart) / 1000;
+    ctx.fillStyle = '#FFD700';
+    for (let i = 0; i < 6; i++){
+      const angle = ct * 3 + i * Math.PI * 2 / 6; const dist = s * (0.5 + ct * 0.4);
+      const stx = Math.cos(angle) * dist; const sty = Math.sin(angle) * dist;
+      const starSize = s * 0.07 * Math.max(0, 1 - ct * 0.35);
+      if (starSize > 0) {
+        ctx.save(); ctx.translate(stx, sty); ctx.beginPath();
+        for (let j = 0; j < 5; j++){ const a = (j * 4 * Math.PI / 5) - Math.PI / 2; ctx[j===0?'moveTo':'lineTo'](Math.cos(a) * starSize, Math.sin(a) * starSize); }
+        ctx.closePath(); ctx.fill(); ctx.restore();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function getSceneUnit(w, h, rx, ry){ return Math.min((w - 20) / (rx * 2 + 1), (h - 20) / (ry * 2 + 1.8)); }
+
+function draw(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+  const cx = w / 2; const cy = h / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  if (state.mode === 'street'){
+    const r = state.zoom.street; const unit = getSceneUnit(w, h, r, r);
+    const roadY = cy - unit / 2;
+    drawSkyGround(w, h, roadY + unit);
+    drawStreetWorld(cx, roadY, unit, r, true);
+    drawWalker(cx + state.walker.animPos * unit, roadY + unit/2 + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
+  }
+  else if (state.mode === 'elevator'){
+    const r = state.zoom.elevator; const unit = getSceneUnit(w, h, r, r);
+    drawSkyGround(w, h, cy + unit/2);
+    ctx.fillStyle = C.road; ctx.fillRect(0, cy - unit/2, w, unit);
+    ctx.fillStyle = C.dash;
+    for (let i = -r; i <= r; i++){ if (i !== 0 && Math.abs(i) % 2 === 0) ctx.fillRect(cx + i * unit - unit/2 + unit*0.08, cy - unit*0.07, unit*0.84, unit*0.14); }
+    const shaftX = drawElevatorWorld(cx, cy, unit, r, true);
+    const ey = cy - state.ellie.animPos * unit;
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(shaftX+3, ey - unit/2+3, unit-6, unit-6);
+    drawEllie(cx, ey, unit);
+  }
+  else {
+    const rx = state.zoom.bothX, ry = state.zoom.bothY; const unit = getSceneUnit(w, h, rx, ry);
+    drawSkyGround(w, h, cy + unit/2);
+
+    // No background grid lines here either — keeps it perfectly clean
+    drawStreetWorld(cx, cy - unit/2, unit, rx, true);
+    const shaftX = drawElevatorWorld(cx, cy, unit, ry, true);
+
+    const wx = cx + state.walker.animPos * unit; const ey = cy - state.ellie.animPos * unit;
+
+    const pm = state.pegamole;
+    if (pm.active){ drawPegamole(cx + pm.x * unit, cy - pm.y * unit, unit, pm.wingPhase, pm.celebrating); }
+
+    if (state.walker.pos !== 0 || state.ellie.pos !== 0){
+      ctx.setLineDash([4, 4]); ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(0,122,255,0.5)'; ctx.beginPath(); ctx.moveTo(wx, cy); ctx.lineTo(wx, ey); ctx.stroke();
+      ctx.strokeStyle = 'rgba(220,20,60,0.5)'; ctx.beginPath(); ctx.moveTo(cx, ey); ctx.lineTo(wx, ey); ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (!pm.active || pm.found){
+        ctx.fillStyle = C.pos; 
+        ctx.beginPath(); ctx.arc(wx, ey, unit*0.1, 0, Math.PI*2); ctx.fill();
+        
+        // Ensure the label is legible against any background
+        const labelText = `(${axl(state.walker.pos)}, ${axl(state.ellie.pos)})`;
+        ctx.font = `900 ${Math.max(12, unit*0.3)}px Lexend`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(labelText, wx + unit*0.15, ey - unit*0.1);
+        
+        ctx.fillStyle = C.pos;
+        ctx.fillText(labelText, wx + unit*0.15, ey - unit*0.1);
+      }
+    }
+
+    drawWalker(wx, cy + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
+    drawEllie(cx, ey, unit);
+  }
+}
+
+// Boot
+setMode('street');
+resize();
+</script>
+</body>
+</html>

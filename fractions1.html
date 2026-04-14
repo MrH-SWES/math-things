@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math Things. | Fraction Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Math Things Brand System */
+    --bg: #F5F5F7;
+    --glass: rgba(245,245,247,0.85);
+    --surface: #FFFFFF;
+    --text-main: #1D1D1F;
+    --text-gray: #86868B;
+    --text-light: #AEAEB2;
+    --border: rgba(0,0,0,0.05);
+    --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+    
+    /* Master Palette */
+    --thousands:   #4CBB17;
+    --hundreds:    #FFD700;
+    --tens:        #4169E1; /* Fraction 1 */
+    --ones:        #DC143C;
+    --tenths:      #7B00FF;
+    --hundredths:  #FF9F0A; /* Fraction 2 */
+    --thousandths: #64D2FF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lexend', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .logo {
+    display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default;
+  }
+  .logo-bead {
+    width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    flex: 1; max-width: 900px; width: 100%; margin: 0 auto;
+    padding: 40px 24px; display: flex; flex-direction: column;
+  }
+  .section-label {
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--text-light); margin-bottom: 16px; padding-left: 2px;
+  }
+  .card {
+    background: var(--surface); border-radius: 28px; padding: 48px 40px;
+    box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 48px;
+  }
+
+  /* ── EQUATION BUILDER ── */
+  .equation-area {
+    display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; width: 100%;
+  }
+  
+  .frac-group {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; width: 80px;
+  }
+  
+  .frac-input {
+    width: 100%; font-family: 'Lexend', sans-serif; font-size: 3rem; font-weight: 800;
+    text-align: center; border: none; background: transparent; outline: none;
+    color: var(--text-main); transition: color 0.2s, transform 0.1s;
+  }
+  .frac-input:focus { transform: scale(1.1); }
+  .frac-input::-webkit-inner-spin-button, .frac-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  
+  .f1-input { color: var(--tens); }
+  .f2-input { color: var(--hundredths); }
+  
+  .frac-bar {
+    width: 100%; height: 4px; background: var(--text-main); border-radius: 2px;
+  }
+  
+  .operator {
+    font-size: 3rem; font-weight: 300; color: var(--text-gray);
+  }
+
+  .result-group {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100px;
+  }
+  .res-text {
+    font-size: 3rem; font-weight: 900; color: var(--text-main); letter-spacing: -0.04em; line-height: 1.1;
+  }
+  .res-unknown { color: var(--text-light); }
+
+  .badge {
+    font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--thousands); background: rgba(76, 187, 23, 0.1);
+    padding: 6px 12px; border-radius: 12px; margin-top: 12px;
+    opacity: 0; transform: translateY(-10px); transition: all 0.3s;
+  }
+  .badge.show { opacity: 1; transform: translateY(0); }
+
+  /* ── TOGGLE SWITCH (The Bead) ── */
+  .toggle-area {
+    height: 40px; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .toggle-area.show { opacity: 1; pointer-events: auto; }
+  
+  .toggle-track {
+    width: 64px; height: 32px; background: rgba(0,0,0,0.06); border-radius: 16px;
+    position: relative; cursor: pointer; transition: background 0.3s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .toggle-track.active { background: rgba(255, 215, 0, 0.3); } /* Faint Hundreds Gold */
+  
+  .toggle-bead {
+    position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .toggle-track.active .toggle-bead { transform: translateX(32px); }
+
+  .toggle-label {
+    font-size: 0.75rem; font-weight: 700; color: var(--text-gray); margin-left: 12px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+
+  /* ── VISUALIZERS ── */
+  .vis-container { width: 100%; display: flex; flex-direction: column; gap: 40px; }
+  
+  .vis-section {
+    display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;
+  }
+
+  svg { overflow: visible; user-select: none; }
+  .shape-stroke { stroke: var(--text-main); stroke-width: 2.5px; stroke-linejoin: round; }
+  .fill-empty { fill: #FFFFFF; }
+  
+  .fill-f1 { fill: var(--tens); }
+  .fill-f2 { fill: var(--hundredths); }
+  .fill-mix { fill: var(--thousands); } /* Result color if perfectly simplified */
+  
+  .slice-line { stroke: var(--hundreds); stroke-width: 2px; stroke-dasharray: 4 4; opacity: 0; transition: opacity 0.4s; }
+  .show-slices .slice-line { opacity: 1; }
+
+  .interactive-path { cursor: pointer; transition: fill 0.15s; }
+  .interactive-path:hover { filter: brightness(1.1); }
+  .interactive-path:active { filter: brightness(0.9); }
+
+  /* ── FOOTER ── */
+  footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); flex-shrink: 0; }
+  .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em; }
+
+  @media (max-width: 768px) {
+    .card { padding: 32px 20px; }
+    .frac-input { font-size: 2.5rem; }
+    .operator { font-size: 2.5rem; }
+    .res-text { font-size: 2.5rem; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+  </header>
+
+  <main>
+    <p class="section-label">Fraction Engine</p>
+    <div class="card">
+      
+      <div class="equation-area">
+        <div class="frac-group">
+          <input type="number" id="n1" class="frac-input f1-input" value="1" min="0">
+          <div class="frac-bar"></div>
+          <input type="number" id="d1" class="frac-input f1-input" value="2" min="1" max="12">
+        </div>
+        
+        <div class="operator">+</div>
+        
+        <div class="frac-group">
+          <input type="number" id="n2" class="frac-input f2-input" value="1" min="0">
+          <div class="frac-bar"></div>
+          <input type="number" id="d2" class="frac-input f2-input" value="3" min="1" max="12">
+        </div>
+        
+        <div class="operator">=</div>
+        
+        <div class="result-group" id="resGroup">
+          <span class="res-text res-unknown" id="resUnknown">?</span>
+          <div id="resFinal" style="display:none; flex-direction:column; align-items:center; width:100%;">
+            <span class="res-text" id="rn">0</span>
+            <div class="frac-bar"></div>
+            <span class="res-text" id="rd">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-area" id="toggleArea">
+        <div class="toggle-track" id="sliceToggle">
+          <div class="toggle-bead"></div>
+        </div>
+        <div class="toggle-label" id="toggleLabel">Slice to match</div>
+      </div>
+
+      <div class="badge" id="simpBadge"></div>
+
+      <div class="vis-container" id="visRoot">
+        <div class="vis-section" id="visBars"></div>
+        <div class="vis-section" id="visPies" style="flex-direction:row; flex-wrap:wrap; justify-content:center; gap:24px;"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+
+<script>
+  // STATE
+  const s = {
+    n1: 1, d1: 2,
+    n2: 1, d2: 3,
+    showSlices: false
+  };
+
+  // DOM
+  const inputs = ['n1', 'd1', 'n2', 'd2'].map(id => document.getElementById(id));
+  const [inN1, inD1, inN2, inD2] = inputs;
+  const toggleArea = document.getElementById('toggleArea');
+  const sliceToggle = document.getElementById('sliceToggle');
+  const visRoot = document.getElementById('visRoot');
+  const resUnknown = document.getElementById('resUnknown');
+  const resFinal = document.getElementById('resFinal');
+  const rn = document.getElementById('rn');
+  const rd = document.getElementById('rd');
+  const simpBadge = document.getElementById('simpBadge');
+  const visBars = document.getElementById('visBars');
+  const visPies = document.getElementById('visPies');
+
+  // MATH UTILS
+  const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+  const lcm = (a, b) => (a * b) / gcd(a, b);
+
+  // INIT
+  inputs.forEach(inp => inp.addEventListener('input', handleInput));
+  sliceToggle.addEventListener('click', () => {
+    s.showSlices = !s.showSlices;
+    sliceToggle.classList.toggle('active', s.showSlices);
+    visRoot.classList.toggle('show-slices', s.showSlices);
+    updateEngine();
+  });
+
+  function handleInput(e) {
+    let val = parseInt(e.target.value);
+    if(isNaN(val)) return;
+    if(e.target.id.startsWith('d') && val < 1) val = 1;
+    if(e.target.id.startsWith('d') && val > 24) val = 24;
+    s[e.target.id] = val;
+    updateEngine();
+  }
+
+  function mutateNumerator(target, delta) {
+    if (target === 1) {
+      s.n1 = Math.max(0, s.n1 + delta);
+      inN1.value = s.n1;
+    } else {
+      s.n2 = Math.max(0, s.n2 + delta);
+      inN2.value = s.n2;
+    }
+    updateEngine();
+  }
+
+  function updateEngine() {
+    const cd = lcm(s.d1, s.d2);
+    const n1_conv = s.n1 * (cd / s.d1);
+    const n2_conv = s.n2 * (cd / s.d2);
+    const sum = n1_conv + n2_conv;
+    
+    // Toggle Visibility
+    const needsSlices = s.d1 !== s.d2;
+    if (needsSlices) {
+      toggleArea.classList.add('show');
+    } else {
+      toggleArea.classList.remove('show');
+      s.showSlices = false;
+      sliceToggle.classList.remove('active');
+      visRoot.classList.remove('show-slices');
+    }
+
+    // Result Logic
+    if (!needsSlices || s.showSlices) {
+      resUnknown.style.display = 'none';
+      resFinal.style.display = 'flex';
+      rn.textContent = sum;
+      rd.textContent = cd;
+      
+      // Simplify check
+      const g = gcd(sum, cd);
+      if (g > 1 && sum > 0) {
+        const simN = sum / g;
+        const simD = cd / g;
+        if (simD === 1) {
+          simpBadge.textContent = `= ${simN}`;
+        } else {
+          const whole = Math.floor(simN / simD);
+          const rem = simN % simD;
+          simpBadge.textContent = whole >= 1 && rem > 0 ? `= ${whole} ${rem}/${simD}` : `= ${simN}/${simD}`;
+        }
+        simpBadge.classList.add('show');
+      } else if (sum > cd && sum > 0) {
+        const whole = Math.floor(sum / cd);
+        const rem = sum % cd;
+        if (whole >= 1 && rem > 0) {
+          simpBadge.textContent = `= ${whole} ${rem}/${cd}`;
+          simpBadge.classList.add('show');
+        } else {
+          simpBadge.classList.remove('show');
+        }
+      } else {
+        simpBadge.classList.remove('show');
+      }
+    } else {
+      resUnknown.style.display = 'block';
+      resFinal.style.display = 'none';
+      simpBadge.classList.remove('show');
+    }
+
+    renderVisuals(cd, sum);
+  }
+
+  // ── SVG RENDERING ──
+  const svgNS = "http://www.w3.org/2000/svg";
+
+  function createSvg(w, h, viewW, viewH) {
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", `0 0 ${viewW} ${viewH}`);
+    return svg;
+  }
+
+  function renderVisuals(cd, sum) {
+    visBars.innerHTML = '';
+    visPies.innerHTML = '';
+    
+    // Bars
+    visBars.appendChild(drawBar(s.n1, s.d1, 'fill-f1', 1, cd));
+    visBars.appendChild(drawBar(s.n2, s.d2, 'fill-f2', 2, cd));
+    
+    if (s.d1 === s.d2 || s.showSlices) {
+      visBars.appendChild(drawResultBar(sum, cd, s.n1 * (cd/s.d1), s.n2 * (cd/s.d2)));
+    }
+
+    // Pies
+    visPies.appendChild(drawPies(s.n1, s.d1, 'fill-f1', 1, cd));
+    visPies.appendChild(drawPies(s.n2, s.d2, 'fill-f2', 2, cd));
+    
+    if (s.d1 === s.d2 || s.showSlices) {
+      visPies.appendChild(drawResultPies(sum, cd, s.n1 * (cd/s.d1), s.n2 * (cd/s.d2)));
+    }
+  }
+
+  // ── BAR MODEL ──
+  function drawBar(n, d, fillClass, targetId, cd) {
+    const w = 600, h = 56, rx = 8;
+    const wholes = Math.max(1, Math.ceil(n/d));
+    const totalW = w * wholes + (wholes - 1) * 12;
+    const svg = createSvg("100%", h + 4, totalW, h + 4);
+    
+    for (let wIdx = 0; wIdx < wholes; wIdx++) {
+      const offsetX = wIdx * (w + 12);
+      
+      // Base frame
+      const frame = document.createElementNS(svgNS, "rect");
+      frame.setAttribute("x", offsetX + 2); frame.setAttribute("y", 2);
+      frame.setAttribute("width", w - 4); frame.setAttribute("height", h - 4);
+      frame.setAttribute("rx", rx);
+      frame.setAttribute("class", "shape-stroke fill-empty");
+      svg.appendChild(frame);
+
+      // Fills
+      for (let i = 0; i < d; i++) {
+        const absIdx = (wIdx * d) + i;
+        const segW = (w - 4) / d;
+        const rect = document.createElementNS(svgNS, "rect");
+        rect.setAttribute("x", offsetX + 2 + (i * segW));
+        rect.setAttribute("y", 2);
+        rect.setAttribute("width", segW);
+        rect.setAttribute("height", h - 4);
+        
+        // Edge rounding
+        if (i === 0) { rect.setAttribute("rx", rx); }
+        if (i === d - 1) { rect.setAttribute("rx", rx); }
+        
+        rect.setAttribute("class", absIdx < n ? `interactive-path ${fillClass}` : "interactive-path fill-empty");
+        rect.setAttribute("stroke", "rgba(0,0,0,0.15)");
+        rect.setAttribute("stroke-width", "1");
+        
+        rect.addEventListener('pointerdown', () => mutateNumerator(targetId, absIdx < n ? -1 : 1));
+        svg.appendChild(rect);
+      }
+
+      // Border redraw overlay for clean edges
+      const frameOverlay = document.createElementNS(svgNS, "rect");
+      frameOverlay.setAttribute("x", offsetX + 2); frameOverlay.setAttribute("y", 2);
+      frameOverlay.setAttribute("width", w - 4); frameOverlay.setAttribute("height", h - 4);
+      frameOverlay.setAttribute("rx", rx);
+      frameOverlay.setAttribute("class", "shape-stroke");
+      frameOverlay.setAttribute("fill", "none");
+      frameOverlay.style.pointerEvents = "none";
+      svg.appendChild(frameOverlay);
+
+      // Common Slice Overlays
+      if (cd !== d) {
+        for(let i = 1; i < cd; i++) {
+          if ((i * d) % cd !== 0) {
+            const lx = offsetX + 2 + i * ((w - 4) / cd);
+            const line = document.createElementNS(svgNS, "line");
+            line.setAttribute("x1", lx); line.setAttribute("x2", lx);
+            line.setAttribute("y1", 2); line.setAttribute("y2", h - 2);
+            line.setAttribute("class", "slice-line");
+            line.style.pointerEvents = "none";
+            svg.appendChild(line);
+          }
+        }
+      }
+    }
+    return svg;
+  }
+
+  function drawResultBar(sum, cd, v1, v2) {
+    const w = 600, h = 56, rx = 8;
+    const wholes = Math.max(1, Math.ceil(sum/cd));
+    const totalW = w * wholes + (wholes - 1) * 12;
+    const svg = createSvg("100%", h + 4, totalW, h + 4);
+    
+    let rem1 = v1, rem2 = v2;
+
+    for (let wIdx = 0; wIdx < wholes; wIdx++) {
+      const offsetX = wIdx * (w + 12);
+      
+      const frame = document.createElementNS(svgNS, "rect");
+      frame.setAttribute("x", offsetX + 2); frame.setAttribute("y", 2);
+      frame.setAttribute("width", w - 4); frame.setAttribute("height", h - 4);
+      frame.setAttribute("rx", rx);
+      frame.setAttribute("class", "shape-stroke fill-empty");
+      svg.appendChild(frame);
+
+      // Fill logic for Result
+      for(let i = 0; i < cd; i++) {
+        const segW = (w - 4) / cd;
+        const rect = document.createElementNS(svgNS, "rect");
+        rect.setAttribute("x", offsetX + 2 + (i * segW));
+        rect.setAttribute("y", 2);
+        rect.setAttribute("width", segW);
+        rect.setAttribute("height", h - 4);
+        
+        if (i === 0) rect.setAttribute("rx", rx);
+        if (i === cd - 1) rect.setAttribute("rx", rx);
+        
+        if (rem1 > 0) {
+          rect.setAttribute("class", "fill-f1");
+          rem1--;
+        } else if (rem2 > 0) {
+          rect.setAttribute("class", "fill-f2");
+          rem2--;
+        } else {
+          rect.setAttribute("class", "fill-empty");
+        }
+        
+        rect.setAttribute("stroke", "rgba(0,0,0,0.15)");
+        rect.setAttribute("stroke-width", "1");
+        svg.appendChild(rect);
+      }
+
+      const frameOverlay = document.createElementNS(svgNS, "rect");
+      frameOverlay.setAttribute("x", offsetX + 2); frameOverlay.setAttribute("y", 2);
+      frameOverlay.setAttribute("width", w - 4); frameOverlay.setAttribute("height", h - 4);
+      frameOverlay.setAttribute("rx", rx);
+      frameOverlay.setAttribute("class", "shape-stroke");
+      frameOverlay.setAttribute("fill", "none");
+      svg.appendChild(frameOverlay);
+    }
+    return svg;
+  }
+
+  // ── CIRCLE MODEL ──
+  function drawPies(n, d, fillClass, targetId, cd) {
+    const r = 48, cx = 52, cy = 52, size = 104;
+    const wholes = Math.max(1, Math.ceil(n/d));
+    const container = document.createElement('div');
+    container.style.display = 'flex'; container.style.gap = '12px';
+    
+    for (let wIdx = 0; wIdx < wholes; wIdx++) {
+      const svg = createSvg(`${size}px`, `${size}px`, size, size);
+      
+      const bg = document.createElementNS(svgNS, "circle");
+      bg.setAttribute("cx", cx); bg.setAttribute("cy", cy); bg.setAttribute("r", r);
+      bg.setAttribute("class", "shape-stroke fill-empty");
+      svg.appendChild(bg);
+
+      for (let i = 0; i < d; i++) {
+        const absIdx = (wIdx * d) + i;
+        const startA = (i * 360 / d) - 90;
+        const endA = ((i + 1) * 360 / d) - 90;
+        
+        // Use full circle if denominator is 1
+        if (d === 1) {
+            const circle = document.createElementNS(svgNS, "circle");
+            circle.setAttribute("cx", cx); circle.setAttribute("cy", cy); circle.setAttribute("r", r);
+            circle.setAttribute("class", absIdx < n ? `interactive-path ${fillClass}` : "interactive-path fill-empty");
+            circle.addEventListener('pointerdown', () => mutateNumerator(targetId, absIdx < n ? -1 : 1));
+            svg.appendChild(circle);
+        } else {
+            const x1 = cx + r * Math.cos(startA * Math.PI / 180);
+            const y1 = cy + r * Math.sin(startA * Math.PI / 180);
+            const x2 = cx + r * Math.cos(endA * Math.PI / 180);
+            const y2 = cy + r * Math.sin(endA * Math.PI / 180);
+            const large = (endA - startA) > 180 ? 1 : 0;
+            
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`);
+            path.setAttribute("class", absIdx < n ? `interactive-path ${fillClass}` : "interactive-path fill-empty");
+            path.setAttribute("stroke", "rgba(0,0,0,0.15)");
+            path.setAttribute("stroke-width", "1");
+            
+            path.addEventListener('pointerdown', () => mutateNumerator(targetId, absIdx < n ? -1 : 1));
+            svg.appendChild(path);
+        }
+      }
+
+      const overlay = document.createElementNS(svgNS, "circle");
+      overlay.setAttribute("cx", cx); overlay.setAttribute("cy", cy); overlay.setAttribute("r", r);
+      overlay.setAttribute("class", "shape-stroke"); overlay.setAttribute("fill", "none");
+      overlay.style.pointerEvents = "none";
+      svg.appendChild(overlay);
+
+      // Common Slices
+      if (cd !== d && d !== 1) {
+        for(let i = 0; i < cd; i++) {
+          if ((i * d) % cd !== 0) {
+            const angle = (i * 360 / cd) - 90;
+            const lx = cx + r * Math.cos(angle * Math.PI / 180);
+            const ly = cy + r * Math.sin(angle * Math.PI / 180);
+            const line = document.createElementNS(svgNS, "line");
+            line.setAttribute("x1", cx); line.setAttribute("y1", cy);
+            line.setAttribute("x2", lx); line.setAttribute("y2", ly);
+            line.setAttribute("class", "slice-line");
+            line.style.pointerEvents = "none";
+            svg.appendChild(line);
+          }
+        }
+      }
+      container.appendChild(svg);
+    }
+    return container;
+  }
+
+  function drawResultPies(sum, cd, v1, v2) {
+    const r = 48, cx = 52, cy = 52, size = 104;
+    const wholes = Math.max(1, Math.ceil(sum/cd));
+    const container = document.createElement('div');
+    container.style.display = 'flex'; container.style.gap = '12px';
+    
+    let rem1 = v1, rem2 = v2;
+
+    for (let wIdx = 0; wIdx < wholes; wIdx++) {
+      const svg = createSvg(`${size}px`, `${size}px`, size, size);
+      
+      const bg = document.createElementNS(svgNS, "circle");
+      bg.setAttribute("cx", cx); bg.setAttribute("cy", cy); bg.setAttribute("r", r);
+      bg.setAttribute("class", "shape-stroke fill-empty");
+      svg.appendChild(bg);
+
+      for (let i = 0; i < cd; i++) {
+        const startA = (i * 360 / cd) - 90;
+        const endA = ((i + 1) * 360 / cd) - 90;
+        
+        let fillClass = "fill-empty";
+        if (rem1 > 0) { fillClass = "fill-f1"; rem1--; }
+        else if (rem2 > 0) { fillClass = "fill-f2"; rem2--; }
+        
+        if (cd === 1) {
+            const circle = document.createElementNS(svgNS, "circle");
+            circle.setAttribute("cx", cx); circle.setAttribute("cy", cy); circle.setAttribute("r", r);
+            circle.setAttribute("class", fillClass);
+            svg.appendChild(circle);
+        } else {
+            const x1 = cx + r * Math.cos(startA * Math.PI / 180);
+            const y1 = cy + r * Math.sin(startA * Math.PI / 180);
+            const x2 = cx + r * Math.cos(endA * Math.PI / 180);
+            const y2 = cy + r * Math.sin(endA * Math.PI / 180);
+            const large = (endA - startA) > 180 ? 1 : 0;
+            
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`);
+            path.setAttribute("class", fillClass);
+            path.setAttribute("stroke", "rgba(0,0,0,0.15)");
+            path.setAttribute("stroke-width", "1");
+            svg.appendChild(path);
+        }
+      }
+
+      const overlay = document.createElementNS(svgNS, "circle");
+      overlay.setAttribute("cx", cx); overlay.setAttribute("cy", cy); overlay.setAttribute("r", r);
+      overlay.setAttribute("class", "shape-stroke"); overlay.setAttribute("fill", "none");
+      svg.appendChild(overlay);
+
+      container.appendChild(svg);
+    }
+    return container;
+  }
+
+  // BOOT
+  updateEngine();
+
+</script>
+</body>
+</html>

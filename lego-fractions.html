@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math Things. | Snap Bricks</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Math Things Brand System */
+    --bg: #F5F5F7;
+    --glass: rgba(245,245,247,0.85);
+    --surface: #FFFFFF;
+    --text-main: #1D1D1F;
+    --text-gray: #86868B;
+    --text-light: #AEAEB2;
+    --border: rgba(0,0,0,0.05);
+    --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+    
+    /* Master Palette */
+    --thousands:   #4CBB17; /* Green (Success/Reduced) */
+    --tens:        #4169E1; /* Blue (Frac 1) */
+    --hundredths:  #FF9F0A; /* Orange (Frac 2) */
+
+    /* Classic Brick Geometry */
+    --unit: 36px; 
+    --brick-h: 42px;
+    --stud-w: 22px;
+    --stud-h: 10px;
+    --outline: #1D1D1F;
+    --brick-base: #555555;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lexend', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .logo {
+    display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default;
+  }
+  .logo-bead {
+    width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    flex: 1; max-width: 1000px; width: 100%; margin: 0 auto;
+    padding: 40px 24px; display: flex; flex-direction: column;
+  }
+  .card {
+    background: var(--surface); border-radius: 28px; padding: 40px;
+    box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 32px;
+    overflow: hidden;
+  }
+
+  /* ── SEGMENTED CONTROL (TABS) ── */
+  .seg-control {
+    display: flex; background: rgba(0,0,0,0.04); padding: 4px; border-radius: 20px;
+    gap: 4px; margin-bottom: 8px;
+  }
+  .seg-btn {
+    width: 64px; height: 44px; border-radius: 16px; border: none; background: transparent;
+    color: var(--text-gray); cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .seg-btn svg { width: 24px; height: 24px; fill: currentColor; }
+  .seg-btn.active {
+    background: var(--surface); color: var(--text-main);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* ── CONTROLS UI ── */
+  .controls-panel {
+    display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
+    background: var(--bg); padding: 16px 24px; border-radius: 24px; border: 1px solid var(--border);
+    width: 100%; max-width: 800px; min-height: 120px; position: relative;
+  }
+
+  /* Stacked Fractions */
+  .frac-stack {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; width: 64px;
+  }
+  .frac-input {
+    width: 100%; font-family: 'Lexend', sans-serif; font-size: 2.2rem; font-weight: 800;
+    text-align: center; border: none; background: transparent; outline: none;
+    color: var(--text-main); transition: transform 0.1s, color 0.2s;
+    padding: 0; margin: 0; line-height: 1;
+  }
+  .frac-input:focus { transform: scale(1.15); }
+  .frac-input::-webkit-inner-spin-button, .frac-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  
+  .f1-color { color: var(--tens); }
+  .f2-color { color: var(--hundredths); }
+  
+  .frac-bar { width: 100%; height: 4px; background: var(--text-main); border-radius: 2px; }
+  .operator { font-size: 2.5rem; font-weight: 400; color: var(--text-gray); margin: 0 8px; }
+  
+  .val-text { font-size: 2.2rem; font-weight: 900; color: var(--text-main); line-height: 1; }
+
+  /* Icon Buttons */
+  .icon-btn {
+    width: 44px; height: 44px; border-radius: 14px; cursor: pointer; border: 2px solid var(--border);
+    background: var(--surface); color: var(--text-main);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+    box-shadow: 0 2px 0 var(--border);
+  }
+  .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  .icon-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 var(--border); }
+  .icon-btn.active-state { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .reset-btn {
+    position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; box-shadow: none; color: var(--text-light);
+  }
+  .reset-btn:hover { color: var(--text-gray); }
+  .reset-btn:active { transform: translateY(-50%) scale(0.9); }
+
+  .group-separator { width: 2px; height: 40px; background: var(--border); margin: 0 16px; border-radius: 1px; }
+
+  /* ── TOGGLES ── */
+  .toggle-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0 12px; }
+  .toggle-icon { width: 28px; height: 28px; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
+  .toggle-icon svg { width: 100%; height: 100%; fill: currentColor; }
+  
+  .toggle-track {
+    width: 54px; height: 30px; background: rgba(0,0,0,0.08); border-radius: 15px;
+    position: relative; transition: background 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .toggle-track.active { background: rgba(0, 122, 255, 0.2); }
+  .toggle-bead {
+    position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .toggle-track.active .toggle-bead { transform: translateX(24px); }
+
+  .slider-group { display: flex; align-items: center; gap: 16px; border-left: 2px solid var(--border); padding-left: 20px; }
+
+  /* ── STAGE & CLASSIC BRICKS ── */
+  .stage {
+    width: 100%; min-height: 400px; padding: 40px;
+    background: white; border-radius: 20px;
+    border: 2px solid var(--border);
+    position: relative; overflow-x: auto;
+  }
+
+  .row { display: flex; height: 100px; position: relative; margin-bottom: 40px; align-items: flex-end; }
+
+  /* Baseplate */
+  .brick {
+    position: relative; height: var(--brick-h); border: 2px solid var(--outline);
+    background-color: var(--brick-base); box-sizing: border-box;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+  }
+
+  .brick.hidden-base { background-color: transparent; border-color: transparent; pointer-events: none; }
+  .brick.hidden-base > .stud-container .stud-inner { visibility: hidden; }
+  .brick.scaffold-base { background-color: transparent; border: 2px dashed #AEAEB2; visibility: visible; }
+  .brick.scaffold-base > .stud-container .stud-inner { border-style: dashed; border-color: #AEAEB2; background-color: transparent; visibility: visible; }
+
+  /* Numerator Block */
+  .num-brick { 
+    height: var(--brick-h); position: absolute; bottom: calc(100% - 2px); left: -2px; z-index: 20;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid var(--outline); border-right: none; box-sizing: border-box;
+    border-radius: 4px 0 0 4px;
+  }
+  .num-brick.last-in-cluster { border-right: 2px solid var(--outline); border-radius: 4px; }
+
+  /* Studs */
+  .stud-container { position: absolute; top: calc(var(--stud-h) * -1); left: 0; width: 100%; height: var(--stud-h); display: flex; z-index: 5; }
+  .stud { height: var(--stud-h); display: flex; justify-content: center; }
+  .stud-inner { 
+    width: var(--stud-w); height: 100%; 
+    border: 2px solid var(--outline); border-bottom: none; 
+    border-radius: 3px 3px 0 0; box-sizing: border-box; 
+  }
+
+  /* Colors */
+  .color-blue { background-color: var(--tens); }
+  .color-blue .stud-inner { background-color: var(--tens); }
+  .color-orange { background-color: var(--hundredths); }
+  .color-orange .stud-inner { background-color: var(--hundredths); }
+  .color-green { background-color: var(--thousands); }
+  .color-green .stud-inner { background-color: var(--thousands); }
+
+  /* Fused / Separated Logic */
+  .row.fused-add .brick, .row.reducing-mode .brick { border-right: none; border-left: none; border-radius: 0; }
+  .row.fused-add .brick:first-child, .row.reducing-mode .brick:first-child { border-left: 2px solid var(--outline); border-radius: 4px 0 0 4px; }
+  .row.fused-add .brick:last-of-type, .row.reducing-mode .brick:last-of-type { border-right: 2px solid var(--outline); border-radius: 0 4px 4px 0; }
+  .row.separated .brick { margin-right: 20px; border-radius: 4px; border-left: 2px solid var(--outline); border-right: 2px solid var(--outline); }
+
+  /* Alignment Laser */
+  #laser { 
+    position: absolute; top: 0; bottom: 0; width: 4px; background: transparent; 
+    left: 0; z-index: 30; transition: left 0.3s ease; 
+  }
+  #laser.aligned { background: var(--thousands); box-shadow: 0 0 12px var(--thousands); }
+
+  /* Ghost Bricks (The on-stage controls) */
+  .ghost-brick {
+    height: var(--brick-h); box-sizing: border-box;
+    border: 2.5px dashed var(--text-light); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-light); transition: all 0.2s;
+    margin-left: 8px; z-index: 10;
+  }
+  .ghost-brick:hover { border-color: var(--text-main); color: var(--text-main); background: rgba(0,0,0,0.02); transform: scale(1.02); }
+  .ghost-brick:active { transform: scale(0.95); }
+  .ghost-brick svg { width: 28px; height: 28px; fill: currentColor; }
+
+  /* Stage Action Button (The Merge Drop) */
+  .stage-action {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--text-main); color: white; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 50;
+  }
+  .stage-action:hover { transform: translate(-50%, -50%) scale(1.1); }
+  .stage-action:active { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .stage-action svg { width: 28px; height: 28px; fill: currentColor; }
+
+  /* ── FOOTER ── */
+  footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); flex-shrink: 0; }
+  .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em; }
+
+  @media (max-width: 768px) {
+    .controls-panel { padding: 16px; padding-right: 60px; }
+    .frac-input { font-size: 1.8rem; }
+    .stage { padding: 20px; min-height: 350px; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+  </header>
+
+  <main>
+    <div class="card">
+      
+      <div class="seg-control">
+        <button id="tab-add" class="seg-btn active" onclick="switchTab('add')">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </button>
+        <button id="tab-mixed" class="seg-btn" onclick="switchTab('mixed')">
+          <svg viewBox="0 0 24 24">
+            <rect x="4" y="5" width="4" height="4" rx="0.5"/>
+            <rect x="10" y="5" width="4" height="4" rx="0.5"/>
+            <rect x="16" y="5" width="4" height="4" rx="0.5"/>
+            <rect x="2" y="11" width="20" height="2" rx="1"/>
+            <rect x="7" y="15" width="4" height="4" rx="0.5"/>
+            <rect x="13" y="15" width="4" height="4" rx="0.5"/>
+          </svg>
+        </button>
+        <button id="tab-reduce" class="seg-btn" onclick="switchTab('reduce')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><rect x="4" y="10.5" width="16" height="3" rx="1.5"/></svg>
+        </button>
+      </div>
+
+      <div id="add-controls" class="controls-panel">
+        <button class="icon-btn reset-btn" onclick="reset('add')" title="Reset"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+
+        <div class="frac-stack">
+          <input type="number" id="n1" class="frac-input f1-color" value="1" oninput="reset('add')">
+          <div class="frac-bar"></div>
+          <input type="number" id="d1" class="frac-input" value="4" oninput="reset('add')">
+        </div>
+        
+        <div class="operator">+</div>
+        
+        <div class="frac-stack">
+          <input type="number" id="n2" class="frac-input f2-color" value="1" oninput="reset('add')">
+          <div class="frac-bar"></div>
+          <input type="number" id="d2" class="frac-input" value="3" oninput="reset('add')">
+        </div>
+
+        <div id="res-eq" style="display:none; align-items:center; gap:16px;"></div>
+      </div>
+
+      <div id="mixed-controls" class="controls-panel" style="display:none">
+        <button class="icon-btn reset-btn" onclick="reset('mixed')" title="Reset"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+
+        <div class="frac-stack">
+          <input type="number" id="mn-n" class="frac-input f1-color" value="9" oninput="reset('mixed')">
+          <div class="frac-bar"></div>
+          <input type="number" id="mn-d" class="frac-input" value="4" oninput="reset('mixed')">
+        </div>
+        
+        <div class="group-separator"></div>
+
+        <div class="toggle-wrap" onclick="toggleScaffold()">
+          <div class="toggle-icon">
+            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="8" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/></svg>
+          </div>
+          <div class="toggle-track" id="scaffold-track"><div class="toggle-bead"></div></div>
+          <div class="toggle-icon">
+            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="8"/></svg>
+          </div>
+        </div>
+
+        <div class="group-separator"></div>
+
+        <div class="toggle-wrap" onclick="toggleBreak()">
+          <div class="toggle-icon">
+            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="8"/></svg>
+          </div>
+          <div class="toggle-track" id="break-track"><div class="toggle-bead"></div></div>
+          <div class="toggle-icon">
+            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="6" height="8"/><rect x="14" y="8" width="6" height="8"/></svg>
+          </div>
+        </div>
+        
+        <div id="res-mixed" style="display:none; align-items:center; gap:16px;"></div>
+      </div>
+
+      <div id="reduce-controls" class="controls-panel" style="display:none">
+        <button class="icon-btn reset-btn" onclick="reset('reduce')" title="Reset"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+
+        <div class="frac-stack">
+          <input type="number" id="red-n" class="frac-input f1-color" value="4" oninput="render()">
+          <div class="frac-bar"></div>
+          <input type="number" id="red-d" class="frac-input" value="8" oninput="render()">
+        </div>
+        
+        <div class="group-separator"></div>
+
+        <div class="slider-group">
+            <div class="toggle-icon">
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="6" width="18" height="12" fill="none" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="6" x2="9" y2="18" stroke="currentColor" stroke-width="2"/>
+                <line x1="15" y1="6" x2="15" y2="18" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <input type="range" id="divisor" min="1" max="12" value="1" oninput="render()" style="accent-color: var(--accent); width: 120px;">
+            <span id="divisor-val" style="font-family:'Lexend'; font-weight: 800; font-size:2rem; color:var(--text-main); width:40px; text-align:center;">1</span>
+        </div>
+
+        <div id="res-red" style="display:none; align-items:center; gap:16px;"></div>
+      </div>
+
+      <div class="stage" id="stage">
+          <div id="laser"></div>
+          <div id="row1" class="row"></div>
+          <div id="row2" class="row"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    Math Things<span class="footer-bead"></span>  |  Math, in your hands<span class="footer-bead"></span>
+  </footer>
+
+<script>
+    let tab = 'add';
+    let c1 = 1, c2 = 1, fused = false, poured = false;
+    let scaffold = false, separated = false;
+    const UNIT = 36; 
+    const DROP_DIST = 140; // 100px row height + 40px margin
+
+    function switchTab(t) {
+        tab = t;
+        document.querySelectorAll('.seg-btn').forEach(el => el.classList.toggle('active', el.id === 'tab-'+t));
+        document.getElementById('add-controls').style.display = t === 'add' ? 'flex' : 'none';
+        document.getElementById('mixed-controls').style.display = t === 'mixed' ? 'flex' : 'none';
+        document.getElementById('reduce-controls').style.display = t === 'reduce' ? 'flex' : 'none';
+        render();
+    }
+
+    function reset(type) {
+        if(type === 'add') { 
+            c1=1; c2=1; fused=false; poured=false; 
+            document.getElementById('n1').value = 1;
+            document.getElementById('d1').value = 4;
+            document.getElementById('n2').value = 1;
+            document.getElementById('d2').value = 3;
+        }
+        if(type === 'mixed') { 
+            scaffold=false; separated=false; 
+            document.getElementById('mn-n').value = 9;
+            document.getElementById('mn-d').value = 4;
+        }
+        if(type === 'reduce') { 
+            document.getElementById('red-n').value = 4;
+            document.getElementById('red-d').value = 8;
+            document.getElementById('divisor').value = 1;
+        }
+        render();
+    }
+    
+    function toggleScaffold() { 
+        scaffold = !scaffold; 
+        document.getElementById('scaffold-track').classList.toggle('active', scaffold);
+        render(); 
+    }
+    
+    function toggleBreak() { 
+        separated = !separated; 
+        document.getElementById('break-track').classList.toggle('active', separated);
+        render(); 
+    }
+
+    function createStuds(count, colorClass = '', widthFactor = 1) {
+        const container = document.createElement('div');
+        container.className = 'stud-container';
+        for(let i=0; i<count; i++) {
+            const s = document.createElement('div');
+            s.className = 'stud';
+            s.style.width = (UNIT * widthFactor) + 'px';
+            const inner = document.createElement('div');
+            inner.className = `stud-inner ${colorClass}`;
+            s.appendChild(inner);
+            container.appendChild(s);
+        }
+        return container;
+    }
+
+    function render() {
+        const r1 = document.getElementById('row1');
+        const r2 = document.getElementById('row2');
+        const laser = document.getElementById('laser');
+        r1.innerHTML = ''; r2.innerHTML = ''; laser.style.display = 'none';
+        
+        const oldMergeBtn = document.getElementById('merge-action');
+        if(oldMergeBtn) oldMergeBtn.remove();
+
+        if (tab === 'add') renderAddition(r1, r2, laser);
+        else if (tab === 'mixed') renderMixed(r1);
+        else renderReducing(r1);
+    }
+
+    function renderAddition(r1, r2, laser) {
+        const n1 = Math.max(0, parseInt(document.getElementById('n1').value) || 0); 
+        const d1 = Math.max(1, parseInt(document.getElementById('d1').value) || 1);
+        const n2 = Math.max(0, parseInt(document.getElementById('n2').value) || 0); 
+        const d2 = Math.max(1, parseInt(document.getElementById('d2').value) || 1);
+        const match = (c1*d1 === c2*d2);
+
+        r1.className = `row ${fused ? 'fused-add' : ''}`;
+        r2.className = `row ${fused ? 'fused-add' : ''}`;
+
+        const draw = (el, count, den, numPer, isTop, colorClass) => {
+            for(let i=0; i<count; i++) {
+                const block = document.createElement('div');
+                block.className = 'brick';
+                block.style.width = (den * UNIT) + 'px';
+                block.appendChild(createStuds(den));
+                
+                for(let j=0; j<numPer; j++) {
+                    const num = document.createElement('div');
+                    num.className = `num-brick ${colorClass}`;
+                    num.appendChild(createStuds(1));
+                    num.style.width = UNIT + 'px';
+                    
+                    let x = j * UNIT, y = 0;
+                    const idx = (i * numPer) + j;
+                    
+                    if (fused) {
+                        x = (idx * UNIT) - (i * den * UNIT);
+                        if (poured && isTop) { y = DROP_DIST; x += (c2*n2*UNIT); } 
+                    }
+                    
+                    if (idx === (count*numPer)-1 || (poured && isTop && idx === (c1*n1)-1)) num.classList.add('last-in-cluster');
+                    if (poured && !isTop && idx === (c2*n2)-1) num.classList.remove('last-in-cluster');
+                    
+                    num.style.transform = `translate(${x}px, ${y}px)`;
+                    block.appendChild(num);
+                }
+                el.appendChild(block);
+            }
+            
+            if (!match && !fused) {
+                const ghost = document.createElement('div');
+                ghost.className = 'ghost-brick';
+                ghost.style.width = (den * UNIT) + 'px';
+                ghost.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
+                ghost.onclick = () => { isTop ? c1++ : c2++; render(); };
+                el.appendChild(ghost);
+            }
+        }
+        
+        draw(r1, c1, d1, n1, true, 'color-blue');
+        draw(r2, c2, d2, n2, false, 'color-orange');
+        
+        laser.style.display = 'block';
+        const alignedX = Math.max(c1*d1, c2*d2)*UNIT;
+        laser.style.left = (alignedX + 40) + 'px'; 
+        match ? laser.classList.add('aligned') : laser.classList.remove('aligned');
+        
+        if (match && !poured) {
+            const mergeBtn = document.createElement('button');
+            mergeBtn.id = 'merge-action';
+            mergeBtn.className = 'stage-action';
+            mergeBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4z"/><rect x="6" y="18" width="12" height="2" rx="1"/></svg>';
+            mergeBtn.style.left = (alignedX + 40) + 'px';
+            mergeBtn.onclick = () => { fused = true; poured = true; render(); };
+            document.getElementById('stage').appendChild(mergeBtn);
+        }
+
+        const resEq = document.getElementById('res-eq');
+        if (poured) {
+            const total = (c1*n1) + (c2*n2), den = c1*d1;
+            resEq.innerHTML = `
+                <div class="operator">=</div>
+                <div class="frac-stack">
+                    <div class="val-text" style="color:var(--thousands)">${total}</div>
+                    <div class="frac-bar"></div>
+                    <div class="val-text">${den}</div>
+                </div>
+            `;
+            resEq.style.display = 'flex';
+        } else {
+            resEq.style.display = 'none';
+        }
+    }
+
+    function renderMixed(r1) {
+        const n = Math.max(0, parseInt(document.getElementById('mn-n').value) || 0);
+        const d = Math.max(1, parseInt(document.getElementById('mn-d').value) || 1);
+        const total = Math.ceil(n / d);
+        r1.className = `row ${separated ? 'separated' : ''}`;
+        
+        for(let i=0; i<total; i++) {
+            const block = document.createElement('div');
+            block.className = 'brick';
+            if (i > 0 && !separated) block.classList.add(scaffold ? 'scaffold-base' : 'hidden-base');
+            block.style.width = (d * UNIT) + 'px';
+            
+            const studContainer = createStuds(d);
+            if (i > 0 && !separated && !scaffold) studContainer.style.visibility = 'hidden';
+            block.appendChild(studContainer);
+
+            for(let j=0; j<d; j++) {
+                const idx = (i * d) + j;
+                if (idx < n) {
+                    const num = document.createElement('div');
+                    num.className = 'num-brick color-blue';
+                    num.style.width = UNIT + 'px';
+                    num.appendChild(createStuds(1));
+                    if (idx === n-1 || j === d-1) num.classList.add('last-in-cluster');
+                    num.style.transform = `translateX(${j * UNIT}px)`;
+                    block.appendChild(num);
+                }
+            }
+            r1.appendChild(block);
+        }
+        
+        const resMixed = document.getElementById('res-mixed');
+        if (separated) {
+            const w = Math.floor(n/d);
+            const r = n%d;
+            resMixed.innerHTML = `
+                <div class="group-separator"></div>
+                <div class="operator">=</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    ${w > 0 ? `<div class="val-text" style="color:var(--tens)">${w}</div>` : ''}
+                    ${r > 0 ? `
+                      <div class="frac-stack">
+                        <div class="val-text" style="color:var(--tens)">${r}</div>
+                        <div class="frac-bar"></div>
+                        <div class="val-text">${d}</div>
+                      </div>
+                    ` : ''}
+                </div>
+            `;
+            resMixed.style.display = 'flex';
+        } else {
+            resMixed.style.display = 'none';
+        }
+    }
+
+    function renderReducing(r1) {
+        const n = Math.max(0, parseInt(document.getElementById('red-n').value) || 0);
+        const d = Math.max(1, parseInt(document.getElementById('red-d').value) || 1);
+        const g = parseInt(document.getElementById('divisor').value);
+        document.getElementById('divisor-val').innerText = g;
+        
+        r1.className = 'row reducing-mode';
+
+        const block = document.createElement('div');
+        block.className = 'brick';
+        block.style.width = (d * UNIT) + 'px';
+        
+        const numSegments = Math.floor(d / g);
+        const remainder = d % g;
+        block.appendChild(createStuds(numSegments, '', g));
+        if(remainder > 0) block.appendChild(createStuds(1, '', remainder));
+        r1.appendChild(block);
+
+        const success = (n % g === 0 && d % g === 0 && g > 1);
+        const colorClass = success ? 'color-green' : 'color-blue';
+
+        const fullBigBlocks = Math.floor(n / g);
+        const leftOverUnits = n % g;
+
+        for(let i=0; i < fullBigBlocks; i++) {
+            const num = document.createElement('div');
+            num.className = `num-brick ${colorClass}`;
+            num.style.width = (g * UNIT) + 'px';
+            num.appendChild(createStuds(1, '', g));
+            num.style.transform = `translateX(${i * g * UNIT}px)`;
+            if (i === fullBigBlocks - 1 && leftOverUnits === 0) num.classList.add('last-in-cluster');
+            block.appendChild(num);
+        }
+        if(leftOverUnits > 0) {
+            const num = document.createElement('div');
+            num.className = `num-brick ${colorClass}`;
+            num.style.width = (leftOverUnits * UNIT) + 'px';
+            num.appendChild(createStuds(1, '', leftOverUnits));
+            num.style.transform = `translateX(${fullBigBlocks * g * UNIT}px)`;
+            num.classList.add('last-in-cluster');
+            block.appendChild(num);
+        }
+
+        const resRed = document.getElementById('res-red');
+        if (success) {
+            resRed.innerHTML = `
+                <div class="group-separator"></div>
+                <div class="operator">=</div>
+                <div class="frac-stack">
+                    <div class="val-text" style="color:var(--thousands)">${n/g}</div>
+                    <div class="frac-bar"></div>
+                    <div class="val-text">${d/g}</div>
+                </div>
+            `;
+            resRed.style.display = 'flex';
+        } else {
+            resRed.style.display = 'none';
+        }
+    }
+
+    // Boot
+    render();
+</script>
+</body>
+</html>
