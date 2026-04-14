@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Fraction Bars Ultimate</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg-color: #f3f4f6;
+      --text-color: #1f2937;
+      --panel-bg: #ffffff;
+      --border-color: #111827;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* --- TOP TOOLBAR --- */
+    #topBar {
+      background: #1f2937;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 60;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tool-group { display: flex; align-items: center; gap: 15px; }
+    .toggle-label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; user-select: none; }
+    
+    input[type="checkbox"] { transform: scale(1.2); cursor: pointer; accent-color: #3b82f6; }
+
+    #totalDisplay {
+      background: #374151;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1.1rem;
+      min-width: 80px;
+      text-align: center;
+      border: 1px solid #4b5563;
+    }
+    .hidden { visibility: hidden; opacity: 0; transition: opacity 0.2s; }
+
+    /* --- WORK AREA --- */
+    #workPane {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px 20px 100px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    #barsWrapper {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* --- RULER --- */
+    #rulerLine {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #ef4444;
+      border-left: 1px dashed rgba(255,255,255,0.5);
+      pointer-events: none;
+      z-index: 50;
+      display: none; 
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+    #rulerLabel {
+      position: absolute;
+      top: -25px;
+      left: -20px;
+      background: #ef4444;
+      color: white;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* --- FRACTION BARS --- */
+    .fraction-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      /* Animation for adding new bars */
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .row-label {
+      width: 50px;
+      text-align: right;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #6b7280;
+    }
+
+    .fraction-bar {
+      flex: 1;
+      height: 55px;
+      display: flex;
+      border: 2px solid var(--border-color); 
+      background: transparent; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    .segment {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #111827; 
+      
+      /* Default State: The "Base" Color */
+      background-color: var(--bar-base);
+      
+      border-right: 2px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease, transform 0.1s;
+    }
+    .segment:last-child { border-right: none; }
+
+    .segment:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Selected State: The "Highlighter" Color */
+    .segment.selected {
+      background-color: var(--bar-highlight) !important;
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,0.3); 
+    }
+    
+    /* --- FOOTER CONTROLS --- */
+    #controls {
+      background: #ffffff;
+      border-top: 1px solid #e5e7eb;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+      z-index: 100;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      font-family: 'Lexend', sans-serif;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    button:active { transform: translateY(1px); }
+
+    .preset-btn {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+    .preset-btn:hover { background: #e5e7eb; }
+
+    .custom-group {
+      display: flex;
+      gap: 5px;
+      background: #f3f4f6;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+    }
+    #customInput {
+      width: 60px;
+      padding: 4px 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-family: 'Lexend', sans-serif;
+    }
+    .add-btn { background: #3b82f6; color: white; }
+    .add-btn:hover { background: #2563eb; }
+
+    .reset-btn { background: #ef4444; color: white; }
+    .reset-btn:hover { background: #dc2626; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Top Settings Bar -->
+  <div id="topBar">
+    <div class="tool-group">
+      <label class="toggle-label">
+        <input type="checkbox" id="rulerToggle"> 
+        <span>Ruler Tool</span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="totalToggle" checked> 
+        <span>Show Decimal</span>
+      </label>
+    </div>
+    <div id="totalDisplay">Total: 0</div>
+  </div>
+
+  <!-- Work Area -->
+  <div id="workPane">
+    <div id="rulerLine"><div id="rulerLabel"></div></div>
+    
+    <div id="barsWrapper">
+      <!-- Bars injected here via JS -->
+    </div>
+  </div>
+
+  <!-- Bottom Controls -->
+  <div id="controls">
+    <div class="control-row">
+      <button class="preset-btn" onclick="addBar(2)">1/2</button>
+      <button class="preset-btn" onclick="addBar(3)">1/3</button>
+      <button class="preset-btn" onclick="addBar(4)">1/4</button>
+      <button class="preset-btn" onclick="addBar(5)">1/5</button>
+      <button class="preset-btn" onclick="addBar(6)">1/6</button>
+      <button class="preset-btn" onclick="addBar(8)">1/8</button>
+      <button class="preset-btn" onclick="addBar(10)">1/10</button>
+      <button class="preset-btn" onclick="addBar(12)">1/12</button>
+    </div>
+    
+    <div class="control-row">
+      <div class="custom-group">
+        <input type="number" id="customInput" placeholder="#" min="1" max="50">
+        <button class="add-btn" id="addCustomBtn">Add</button>
+      </div>
+      <button class="reset-btn" onclick="resetApp()">Clear All</button>
+    </div>
+  </div>
+
+  <script>
+    let bars = []; 
+    
+    const wrapper = document.getElementById('barsWrapper');
+    const rulerLine = document.getElementById('rulerLine');
+    const rulerLabel = document.getElementById('rulerLabel');
+    const totalDisplay = document.getElementById('totalDisplay');
+    
+    // --- COLOR SYSTEM ---
+    function getColors(n) {
+      const map = {
+        1:  { base: '#ef4444', highlight: '#fca5a5' },
+        2:  { base: '#f97316', highlight: '#fdba74' },
+        3:  { base: '#f59e0b', highlight: '#fde047' },
+        4:  { base: '#eab308', highlight: '#fef08a' },
+        5:  { base: '#84cc16', highlight: '#bef264' },
+        6:  { base: '#22c55e', highlight: '#86efac' },
+        8:  { base: '#14b8a6', highlight: '#5eead4' },
+        9:  { base: '#06b6d4', highlight: '#67e8f9' },
+        10: { base: '#0ea5e9', highlight: '#7dd3fc' },
+        12: { base: '#6366f1', highlight: '#a5b4fc' }
+      };
+
+      if(map[n]) return map[n];
+
+      const hue = (n * 137.508) % 360; 
+      return {
+        base: `hsl(${hue}, 70%, 50%)`,
+        highlight: `hsl(${hue}, 90%, 80%)`
+      };
+    }
+
+    function init() {
+      addBar(1);
+    }
+
+    function addBar(denom) {
+      const id = Date.now() + Math.random();
+      const colors = getColors(denom);
+      const barObj = { id, denom, colors };
+      bars.push(barObj);
+      renderBarSorted(barObj);
+    }
+
+    // --- NEW SORTED RENDER LOGIC ---
+    function renderBarSorted(barData) {
+      const row = createBarElement(barData);
+      
+      // Find insertion point
+      const existingRows = Array.from(wrapper.children);
+      let inserted = false;
+
+      for (let existingRow of existingRows) {
+        const currentDenom = parseInt(existingRow.dataset.denom);
+        // If existing bar has a LARGER denominator (meaning it is a SMALLER fraction),
+        // we insert our new (bigger fraction/smaller denom) bar BEFORE it.
+        if (currentDenom > barData.denom) {
+          wrapper.insertBefore(row, existingRow);
+          inserted = true;
+          break;
+        }
+      }
+
+      // If we didn't find a larger denominator, append to the end
+      if (!inserted) {
+        wrapper.appendChild(row);
+      }
+    }
+
+    function createBarElement(barData) {
+      const row = document.createElement('div');
+      row.className = 'fraction-row';
+      row.dataset.id = barData.id;
+      row.dataset.denom = barData.denom; // Critical for sorting
+      
+      row.style.setProperty('--bar-base', barData.colors.base);
+      row.style.setProperty('--bar-highlight', barData.colors.highlight);
+
+      // Label
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = `1/${barData.denom}`;
+      label.title = "Double click to remove";
+      label.style.cursor = "pointer";
+      label.addEventListener('dblclick', () => removeBar(barData.id));
+      row.appendChild(label);
+
+      // Bar Container
+      const bar = document.createElement('div');
+      bar.className = 'fraction-bar';
+
+      // Segments
+      for(let i=0; i<barData.denom; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'segment';
+        seg.textContent = `1/${barData.denom}`;
+        seg.dataset.value = 1 / barData.denom;
+        
+        seg.addEventListener('click', () => {
+          seg.classList.toggle('selected');
+          calculateTotal();
+        });
+        
+        bar.appendChild(seg);
+      }
+
+      row.appendChild(bar);
+      return row;
+    }
+
+    function removeBar(id) {
+      bars = bars.filter(b => b.id !== id);
+      const el = document.querySelector(`.fraction-row[data-id='${id}']`);
+      if(el) el.remove();
+      calculateTotal();
+    }
+
+    function resetApp() {
+      bars = [];
+      wrapper.innerHTML = '';
+      calculateTotal();
+      addBar(1);
+    }
+
+    function calculateTotal() {
+      const selected = document.querySelectorAll('.segment.selected');
+      let sum = 0;
+      selected.forEach(s => sum += parseFloat(s.dataset.value));
+      sum = Math.round(sum * 10000) / 10000;
+      totalDisplay.textContent = `Total: ${sum}`;
+    }
+
+    // Custom Input
+    document.getElementById('addCustomBtn').addEventListener('click', () => {
+      const input = document.getElementById('customInput');
+      const val = parseInt(input.value);
+      if(val && val > 0 && val <= 100) {
+        addBar(val);
+        input.value = '';
+      } else {
+        alert("Please enter a number between 1 and 100");
+      }
+    });
+
+    // Ruler Tool
+    const workPane = document.getElementById('workPane');
+    let rulerEnabled = false;
+
+    document.getElementById('rulerToggle').addEventListener('change', (e) => {
+      rulerEnabled = e.target.checked;
+      rulerLine.style.display = rulerEnabled ? 'block' : 'none';
+      if(!rulerEnabled) rulerLabel.style.display = 'none';
+    });
+
+    workPane.addEventListener('mousemove', (e) => {
+      if (!rulerEnabled) return;
+      const rect = workPane.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const relativeWrapperX = wrapperRect.left - rect.left;
+
+      if (x >= relativeWrapperX && x <= (relativeWrapperX + wrapperRect.width)) {
+        rulerLine.style.display = 'block';
+        rulerLine.style.left = x + 'px';
+        const pct = (e.clientX - wrapperRect.left) / wrapperRect.width;
+        if(pct >= 0 && pct <= 1.01) rulerLabel.textContent = pct.toFixed(2);
+      } else {
+        rulerLine.style.display = 'none';
+      }
+    });
+
+    workPane.addEventListener('mouseleave', () => {
+      if(rulerEnabled) rulerLine.style.display = 'none';
+    });
+
+    // Total Toggle
+    document.getElementById('totalToggle').addEventListener('change', (e) => {
+      if(e.target.checked) totalDisplay.classList.remove('hidden');
+      else totalDisplay.classList.add('hidden');
+    });
+
+    init();
+  </script>
+</body>
+</html>

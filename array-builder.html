@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Things. | Array Builder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #E5E5EA; /* Deepened slightly to let the spotlight pop */
+      --glass: rgba(245,245,247,0.85);
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      
+      --ones: #DC143C; 
+      --tens: #4169E1; 
+      
+      --shadow-block: 
+        inset 2px 2px 0 rgba(255,255,255,0.4),
+        inset -2px -2px 0 rgba(0,0,0,0.12),
+        0 8px 20px rgba(0,0,0,0.12),
+        1px -1px 0 rgba(0,0,0,0.08);
+
+      --bead-surface: 
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      
+      --grid-size: 60px; 
+      --block-size: 56px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; user-select: none; }
+    body { font-family: 'Lexend', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    header { position: relative; height: 60px; background: var(--glass); backdrop-filter: blur(40px); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .logo { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.05em; color: var(--text-main); display: inline-flex; align-items: baseline; z-index: 2; }
+    .logo-bead { width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block; background: var(--bead-surface); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22); }
+    
+    .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 600; font-size: 0.9rem; color: var(--text-gray); letter-spacing: 1.5px; text-transform: uppercase; z-index: 1; }
+
+    .pagination { display: flex; gap: 8px; cursor: pointer; z-index: 2; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-light); opacity: 0.3; transition: all 0.3s ease; }
+    .dot.active { opacity: 1; background: var(--tens); transform: scale(1.3); }
+    .dot.sandbox { border-radius: 4px; width: 12px; }
+
+    #workspace { 
+      flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; 
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(rgba(29, 29, 31, 0.12) 2px, transparent 2px), /* Grid dots on top layer */
+        radial-gradient(circle at 50% -20%, #FFFFFF 0%, rgba(255,255,255,0.5) 40%, transparent 80%); /* Spotlight underneath */
+      background-size: var(--grid-size) var(--grid-size), 100% 100%; 
+      background-position: calc(var(--grid-size)/2) calc(var(--grid-size)/2), center top;
+      box-shadow: inset 0 10px 30px rgba(0,0,0,0.02);
+    }
+
+    #reset-btn {
+      position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 150;
+    }
+    #reset-btn.show { opacity: 1; pointer-events: auto; }
+    #reset-btn:active { transform: scale(0.9); }
+    #reset-btn svg { width: 18px; height: 18px; stroke: var(--text-gray); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    #target-zone {
+      position: absolute; border: 3px dashed rgba(0,0,0,0.15); border-radius: 8px; background: rgba(0,0,0,0.02);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #target-zone.sandbox-mode { border-color: rgba(0,0,0,0.06); background: transparent; }
+    .landing-strip { border-color: rgba(65, 105, 225, 0.5) !important; background: rgba(65, 105, 225, 0.05) !important; border-style: solid !important; }
+
+    .tutorial-active .bead-handle { pointer-events: none; }
+
+    .bead-handle {
+      position: absolute; width: calc(var(--grid-size) * 0.55); height: calc(var(--grid-size) * 0.55); border-radius: 50%;
+      background: var(--bead-surface);
+      box-shadow: inset 1.5px 1.5px 3px rgba(255,255,255,0.8), inset -1.5px -1.5px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.2);
+      cursor: grab; z-index: 100; transition: transform 0.1s ease, left 0.3s ease, top 0.3s ease, bottom 0.3s ease;
+    }
+    .bead-handle:active { transform: scale(0.85) !important; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: grabbing; }
+
+    #build-container { position: absolute; }
+
+    .block {
+      position: absolute; width: var(--block-size); height: var(--block-size);
+      background: var(--ones); border-radius: 6px; box-shadow: var(--shadow-block);
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--grid-size) * 0.4); font-weight: 800; color: white;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+    }
+    .block .val { transition: transform 0.5s ease-in-out, opacity 0.3s ease; }
+
+    .row-fused {
+      position: absolute; height: var(--block-size); background: var(--tens);
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      transition: width 0.3s ease; box-shadow: var(--shadow-block);
+    }
+    .row-fused::after { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, transparent, transparent calc(var(--grid-size) - 2px), rgba(0,0,0,0.15) calc(var(--grid-size) - 1px), rgba(0,0,0,0.15) var(--grid-size)); z-index: 1; pointer-events: none; }
+    
+    .fused-label { position: relative; z-index: 5; font-size: calc(var(--grid-size) * 0.45); font-weight: 800; color: rgba(255,255,255,0.95); }
+
+    .skip-tag {
+      position: absolute; right: calc(var(--grid-size) * -0.9); font-size: calc(var(--grid-size) * 0.35); font-weight: 400; 
+      color: rgba(0,0,0,0.15); transition: color 0.4s, font-weight 0.4s;
+    }
+    .skip-tag.lit { color: var(--tens); font-weight: 800; }
+
+    #equation-board { position: absolute; bottom: calc(var(--grid-size) * 0.8); width: 100%; text-align: center; font-size: calc(var(--grid-size) * 0.65); font-weight: 900; color: var(--text-main); }
+    .operator { color: var(--text-light); font-weight: 300; margin: 0 8px; }
+    .final-eq { animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    
+    @keyframes pulseNext {
+      0% { box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2), 0 0 0 0 rgba(65, 105, 225, 0.4); }
+      70% { box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2), 0 0 0 15px rgba(65, 105, 225, 0); }
+      100% { box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2), 0 0 0 0 rgba(65, 105, 225, 0); }
+    }
+
+    #next-btn {
+      position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%) scale(0);
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--bead-surface);
+      box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2);
+      cursor: pointer; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
+      display: flex; align-items: center; justify-content: center; z-index: 150;
+    }
+    #next-btn svg { width: 24px; height: 24px; fill: none; stroke: var(--tens); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; transform: translateX(2px); }
+    #next-btn.show { transform: translateX(-50%) scale(1); animation: pulseNext 2s infinite 1s; }
+    #next-btn:active { transform: translateX(-50%) scale(0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.2); animation: none; }
+
+    @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+    footer { height: 40px; background: var(--surface); border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); z-index: 10; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Math Things<span class="logo-bead"></span></div>
+  <div class="header-title">Array Builder</div>
+  <div class="pagination" id="pagination"></div>
+</header>
+
+<div id="workspace">
+  <div id="reset-btn">
+    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+  </div>
+  <div id="target-zone"></div>
+  <div id="build-container"></div>
+  <div id="equation-board"><div id="dynamic-math"></div></div>
+  
+  <div id="next-btn">
+    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+</div>
+
+<footer>Math Things<span class="logo-bead" style="width:0.18em;height:0.18em;box-shadow:none;"></span> &nbsp;|&nbsp; Math, in your hands</footer>
+
+<script>
+    const container = document.getElementById('build-container');
+    const targetZone = document.getElementById('target-zone');
+    const dynamicMath = document.getElementById('dynamic-math');
+    const pagination = document.getElementById('pagination');
+    const nextBtn = document.getElementById('next-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const workspace = document.getElementById('workspace');
+    
+    let GRID = 60; 
+    let currentCols = 1, currentRows = 1;
+    let state = 'horizontal'; 
+    let handleX, handleY;
+    let isDraggingY = false;
+
+    const levels = [
+      { c: 4, r: 3, tutorial: true },
+      { c: 6, r: 2 },
+      { c: 5, r: 4 },
+      { c: 7, r: 3 },
+      { sandbox: true }
+    ];
+
+    // Build Pagination Dots
+    levels.forEach((lvl, idx) => {
+        const dot = document.createElement('div');
+        dot.className = lvl.sandbox ? 'dot sandbox' : 'dot';
+        dot.addEventListener('click', () => { currentLevelIdx = idx; loadLevel(); });
+        pagination.appendChild(dot);
+    });
+    const dots = document.querySelectorAll('.dot');
+
+    function updateGridSize() {
+      const maxColsNeeded = levels[currentLevelIdx].sandbox ? 12 : Math.max(8, levels[currentLevelIdx].c);
+      const availableWidth = window.innerWidth - 64; 
+      GRID = Math.max(20, Math.min(60, availableWidth / maxColsNeeded));
+      document.documentElement.style.setProperty('--grid-size', `${GRID}px`);
+      document.documentElement.style.setProperty('--block-size', `${GRID - 4}px`);
+    }
+
+    function loadLevel() {
+      updateGridSize();
+      const lvl = levels[currentLevelIdx];
+      currentCols = 1; currentRows = 1; state = 'horizontal';
+      container.innerHTML = ''; dynamicMath.innerHTML = '';
+      nextBtn.classList.remove('show');
+      
+      if(lvl.sandbox) localStorage.setItem('mathThings_arrayBuilder_unlocked', 'true');
+      workspace.classList.toggle('tutorial-active', !!lvl.tutorial);
+      dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentLevelIdx));
+
+      if (lvl.sandbox) {
+        targetZone.classList.add('sandbox-mode');
+        targetZone.style.width = `${12 * GRID}px`;
+        targetZone.style.height = `${12 * GRID}px`;
+        targetZone.style.left = `calc(50vw - ${(12 * GRID)/2}px - 20px)`; 
+        targetZone.style.top = `calc(50vh - ${(12 * GRID)/2}px - 40px)`; 
+        resetBtn.classList.add('show');
+      } else {
+        targetZone.classList.remove('sandbox-mode');
+        targetZone.style.width = `${lvl.c * GRID}px`;
+        targetZone.style.height = `${lvl.r * GRID}px`;
+        targetZone.style.left = `calc(50vw - ${(lvl.c * GRID)/2}px - 20px)`;
+        targetZone.style.top = `calc(50vh - ${(lvl.r * GRID)/2}px - 40px)`; 
+        resetBtn.classList.remove('show');
+      }
+
+      container.style.left = targetZone.style.left;
+      container.style.top = targetZone.style.top;
+
+      createHandleX(); 
+      renderHorizontal();
+
+      if (lvl.tutorial) setTimeout(runTutorialX, 1000);
+    }
+
+    window.addEventListener('resize', () => { updateGridSize(); loadLevel(); });
+    resetBtn.addEventListener('click', () => loadLevel());
+
+    // --- Deliberate Tutorial Auto-Pilot ---
+    function runTutorialX() {
+        targetZone.classList.add('landing-strip');
+        const targetC = levels[currentLevelIdx].c;
+        let xInt = setInterval(() => {
+            if (currentCols < targetC) {
+                currentCols++; renderHorizontal();
+            } else {
+                clearInterval(xInt);
+                targetZone.classList.remove('landing-strip');
+                setTimeout(animateStaggeredMerge, 800); // Wait so they can see the full row
+            }
+        }, 650); // Slower drag
+    }
+
+    function runTutorialY() {
+        targetZone.classList.add('landing-strip');
+        const targetR = levels[currentLevelIdx].r;
+        let yInt = setInterval(() => {
+            if (currentRows < targetR) {
+                currentRows++; renderVertical();
+            } else {
+                clearInterval(yInt);
+                targetZone.classList.remove('landing-strip');
+                setTimeout(finish, 800);
+            }
+        }, 650); // Slower drag
+    }
+
+    function createHandleX() {
+      handleX = document.createElement('div');
+      handleX.className = 'bead-handle'; handleX.id = 'handle-x';
+      handleX.addEventListener('pointerdown', e => {
+        if(!levels[currentLevelIdx].sandbox) targetZone.classList.add('landing-strip');
+        const startX = e.clientX ?? e.touches[0].clientX; 
+        const startCols = currentCols;
+        
+        const move = e => {
+          let dx = (e.clientX ?? e.touches[0].clientX) - startX;
+          let limit = levels[currentLevelIdx].sandbox ? 12 : levels[currentLevelIdx].c;
+          let newCols = Math.max(1, Math.min(limit, startCols + Math.round(dx / GRID)));
+          if(newCols !== currentCols) { currentCols = newCols; renderHorizontal(); }
+        };
+        
+        const up = () => {
+          targetZone.classList.remove('landing-strip');
+          document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
+          
+          if (levels[currentLevelIdx].sandbox) {
+              if(currentCols > 1) animateStaggeredMerge();
+          } else {
+              if(currentCols === levels[currentLevelIdx].c) animateStaggeredMerge();
+          }
+        };
+        document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+      });
+    }
+
+    function renderHorizontal() {
+      container.innerHTML = '';
+      for(let i=0; i<currentCols; i++){
+        let b = document.createElement('div'); b.className = 'block';
+        b.style.left = (i*GRID)+'px'; b.innerHTML = `<span class="val">${i+1}</span>`;
+        container.appendChild(b);
+      }
+      handleX.style.left = (currentCols * GRID - (GRID * 0.28)) + 'px';
+      handleX.style.top = (GRID * 0.22) + 'px';
+      container.appendChild(handleX);
+      dynamicMath.innerHTML = `<span>${currentCols}</span>`;
+    }
+
+    function animateStaggeredMerge() {
+      if(handleX) handleX.remove();
+      let spans = document.querySelectorAll('.val');
+      let exactCenter = (currentCols - 1) / 2; // The geometric center fix
+      
+      if(spans.length > 2) {
+        spans[0].style.transform = `translateX(${GRID}px)`;
+        spans[spans.length-1].style.transform = `translateX(${-GRID}px)`;
+      }
+
+      setTimeout(() => {
+        spans.forEach((s, i) => { 
+            s.style.transform = `translateX(${(exactCenter - i) * GRID}px)`; 
+        });
+      }, 500);
+
+      setTimeout(() => {
+        let keeperIdx = Math.floor(exactCenter); // The numeral that survives
+        spans.forEach((s, i) => {
+          let tx = (exactCenter - i) * GRID;
+          if(i === keeperIdx) { 
+              s.style.transform = `translateX(${tx}px) scale(1.5)`; 
+              s.textContent = currentCols; 
+              s.style.zIndex = '10';
+          } else { 
+              s.style.transform = `translateX(${tx}px) scale(0.5)`;
+              s.style.opacity = '0'; 
+          }
+        });
+      }, 1000);
+
+      setTimeout(() => {
+        container.innerHTML = '';
+        let fused = document.createElement('div'); fused.className = 'row-fused';
+        fused.style.width = (currentCols*GRID - 4)+'px';
+        fused.innerHTML = `<span class="fused-label">${currentCols}</span>`;
+        container.appendChild(fused);
+        addTag(fused, currentCols, true);
+        createHandleY(fused);
+        state = 'vertical'; updateMath();
+
+        if(levels[currentLevelIdx].tutorial) setTimeout(runTutorialY, 500);
+
+      }, 1500);
+    }
+
+    function animateUnfuse() {
+        container.innerHTML = '';
+        state = 'horizontal';
+        createHandleX();
+        renderHorizontal();
+        
+        document.querySelectorAll('.block').forEach(b => {
+            b.style.transform = 'scale(0.8)';
+            b.style.opacity = '0.5';
+            setTimeout(() => {
+                b.style.transform = 'scale(1)';
+                b.style.opacity = '1';
+            }, 20);
+        });
+    }
+
+    function createHandleY(parent) {
+      handleY = document.createElement('div'); handleY.className = 'bead-handle'; handleY.id = 'handle-y';
+      handleY.addEventListener('pointerdown', e => {
+        isDraggingY = true; 
+        if(!levels[currentLevelIdx].sandbox) targetZone.classList.add('landing-strip');
+        
+        const startY = e.clientY ?? e.touches[0].clientY; 
+        const startRows = currentRows;
+        
+        const move = e => {
+          let dy = (e.clientY ?? e.touches[0].clientY) - startY;
+          let limit = levels[currentLevelIdx].sandbox ? 12 : levels[currentLevelIdx].r;
+          let newRows = Math.max(1, Math.min(limit, startRows + Math.round(dy / GRID)));
+          if(newRows !== currentRows) { currentRows = newRows; renderVertical(); }
+        };
+        
+        const up = () => {
+          isDraggingY = false; targetZone.classList.remove('landing-strip');
+          document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
+          
+          if (levels[currentLevelIdx].sandbox) {
+              if (currentRows === 1) animateUnfuse(); 
+              else renderVertical(); 
+          } else {
+              if (currentRows === levels[currentLevelIdx].r) finish(); 
+              else renderVertical(); 
+          }
+        };
+        document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+      });
+      parent.appendChild(handleY);
+      
+      handleY.style.bottom = `-${GRID * 0.28}px`;
+      handleY.style.left = '50%';
+      handleY.style.transform = 'translateX(-50%)';
+    }
+
+    function renderVertical() {
+      container.innerHTML = '';
+      for(let i=0; i<currentRows; i++) {
+        let f = document.createElement('div'); f.className = 'row-fused';
+        f.style.width = (currentCols*GRID - 4)+'px'; f.style.top = (i*GRID)+'px';
+        f.innerHTML = `<span class="fused-label">${currentCols}</span>`;
+        addTag(f, (i+1)*currentCols, !(i === currentRows-1 && isDraggingY));
+        if(i === currentRows-1 && !levels[currentLevelIdx].tutorial) f.appendChild(handleY);
+        container.appendChild(f);
+      }
+      updateMath();
+    }
+
+    function addTag(p, val, lit) {
+      let t = document.createElement('div'); t.className = 'skip-tag' + (lit?' lit':'');
+      t.textContent = val; p.appendChild(t);
+    }
+
+    function updateMath() {
+      let h = ''; 
+      for(let i=0; i<currentRows; i++) {
+          h += `<span>${currentCols}</span>`;
+          if(i < currentRows-1) h += `<span class="operator">+</span>`;
+      }
+      dynamicMath.innerHTML = h;
+      
+      if(levels[currentLevelIdx].sandbox && !isDraggingY && currentRows > 1) {
+         dynamicMath.innerHTML = `<div class="final-eq">${currentRows} × ${currentCols} = ${currentRows * currentCols}</div>`;
+      }
+    }
+
+    function finish() {
+      if(handleY) handleY.remove();
+      document.querySelectorAll('.skip-tag').forEach(t => t.classList.add('lit'));
+      dynamicMath.innerHTML = `<div class="final-eq">${currentRows} × ${currentCols} = ${currentRows * currentCols}</div>`;
+      
+      if(currentLevelIdx < levels.length - 1) {
+        setTimeout(() => nextBtn.classList.add('show'), 800);
+      }
+    }
+
+    nextBtn.addEventListener('click', () => { currentLevelIdx++; loadLevel(); });
+
+    let currentLevelIdx = localStorage.getItem('mathThings_arrayBuilder_unlocked') === 'true' ? levels.length - 1 : 0;
+    
+    loadLevel(); 
+</script>
+</body>
+</html>
