@@ -9,34 +9,40 @@
         :root {
             /* Milled Aluminum Hardware Palette */
             --alum-base: #E8E9ED;
-            --text-main: #2D2D35;
-            --text-gray: #7A7D8A;
-            --text-light: #A5A8B6;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
             
-            /* The Four Strands (NBT) */
-            --strand-1: #7B00FF; /* Unitizing */
-            --strand-2: #DC143C; /* Notation */
-            --strand-3: #4CBB17; /* Additive */
-            --strand-4: #FF7F00; /* Multiplicative */
+            /* The Brand Palette (from math-things-branding.html) */
+            --brand-green:  #4CBB17; 
+            --brand-yellow: #FFD700; 
+            --brand-blue:   #4169E1; 
+            --brand-red:    #DC143C; 
+            --brand-indigo: #7B00FF; 
+            --brand-orange: #FF9F0A; 
+            --brand-ice:    #64D2FF; 
 
             /* Hardware Shadows */
             --raised: 
-                8px 8px 16px rgba(166, 171, 189, 0.4), 
-                -8px -8px 16px rgba(255, 255, 255, 0.8),
-                inset 0 0 0 1px rgba(255,255,255,0.4);
+                12px 12px 24px rgba(166, 171, 189, 0.4), 
+                -12px -12px 24px rgba(255, 255, 255, 0.8),
+                inset 0 0 0 1px rgba(255,255,255,0.5);
+            --raised-hover:
+                16px 16px 32px rgba(166, 171, 189, 0.5), 
+                -16px -16px 32px rgba(255, 255, 255, 0.9),
+                inset 0 0 0 1px rgba(255,255,255,0.8);
             --depressed: 
-                inset 3px 3px 6px rgba(166, 171, 189, 0.5), 
-                inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+                inset 4px 4px 8px rgba(166, 171, 189, 0.5), 
+                inset -4px -4px 8px rgba(255, 255, 255, 0.8);
             --milled-track:
                 inset 2px 2px 4px rgba(166, 171, 189, 0.6), 
                 inset -1px -1px 2px rgba(255, 255, 255, 0.9);
 
-            /* Scale factor for responsive constellation */
             --scale: 1;
         }
 
-        @media (max-width: 900px) { :root { --scale: 0.75; } }
-        @media (max-width: 600px) { :root { --scale: 0.55; } }
+        @media (max-width: 900px) { :root { --scale: 0.8; } }
+        @media (max-width: 600px) { :root { --scale: 0.6; } }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -48,9 +54,9 @@
         /* ── HEADER ── */
         header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(232, 233, 237, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(232, 233, 237, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             height: 70px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02); border-bottom: 1px solid rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(255,255,255,0.4);
         }
         .logo { display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default; }
         .logo-bead {
@@ -69,63 +75,138 @@
         }
         .view::-webkit-scrollbar { display: none; }
         .view.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
-        .view.zoom-out { transform: scale(1.1); opacity: 0; }
-        .view.zoom-in { transform: scale(0.9); opacity: 0; }
+        .view.zoom-out { transform: scale(1.05); opacity: 0; }
+        .view.zoom-in { transform: scale(0.95); opacity: 0; }
 
         /* =========================================
-           VIEW 0: ASYMMETRIC HARDWARE HUB
+           VIEW 0: FLOATING HARDWARE GALLERY (HUB)
            ========================================= */
-        .hub-wrapper {
+        .gallery-wrapper {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; min-height: 600px;
+            width: 100%; height: 100%; min-height: 800px; min-width: 1000px;
         }
 
-        /* Dynamic Spoke */
-        .spoke {
-            position: absolute; bottom: 50%; left: 50%; width: 6px; 
-            height: calc(var(--radius) * var(--scale)); /* Scaled dynamically */
-            transform-origin: bottom center; transform: translateX(-50%) rotate(var(--angle));
-            background: var(--alum-base); box-shadow: var(--milled-track); border-radius: 3px; z-index: 1;
+        /* Ambient Studio Light behind the hub */
+        .ambient-glow {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 600px; height: 600px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(232,233,237,0) 70%);
+            pointer-events: none; z-index: 0;
         }
 
-        /* Central Mission Button */
+        /* The Central Pucks */
         .hub-center {
-            position: absolute; z-index: 10; 
-            width: calc(180px * var(--scale)); height: calc(180px * var(--scale)); border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 20; width: calc(200px * var(--scale)); height: calc(200px * var(--scale)); border-radius: 50%;
             background: var(--alum-base); box-shadow: var(--raised);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center;
         }
-        .hub-center:active { box-shadow: var(--depressed); transform: scale(0.96); }
+        .hub-center:active { box-shadow: var(--depressed); transform: translate(-50%, -50%) scale(0.96); }
         .hub-center .logo-bead {
-            width: calc(32px * var(--scale)); height: calc(32px * var(--scale)); border-radius: 50%; margin-bottom: 8px;
+            width: calc(40px * var(--scale)); height: calc(40px * var(--scale)); border-radius: 50%; margin-bottom: 12px;
             background: radial-gradient(circle at 33% 28%, #fff 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #fff 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
-            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.8), inset -2px -2px 4px rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.15);
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.8), inset -2px -2px 4px rgba(0,0,0,0.2), 0 6px 14px rgba(0,0,0,0.2);
         }
-        .hub-center-title { font-weight: 900; font-size: calc(1.1rem * var(--scale)); letter-spacing: -0.04em; }
-        .hub-center-sub { font-size: calc(0.65rem * var(--scale)); color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .hub-center-title { font-weight: 900; font-size: calc(1.3rem * var(--scale)); letter-spacing: -0.04em; color: var(--text-main); }
+        .hub-center-sub { font-size: calc(0.7rem * var(--scale)); color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
-        /* Dynamic Nodes */
-        .hub-node {
-            position: absolute; z-index: 5; 
-            width: calc(120px * var(--scale)); height: calc(120px * var(--scale)); border-radius: 50%;
-            background: var(--alum-base); box-shadow: var(--raised);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            /* Trigonometry positioning baked into CSS! */
-            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1));
+        /* The Floating Plates */
+        .domain-plate {
+            position: absolute; z-index: 10;
+            background: var(--alum-base); box-shadow: var(--raised); border-radius: 28px;
+            display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* Transform handles the centering offset so left/top act as true coordinates relative to center */
+            transform: translate(-50%, -50%);
         }
-        .hub-node:active:not(.disabled) {
-            box-shadow: var(--depressed);
-            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) scale(0.95);
+        .domain-plate:hover:not(.disabled) {
+            transform: translate(-50%, calc(-50% - 8px)) scale(1.02);
+            box-shadow: var(--raised-hover);
         }
-        .hub-node.disabled { opacity: 0.6; cursor: not-allowed; }
-        .hub-node.disabled:active { transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)); }
+        .domain-plate:active:not(.disabled) {
+            transform: translate(-50%, -50%) scale(0.98); box-shadow: var(--depressed);
+        }
+        
+        .domain-plate.disabled { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.8); }
 
-        .node-icon { font-size: calc(2rem * var(--scale)); margin-bottom: 4px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
-        .node-title { font-size: calc(0.8rem * var(--scale)); font-weight: 800; letter-spacing: -0.02em; color: var(--text-main); }
-        .node-code { font-size: calc(0.6rem * var(--scale)); color: var(--text-gray); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .plate-acronym { font-weight: 900; letter-spacing: -0.05em; line-height: 1; margin-bottom: 8px; }
+        .plate-title { font-weight: 800; letter-spacing: -0.02em; color: var(--text-main); }
+        .plate-desc { color: var(--text-gray); font-weight: 600; margin-top: 4px; }
 
+        /* Asymmetric Sizes & Positions */
+        /* NBT: Massive slab, top right */
+        .plate-nbt { 
+            left: calc(50% + 200px * var(--scale)); top: calc(50% - 180px * var(--scale)); 
+            padding: calc(32px * var(--scale)) calc(48px * var(--scale)); 
+        }
+        .plate-nbt .plate-acronym { font-size: calc(3.5rem * var(--scale)); color: var(--brand-blue); }
+        .plate-nbt .plate-title { font-size: calc(1.1rem * var(--scale)); }
+        .plate-nbt .plate-desc { font-size: calc(0.8rem * var(--scale)); }
+
+        /* OA: Medium slab, top left */
+        .plate-oa { 
+            left: calc(50% - 240px * var(--scale)); top: calc(50% - 140px * var(--scale)); 
+            padding: calc(24px * var(--scale)) calc(36px * var(--scale)); 
+        }
+        .plate-oa .plate-acronym { font-size: calc(2.8rem * var(--scale)); color: var(--brand-red); }
+        .plate-oa .plate-title { font-size: calc(0.9rem * var(--scale)); }
+        .plate-oa .plate-desc { font-size: calc(0.7rem * var(--scale)); }
+
+        /* NF: Medium-Large slab, far right */
+        .plate-nf { 
+            left: calc(50% + 320px * var(--scale)); top: calc(50% + 80px * var(--scale)); 
+            padding: calc(28px * var(--scale)) calc(40px * var(--scale)); 
+        }
+        .plate-nf .plate-acronym { font-size: calc(3rem * var(--scale)); color: var(--brand-orange); }
+        .plate-nf .plate-title { font-size: calc(1rem * var(--scale)); }
+        .plate-nf .plate-desc { font-size: calc(0.75rem * var(--scale)); }
+
+        /* MD: Medium slab, bottom right */
+        .plate-md { 
+            left: calc(50% + 80px * var(--scale)); top: calc(50% + 220px * var(--scale)); 
+            padding: calc(20px * var(--scale)) calc(32px * var(--scale)); 
+        }
+        .plate-md .plate-acronym { font-size: calc(2.4rem * var(--scale)); color: var(--brand-green); }
+        .plate-md .plate-title { font-size: calc(0.85rem * var(--scale)); }
+        .plate-md .plate-desc { font-size: calc(0.65rem * var(--scale)); }
+
+        /* G: Medium slab, bottom left */
+        .plate-g { 
+            left: calc(50% - 220px * var(--scale)); top: calc(50% + 140px * var(--scale)); 
+            padding: calc(24px * var(--scale)) calc(36px * var(--scale)); 
+        }
+        .plate-g .plate-acronym { font-size: calc(2.6rem * var(--scale)); color: var(--brand-indigo); }
+        .plate-g .plate-title { font-size: calc(0.9rem * var(--scale)); }
+        .plate-g .plate-desc { font-size: calc(0.7rem * var(--scale)); }
+
+        /* CC: Small tight slab, near center left */
+        .plate-cc { 
+            left: calc(50% - 140px * var(--scale)); top: calc(50% + 10px * var(--scale)); 
+            padding: calc(16px * var(--scale)) calc(24px * var(--scale)); 
+            border-radius: 20px;
+        }
+        .plate-cc .plate-acronym { font-size: calc(2rem * var(--scale)); color: var(--brand-yellow); }
+        .plate-cc .plate-title { font-size: calc(0.75rem * var(--scale)); }
+        .plate-cc .plate-desc { display: none; } /* Too small for desc */
+
+        @media (max-width: 900px) {
+            /* On very small screens, fallback to flex column */
+            .gallery-wrapper {
+                position: relative; top: auto; left: auto; transform: none; min-height: auto; min-width: auto;
+                display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 40px 0;
+            }
+            .ambient-glow { display: none; }
+            .hub-center, .domain-plate {
+                position: relative; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 320px; border-radius: 24px !important;
+            }
+            .hub-center { height: auto !important; padding: 40px !important; }
+            .domain-plate { padding: 24px 32px !important; align-items: center; text-align: center; }
+            .domain-plate:hover:not(.disabled) { transform: translateY(-4px) !important; }
+            .plate-acronym { font-size: 2.5rem !important; }
+            .plate-title { font-size: 1rem !important; }
+            .plate-desc { font-size: 0.8rem !important; display: block !important; }
+        }
 
         /* =========================================
            VIEW 1: MISSION / OVERVIEW
@@ -213,55 +294,50 @@
 
     <main>
         <div class="view active" id="view-hub">
-            <div class="hub-wrapper">
+            <div class="gallery-wrapper">
                 
-                <div class="spoke" style="--angle: 30deg; --radius: 260px;"></div>
-                <div class="hub-node" style="--angle: 30deg; --radius: 260px;" onclick="openView('view-nbt')">
-                    <div class="node-icon">🧊</div>
-                    <div class="node-code">NBT</div>
-                    <div class="node-title">Base Ten</div>
-                </div>
-
-                <div class="spoke" style="--angle: 80deg; --radius: 200px;"></div>
-                <div class="hub-node disabled" style="--angle: 80deg; --radius: 200px;">
-                    <div class="node-icon">🍕</div>
-                    <div class="node-code">NF</div>
-                    <div class="node-title">Fractions</div>
-                </div>
-
-                <div class="spoke" style="--angle: 150deg; --radius: 240px;"></div>
-                <div class="hub-node disabled" style="--angle: 150deg; --radius: 240px;">
-                    <div class="node-icon">📏</div>
-                    <div class="node-code">MD</div>
-                    <div class="node-title">Measurement</div>
-                </div>
-
-                <div class="spoke" style="--angle: 210deg; --radius: 220px;"></div>
-                <div class="hub-node disabled" style="--angle: 210deg; --radius: 220px;">
-                    <div class="node-icon">📐</div>
-                    <div class="node-code">G</div>
-                    <div class="node-title">Geometry</div>
-                </div>
-
-                <div class="spoke" style="--angle: 280deg; --radius: 140px;"></div>
-                <div class="hub-node disabled" style="--angle: 280deg; --radius: 140px;">
-                    <div class="node-icon">🍎</div>
-                    <div class="node-code">CC</div>
-                    <div class="node-title">Counting</div>
-                </div>
-
-                <div class="spoke" style="--angle: 330deg; --radius: 250px;"></div>
-                <div class="hub-node disabled" style="--angle: 330deg; --radius: 250px;">
-                    <div class="node-icon">⚖️</div>
-                    <div class="node-code">OA</div>
-                    <div class="node-title">Algebra</div>
-                </div>
-
+                <div class="ambient-glow"></div>
 
                 <div class="hub-center" onclick="openView('view-mission')">
                     <div class="logo-bead"></div>
                     <div class="hub-center-title">Math Things.</div>
                     <div class="hub-center-sub">Curriculum Hub</div>
+                </div>
+
+                <div class="domain-plate plate-nbt" onclick="openView('view-nbt')">
+                    <div class="plate-acronym">NBT</div>
+                    <div class="plate-title">Base Ten</div>
+                    <div class="plate-desc">Numbers & Operations in Base Ten</div>
+                </div>
+
+                <div class="domain-plate plate-oa disabled">
+                    <div class="plate-acronym">OA</div>
+                    <div class="plate-title">Algebraic Thinking</div>
+                    <div class="plate-desc">Operations & Algebra</div>
+                </div>
+
+                <div class="domain-plate plate-nf disabled">
+                    <div class="plate-acronym">NF</div>
+                    <div class="plate-title">Fractions</div>
+                    <div class="plate-desc">Numbers & Operations</div>
+                </div>
+
+                <div class="domain-plate plate-md disabled">
+                    <div class="plate-acronym">MD</div>
+                    <div class="plate-title">Measurement</div>
+                    <div class="plate-desc">Measurement & Data</div>
+                </div>
+
+                <div class="domain-plate plate-g disabled">
+                    <div class="plate-acronym">G</div>
+                    <div class="plate-title">Geometry</div>
+                    <div class="plate-desc">Spatial Reasoning</div>
+                </div>
+
+                <div class="domain-plate plate-cc disabled">
+                    <div class="plate-acronym">CC</div>
+                    <div class="plate-title">Counting</div>
+                    <div class="plate-desc">Cardinality</div>
                 </div>
 
             </div>
