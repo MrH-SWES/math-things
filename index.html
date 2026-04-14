@@ -12,49 +12,39 @@
             --bg-edge: #D1D1D6;
             --alum-base: #E8E9ED;
             --text-main: #1D1D1F;
-            --text-gray: #86868B;
+            --text-gray: #7A7D8A;
             --text-light: #AEAEB2;
             
-            /* The Brand Palette (from math-things-branding.html) */
-            --brand-green:  #4CBB17; /* Thousands */
-            --brand-yellow: #FFD700; /* Hundreds */
-            --brand-blue:   #4169E1; /* Tens */
-            --brand-red:    #DC143C; /* Ones */
-            --brand-indigo: #7B00FF; /* Tenths */
-            --brand-orange: #FF9F0A; /* Hundredths */
-            --brand-ice:    #64D2FF; /* Thousandths */
+            /* The Brand Palette (Saturated) */
+            --brand-green:  #4CBB17; 
+            --brand-yellow: #FFD700; 
+            --brand-blue:   #4169E1; 
+            --brand-red:    #DC143C; 
+            --brand-indigo: #7B00FF; 
+            --brand-orange: #FF9F0A; 
+            --brand-ice:    #64D2FF; 
 
-            /* Thick "Pizza Steel" Slab Shadows */
-            --plate-shadow: 
-                20px 20px 40px rgba(166, 171, 189, 0.4), 
-                -10px -10px 30px rgba(255, 255, 255, 0.8),
-                inset 3px 3px 6px rgba(255,255,255,0.4),  /* Bright top-left lip */
-                inset -3px -3px 8px rgba(0,0,0,0.25);     /* Heavy dark bottom-right lip */
+            /* Heavy "Pizza Steel" Shadows */
+            --raised: 
+                16px 16px 32px rgba(166, 171, 189, 0.4), 
+                -16px -16px 32px rgba(255, 255, 255, 0.9),
+                inset 2px 2px 4px rgba(255,255,255,0.8),
+                inset -4px -4px 8px rgba(0,0,0,0.15);
+            --raised-hover:
+                24px 24px 48px rgba(166, 171, 189, 0.45), 
+                -20px -20px 40px rgba(255, 255, 255, 1),
+                inset 2px 2px 4px rgba(255,255,255,0.9),
+                inset -4px -4px 8px rgba(0,0,0,0.15);
+            --depressed: 
+                inset 6px 6px 16px rgba(0, 0, 0, 0.25), 
+                inset -6px -6px 16px rgba(255, 255, 255, 0.6);
             
-            --plate-hover:
-                28px 28px 56px rgba(166, 171, 189, 0.45), 
-                -14px -14px 40px rgba(255, 255, 255, 1),
-                inset 3px 3px 6px rgba(255,255,255,0.5),
-                inset -3px -3px 8px rgba(0,0,0,0.3);
-            
-            --plate-depressed: 
-                inset 6px 6px 16px rgba(0, 0, 0, 0.3), 
-                inset -6px -6px 16px rgba(255, 255, 255, 0.5);
-            
-            /* Milled Tracking Channel (Deep & Wide) */
+            /* Deep Milled Routing Channel */
             --milled-track:
                 inset 3px 3px 6px rgba(166, 171, 189, 0.8), 
                 inset -3px -3px 6px rgba(255, 255, 255, 1);
 
-            /* Hardware Shadows for non-colored elements */
-            --raised: 
-                16px 16px 32px rgba(166, 171, 189, 0.4), 
-                -16px -16px 32px rgba(255, 255, 255, 0.9),
-                inset 0 0 0 1px rgba(255,255,255,0.6);
-            --depressed: 
-                inset 6px 6px 12px rgba(166, 171, 189, 0.6), 
-                inset -6px -6px 12px rgba(255, 255, 255, 0.9);
-
+            /* Scale factor for massive computer screens */
             --scale: 1;
         }
 
@@ -72,7 +62,7 @@
         }
 
         /* ── VIEW ROUTING ── */
-        main { flex: 1; position: relative; }
+        main { flex: 1; position: relative; padding-top: 50px; }
         
         .view {
             position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
@@ -89,7 +79,7 @@
            ========================================= */
         .gallery-wrapper {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 100%; height: 100%; min-height: 800px; min-width: 1000px;
+            width: 100%; height: 100%; min-height: 800px; min-width: 1200px; /* Wider bound for horizontal spread */
         }
 
         /* Ambient Glow behind the central monolith bead */
@@ -100,15 +90,16 @@
             pointer-events: none; z-index: 0;
         }
 
-        /* Milled Hardware Spoke Tracks (Thick & Deep) */
+        /* Milled Hardware Spoke Tracks */
         .spoke {
-            position: absolute; bottom: 0; left: calc(-8px * var(--scale)); 
-            width: calc(16px * var(--scale)); height: calc(var(--radius) * var(--scale)); 
-            transform-origin: bottom center; transform: rotate(var(--angle));
-            background: var(--alum-base); box-shadow: var(--milled-track); border-radius: calc(8px * var(--scale)); z-index: 1;
+            position: absolute; bottom: 50%; left: 50%; width: calc(12px * var(--scale)); 
+            height: calc(var(--radius) * var(--scale)); 
+            transform-origin: bottom center; 
+            transform: translateX(-50%) rotate(var(--angle));
+            background: var(--alum-base); box-shadow: var(--milled-track); border-radius: calc(6px * var(--scale)); z-index: 1;
         }
 
-        /* The Central Monolith Bead */
+        /* The Central Monolith Bead Hub */
         .hub-center {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; 
             width: calc(280px * var(--scale)); height: calc(280px * var(--scale)); border-radius: 50%;
@@ -126,9 +117,9 @@
         .hub-center:active { transform: translate(-50%, -50%) scale(0.98); }
         
         .hub-center-title { 
-            font-weight: 900; font-size: calc(2.4rem * var(--scale)); letter-spacing: -0.05em; 
+            font-weight: 900; font-size: calc(2.6rem * var(--scale)); letter-spacing: -0.05em; 
             color: #2D2D35; text-shadow: 0px 2px 2px rgba(255,255,255,0.9); 
-            line-height: 1; z-index: 21; white-space: nowrap; /* Forces text to single line */
+            line-height: 1; z-index: 21; white-space: nowrap;
         }
 
         /* Coordinate Assemblies */
@@ -136,85 +127,77 @@
             position: absolute; top: 50%; left: 50%;
         }
 
-        /* The Anodized "Pizza Steel" Slabs */
+        /* The Heavy Steel Domain Plates */
         .domain-plate {
             position: absolute; z-index: 10; opacity: 1; 
-            background-color: var(--plate-color);
-            background-image: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.1) 100%); 
-            box-shadow: var(--plate-shadow); border-radius: 36px;
-            display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+            /* Brushed Steel Texture */
+            background: linear-gradient(135deg, #f5f5f7 0%, #e8e9ed 40%, #d1d1d6 100%);
+            box-shadow: var(--raised); border-radius: calc(32px * var(--scale));
+            padding: calc(32px * var(--scale)) calc(48px * var(--scale));
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            color: var(--text-color, #ffffff);
-            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%);
+            text-align: center;
+            
+            /* Pin to tip of spoke, then upright */
+            transform: 
+                rotate(var(--angle)) 
+                translateY(calc((var(--radius) * var(--scale)) * -1)) 
+                rotate(calc(var(--angle) * -1)) 
+                translate(-50%, -50%);
         }
         
         .domain-plate:hover:not(.disabled) {
-            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, calc(-50% - 12px)) scale(1.02);
-            box-shadow: var(--plate-hover);
+            transform: 
+                rotate(var(--angle)) 
+                translateY(calc((var(--radius) * var(--scale)) * -1)) 
+                rotate(calc(var(--angle) * -1)) 
+                translate(-50%, calc(-50% - 12px)) scale(1.02);
+            box-shadow: var(--raised-hover);
         }
         
         .domain-plate:active:not(.disabled) {
-            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%) scale(0.98);
-            box-shadow: var(--plate-depressed);
+            transform: 
+                rotate(var(--angle)) 
+                translateY(calc((var(--radius) * var(--scale)) * -1)) 
+                rotate(calc(var(--angle) * -1)) 
+                translate(-50%, -50%) scale(0.98);
+            box-shadow: var(--depressed);
         }
         
-        .domain-plate.disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.5) blur(0.5px); }
+        .domain-plate.disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.5); }
 
-        .plate-acronym { font-weight: 900; letter-spacing: -0.05em; line-height: 1; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.15); }
-        .plate-title { font-weight: 800; letter-spacing: -0.02em; }
-        .plate-desc { font-weight: 600; margin-top: 4px; opacity: 0.9; }
+        /* The Periodic Table Typography */
+        .plate-acronym { 
+            font-weight: 900; letter-spacing: -0.05em; line-height: 1; margin-bottom: 8px; 
+            font-size: calc(4rem * var(--scale));
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Saturated pop */
+        }
+        .plate-title { 
+            font-weight: 800; font-size: calc(0.95rem * var(--scale));
+            color: var(--text-gray); text-transform: uppercase; letter-spacing: 2px;
+        }
 
-        /* Dark Text Override for Bright Plates */
-        .dark-text { --text-color: #1D1D1F; }
-        .dark-text .plate-acronym { text-shadow: 0 1px 2px rgba(255,255,255,0.5); }
-        .dark-text .plate-desc { opacity: 0.75; }
+        /* Colors mapping to specific acronyms */
+        .plate-cc .plate-acronym { color: var(--brand-yellow); }
+        .plate-oa .plate-acronym { color: var(--brand-red); }
+        .plate-nbt .plate-acronym { color: var(--brand-blue); }
+        .plate-nf .plate-acronym { color: var(--brand-orange); }
+        .plate-md .plate-acronym { color: var(--brand-green); }
+        .plate-g .plate-acronym { color: var(--brand-ice); }
 
         /* =========================================
-           TIGHTENED RADII & ANODIZED COLORS
+           HORIZONTAL SPREAD & RADII (The Bowtie)
            ========================================= */
         
-        /* 1. CC: Counting (Yellow, dark text) */
-        .node-cc { --angle: 260deg; --radius: 220px; }
-        .plate-cc { --plate-color: var(--brand-yellow); padding: calc(24px * var(--scale)) calc(36px * var(--scale)); border-radius: 28px; }
-        .plate-cc .plate-acronym { font-size: calc(2.6rem * var(--scale)); }
-        .plate-cc .plate-title { font-size: calc(0.95rem * var(--scale)); }
-        .plate-cc .plate-desc { display: none; } 
+        /* LEFT FLANK */
+        .node-oa { --angle: 295deg; --radius: 460px; }
+        .node-cc { --angle: 260deg; --radius: 420px; }
+        .node-g  { --angle: 225deg; --radius: 440px; }
 
-        /* 2. OA: Algebra (Red, light text) */
-        .node-oa { --angle: 310deg; --radius: 300px; }
-        .plate-oa { --plate-color: var(--brand-red); padding: calc(36px * var(--scale)) calc(52px * var(--scale)); }
-        .plate-oa .plate-acronym { font-size: calc(3.6rem * var(--scale)); }
-        .plate-oa .plate-title { font-size: calc(1.15rem * var(--scale)); }
-        .plate-oa .plate-desc { font-size: calc(0.85rem * var(--scale)); }
-
-        /* 3. NBT: Base Ten (Blue, light text) */
-        .node-nbt { --angle: 40deg; --radius: 320px; }
-        .plate-nbt { --plate-color: var(--brand-blue); padding: calc(44px * var(--scale)) calc(64px * var(--scale)); }
-        .plate-nbt .plate-acronym { font-size: calc(4.5rem * var(--scale)); }
-        .plate-nbt .plate-title { font-size: calc(1.3rem * var(--scale)); }
-        .plate-nbt .plate-desc { font-size: calc(0.95rem * var(--scale)); }
-
-        /* 4. NF: Fractions (Orange, light text) */
-        .node-nf { --angle: 110deg; --radius: 300px; }
-        .plate-nf { --plate-color: var(--brand-orange); padding: calc(40px * var(--scale)) calc(56px * var(--scale)); }
-        .plate-nf .plate-acronym { font-size: calc(4rem * var(--scale)); }
-        .plate-nf .plate-title { font-size: calc(1.2rem * var(--scale)); }
-        .plate-nf .plate-desc { font-size: calc(0.9rem * var(--scale)); }
-
-        /* 5. MD: Measurement (Green, light text) */
-        .node-md { --angle: 155deg; --radius: 260px; }
-        .plate-md { --plate-color: var(--brand-green); padding: calc(32px * var(--scale)) calc(44px * var(--scale)); }
-        .plate-md .plate-acronym { font-size: calc(3rem * var(--scale)); }
-        .plate-md .plate-title { font-size: calc(1rem * var(--scale)); }
-        .plate-md .plate-desc { font-size: calc(0.8rem * var(--scale)); }
-
-        /* 6. G: Geometry (Ice Teal Swap, dark text) */
-        .node-g { --angle: 205deg; --radius: 280px; }
-        .plate-g { --plate-color: var(--brand-ice); padding: calc(36px * var(--scale)) calc(48px * var(--scale)); }
-        .plate-g .plate-acronym { font-size: calc(3.4rem * var(--scale)); }
-        .plate-g .plate-title { font-size: calc(1.05rem * var(--scale)); }
-        .plate-g .plate-desc { font-size: calc(0.8rem * var(--scale)); }
-
+        /* RIGHT FLANK */
+        .node-nbt { --angle: 65deg; --radius: 480px; }
+        .node-nf  { --angle: 100deg; --radius: 450px; }
+        .node-md  { --angle: 135deg; --radius: 430px; }
 
         @media (max-width: 900px) {
             .gallery-wrapper {
@@ -222,18 +205,12 @@
                 display: flex; flex-direction: column; align-items: center; gap: 32px; padding: 40px 0;
             }
             .node-assembly { display: none; }
-            .spoke { display: none; }
+            .ambient-glow { display: none; }
             .hub-center, .domain-plate {
-                position: relative; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 320px; border-radius: 32px !important; display: flex !important;
+                position: relative; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 320px; display: flex !important;
             }
             .hub-center { height: auto !important; padding: 48px !important; }
-            .domain-plate { padding: 32px 40px !important; align-items: center; text-align: center; }
             .domain-plate:hover:not(.disabled) { transform: translateY(-4px) !important; }
-            .plate-acronym { font-size: 3.5rem !important; }
-            .plate-title { font-size: 1.2rem !important; }
-            .plate-desc { font-size: 0.9rem !important; display: block !important; }
-            .hub-center-title { font-size: 2.8rem !important; }
-            .plate-cc .plate-desc { display: block !important; }
         }
 
         /* =========================================
@@ -315,21 +292,27 @@
                 
                 <div class="ambient-glow"></div>
 
-                <div class="node-assembly node-cc">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-cc dark-text disabled">
-                        <div class="plate-acronym">CC</div>
-                        <div class="plate-title">Counting</div>
-                        <div class="plate-desc">Cardinality</div>
-                    </div>
-                </div>
-
                 <div class="node-assembly node-oa">
                     <div class="spoke"></div>
                     <div class="domain-plate plate-oa disabled">
                         <div class="plate-acronym">OA</div>
-                        <div class="plate-title">Algebraic Thinking</div>
-                        <div class="plate-desc">Operations & Algebra</div>
+                        <div class="plate-title">Algebra</div>
+                    </div>
+                </div>
+
+                <div class="node-assembly node-cc">
+                    <div class="spoke"></div>
+                    <div class="domain-plate plate-cc disabled">
+                        <div class="plate-acronym">CC</div>
+                        <div class="plate-title">Counting</div>
+                    </div>
+                </div>
+
+                <div class="node-assembly node-g">
+                    <div class="spoke"></div>
+                    <div class="domain-plate plate-g disabled">
+                        <div class="plate-acronym">G</div>
+                        <div class="plate-title">Geometry</div>
                     </div>
                 </div>
 
@@ -338,7 +321,6 @@
                     <div class="domain-plate plate-nbt" onclick="openView('view-nbt')">
                         <div class="plate-acronym">NBT</div>
                         <div class="plate-title">Base Ten</div>
-                        <div class="plate-desc">Numbers & Operations</div>
                     </div>
                 </div>
 
@@ -347,7 +329,6 @@
                     <div class="domain-plate plate-nf disabled">
                         <div class="plate-acronym">NF</div>
                         <div class="plate-title">Fractions</div>
-                        <div class="plate-desc">Numbers & Operations</div>
                     </div>
                 </div>
 
@@ -356,16 +337,6 @@
                     <div class="domain-plate plate-md disabled">
                         <div class="plate-acronym">MD</div>
                         <div class="plate-title">Measurement</div>
-                        <div class="plate-desc">Measurement & Data</div>
-                    </div>
-                </div>
-
-                <div class="node-assembly node-g">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-g dark-text disabled">
-                        <div class="plate-acronym">G</div>
-                        <div class="plate-title">Geometry</div>
-                        <div class="plate-desc">Spatial Reasoning</div>
                     </div>
                 </div>
 
