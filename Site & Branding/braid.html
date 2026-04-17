@@ -3,190 +3,605 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Things. | The NBT Braid (39-Point Full Roadmap)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <title>Math Things. | The Master Braid</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-center: #F5F5F7;
             --bg-edge: #D1D1D6;
             --alum-base: #E8E9ED;
+            --surface: #FFFFFF;
             --text-main: #1D1D1F;
             --text-gray: #7A7D8A;
+            --text-light: #AEAEB2;
             
             --strand-system:    #7B00FF; 
             --strand-sense:     #DC143C; 
             --strand-basic:     #4CBB17; 
             --strand-advanced:  #FF9F0A; 
 
+            --brand-k:  #64D2FF; 
+            --brand-g1: #DC143C; 
+            --brand-g2: #4169E1; 
+            --brand-g3: #FFD700; 
+            --brand-g4: #4CBB17; 
+            --brand-g5: #CF3476; 
+
             --raised: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.9);
-            --depressed: inset 4px 4px 10px rgba(0, 0, 0, 0.15), inset -4px -4px 10px rgba(255, 255, 255, 0.6);
             --milled: inset 3px 3px 6px rgba(166, 171, 189, 0.9), inset -3px -3px 6px rgba(255, 255, 255, 1);
+            --glass: rgba(245, 245, 247, 0.85);
         }
+
+        [data-strand="system"]   { --strand-color: var(--strand-system); }
+        [data-strand="sense"]    { --strand-color: var(--strand-sense); }
+        [data-strand="basic"]    { --strand-color: var(--strand-basic); }
+        [data-strand="advanced"] { --strand-color: var(--strand-advanced); }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Lexend', sans-serif;
-            background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-edge) 150%);
             color: var(--text-main);
-            min-height: 100vh; overflow-y: auto; overflow-x: hidden;
+            height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
+            background: var(--bg-center);
         }
 
-        .framework-container { max-width: 1500px; margin: 0 auto; padding: 100px 40px; }
-        .matrix-grid { display: grid; grid-template-columns: 140px repeat(4, 1fr); gap: 40px 24px; position: relative; }
+        header {
+            flex-shrink: 0;
+            padding: 24px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
 
-        .track-bg { grid-row: 1 / span 6; display: flex; justify-content: center; pointer-events: none; z-index: 0; }
-        .milled-groove { width: 14px; height: 100%; background: var(--alum-base); box-shadow: var(--milled); border-radius: 7px; position: relative; }
+        .brand-logo { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.02em; }
+        
+        .domain-nav {
+            display: flex;
+            background: var(--alum-base);
+            padding: 4px;
+            border-radius: 12px;
+            box-shadow: var(--milled);
+            gap: 4px;
+            overflow-x: auto;
+            max-width: 80%;
+        }
+
+        .domain-btn {
+            border: none; background: transparent; padding: 8px 16px; border-radius: 8px;
+            font-family: inherit; font-size: 0.65rem; font-weight: 700; color: var(--text-gray);
+            cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+        }
+
+        .domain-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        .main-container { flex: 1; display: flex; overflow: hidden; }
+
+        .map-zone {
+            flex: 1; height: 100%; overflow: auto;
+            background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-edge) 150%);
+            padding: 40px 40px 100px; position: relative;
+        }
+
+        .tool-zone {
+            width: 420px; min-width: 350px; height: 100%;
+            background: var(--glass); backdrop-filter: blur(40px);
+            border-left: 1px solid rgba(0,0,0,0.08); box-shadow: -10px 0 30px rgba(0,0,0,0.03);
+            overflow-y: auto; padding: 40px 32px 60px; z-index: 100;
+        }
+
+        .matrix-wrapper { display: flex; gap: 80px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 40px; align-items: flex-start; }
+
+        .domain-module { scroll-snap-align: start; flex-shrink: 0; display: flex; flex-direction: column; }
+        .domain-module-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text-light); margin-bottom: 20px; padding: 0 4px; }
+        
+        .matrix-grid { 
+            display: grid; grid-template-columns: 80px repeat(4, minmax(220px, 1fr)); 
+            gap: 40px 24px; position: relative; width: max-content; padding-right: 40px;
+        }
+
+        .track-bg { grid-row: 1 / span 8; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 0; }
+        .strand-label { position: sticky; top: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--strand-color); background: var(--bg-center); padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; z-index: 50; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .milled-groove { width: 14px; flex: 1; background: var(--alum-base); box-shadow: var(--milled); border-radius: 7px; position: relative; }
         .color-line { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; background: var(--strand-color); opacity: 0.2; }
 
-        .grade-marker { grid-column: 1; display: flex; align-items: flex-start; justify-content: flex-end; padding-top: 15px; }
-        .grade-header { font-size: 2rem; font-weight: 900; color: var(--text-gray); opacity: 0.4; }
+        .grade-marker { 
+            grid-column: 1; display: flex; align-items: flex-start; justify-content: flex-end; 
+            padding-top: 15px; padding-right: 15px; background: transparent; border: none; font-family: inherit;
+            cursor: pointer; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+        .grade-header { font-size: 2rem; font-weight: 900; opacity: 0.8; }
 
         .grid-cell { display: flex; flex-direction: column; gap: 12px; z-index: 10; }
+
+        .map-zone.is-spotlighting .node:not(.spotlight-active):not(.primary-selected) { opacity: 0.15; filter: grayscale(0.6); transform: scale(0.98); box-shadow: none; border-color: transparent; }
+        .map-zone.is-spotlighting .grade-marker:not(.spotlight-active) { opacity: 0.3; }
 
         .node {
             background: var(--alum-base); box-shadow: var(--raised); border-radius: 12px;
             padding: 12px 16px; display: flex; flex-direction: column;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border-left: 4px solid var(--strand-color); position: relative;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-left: 4px solid var(--strand-color); position: relative; cursor: pointer;
         }
-        .node:hover { transform: translateY(-3px); box-shadow: 15px 15px 30px rgba(166,171,189,0.5); }
+        .node.spotlight-active:not(.primary-selected) {
+            box-shadow: var(--raised), 0 0 0 2px var(--strand-color);
+            transform: scale(1);
+            z-index: 10;
+        }
+        .node.primary-selected {
+            box-shadow: var(--milled);
+            transform: scale(0.96) translateY(2px);
+            background: #E0E0E5;
+            border-left-width: 8px;
+            z-index: 50;
+        }
         
         .std-code { font-size: 0.55rem; color: var(--text-gray); font-weight: 800; letter-spacing: 0.8px; margin-bottom: 2px; }
-        .std-desc { font-size: 0.8rem; font-weight: 700; color: var(--text-main); line-height: 1.2; }
-
+        .std-desc { font-size: 0.85rem; font-weight: 700; color: var(--text-main); line-height: 1.3; }
         .sub { margin-left: 15px; border-left-width: 2px; border-radius: 8px; padding: 8px 12px; opacity: 0.85; }
-        .sub .std-desc { font-size: 0.75rem; font-weight: 500; }
 
-        .engine-badge {
-            position: absolute; top: 8px; right: 8px;
-            font-size: 0.55rem; font-weight: 900; color: #fff;
-            padding: 1px 5px; border-radius: 3px; background: var(--text-gray); opacity: 0.3;
-        }
+        .panel-header { font-size: 0.65rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-light); margin-bottom: 24px; }
+        .app-desc { font-size: 0.8rem; font-weight: 400; color: var(--text-gray); line-height: 1.5; margin-bottom: 12px; }
 
-        .brand-header { position: fixed; top: 24px; left: 24px; z-index: 100; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.02em; }
-        .legend {
-            position: fixed; bottom: 24px; right: 24px; background: var(--alum-base); padding: 16px;
-            border-radius: 16px; box-shadow: var(--raised); z-index: 100;
+        .tool-zone.is-spotlighting .app-card:not(.active) { opacity: 0.3; filter: grayscale(0.5); transform: scale(0.98); box-shadow: none; }
+
+        .app-card {
+            background: var(--alum-base); border-radius: 16px; padding: 20px;
+            box-shadow: var(--raised); border: none;
+            margin-bottom: 16px; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: 800; color: var(--text-gray); margin-bottom: 6px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .e-tag { font-family: monospace; font-size: 0.65rem; padding: 1px 4px; background: var(--text-main); color: #fff; border-radius: 3px; margin-right: 4px; }
+        .app-card:hover { transform: translateY(-2px); box-shadow: 16px 16px 32px rgba(166,171,189,0.45), -16px -16px 32px rgba(255,255,255,0.95); }
+        .app-card.active { box-shadow: var(--milled); transform: scale(0.98); border: none; }
+        .tool-bead {
+            width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+            margin-bottom: 12px;
+            background:
+                radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow:
+                inset 1px 1px 2px rgba(255,255,255,0.8),
+                inset -1px -1px 2px rgba(0,0,0,0.2),
+                0 2px 5px rgba(0,0,0,0.22);
+        }
+        .app-title { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; text-shadow: 0px 1px 0px rgba(255,255,255,0.6), 0px -1px 0px rgba(0,0,0,0.2); }
+        .app-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .tag { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; background: var(--bg-center); color: var(--text-gray); font-weight: 600; }
+
+        footer {
+            position: fixed; bottom: 0; width: 100%; z-index: 300;
+            text-align: center; padding: 10px 24px;
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--text-light);
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            background: linear-gradient(135deg, #efefef, #a8a8a8, #e0e0e0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            margin-bottom: 0.06em; vertical-align: baseline;
+        }
     </style>
 </head>
 <body>
 
-    <div class="brand-header">MATH THINGS. <span style="font-weight:300; color:var(--text-gray)">| NBT BRAID</span></div>
+    <header>
+        <div class="brand-logo">MATH THINGS.</div>
+        <nav class="domain-nav">
+            <button class="domain-btn" onclick="switchDomain('cc')">COUNTING (CC)</button>
+            <button class="domain-btn active" onclick="switchDomain('nbt')">BASE TEN (NBT)</button>
+            <button class="domain-btn" onclick="switchDomain('oa')">OPERATIONS (OA)</button>
+            <button class="domain-btn" onclick="switchDomain('nf')">FRACTIONS (NF)</button>
+            <button class="domain-btn" onclick="switchDomain('md')">MEASUREMENT (MD)</button>
+            <button class="domain-btn" onclick="switchDomain('g')">GEOMETRY (G)</button>
+        </nav>
+        <div style="width:100px"></div>
+    </header>
 
-    <div class="legend">
-        <div class="legend-item"><div class="dot" style="background: var(--strand-system);"></div> The System</div>
-        <div class="legend-item"><div class="dot" style="background: var(--strand-sense);"></div> Number Sense</div>
-        <div class="legend-item"><div class="dot" style="background: var(--strand-basic);"></div> Basic Ops</div>
-        <div class="legend-item"><div class="dot" style="background: var(--strand-advanced);"></div> Adv. Ops</div>
-        <div style="border-top:1px solid rgba(0,0,0,0.1); margin-top:10px; padding-top:10px;">
-            <div class="legend-item"><span class="e-tag">A</span> Assembler</div>
-            <div class="legend-item"><span class="e-tag">N</span> Navigator</div>
-            <div class="legend-item"><span class="e-tag">S</span> Slider</div>
-            <div class="legend-item"><span class="e-tag">E</span> Excavator</div>
-            <div class="legend-item"><span class="e-tag">C</span> Collector</div>
+    <div class="main-container">
+        <div class="map-zone" id="mapZone">
+            <div class="matrix-wrapper" id="matrixWrapper">
+            </div>
+        </div>
+        <div class="tool-zone" id="toolZone">
+            <div class="panel-header">The Tools</div>
+            <div id="appContainer"></div>
         </div>
     </div>
 
-    <div class="framework-container">
-        <div class="matrix-grid">
-            
-            <div class="track-bg" style="grid-column: 2;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-system);"></div></div></div>
-            <div class="track-bg" style="grid-column: 3;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-sense);"></div></div></div>
-            <div class="track-bg" style="grid-column: 4;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-basic);"></div></div></div>
-            <div class="track-bg" style="grid-column: 5;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-advanced);"></div></div></div>
+    <script>
+        const appsData = [
+            // CC
+            { id: "app-cc-stage", title: "App that is a virtual counting stage", desc: "Modeling count sequences and skip-counting.", strand: "system", strandLabel: "The System", grades: ["K"] },
+            { id: "app-cc-writing", title: "App for writing and representing numerals", desc: "Connecting written symbols to quantities.", strand: "sense", strandLabel: "Number Sense", grades: ["K"] },
+            { id: "app-cc-cardinality", title: "App for one-to-one correspondence", desc: "Physical interaction with cardinality.", strand: "basic", strandLabel: "Basic Ops", grades: ["K"] },
+            // NBT
+            { id: "app-nbt-blocks", title: "App that is virtual base ten blocks", desc: "Physical bundling and unbundling of magnitudes.", strand: "system", strandLabel: "The System", grades: ["K", "G1", "G2"] },
+            { id: "app-nbt-line", title: "App that is a zoomable number line", desc: "Spatial orientation and skip-counting engine.", strand: "sense", strandLabel: "Number Sense", grades: ["G1", "G2"] },
+            { id: "app-nbt-ops", title: "App for multi-digit addition and subtraction", desc: "Regrouping and standard algorithm flow.", strand: "basic", strandLabel: "Basic Ops", grades: ["G1", "G2", "G3", "G4"] },
+            { id: "app-nbt-advanced", title: "App for multi-digit multiplication and division", desc: "Area models and partitioning.", strand: "advanced", strandLabel: "Adv. Ops", grades: ["G3", "G4", "G5"] },
+            { id: "app-nbt-rounding", title: "App that is a rounding boundary tool", desc: "Task-fail-wait environment for proximity.", strand: "sense", strandLabel: "Number Sense", grades: ["G3", "G4", "G5"] },
+            // OA
+            { id: "app-oa-balancer", title: "App that is an equation balancer", desc: "Balance scale for missing addends and equality.", strand: "sense", strandLabel: "Number Sense", grades: ["K", "G1", "G3"] },
+            { id: "app-oa-arrays", title: "App that is virtual arrays & equal groups", desc: "Modeling multiplication and division concepts.", strand: "advanced", strandLabel: "Adv. Ops", grades: ["G2", "G3", "G4"] },
+            { id: "app-oa-patterns", title: "App that is a pattern & expression engine", desc: "Generating rules and evaluating brackets.", strand: "system", strandLabel: "The System", grades: ["G3", "G4", "G5"] },
+            // NF
+            { id: "app-nf-bars", title: "App that is virtual fraction bars", desc: "Draggable bars to physically prove equivalence.", strand: "system", strandLabel: "The System", grades: ["G3", "G4", "G5"] },
+            { id: "app-nf-add", title: "App that combines unlike denominators", desc: "Forces slicing into common units.", strand: "basic", strandLabel: "Basic Ops", grades: ["G4", "G5"] },
+            { id: "app-nf-mult", title: "App that is a fraction area multiplier", desc: "Transparent grids showing scaling.", strand: "advanced", strandLabel: "Adv. Ops", grades: ["G4", "G5"] },
+            // MD
+            { id: "app-md-ruler", title: "App that is a dynamic digital ruler", desc: "Length comparison and fractional measuring.", strand: "basic", strandLabel: "Basic Ops", grades: ["K", "G1", "G2", "G3"] },
+            { id: "app-md-clock", title: "App for relational time manipulation", desc: "Physical gears moving based on duration.", strand: "sense", strandLabel: "Number Sense", grades: ["G1", "G2", "G3"] },
+            { id: "app-md-vol", title: "App for liquid volume & mass", desc: "Virtual pouring and balancing mass units.", strand: "advanced", strandLabel: "Adv. Ops", grades: ["G3", "G4", "G5"] },
+            // G
+            { id: "app-g-shapes", title: "App that is virtual pattern blocks", desc: "Composing and decomposing 2D/3D shapes.", strand: "advanced", strandLabel: "Adv. Ops", grades: ["K", "G1", "G2"] },
+            { id: "app-g-coord", title: "App for coordinate plane geometry", desc: "Plotting spatial points in 2D space.", strand: "system", strandLabel: "The System", grades: ["G5"] }
+        ];
 
-            <div class="grade-marker" style="grid-row: 1;"><div class="grade-header">K</div></div>
-            <div class="grid-cell" style="grid-column: 2; grid-row: 1;">
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">A</div><div class="std-code">K.NBT.A.1</div><div class="std-desc">Teens as 10 + ones.</div></div>
-            </div>
+        const allStandards = {
+            cc: [
+                { id: "K.CC.A.1", grade: "k", strand: "system", desc: "Count to 100 by 1s/10s.", apps: ["app-cc-stage"] },
+                { id: "K.CC.A.2", grade: "k", strand: "system", desc: "Count forward from given num.", apps: ["app-cc-stage"] },
+                { id: "K.CC.A.3", grade: "k", strand: "sense", desc: "Write numerals 0-20.", apps: ["app-cc-writing"] },
+                { id: "K.CC.B.4.a", grade: "k", strand: "basic", desc: "1-to-1 correspondence.", apps: ["app-cc-cardinality"], isSub: true },
+                { id: "K.CC.B.4.b", grade: "k", strand: "basic", desc: "Last number is the total.", apps: ["app-cc-cardinality"], isSub: true },
+                { id: "K.CC.B.4.c", grade: "k", strand: "basic", desc: "Successive number is +1.", apps: ["app-cc-cardinality"], isSub: true },
+                { id: "K.CC.B.5", grade: "k", strand: "basic", desc: "Count up to 20 objects.", apps: ["app-cc-cardinality"] },
+                { id: "K.CC.C.6", grade: "k", strand: "sense", desc: "Compare group sizes (> = <).", apps: ["app-cc-writing"] },
+                { id: "K.CC.C.7", grade: "k", strand: "sense", desc: "Compare numerals 1-10.", apps: ["app-cc-writing"] }
+            ],
+            nbt: [
+                { id: "K.NBT.A.1", grade: "k", strand: "system", desc: "Teens as 10 + ones.", apps: ["app-nbt-blocks"] },
+                { id: "1.NBT.A.1", grade: "g1", strand: "sense", desc: "Count/read/write to 120.", apps: ["app-nbt-line"] },
+                { id: "1.NBT.B.2.a", grade: "g1", strand: "system", desc: "10 ones = 1 ten.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "1.NBT.B.2.b", grade: "g1", strand: "system", desc: "11-19: ten and ones.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "1.NBT.B.2.c", grade: "g1", strand: "system", desc: "Multiples of 10: tens + 0 ones.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "1.NBT.B.3", grade: "g1", strand: "sense", desc: "Compare 2-digits (symbols).", apps: ["app-nbt-line"] },
+                { id: "1.NBT.C.4", grade: "g1", strand: "basic", desc: "Add within 100 (concrete/model).", apps: ["app-nbt-ops"] },
+                { id: "1.NBT.C.5", grade: "g1", strand: "basic", desc: "Mental 10 more/less.", apps: ["app-nbt-ops"] },
+                { id: "1.NBT.C.6", grade: "g1", strand: "basic", desc: "Subtract multiples of 10.", apps: ["app-nbt-ops"] },
+                { id: "2.NBT.A.1.a", grade: "g2", strand: "system", desc: "100 = 10 tens.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "2.NBT.A.1.b", grade: "g2", strand: "system", desc: "Multiples of 100.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "2.NBT.A.2", grade: "g2", strand: "sense", desc: "Skip-count 5, 10, 100.", apps: ["app-nbt-line"] },
+                { id: "2.NBT.A.3", grade: "g2", strand: "sense", desc: "Read/write to 1000.", apps: ["app-nbt-line"] },
+                { id: "2.NBT.A.4", grade: "g2", strand: "sense", desc: "Compare 3-digits.", apps: ["app-nbt-line"] },
+                { id: "2.NBT.B.5", grade: "g2", strand: "basic", desc: "Fluent +/- within 100.", apps: ["app-nbt-ops"] },
+                { id: "2.NBT.B.6", grade: "g2", strand: "basic", desc: "Add four 2-digits.", apps: ["app-nbt-ops"] },
+                { id: "2.NBT.B.7", grade: "g2", strand: "basic", desc: "Add/sub within 1000.", apps: ["app-nbt-ops"] },
+                { id: "2.NBT.B.8", grade: "g2", strand: "basic", desc: "Mental 10/100 more/less.", apps: ["app-nbt-ops"] },
+                { id: "2.NBT.B.9", grade: "g2", strand: "basic", desc: "Explain strategy reasoning.", apps: ["app-nbt-ops"] },
+                { id: "3.NBT.A.1", grade: "g3", strand: "sense", desc: "Round to nearest 10/100.", apps: ["app-nbt-rounding"] },
+                { id: "3.NBT.A.2", grade: "g3", strand: "basic", desc: "Fluent +/- within 1000.", apps: ["app-nbt-ops"] },
+                { id: "3.NBT.A.3", grade: "g3", strand: "advanced", desc: "Multiply by multiples of 10.", apps: ["app-nbt-advanced"] },
+                { id: "4.NBT.A.1", grade: "g4", strand: "system", desc: "Multi-digit 10x shift.", apps: ["app-nbt-blocks"] },
+                { id: "4.NBT.A.2", grade: "g4", strand: "sense", desc: "Read/Write/Compare to 1M.", apps: ["app-nbt-rounding"] },
+                { id: "4.NBT.A.3", grade: "g4", strand: "sense", desc: "Round multi-digit numbers.", apps: ["app-nbt-rounding"] },
+                { id: "4.NBT.B.4", grade: "g4", strand: "basic", desc: "Fluent Standard Algorithm +/-.", apps: ["app-nbt-ops"] },
+                { id: "4.NBT.B.5", grade: "g4", strand: "advanced", desc: "Multiply: 4-by-1, 2-by-2.", apps: ["app-nbt-advanced"] },
+                { id: "4.NBT.B.6", grade: "g4", strand: "advanced", desc: "Division with remainders.", apps: ["app-nbt-advanced"] },
+                { id: "5.NBT.A.1", grade: "g5", strand: "system", desc: "Base ten place value 10x/0.1x.", apps: ["app-nbt-blocks"] },
+                { id: "5.NBT.A.2", grade: "g5", strand: "system", desc: "Powers of 10 / Exponents.", apps: ["app-nbt-blocks"] },
+                { id: "5.NBT.A.3.a", grade: "g5", strand: "sense", desc: "Read/Write decimals to 1000ths.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "5.NBT.A.3.b", grade: "g5", strand: "sense", desc: "Compare decimals to 1000ths.", apps: ["app-nbt-blocks"], isSub: true },
+                { id: "5.NBT.A.4", grade: "g5", strand: "sense", desc: "Round decimals.", apps: ["app-nbt-rounding"] },
+                { id: "5.NBT.B.5", grade: "g5", strand: "advanced", desc: "Fluent Standard Mult.", apps: ["app-nbt-advanced"] },
+                { id: "5.NBT.B.6", grade: "g5", strand: "advanced", desc: "Divide 4-digit by 2-digit.", apps: ["app-nbt-advanced"] },
+                { id: "5.NBT.B.7", grade: "g5", strand: "advanced", desc: "Decimal operations (+/-/x/÷).", apps: ["app-nbt-advanced"] }
+            ],
+            oa: [
+                { id: "K.OA.A.1", grade: "k", strand: "basic", desc: "Represent Add/Sub.", apps: ["app-cc-cardinality"] },
+                { id: "K.OA.A.2", grade: "k", strand: "basic", desc: "Word problems within 10.", apps: ["app-cc-cardinality"] },
+                { id: "K.OA.A.3", grade: "k", strand: "sense", desc: "Decompose to 10.", apps: ["app-oa-balancer"] },
+                { id: "K.OA.A.4", grade: "k", strand: "sense", desc: "Make 10 missing part.", apps: ["app-oa-balancer"] },
+                { id: "K.OA.A.5", grade: "k", strand: "basic", desc: "Fluent +/- within 5.", apps: ["app-cc-cardinality"] },
+                { id: "1.OA.A.1", grade: "g1", strand: "basic", desc: "Word problems within 20.", apps: ["app-nbt-line"] },
+                { id: "1.OA.A.2", grade: "g1", strand: "basic", desc: "Add three numbers.", apps: ["app-nbt-line"] },
+                { id: "1.OA.B.3", grade: "g1", strand: "system", desc: "Addition properties.", apps: ["app-oa-balancer"] },
+                { id: "1.OA.B.4", grade: "g1", strand: "sense", desc: "Sub as missing addend.", apps: ["app-oa-balancer"] },
+                { id: "1.OA.C.5", grade: "g1", strand: "sense", desc: "Count to add/sub.", apps: ["app-nbt-line"] },
+                { id: "1.OA.C.6", grade: "g1", strand: "basic", desc: "Fluent within 20.", apps: ["app-nbt-ops"] },
+                { id: "1.OA.D.7", grade: "g1", strand: "system", desc: "Equal sign meaning.", apps: ["app-oa-balancer"] },
+                { id: "1.OA.D.8", grade: "g1", strand: "system", desc: "Find unknown in equation.", apps: ["app-oa-balancer"] },
+                { id: "2.OA.A.1", grade: "g2", strand: "basic", desc: "1 & 2-step problems.", apps: ["app-nbt-ops"] },
+                { id: "2.OA.B.2", grade: "g2", strand: "basic", desc: "Mental +/- within 20.", apps: ["app-nbt-ops"] },
+                { id: "2.OA.C.3", grade: "g2", strand: "sense", desc: "Odd/Even pairing.", apps: ["app-oa-arrays"] },
+                { id: "2.OA.C.4", grade: "g2", strand: "advanced", desc: "Repeated addition.", apps: ["app-oa-arrays"] },
+                { id: "3.OA.A.1", grade: "g3", strand: "advanced", desc: "Interpret mult.", apps: ["app-oa-arrays"] },
+                { id: "3.OA.A.2", grade: "g3", strand: "advanced", desc: "Interpret division.", apps: ["app-oa-arrays"] },
+                { id: "3.OA.A.3", grade: "g3", strand: "advanced", desc: "Mult/Div word problems.", apps: ["app-oa-arrays"] },
+                { id: "3.OA.A.4", grade: "g3", strand: "advanced", desc: "Unknown factor/quotient.", apps: ["app-oa-balancer"] },
+                { id: "3.OA.B.5", grade: "g3", strand: "system", desc: "Mult properties.", apps: ["app-oa-arrays"] },
+                { id: "3.OA.B.6", grade: "g3", strand: "sense", desc: "Div as missing factor.", apps: ["app-oa-balancer"] },
+                { id: "3.OA.C.7", grade: "g3", strand: "advanced", desc: "Fluent Mult/Div.", apps: ["app-oa-arrays"] },
+                { id: "3.OA.D.8", grade: "g3", strand: "system", desc: "2-step & estimation.", apps: ["app-oa-balancer"] },
+                { id: "3.OA.D.9", grade: "g3", strand: "system", desc: "Arithmetic patterns.", apps: ["app-oa-patterns"] },
+                { id: "4.OA.A.1", grade: "g4", strand: "sense", desc: "Mult comparison.", apps: ["app-oa-arrays"] },
+                { id: "4.OA.A.2", grade: "g4", strand: "advanced", desc: "Comparison word problems.", apps: ["app-oa-arrays"] },
+                { id: "4.OA.A.3", grade: "g4", strand: "advanced", desc: "Multistep/Remainders.", apps: ["app-oa-balancer"] },
+                { id: "4.OA.B.4", grade: "g4", strand: "system", desc: "Factors/Multiples.", apps: ["app-oa-arrays"] },
+                { id: "4.OA.C.5", grade: "g4", strand: "system", desc: "Analyze patterns.", apps: ["app-oa-patterns"] },
+                { id: "5.OA.A.1", grade: "g5", strand: "system", desc: "Evaluate brackets.", apps: ["app-oa-patterns"] },
+                { id: "5.OA.A.2", grade: "g5", strand: "system", desc: "Interpret expressions.", apps: ["app-oa-patterns"] },
+                { id: "5.OA.B.3", grade: "g5", strand: "system", desc: "Ordered pairs/graphs.", apps: ["app-oa-patterns"] }
+            ],
+            nf: [
+                { id: "3.NF.A.1", grade: "g3", strand: "system", desc: "Unit fraction 1/b.", apps: ["app-nf-bars"] },
+                { id: "3.NF.A.2.a", grade: "g3", strand: "sense", desc: "Fraction 1/b on number line.", apps: ["app-nbt-line"], isSub: true },
+                { id: "3.NF.A.2.b", grade: "g3", strand: "sense", desc: "Fraction a/b on number line.", apps: ["app-nbt-line"], isSub: true },
+                { id: "3.NF.A.3.a", grade: "g3", strand: "system", desc: "Equivalent if same size/point.", apps: ["app-nf-bars"], isSub: true },
+                { id: "3.NF.A.3.b", grade: "g3", strand: "system", desc: "Recognize/generate simple equivalents.", apps: ["app-nf-bars"], isSub: true },
+                { id: "3.NF.A.3.c", grade: "g3", strand: "system", desc: "Whole numbers as fractions.", apps: ["app-nf-bars"], isSub: true },
+                { id: "3.NF.A.3.d", grade: "g3", strand: "sense", desc: "Compare fractions same num/denom.", apps: ["app-nf-bars"], isSub: true },
+                { id: "4.NF.A.1", grade: "g4", strand: "system", desc: "Explain fraction equivalence.", apps: ["app-nf-bars"] },
+                { id: "4.NF.A.2", grade: "g4", strand: "sense", desc: "Compare different num/denom.", apps: ["app-nf-bars"] },
+                { id: "4.NF.B.3.a", grade: "g4", strand: "basic", desc: "Add/sub as joining/separating.", apps: ["app-nf-bars"], isSub: true },
+                { id: "4.NF.B.3.b", grade: "g4", strand: "basic", desc: "Decompose into sum of fractions.", apps: ["app-nf-bars"], isSub: true },
+                { id: "4.NF.B.3.c", grade: "g4", strand: "basic", desc: "Add/sub mixed with like denom.", apps: ["app-nf-bars"], isSub: true },
+                { id: "4.NF.B.3.d", grade: "g4", strand: "basic", desc: "Word problems: Add/sub like denom.", apps: ["app-nf-bars"], isSub: true },
+                { id: "4.NF.B.4.a", grade: "g4", strand: "advanced", desc: "n/b as multiple of 1/b.", apps: ["app-nf-mult"], isSub: true },
+                { id: "4.NF.B.4.b", grade: "g4", strand: "advanced", desc: "Mult fraction by whole number.", apps: ["app-nf-mult"], isSub: true },
+                { id: "4.NF.B.4.c", grade: "g4", strand: "advanced", desc: "Word problems: Mult frac by whole.", apps: ["app-nf-mult"], isSub: true },
+                { id: "4.NF.C.5", grade: "g4", strand: "system", desc: "Rename 10ths as 100ths.", apps: ["app-nf-bars"] },
+                { id: "4.NF.C.6", grade: "g4", strand: "sense", desc: "Decimal notation (10ths/100ths).", apps: ["app-nbt-blocks"] },
+                { id: "4.NF.C.7", grade: "g4", strand: "sense", desc: "Compare two decimals to 100ths.", apps: ["app-nbt-blocks"] },
+                { id: "5.NF.A.1", grade: "g5", strand: "basic", desc: "Add/sub unlike denominators.", apps: ["app-nf-add"] },
+                { id: "5.NF.A.2", grade: "g5", strand: "basic", desc: "Word problems: Add/sub unlike denom.", apps: ["app-nf-add"] },
+                { id: "5.NF.B.3", grade: "g5", strand: "system", desc: "Fraction as division (a/b = a ÷ b).", apps: ["app-nf-bars"] },
+                { id: "5.NF.B.4.a", grade: "g5", strand: "advanced", desc: "Interpret product (a/b) × q.", apps: ["app-nf-mult"], isSub: true },
+                { id: "5.NF.B.4.b", grade: "g5", strand: "advanced", desc: "Area: Frac sides; tiling.", apps: ["app-nf-mult"], isSub: true },
+                { id: "5.NF.B.5.a", grade: "g5", strand: "sense", desc: "Scaling: Size of factor relative to 1.", apps: ["app-nf-mult"], isSub: true },
+                { id: "5.NF.B.5.b", grade: "g5", strand: "sense", desc: "Scaling: Factor >1 vs factor <1.", apps: ["app-nf-mult"], isSub: true },
+                { id: "5.NF.B.6", grade: "g5", strand: "advanced", desc: "Word problems: Mult fractions.", apps: ["app-nf-mult"] },
+                { id: "5.NF.B.7.a", grade: "g5", strand: "advanced", desc: "Unit fraction ÷ whole number.", apps: ["app-nf-mult"], isSub: true },
+                { id: "5.NF.B.7.b", grade: "g5", strand: "advanced", desc: "Whole number ÷ unit fraction.", apps: ["app-nf-mult"], isSub: true },
+                { id: "5.NF.B.7.c", grade: "g5", strand: "advanced", desc: "Word problems: Unit frac division.", apps: ["app-nf-mult"], isSub: true }
+            ],
+            md: [
+                { id: "K.MD.A.1", grade: "k", strand: "basic", desc: "Describe measurable attributes.", apps: ["app-md-ruler"] },
+                { id: "K.MD.A.2", grade: "k", strand: "basic", desc: "Compare two objects directly.", apps: ["app-md-ruler"] },
+                { id: "K.MD.B.3", grade: "k", strand: "sense", desc: "Classify and count by category.", apps: ["app-cc-cardinality"] },
+                { id: "1.MD.A.1", grade: "g1", strand: "basic", desc: "Order three objects by length.", apps: ["app-md-ruler"] },
+                { id: "1.MD.A.2", grade: "g1", strand: "basic", desc: "Measure length in units.", apps: ["app-md-ruler"] },
+                { id: "1.MD.B.3", grade: "g1", strand: "sense", desc: "Tell time: hour/half-hour.", apps: ["app-md-clock"] },
+                { id: "1.MD.C.4", grade: "g1", strand: "system", desc: "Organize data (3 categories).", apps: ["app-cc-cardinality"] },
+                { id: "2.MD.A.1", grade: "g2", strand: "basic", desc: "Select and use tools (rulers).", apps: ["app-md-ruler"] },
+                { id: "2.MD.A.2", grade: "g2", strand: "basic", desc: "Measure using two different units.", apps: ["app-md-ruler"] },
+                { id: "2.MD.A.3", grade: "g2", strand: "basic", desc: "Estimate lengths (in, ft, cm, m).", apps: ["app-md-ruler"] },
+                { id: "2.MD.A.4", grade: "g2", strand: "basic", desc: "Find length difference.", apps: ["app-md-ruler"] },
+                { id: "2.MD.B.5", grade: "g2", strand: "basic", desc: "Word problems: Length +/-.", apps: ["app-nbt-line"] },
+                { id: "2.MD.B.6", grade: "g2", strand: "sense", desc: "Represent length on number line.", apps: ["app-nbt-line"] },
+                { id: "2.MD.C.7", grade: "g2", strand: "sense", desc: "Tell time: nearest 5 mins.", apps: ["app-md-clock"] },
+                { id: "2.MD.C.8", grade: "g2", strand: "sense", desc: "Money word problems.", apps: ["app-nbt-blocks"] },
+                { id: "2.MD.D.9", grade: "g2", strand: "system", desc: "Generate data; Line plots.", apps: ["app-md-ruler"] },
+                { id: "2.MD.D.10", grade: "g2", strand: "system", desc: "Draw bar/picture graphs.", apps: ["app-cc-cardinality"] },
+                { id: "3.MD.A.1", grade: "g3", strand: "sense", desc: "Time word problems: elapsed mins.", apps: ["app-md-clock"] },
+                { id: "3.MD.A.2", grade: "g3", strand: "advanced", desc: "Liquid volume/mass +/-.", apps: ["app-md-vol"] },
+                { id: "3.MD.B.3", grade: "g3", strand: "system", desc: "Scaled picture/bar graphs.", apps: ["app-oa-patterns"] },
+                { id: "3.MD.B.4", grade: "g3", strand: "system", desc: "Line plots: fractional units.", apps: ["app-md-ruler"] },
+                { id: "3.MD.C.5.a", grade: "g3", strand: "advanced", desc: "Unit square: area of 1 sq unit.", apps: ["app-oa-arrays"], isSub: true },
+                { id: "3.MD.C.5.b", grade: "g3", strand: "advanced", desc: "Plane figure area (n square units).", apps: ["app-oa-arrays"], isSub: true },
+                { id: "3.MD.C.6", grade: "g3", strand: "advanced", desc: "Measure area by counting sq units.", apps: ["app-oa-arrays"] },
+                { id: "3.MD.C.7.a", grade: "g3", strand: "advanced", desc: "Area = Side x Side.", apps: ["app-oa-arrays"], isSub: true },
+                { id: "3.MD.C.7.b", grade: "g3", strand: "advanced", desc: "Multiply side lengths (real world).", apps: ["app-oa-arrays"], isSub: true },
+                { id: "3.MD.C.7.c", grade: "g3", strand: "advanced", desc: "Distributive property area.", apps: ["app-oa-arrays"], isSub: true },
+                { id: "3.MD.C.7.d", grade: "g3", strand: "advanced", desc: "Additive area (rectilinear).", apps: ["app-oa-arrays"], isSub: true },
+                { id: "3.MD.D.8", grade: "g3", strand: "advanced", desc: "Perimeter word problems.", apps: ["app-oa-arrays"] },
+                { id: "4.MD.A.1", grade: "g4", strand: "system", desc: "Units and relative sizes.", apps: ["app-md-ruler"] },
+                { id: "4.MD.A.2", grade: "g4", strand: "basic", desc: "Measurement word problems.", apps: ["app-md-ruler"] },
+                { id: "4.MD.A.3", grade: "g4", strand: "advanced", desc: "Area/Perimeter formulas.", apps: ["app-oa-arrays"] },
+                { id: "4.MD.B.4", grade: "g4", strand: "system", desc: "Line plots: fractions +/-.", apps: ["app-nf-bars"] },
+                { id: "4.MD.C.5.a", grade: "g4", strand: "sense", desc: "Angle measurement (360 deg).", apps: ["app-g-shapes"], isSub: true },
+                { id: "4.MD.C.5.b", grade: "g4", strand: "sense", desc: "Measure angles: unit angles.", apps: ["app-g-shapes"], isSub: true },
+                { id: "4.MD.C.6", grade: "g4", strand: "sense", desc: "Measure/draw angles (protractor).", apps: ["app-g-shapes"] },
+                { id: "4.MD.C.7", grade: "g4", strand: "sense", desc: "Additive angles (non-overlap).", apps: ["app-g-shapes"] },
+                { id: "5.MD.A.1", grade: "g5", strand: "system", desc: "Convert measurement units.", apps: ["app-nbt-blocks"] },
+                { id: "5.MD.B.2", grade: "g5", strand: "system", desc: "Line plots: Fraction operations.", apps: ["app-nf-bars"] },
+                { id: "5.MD.C.3.a", grade: "g5", strand: "advanced", desc: "Volume: Unit cube 1x1x1.", apps: ["app-md-vol"], isSub: true },
+                { id: "5.MD.C.3.b", grade: "g5", strand: "advanced", desc: "Volume measurement (n cubes).", apps: ["app-md-vol"], isSub: true },
+                { id: "5.MD.C.4", grade: "g5", strand: "advanced", desc: "Measure volume by counting cubes.", apps: ["app-md-vol"] },
+                { id: "5.MD.C.5.a", grade: "g5", strand: "advanced", desc: "Volume = L x W x H.", apps: ["app-md-vol"], isSub: true },
+                { id: "5.MD.C.5.b", grade: "g5", strand: "advanced", desc: "Volume = Base x H.", apps: ["app-md-vol"], isSub: true },
+                { id: "5.MD.C.5.c", grade: "g5", strand: "advanced", desc: "Volume: Additive figures.", apps: ["app-md-vol"], isSub: true }
+            ],
+            g: [
+                { id: "K.G.A.1", grade: "k", strand: "sense", desc: "Relative positions.", apps: ["app-g-shapes"] },
+                { id: "K.G.A.2", grade: "k", strand: "sense", desc: "Shape names regardless of size.", apps: ["app-g-shapes"] },
+                { id: "K.G.A.3", grade: "k", strand: "sense", desc: "2D vs 3D identifiers.", apps: ["app-g-shapes"] },
+                { id: "K.G.B.4", grade: "k", strand: "sense", desc: "Analyze/compare 2D/3D shapes.", apps: ["app-g-shapes"] },
+                { id: "K.G.B.5", grade: "k", strand: "advanced", desc: "Model shapes from world components.", apps: ["app-g-shapes"] },
+                { id: "K.G.B.6", grade: "k", strand: "advanced", desc: "Compose simple shapes into larger.", apps: ["app-g-shapes"] },
+                { id: "1.G.A.1", grade: "g1", strand: "sense", desc: "Defining attributes vs non-defining.", apps: ["app-g-shapes"] },
+                { id: "1.G.A.2", grade: "g1", strand: "advanced", desc: "Compose 2D/3D composite shapes.", apps: ["app-g-shapes"] },
+                { id: "1.G.A.3", grade: "g1", strand: "system", desc: "Partitioning: halves/fourths.", apps: ["app-nf-bars"] },
+                { id: "2.G.A.1", grade: "g2", strand: "advanced", desc: "Identify/draw specific attributes.", apps: ["app-g-shapes"] },
+                { id: "2.G.A.2", grade: "g2", strand: "system", desc: "Partition rect into rows/cols.", apps: ["app-oa-arrays"] },
+                { id: "2.G.A.3", grade: "g2", strand: "system", desc: "Partition circles/rect: halves/3rds.", apps: ["app-nf-bars"] },
+                { id: "3.G.A.1", grade: "g3", strand: "system", desc: "Categorize shapes by attributes.", apps: ["app-g-shapes"] },
+                { id: "3.G.A.2", grade: "g3", strand: "system", desc: "Partition into equal area parts.", apps: ["app-nf-bars"] },
+                { id: "4.G.A.1", grade: "g4", strand: "sense", desc: "Draw points, lines, angles.", apps: ["app-g-shapes"] },
+                { id: "4.G.A.2", grade: "g4", strand: "sense", desc: "Classify triangles/quads.", apps: ["app-g-shapes"] },
+                { id: "4.G.A.3", grade: "g4", strand: "sense", desc: "Identify/draw lines of symmetry.", apps: ["app-g-shapes"] },
+                { id: "5.G.A.1", grade: "g5", strand: "system", desc: "Coordinate system logic.", apps: ["app-g-coord"] },
+                { id: "5.G.A.2", grade: "g5", strand: "system", desc: "Graph real-world 1st quad.", apps: ["app-g-coord"] },
+                { id: "5.G.B.3", grade: "g5", strand: "system", desc: "2D figure subcategory properties.", apps: ["app-g-shapes"] },
+                { id: "5.G.B.4", grade: "g5", strand: "system", desc: "Classify 2D figures in hierarchy.", apps: ["app-g-shapes"] }
+            ]
+        };
 
-            <div class="grade-marker" style="grid-row: 2;"><div class="grade-header">G1</div></div>
-            <div class="grid-cell" style="grid-column: 2; grid-row: 2;">
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">N</div><div class="std-code">1.NBT.A.1</div><div class="std-desc">Count to 120.</div></div>
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">A</div><div class="std-code">1.NBT.B.2</div><div class="std-desc">Tens and Ones logic.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">1.NBT.B.2.a</div><div class="std-desc">1 Ten = 10 Ones.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">1.NBT.B.2.b</div><div class="std-desc">11–19 structure.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">1.NBT.B.2.c</div><div class="std-desc">Multiples of 10.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 3; grid-row: 2;">
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">1.NBT.B.3</div><div class="std-desc">Compare 2-digits.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 4; grid-row: 2;">
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">1.NBT.C.4</div><div class="std-desc">Add within 100.</div></div>
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">1.NBT.C.5</div><div class="std-desc">Mental +/- 10.</div></div>
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">1.NBT.C.6</div><div class="std-desc">Subtract multiples of 10.</div></div>
-            </div>
+        const gradeMap = [
+            { id: 'k', label: 'K', colorVar: '--brand-k' },
+            { id: 'g1', label: 'G1', colorVar: '--brand-g1' },
+            { id: 'g2', label: 'G2', colorVar: '--brand-g2' },
+            { id: 'g3', label: 'G3', colorVar: '--brand-g3' },
+            { id: 'g4', label: 'G4', colorVar: '--brand-g4' },
+            { id: 'g5', label: 'G5', colorVar: '--brand-g5' }
+        ];
+        
+        const strandCols = { 'system': 2, 'sense': 3, 'basic': 4, 'advanced': 5 };
+        const domainLabels = { cc: 'COUNTING (CC)', nbt: 'BASE TEN (NBT)', oa: 'OPERATIONS (OA)', nf: 'FRACTIONS (NF)', md: 'MEASUREMENT (MD)', g: 'GEOMETRY (G)' };
+        const matrixWrapper = document.getElementById('matrixWrapper');
+        const appContainer = document.getElementById('appContainer');
 
-            <div class="grade-marker" style="grid-row: 3;"><div class="grade-header">G2</div></div>
-            <div class="grid-cell" style="grid-column: 2; grid-row: 3;">
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">A</div><div class="std-code">2.NBT.A.1</div><div class="std-desc">H, T, O Logic.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">2.NBT.A.1.a</div><div class="std-desc">100 = 10 Tens.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">2.NBT.A.1.b</div><div class="std-desc">Multiples of 100.</div></div>
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">N</div><div class="std-code">2.NBT.A.2</div><div class="std-desc">Skip-count 5, 10, 100.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 3; grid-row: 3;">
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">A</div><div class="std-code">2.NBT.A.3</div><div class="std-desc">Expanded form.</div></div>
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">2.NBT.A.4</div><div class="std-desc">Compare 3-digits.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 4; grid-row: 3;">
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.5</div><div class="std-desc">Fluent within 100.</div></div>
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.6</div><div class="std-desc">Add four 2-digits.</div></div>
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.7</div><div class="std-desc">Add/Sub within 1000.</div></div>
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.8</div><div class="std-desc">Mental +/- 10, 100.</div></div>
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.9</div><div class="std-desc">Explain strategies.</div></div>
-            </div>
+        function switchDomain(domainKey) {
+            document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+            const btn = Array.from(document.querySelectorAll('.domain-btn')).find(b => b.textContent.toLowerCase().includes(domainKey));
+            if (btn) btn.classList.add('active');
+            resetBoard();
+            const module = document.getElementById(`module-${domainKey}`);
+            if (module) module.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+            renderApps(domainKey);
+        }
 
-            <div class="grade-marker" style="grid-row: 4;"><div class="grade-header">G3</div></div>
-            <div class="grid-cell" style="grid-column: 3; grid-row: 4;">
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">3.NBT.A.1</div><div class="std-desc">Round to 10 or 100.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 4; grid-row: 4;">
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">3.NBT.A.2</div><div class="std-desc">Add/Sub to 1000.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 5; grid-row: 4;">
-                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">A</div><div class="std-code">3.NBT.A.3</div><div class="std-desc">Multiply by tens.</div></div>
-            </div>
+        function renderAllDomains() {
+            matrixWrapper.innerHTML = '';
+            Object.keys(allStandards).forEach(domainKey => {
+                const module = document.createElement('div');
+                module.className = 'domain-module';
+                module.id = `module-${domainKey}`;
 
-            <div class="grade-marker" style="grid-row: 5;"><div class="grade-header">G4</div></div>
-            <div class="grid-cell" style="grid-column: 2; grid-row: 5;">
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">S</div><div class="std-code">4.NBT.A.1</div><div class="std-desc">10x shift logic.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 3; grid-row: 5;">
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">4.NBT.A.2</div><div class="std-desc">Compare big numbers.</div></div>
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">4.NBT.A.3</div><div class="std-desc">Round to any place.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 4; grid-row: 5;">
-                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">4.NBT.B.4</div><div class="std-desc">Standard Algorithm +/-.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 5; grid-row: 5;">
-                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">E</div><div class="std-code">4.NBT.B.5</div><div class="std-desc">Multi-digit Multiplication.</div></div>
-                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">E</div><div class="std-code">4.NBT.B.6</div><div class="std-desc">Division with remainders.</div></div>
-            </div>
+                const label = document.createElement('div');
+                label.className = 'domain-module-label';
+                label.textContent = domainLabels[domainKey] || domainKey.toUpperCase();
+                module.appendChild(label);
 
-            <div class="grade-marker" style="grid-row: 6;"><div class="grade-header">G5</div></div>
-            <div class="grid-cell" style="grid-column: 2; grid-row: 6;">
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">S</div><div class="std-code">5.NBT.A.1</div><div class="std-desc">10x / 0.1x logic.</div></div>
-                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">S</div><div class="std-code">5.NBT.A.2</div><div class="std-desc">Exponents & 10^n.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 3; grid-row: 6;">
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">5.NBT.A.3</div><div class="std-desc">Decimal Literacy.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-sense);"><div class="engine-badge">A</div><div class="std-code">5.NBT.A.3.a</div><div class="std-desc">Expanded Decimal form.</div></div>
-                <div class="node sub" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">5.NBT.A.3.b</div><div class="std-desc">Compare thousandths.</div></div>
-                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">5.NBT.A.4</div><div class="std-desc">Round Decimals.</div></div>
-            </div>
-            <div class="grid-cell" style="grid-column: 5; grid-row: 6;">
-                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">C</div><div class="std-code">5.NBT.B.5</div><div class="std-desc">Standard Algorithm (X).</div></div>
-                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">E</div><div class="std-code">5.NBT.B.6</div><div class="std-desc">Divide by 2-digits.</div></div>
-                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">C</div><div class="std-code">5.NBT.B.7</div><div class="std-desc">All Decimal Operations.</div></div>
-            </div>
+                const grid = document.createElement('div');
+                grid.className = 'matrix-grid';
+                module.appendChild(grid);
+                matrixWrapper.appendChild(module);
 
-        </div>
-    </div>
+                // Strand track backgrounds
+                Object.keys(strandCols).forEach(key => {
+                    const trackLabel = key === 'system' ? 'The System' : key === 'sense' ? 'Number Sense' : key === 'basic' ? 'Basic Ops' : 'Adv. Ops';
+                    grid.insertAdjacentHTML('beforeend', `
+                        <div class="track-bg" style="grid-column: ${strandCols[key]};">
+                            <div class="strand-label" data-strand="${key}">${trackLabel}</div>
+                            <div class="milled-groove"><div class="color-line" data-strand="${key}"></div></div>
+                        </div>
+                    `);
+                });
 
+                const domainData = allStandards[domainKey] || [];
+                gradeMap.forEach((grade, index) => {
+                    const row = index + 1;
+                    grid.insertAdjacentHTML('beforeend', `
+                        <button class="grade-marker" data-row="${grade.id}" style="grid-row: ${row};">
+                            <div class="grade-header" style="color: var(${grade.colorVar});">${grade.label}</div>
+                        </button>
+                    `);
+                    Object.keys(strandCols).forEach(strandKey => {
+                        const cellStds = domainData.filter(std => std.grade === grade.id && std.strand === strandKey);
+                        if (cellStds.length > 0) {
+                            let cellHtml = `<div class="grid-cell" data-row="${grade.id}" style="grid-column: ${strandCols[strandKey]}; grid-row: ${row};">`;
+                            cellStds.forEach(std => {
+                                cellHtml += `
+                                    <div class="node ${std.isSub ? 'sub' : ''}" data-apps="${std.apps.join(',')}" data-domain="${domainKey}">
+                                        <div class="std-code">${std.id}</div>
+                                        <div class="std-desc">${std.desc}</div>
+                                    </div>
+                                `;
+                            });
+                            cellHtml += `</div>`;
+                            grid.insertAdjacentHTML('beforeend', cellHtml);
+                        }
+                    });
+                });
+            });
+        }
+
+        function renderApps(domainKey) {
+            appContainer.innerHTML = '';
+            const domainStds = allStandards[domainKey] || [];
+            const activeAppIds = [...new Set(domainStds.flatMap(s => s.apps))];
+            appsData.filter(app => activeAppIds.includes(app.id)).forEach(app => {
+                appContainer.insertAdjacentHTML('beforeend', `
+                    <div class="app-card" data-trigger-app="${app.id}">
+                        <div class="tool-bead"></div>
+                        <div class="app-title">${app.title}</div>
+                        <div class="app-desc">${app.desc}</div>
+                        <div class="app-tags">
+                            <div class="tag" style="color: var(--strand-${app.strand})">${app.strandLabel}</div>
+                            ${app.grades.map(g => `<div class="tag">${g}</div>`).join('')}
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function resetBoard() {
+            document.getElementById('mapZone').classList.remove('is-spotlighting');
+            document.getElementById('toolZone').classList.remove('is-spotlighting');
+            document.querySelectorAll('.spotlight-active').forEach(el => el.classList.remove('spotlight-active'));
+            document.querySelectorAll('.primary-selected').forEach(el => el.classList.remove('primary-selected'));
+            document.querySelectorAll('.app-card.active').forEach(el => el.classList.remove('active'));
+        }
+
+        document.body.addEventListener('click', (e) => {
+            const node = e.target.closest('.node');
+            const card = e.target.closest('.app-card');
+            const marker = e.target.closest('.grade-marker');
+
+            if (node) {
+                e.stopPropagation();
+                const wasPrimary = node.classList.contains('primary-selected');
+                resetBoard();
+                if (!wasPrimary) {
+                    const apps = node.getAttribute('data-apps').split(',');
+                    const domainKey = node.getAttribute('data-domain');
+                    document.getElementById('mapZone').classList.add('is-spotlighting');
+                    document.getElementById('toolZone').classList.add('is-spotlighting');
+                    node.classList.add('primary-selected', 'spotlight-active');
+                    apps.forEach(appId => {
+                        const cardEl = document.querySelector(`[data-trigger-app="${appId}"]`);
+                        if (cardEl) cardEl.classList.add('active');
+                        document.querySelectorAll('.node').forEach(n => {
+                            if (n !== node && (n.getAttribute('data-apps') || '').includes(appId)) {
+                                n.classList.add('spotlight-active');
+                            }
+                        });
+                    });
+                    if (domainKey) renderApps(domainKey);
+                }
+            } else if (card) {
+                e.stopPropagation();
+                const wasActive = card.classList.contains('active');
+                resetBoard();
+                if (!wasActive) {
+                    const appId = card.getAttribute('data-trigger-app');
+                    document.getElementById('mapZone').classList.add('is-spotlighting');
+                    document.getElementById('toolZone').classList.add('is-spotlighting');
+                    card.classList.add('active');
+                    document.querySelectorAll('.node').forEach(n => {
+                        if ((n.getAttribute('data-apps') || '').includes(appId)) n.classList.add('spotlight-active');
+                    });
+                }
+            } else if (marker) {
+                e.stopPropagation();
+                const wasActive = marker.classList.contains('spotlight-active');
+                resetBoard();
+                if (!wasActive) {
+                    marker.classList.add('spotlight-active');
+                    document.getElementById('mapZone').classList.add('is-spotlighting');
+                    document.querySelectorAll(`.grid-cell[data-row="${marker.getAttribute('data-row')}"] .node`).forEach(n => n.classList.add('spotlight-active'));
+                }
+            } else if (!e.target.closest('.domain-nav')) {
+                resetBoard();
+            }
+        });
+
+        renderAllDomains();
+        switchDomain('nbt');
+    </script>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
 </body>
 </html>
