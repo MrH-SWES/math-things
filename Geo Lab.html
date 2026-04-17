@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Geo Lab</title>
+<style>
+:root{
+  --bg:#FFF;--bg2:#F5F5F7;--bg3:#FAFAFA;--surface:#FFF;
+  --border:#E5E5EA;--bl:#F0F0F2;
+  --t1:#1D1D1F;--t2:#6E6E73;--t3:#AEAEB2;
+  --acc:#007AFF;--accl:rgba(0,122,255,.08);
+  --grn:#34C759;--grnl:rgba(52,199,89,.08);
+  --org:#FF9500;--orgl:rgba(255,149,0,.08);
+  --red:#FF3B30;--pur:#AF52DE;--purl:rgba(175,82,222,.08);
+  --gld:#FF9F0A;--gldl:rgba(255,159,10,.06);
+  --f:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',system-ui,sans-serif;
+  --ease:cubic-bezier(.25,.46,.45,.94);--spring:cubic-bezier(.34,1.56,.64,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg2);color:var(--t1);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+.top{background:rgba(255,255,255,.72);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:.5px solid var(--border);padding:0 1rem;height:52px;display:flex;align-items:center;gap:.8rem;position:sticky;top:0;z-index:100}
+.top h1{font-size:1.1rem;font-weight:700;letter-spacing:-.02em}
+.top h1 span{background:linear-gradient(135deg,var(--gld),#FF6B00);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.pw{flex:1;max-width:240px;min-width:80px}
+.pm{display:flex;justify-content:space-between;font-size:.68rem;font-weight:500;color:var(--t3);margin-bottom:2px}
+.pt{height:4px;background:var(--border);border-radius:99px;overflow:hidden}
+.pfl{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gld),#FF6B00);transition:width .6s var(--ease);width:0%}
+.fc{font-size:.78rem;font-weight:600;color:var(--gld);white-space:nowrap}
+.ml{font-size:.62rem;font-weight:700;padding:.18rem .5rem;border-radius:999px;text-transform:uppercase;letter-spacing:.08em}
+.ml.disc{background:var(--accl);color:var(--acc)}.ml.mast{background:var(--gldl);color:var(--gld)}
+
+.tnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
+.tbtn{font-family:var(--f);font-weight:600;font-size:.75rem;border:1.5px solid var(--border);background:var(--surface);color:var(--t2);padding:.38rem .75rem;border-radius:999px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tbtn:hover:not(.locked){border-color:var(--acc);color:var(--acc)}
+.tbtn.active{background:var(--t1);border-color:var(--t1);color:#FFF}
+.tbtn.locked{opacity:.35;cursor:not-allowed}
+.tbtn.cleared{border-color:var(--grn);color:var(--grn)}
+.tbtn.cleared.active{background:var(--grn);border-color:var(--grn);color:#FFF}
+
+.app{display:grid;grid-template-columns:1fr 260px;height:calc(100vh - 52px)}
+@media(max-width:800px){.app{grid-template-columns:1fr;height:auto}.dex{max-height:36vh;border-left:none;border-top:.5px solid var(--border)}}
+.ba{padding:1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.75rem}
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+
+.mb{border-radius:12px;padding:.75rem .9rem;display:flex;align-items:center;gap:.7rem;animation:si .4s var(--spring) both}
+.mb.d{background:var(--accl);border:1.5px solid rgba(0,122,255,.15)}
+.mb.m{background:var(--gldl);border:1.5px solid rgba(255,159,10,.2)}
+@keyframes si{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.mnum{width:28px;height:28px;border-radius:50%;background:var(--acc);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0}
+.mb.m .mnum{background:var(--gld)}
+.mtxt{font-size:.88rem;font-weight:500;line-height:1.4}.mtxt b{font-weight:700}
+
+.cw{position:relative}
+.bc{background:var(--bg);border:.5px solid var(--border);border-radius:12px;min-height:300px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:default}
+.bc svg{width:100%;height:300px}
+.bc.nocur{cursor:default}
+.cbtn{position:absolute;font-family:var(--f);font-size:.68rem;font-weight:600;color:var(--t3);background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border:.5px solid var(--border);border-radius:999px;padding:.25rem .6rem;cursor:pointer;transition:all .2s;z-index:5}
+.cbtn:hover{color:var(--acc);border-color:var(--acc)}
+.cbtn.clr{top:8px;right:8px}.cbtn.clr:hover{color:var(--red);border-color:var(--red)}
+.cbtn.bck{top:8px;left:8px}
+
+.cr{display:flex;gap:5px;flex-wrap:wrap;margin-top:.5rem}
+.chip{display:flex;align-items:center;gap:3px;border-radius:999px;padding:.18rem .5rem .18rem .3rem;font-size:.68rem;font-weight:600;animation:pop .35s var(--spring) both}
+.chip.disc{background:var(--accl);border:1px solid rgba(0,122,255,.15);color:var(--acc)}
+.chip.mast{background:var(--grnl);border:1px solid rgba(52,199,89,.2);color:var(--grn)}
+.chip svg{width:14px;height:14px}
+.hint{font-size:.75rem;color:var(--t3);text-align:center;padding:.4rem;line-height:1.4}
+
+.dex{background:var(--surface);border-left:.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.dxh{padding:.75rem .85rem;border-bottom:.5px solid var(--border)}
+.dxh h2{font-size:.9rem;font-weight:700}.dxh p{font-size:.62rem;color:var(--t3);margin-top:.15rem}
+.dxl{flex:1;overflow-y:auto;padding:.4rem .5rem}
+.dxl::-webkit-scrollbar{width:3px}.dxl::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.dxtl{font-size:.6rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;padding:.5rem .4rem .15rem}
+.de{display:flex;align-items:center;gap:.45rem;padding:.4rem .45rem;border-radius:9px;margin-bottom:2px;border:1px solid transparent;transition:all .2s;cursor:default}
+.de.disc{border-color:var(--bl);background:var(--bg3);cursor:pointer}.de.disc:hover{border-color:var(--acc)}
+.de.mast{border-color:rgba(52,199,89,.12);background:rgba(52,199,89,.02);cursor:pointer}.de.mast:hover{border-color:var(--grn)}
+.de.locked{opacity:1}
+.de.locked .di{background:var(--bg2);border-color:var(--border)}
+.de.locked .di svg{filter:grayscale(1) opacity(.35)}
+.de.collect{padding:.5rem;border-radius:12px;border-width:1.5px}
+.di{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg2);border:.5px solid var(--bl)}
+.de.disc .di{background:var(--accl);border-color:rgba(0,122,255,.12)}
+.de.mast .di{background:var(--grnl);border-color:rgba(52,199,89,.12)}
+.di svg{width:18px;height:18px}
+.dn{font-size:.72rem;font-weight:600}.de.locked .dn{color:var(--border)}
+.dd{font-size:.58rem;color:var(--t3);margin-top:1px}.de.locked .dd{color:var(--border)}
+.ds{font-size:.55rem;font-weight:700;padding:.12rem .35rem;border-radius:999px;flex-shrink:0}
+.ds.d{background:var(--accl);color:var(--acc)}.ds.m{background:var(--grnl);color:var(--grn)}
+.sprite{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg2);border:1px solid var(--border);font-size:14px;flex-shrink:0}
+.de.disc .sprite{background:var(--accl);border-color:rgba(0,122,255,.2)}
+.de.mast .sprite{background:var(--grnl);border-color:rgba(52,199,89,.3)}
+.dexstat{font-size:.6rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-top:.35rem}
+.de.mast.collect{box-shadow:0 6px 18px rgba(52,199,89,.08)}
+
+.ov{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s}
+.ov.on{opacity:1;pointer-events:auto}
+.ovbg{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .4s}.ov.on .ovbg{background:rgba(0,0,0,.4)}
+.ovc{position:relative;z-index:1;background:var(--surface);border-radius:22px;padding:1.75rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.12);transform:scale(.3) translateY(30px);transition:transform .55s var(--spring);max-width:420px;width:92%;max-height:85vh;overflow-y:auto}
+.ov.on .ovc{transform:scale(1) translateY(0)}
+
+.cel-badge{display:inline-block;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#FFF;background:var(--gld);padding:.18rem .6rem;border-radius:999px;margin-bottom:.5rem}
+.cel-iw{width:72px;height:72px;margin:0 auto .5rem;border-radius:12px;background:var(--gldl);border:2px solid rgba(255,159,10,.15);display:flex;align-items:center;justify-content:center;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,159,10,.1)}50%{box-shadow:0 0 0 8px rgba(255,159,10,0)}}
+.cel-iw svg{width:42px;height:42px}
+.cel-nm{font-size:1.25rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.15rem}
+.cel-sub{font-size:.72rem;color:var(--t3);margin-bottom:.5rem}
+
+/* TEACH MODAL */
+.teach-section{text-align:left;background:var(--bg2);border-radius:14px;padding:.9rem 1rem;margin:.6rem 0}
+.teach-section h3{font-size:.82rem;font-weight:700;margin-bottom:.6rem;display:flex;align-items:center;gap:6px}
+.teach-fact{display:flex;align-items:flex-start;gap:8px;margin-bottom:.5rem;font-size:.8rem;line-height:1.5;text-align:left}
+.teach-fact:last-child{margin-bottom:0}
+.teach-bullet{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.teach-fact b{font-weight:700}
+
+.qq{font-size:.9rem;font-weight:600;margin-bottom:.75rem;line-height:1.4}
+.qo{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:.6rem}
+.qi{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:.55rem;cursor:pointer;transition:all .2s;text-align:center}
+.qi:hover{border-color:var(--acc)}
+.qi.correct{border-color:var(--grn);background:var(--grnl);animation:cpop .3s var(--spring)}
+@keyframes cpop{50%{transform:scale(1.04)}}
+.qi.wrong{border-color:var(--red);background:rgba(255,59,48,.06);animation:shake .4s ease}
+@keyframes shake{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+.qi svg{width:46px;height:46px;margin-bottom:3px}
+.qi .ol{font-size:.72rem;font-weight:600}
+.qf{font-size:.78rem;font-weight:500;padding:.35rem .6rem;border-radius:8px;margin-bottom:.5rem;display:none}
+.qf.corfb{display:block;background:var(--grnl);color:var(--grn)}.qf.wrfb{display:block;background:rgba(255,59,48,.06);color:var(--red)}
+
+.btn{font-family:var(--f);font-weight:600;font-size:.82rem;background:var(--t1);color:#FFF;border:none;padding:.5rem 1.3rem;border-radius:999px;cursor:pointer;transition:all .2s}
+.btn:hover{transform:scale(1.04)}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.3;pointer-events:none}
+.btn.grn{background:var(--grn)}.btn.gld{background:var(--gld)}.btn.sec{background:none;color:var(--t3);font-size:.75rem;border:none;margin-top:.4rem}
+.msc{font-size:.58rem;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem}
+.cfb{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:.78rem;font-weight:600;padding:.35rem .75rem;border-radius:999px;z-index:5;animation:si .3s var(--spring) both;pointer-events:none}
+.cfb.ok{background:var(--grnl);color:var(--grn);border:1px solid rgba(52,199,89,.2)}
+
+.angle-readout{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:var(--surface);border:.5px solid var(--border);padding:.3rem .7rem;border-radius:10px;font-size:1.1rem;font-weight:700;color:var(--acc);box-shadow:0 4px 12px rgba(0,0,0,.06);z-index:5}
+.angle-type{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:.82rem;font-weight:600;padding:.3rem .75rem;border-radius:999px;z-index:5;transition:all .3s}
+.angle-type.acute{background:var(--accl);color:var(--acc)}
+.angle-type.right{background:var(--purl);color:var(--pur)}
+.angle-type.obtuse{background:var(--grnl);color:var(--grn)}
+.angle-type.none{background:var(--bg2);color:var(--t3)}
+
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+
+/* Pulsing extender arrow — rendered inside SVG now */
+
+/* TTS speaker button */
+.tts-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-size:14px;flex-shrink:0;transition:all .2s;padding:0;line-height:1;vertical-align:middle;margin-left:4px}
+.tts-btn:hover{border-color:var(--acc);background:var(--accl)}
+.tts-btn.speaking{border-color:var(--acc);background:var(--accl);animation:pulse 1s ease infinite}
+.sbtn{position:absolute;top:8px;left:88px}
+
+.spr-wrap{display:flex;align-items:flex-start;gap:.7rem;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:.7rem .8rem;margin:.6rem 0 1rem}
+.spr-char{width:46px;height:46px;border-radius:12px;background:linear-gradient(145deg,#fff,#f7f7f9);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.spr-bub{flex:1;text-align:left;background:#FFF7E8;border:1px solid rgba(255,159,10,.3);border-radius:12px;padding:.55rem .65rem;position:relative}
+.spr-bub:before{content:'';position:absolute;left:-6px;top:12px;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid rgba(255,159,10,.3)}
+.spr-bub:after{content:'';position:absolute;left:-5px;top:12px;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid #FFF7E8}
+.spr-name{font-size:.66rem;font-weight:700;color:var(--org);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem}
+.spr-text{font-size:.82rem;line-height:1.35;font-weight:600}
+/* Tier unlock celebration */
+.tier-unlock-bg{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(255,159,10,.15),rgba(0,0,0,.7));z-index:998;animation:tierBgIn .6s ease both}
+@keyframes tierBgIn{from{opacity:0}to{opacity:1}}
+.tier-unlock-card{animation:tierCardIn .8s cubic-bezier(.34,1.56,.64,1) both;animation-delay:.3s}
+@keyframes tierCardIn{from{opacity:0;transform:scale(.2) translateY(60px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.tier-trophy{font-size:4rem;animation:trophyBounce 1s ease infinite;display:block;margin-bottom:.3rem}
+@keyframes trophyBounce{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-12px) rotate(-5deg)}75%{transform:translateY(-8px) rotate(5deg)}}
+.tier-title{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--gld),#FF6B00,var(--grn));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
+.tier-sub{font-size:.9rem;font-weight:600;color:var(--t2);margin-bottom:.3rem}
+.tier-next{font-size:.78rem;color:var(--t3);margin-bottom:.8rem}
+.tier-sprites{display:flex;justify-content:center;gap:8px;margin:.6rem 0;flex-wrap:wrap}
+.tier-sprites .ts{width:44px;height:44px;border-radius:12px;background:var(--grnl);border:2px solid rgba(52,199,89,.2);display:flex;align-items:center;justify-content:center;font-size:22px;animation:tsIn .5s var(--spring) both}
+@keyframes tsIn{from{opacity:0;transform:scale(0) rotate(-30deg)}to{opacity:1;transform:scale(1) rotate(0deg)}}
+.tier-stars{font-size:1.8rem;letter-spacing:6px;margin:.3rem 0}
+.tier-stars span{display:inline-block;animation:starSpin .6s var(--spring) both}
+@keyframes starSpin{from{opacity:0;transform:scale(0) rotate(-180deg)}to{opacity:1;transform:scale(1) rotate(0deg)}}
+</style>
+</head>
+<body>
+<canvas id="pc" style="position:fixed;inset:0;z-index:999;pointer-events:none"></canvas>
+<div class="ov" id="ov"><div class="ovbg"></div><div class="ovc" id="ovc"></div></div>
+<div class="top">
+  <h1><span>Geo Lab</span></h1>
+  <div class="pw"><div class="pm"><span id="tierLabel">Foundations</span><span id="pTxt">0/8</span></div><div class="pt"><div class="pfl" id="pFill"></div></div></div>
+  <div class="ml disc" id="modeLabel">Discovery</div>
+  <div class="fc" id="fCnt">0 mastered</div>
+  <button onclick="devSkip()" style="font-family:var(--f);font-size:.6rem;font-weight:600;background:var(--red);color:#FFF;border:none;padding:.2rem .5rem;border-radius:999px;cursor:pointer;opacity:.6">DEV SKIP</button>
+</div>
+<div class="app">
+  <div class="ba" id="ba"></div>
+  <div class="dex">
+    <div class="dxh"><h2>Collection</h2><p>Discover concepts, then master them</p></div>
+    <div class="dxl" id="dList"></div>
+  </div>
+</div>
+<script>
+const TIERS=[
+{id:'t1',name:'Foundations',concepts:[
+  {id:'point',name:'Point',
+   icon:'<circle cx="40" cy="40" r="7" fill="#FF3B30"/><text x="50" y="31" font-size="11" fill="#FF6961" font-weight="600">A</text>',
+   def:'An exact location in space — no size, just a position.',
+   teach:{
+     emoji:'📍',title:'What is a Point?',
+     facts:[
+       'A point marks an <b>exact location</b> in space.',
+       'It has <b>no size at all</b> — no width, no height, no length. Zero dimensions!',
+       'We draw it as a dot so we can see it, but a true point is infinitely small.',
+       'Points are named with <b>capital letters</b>, like Point A or Point B.',
+       'Every shape in geometry starts with points!'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Place <b>a point</b> on the grid.',detect:'point'},
+     {type:'quiz',q:'Which one shows just a point?',opts:[
+       {l:'A',svg:'<circle cx="25" cy="25" r="5" fill="#FF3B30"/><text x="32" y="22" font-size="9" fill="#FF6961" font-weight="600">P</text>',c:true},
+       {l:'B',svg:'<line x1="8" y1="42" x2="42" y2="8" stroke="#007AFF" stroke-width="3" stroke-linecap="round"/><circle cx="8" cy="42" r="3" fill="#FF3B30"/><circle cx="42" cy="8" r="3" fill="#FF3B30"/>',c:false},
+       {l:'C',svg:'<line x1="8" y1="42" x2="25" y2="8" stroke="#8E8E93" stroke-width="2.5"/><line x1="8" y1="42" x2="42" y2="42" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'D',svg:'<circle cx="25" cy="25" r="16" fill="none" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'A point has:',opts:[
+       {l:'No size at all',svg:'<circle cx="25" cy="25" r="4" fill="#FF3B30"/>',c:true},
+       {l:'Length',svg:'<line x1="8" y1="25" x2="42" y2="25" stroke="#8E8E93" stroke-width="3"/>',c:false},
+       {l:'Width and height',svg:'<rect x="10" y="10" width="30" height="30" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'A radius',svg:'<circle cx="25" cy="25" r="16" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'line_segment',name:'Line Segment',
+   icon:'<line x1="14" y1="60" x2="66" y2="20" stroke="#007AFF" stroke-width="4" stroke-linecap="round"/><circle cx="14" cy="60" r="4" fill="#FF3B30"/><circle cx="66" cy="20" r="4" fill="#FF3B30"/>',
+   def:'A straight path between two endpoints — it starts and stops.',
+   teach:{
+     emoji:'📏',title:'What is a Line Segment?',
+     facts:[
+       'A line segment connects <b>two points</b> with a straight path.',
+       'It has a <b>beginning and an end</b> — two endpoints.',
+       'Unlike a line, a segment <b>does not go on forever</b>.',
+       'You can <b>measure</b> a segment because it has a definite length.',
+       'We name it by its endpoints: Segment AB or AB̅.'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Tap two points to <b>connect them with a segment</b>.',detect:'segment'},
+     {type:'quiz',q:'How many endpoints does this figure have?',opts:[
+       {l:'Two',svg:'<line x1="8" y1="35" x2="42" y2="15" stroke="#007AFF" stroke-width="3" stroke-linecap="round"/><circle cx="8" cy="35" r="3.5" fill="#FF3B30"/><circle cx="42" cy="15" r="3.5" fill="#FF3B30"/>',c:true},
+       {l:'Zero',svg:'<line x1="2" y1="35" x2="48" y2="15" stroke="#8E8E93" stroke-width="2.5"/><polygon points="2,35 8,37 7,31" fill="#8E8E93"/><polygon points="48,15 42,13 43,19" fill="#8E8E93"/>',c:false},
+       {l:'One',svg:'<circle cx="8" cy="35" r="3.5" fill="#FF3B30"/><line x1="8" y1="35" x2="48" y2="15" stroke="#8E8E93" stroke-width="2.5"/><polygon points="48,15 42,13 43,19" fill="#8E8E93"/>',c:false},
+       {l:'Infinite',svg:'<text x="7" y="32" font-size="18" font-weight="700" fill="#8E8E93">∞</text>',c:false},
+     ]},
+     {type:'quiz',q:'Can you measure the length of this?',opts:[
+       {l:'Yes',svg:'<line x1="5" y1="30" x2="45" y2="30" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"/><circle cx="5" cy="30" r="3" fill="#FF3B30"/><circle cx="45" cy="30" r="3" fill="#FF3B30"/><text x="18" y="44" font-size="8" fill="#007AFF" font-weight="600">5 cm</text>',c:true},
+       {l:'No',svg:'<line x1="2" y1="30" x2="48" y2="30" stroke="#8E8E93" stroke-width="2.5"/><polygon points="2,30 8,33 8,27" fill="#8E8E93"/><polygon points="48,30 42,33 42,27" fill="#8E8E93"/><text x="16" y="44" font-size="8" fill="#8E8E93">forever</text>',c:false},
+     ]},
+   ]},
+  {id:'ray',name:'Ray',
+   icon:'<line x1="14" y1="50" x2="66" y2="20" stroke="#007AFF" stroke-width="3"/><circle cx="14" cy="50" r="4" fill="#FF3B30"/><polygon points="66,20 58,19 60,26" fill="#007AFF"/>',
+   def:'Starts at one endpoint and extends forever in one direction — like a flashlight beam.',
+   teach:{
+     emoji:'🔦',title:'What is a Ray?',
+     facts:[
+       'A ray starts at <b>one point</b> and goes on <b>forever</b> in one direction.',
+       'It has <b>one endpoint</b> (where it starts) and no end (it keeps going!).',
+       'Think of a flashlight beam — it starts somewhere and shines outward forever.',
+       'We name it starting with the endpoint: Ray AB starts at A, passes through B, and keeps going.',
+       'You <b>cannot measure</b> a ray because it never ends!'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Make a segment, then tap a <b>pulsing arrow</b> to extend it into a ray.',detect:'ray'},
+     {type:'quiz',q:'How many endpoints does this figure have?',opts:[
+       {l:'One',svg:'<circle cx="8" cy="38" r="3.5" fill="#FF3B30"/><line x1="8" y1="38" x2="48" y2="12" stroke="#007AFF" stroke-width="2.5"/><polygon points="48,12 42,10 43,16" fill="#007AFF"/>',c:true},
+       {l:'Two',svg:'<line x1="8" y1="35" x2="42" y2="15" stroke="#8E8E93" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="35" r="3.5" fill="#FF3B30"/><circle cx="42" cy="15" r="3.5" fill="#FF3B30"/>',c:false},
+       {l:'Zero',svg:'<line x1="2" y1="35" x2="48" y2="15" stroke="#8E8E93" stroke-width="2.5"/><polygon points="2,35 8,37 7,31" fill="#8E8E93"/><polygon points="48,15 42,13 43,19" fill="#8E8E93"/>',c:false},
+       {l:'Three',svg:'<text x="14" y="35" font-size="20" font-weight="700" fill="#8E8E93">3</text>',c:false},
+     ]},
+     {type:'quiz',q:'Which figure extends forever in ONE direction?',opts:[
+       {l:'A',svg:'<circle cx="8" cy="35" r="3" fill="#FF3B30"/><line x1="8" y1="35" x2="48" y2="15" stroke="#007AFF" stroke-width="2.5"/><polygon points="48,15 42,13 43,19" fill="#007AFF"/>',c:true},
+       {l:'B',svg:'<line x1="2" y1="35" x2="48" y2="15" stroke="#8E8E93" stroke-width="2.5"/><polygon points="2,35 8,37 7,31" fill="#8E8E93"/><polygon points="48,15 42,13 43,19" fill="#8E8E93"/>',c:false},
+       {l:'C',svg:'<line x1="8" y1="35" x2="42" y2="15" stroke="#8E8E93" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="35" r="3" fill="#FF3B30"/><circle cx="42" cy="15" r="3" fill="#FF3B30"/>',c:false},
+       {l:'D',svg:'<circle cx="25" cy="25" r="5" fill="#8E8E93"/>',c:false},
+     ]},
+   ]},
+  {id:'line',name:'Line',
+   icon:'<line x1="8" y1="58" x2="72" y2="22" stroke="#8E8E93" stroke-width="3"/><path d="M 8 58 l 8 -1 l -2 -7" fill="#8E8E93"/><path d="M 72 22 l -8 1 l 2 7" fill="#8E8E93"/>',
+   def:'Extends forever in both directions — no endpoints. Arrows on both ends.',
+   teach:{
+     emoji:'♾️',title:'What is a Line?',
+     facts:[
+       'A line goes on <b>forever in both directions</b>.',
+       'It has <b>no endpoints</b> at all — it never starts and never stops.',
+       'We show this with <b>arrows on both ends</b>.',
+       'A line has <b>one dimension</b> — length (but infinite length!).',
+       'We name it with any two points on it: Line AB, or with a lowercase letter like line <i>m</i>.'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Extend <b>both ends</b> of a segment to make a line.',detect:'line'},
+     {type:'quiz',q:'Fewest to most endpoints:',opts:[
+       {l:'Line(0) → Ray(1) → Segment(2)',svg:'<text x="2" y="15" font-size="8" fill="#1D1D1F" font-weight="600">Line: 0 endpoints</text><text x="2" y="28" font-size="8" fill="#1D1D1F" font-weight="600">Ray: 1 endpoint</text><text x="2" y="41" font-size="8" fill="#1D1D1F" font-weight="600">Segment: 2 endpoints</text>',c:true},
+       {l:'Segment(2) → Ray(1) → Line(0)',svg:'<text x="2" y="15" font-size="8" fill="#8E8E93">Segment first</text><text x="2" y="28" font-size="8" fill="#8E8E93">then Ray</text><text x="2" y="41" font-size="8" fill="#8E8E93">then Line</text>',c:false},
+       {l:'All have the same',svg:'<text x="8" y="28" font-size="12" fill="#8E8E93" font-weight="700">= = =</text>',c:false},
+       {l:'Ray(1) → Line(0) → Segment(2)',svg:'<text x="2" y="15" font-size="8" fill="#8E8E93">Ray first</text><text x="2" y="28" font-size="8" fill="#8E8E93">then Line</text><text x="2" y="41" font-size="8" fill="#8E8E93">then Segment</text>',c:false},
+     ]},
+     {type:'quiz',q:'Which extends forever in BOTH directions?',opts:[
+       {l:'A',svg:'<line x1="2" y1="35" x2="48" y2="15" stroke="#1D1D1F" stroke-width="2.5"/><polygon points="2,35 8,37 7,31" fill="#1D1D1F"/><polygon points="48,15 42,13 43,19" fill="#1D1D1F"/>',c:true},
+       {l:'B',svg:'<circle cx="8" cy="30" r="3" fill="#FF3B30"/><line x1="8" y1="30" x2="48" y2="15" stroke="#8E8E93" stroke-width="2.5"/><polygon points="48,15 42,13 43,19" fill="#8E8E93"/>',c:false},
+       {l:'C',svg:'<line x1="8" y1="30" x2="42" y2="15" stroke="#8E8E93" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="30" r="3" fill="#FF3B30"/><circle cx="42" cy="15" r="3" fill="#FF3B30"/>',c:false},
+       {l:'D',svg:'<circle cx="25" cy="25" r="5" fill="#8E8E93"/>',c:false},
+     ]},
+   ]},
+  {id:'intersection',name:'Intersection',
+   icon:'<line x1="12" y1="62" x2="68" y2="18" stroke="#007AFF" stroke-width="3"/><line x1="12" y1="18" x2="68" y2="62" stroke="#007AFF" stroke-width="3"/><circle cx="40" cy="40" r="5" fill="#FF3B30"/>',
+   def:'The exact point where two lines or segments meet or cross.',
+   teach:{
+     emoji:'✖️',title:'What is an Intersection?',
+     facts:[
+       'An intersection is the <b>exact point</b> where two figures cross or meet.',
+       'Two segments can intersect by <b>sharing an endpoint</b> or by <b>crossing</b> each other.',
+       'The intersection point is <b>always a point</b> — remember, a point is just a location!',
+       'Two lines can intersect at <b>most one point</b> (or zero, if they\'re parallel).',
+       'Look for intersection points — they help you find <b>angles</b> and other relationships!'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Build <b>two segments that share an endpoint</b>.',detect:'intersection'},
+     {type:'quiz',q:'Where do these two segments intersect?',opts:[
+       {l:'Where they cross',svg:'<line x1="5" y1="42" x2="45" y2="8" stroke="#007AFF" stroke-width="2.5"/><line x1="5" y1="8" x2="45" y2="42" stroke="#007AFF" stroke-width="2.5"/><circle cx="25" cy="25" r="5" fill="#FF3B30"/>',c:true},
+       {l:'At the tip',svg:'<line x1="8" y1="35" x2="42" y2="15" stroke="#8E8E93" stroke-width="2.5"/><circle cx="42" cy="15" r="5" fill="#FF3B30"/>',c:false},
+       {l:'In the middle of one',svg:'<line x1="8" y1="25" x2="42" y2="25" stroke="#8E8E93" stroke-width="2.5"/><circle cx="25" cy="25" r="5" fill="#FF3B30"/>',c:false},
+       {l:'They don\'t intersect',svg:'<line x1="5" y1="15" x2="45" y2="15" stroke="#8E8E93" stroke-width="2.5"/><line x1="5" y1="35" x2="45" y2="35" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'Do these segments intersect?',opts:[
+       {l:'Yes',svg:'<line x1="5" y1="40" x2="25" y2="10" stroke="#007AFF" stroke-width="2.5"/><line x1="25" y1="10" x2="45" y2="40" stroke="#007AFF" stroke-width="2.5"/><circle cx="25" cy="10" r="4" fill="#FF3B30"/>',c:true},
+       {l:'No',svg:'<line x1="5" y1="15" x2="20" y2="15" stroke="#8E8E93" stroke-width="2.5"/><line x1="30" y1="35" x2="45" y2="35" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+   ]},
+  {id:'vertex',name:'Vertex',
+   icon:'<circle cx="40" cy="50" r="6" fill="#FF3B30"/><line x1="40" y1="50" x2="20" y2="20" stroke="#8E8E93" stroke-width="3"/><line x1="40" y1="50" x2="64" y2="30" stroke="#8E8E93" stroke-width="3"/>',
+   def:'A corner point where two or more lines, segments, or rays meet.',
+   teach:{
+     emoji:'🔴',title:'What is a Vertex?',
+     facts:[
+       'A vertex is a <b>corner point</b> where lines, segments, or rays meet.',
+       'A triangle has <b>3 vertices</b>, a rectangle has <b>4 vertices</b>.',
+       'The plural of vertex is <b>vertices</b>.',
+       'The word "vertex" comes from Latin meaning <b>"turning point."</b>',
+       'When naming an angle, the vertex letter goes in the <b>middle</b>: angle ABC has vertex B.'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Build <b>two segments that share an endpoint</b> — that shared point is a vertex!',detect:'vertex_build'},
+     {type:'quiz',q:'A vertex is:',opts:[
+       {l:'Where segments meet',svg:'<circle cx="12" cy="38" r="4" fill="#FF3B30"/><line x1="12" y1="38" x2="8" y2="10" stroke="#8E8E93" stroke-width="2"/><line x1="12" y1="38" x2="42" y2="38" stroke="#8E8E93" stroke-width="2"/>',c:true},
+       {l:'The end of one ray',svg:'<line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/><circle cx="45" cy="25" r="4" fill="#FF3B30"/>',c:false},
+       {l:'The middle of a line',svg:'<line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/><circle cx="25" cy="25" r="4" fill="#FF3B30"/>',c:false},
+       {l:'Any point in space',svg:'<circle cx="25" cy="25" r="4" fill="#8E8E93"/>',c:false},
+     ]},
+     {type:'quiz',q:'How many vertices does a triangle have?',opts:[
+       {l:'3',svg:'<polygon points="25,5 5,45 45,45" fill="none" stroke="#1D1D1F" stroke-width="2"/><circle cx="25" cy="5" r="3" fill="#FF3B30"/><circle cx="5" cy="45" r="3" fill="#FF3B30"/><circle cx="45" cy="45" r="3" fill="#FF3B30"/>',c:true},
+       {l:'1',svg:'<text x="15" y="30" font-size="16" fill="#8E8E93" font-weight="700">1</text>',c:false},
+       {l:'2',svg:'<text x="15" y="30" font-size="16" fill="#8E8E93" font-weight="700">2</text>',c:false},
+       {l:'0',svg:'<text x="15" y="30" font-size="16" fill="#8E8E93" font-weight="700">0</text>',c:false},
+     ]},
+   ]},
+  {id:'parallel',name:'Parallel Lines',
+   icon:'<line x1="10" y1="28" x2="70" y2="28" stroke="#34C759" stroke-width="3"/><line x1="10" y1="52" x2="70" y2="52" stroke="#34C759" stroke-width="3"/>',
+   def:'Lines going the same direction that never cross — always the same distance apart.',
+   teach:{
+     emoji:'🛤️',title:'What are Parallel Lines?',
+     facts:[
+       'Parallel lines are <b>always the same distance apart</b>.',
+       'They go in the <b>same direction</b> and <b>never cross</b>, even if extended forever.',
+       'Think of railroad tracks, lined paper, or the edges of a ruler.',
+       'The symbol is <b>∥</b> — so AB ∥ CD means "line AB is parallel to line CD."',
+       'Parallel lines can be diagonal — they don\'t have to be horizontal!'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Build <b>two segments going the same direction</b>.',detect:'parallel'},
+     {type:'challenge',prompt:'A segment is shown. Build one <b>parallel</b> to it.',detect:'parallel_match'},
+     {type:'quiz',q:'Which pair will NEVER cross, even if extended?',opts:[
+       {l:'A',svg:'<line x1="5" y1="15" x2="45" y2="15" stroke="#34C759" stroke-width="2.5"/><line x1="5" y1="35" x2="45" y2="35" stroke="#34C759" stroke-width="2.5"/>',c:true},
+       {l:'B',svg:'<line x1="5" y1="42" x2="45" y2="8" stroke="#8E8E93" stroke-width="2.5"/><line x1="5" y1="8" x2="45" y2="42" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'C',svg:'<line x1="25" y1="5" x2="25" y2="45" stroke="#8E8E93" stroke-width="2.5"/><line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'D',svg:'<line x1="5" y1="10" x2="45" y2="22" stroke="#8E8E93" stroke-width="2.5"/><line x1="5" y1="40" x2="45" y2="28" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'Can parallel lines be diagonal?',opts:[
+       {l:'Yes',svg:'<line x1="5" y1="40" x2="35" y2="10" stroke="#34C759" stroke-width="2.5"/><line x1="15" y1="45" x2="45" y2="15" stroke="#34C759" stroke-width="2.5"/>',c:true},
+       {l:'No — must be flat',svg:'<line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+   ]},
+  {id:'perpendicular',name:'Perpendicular',
+   icon:'<line x1="14" y1="40" x2="66" y2="40" stroke="#AF52DE" stroke-width="3"/><line x1="40" y1="14" x2="40" y2="66" stroke="#AF52DE" stroke-width="3"/><path d="M 40 40 L 52 40 L 52 28" fill="none" stroke="#AF52DE" stroke-width="2"/>',
+   def:'Lines that cross at a perfectly square corner — exactly 90°.',
+   teach:{
+     emoji:'📐',title:'What are Perpendicular Lines?',
+     facts:[
+       'Perpendicular lines cross at a <b>90° angle</b> (a right angle).',
+       'The corner of a piece of paper? That\'s a 90° angle — perpendicular edges!',
+       'The symbol is <b>⊥</b> — so AB ⊥ CD means "AB is perpendicular to CD."',
+       'A small square drawn at the intersection shows it\'s a right angle.',
+       'Perpendicular lines make an <b>L shape</b> or a <b>+ shape</b>.'
+     ]
+   },
+   mastery:[
+     {type:'build',prompt:'Build two segments making a <b>square corner</b>.',detect:'perpendicular'},
+     {type:'challenge',prompt:'Build a segment <b>perpendicular</b> to this one.',detect:'perp_match'},
+     {type:'quiz',q:'Which pair forms a square corner?',opts:[
+       {l:'A',svg:'<line x1="5" y1="40" x2="45" y2="40" stroke="#AF52DE" stroke-width="2.5"/><line x1="25" y1="5" x2="25" y2="45" stroke="#AF52DE" stroke-width="2.5"/><path d="M 25 40 L 32 40 L 32 33" fill="none" stroke="#AF52DE" stroke-width="1.5"/>',c:true},
+       {l:'B',svg:'<line x1="5" y1="15" x2="45" y2="15" stroke="#8E8E93" stroke-width="2.5"/><line x1="5" y1="35" x2="45" y2="35" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'C',svg:'<line x1="5" y1="5" x2="45" y2="45" stroke="#8E8E93" stroke-width="2.5"/><line x1="45" y1="5" x2="5" y2="45" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'D',svg:'<line x1="5" y1="42" x2="30" y2="8" stroke="#8E8E93" stroke-width="2.5"/><line x1="20" y1="42" x2="45" y2="8" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'The small square in the corner tells you the angle is:',opts:[
+       {l:'Exactly 90°',svg:'<path d="M 12 38 L 24 38 L 24 26" fill="none" stroke="#AF52DE" stroke-width="2.5"/><text x="8" y="18" font-size="10" fill="#AF52DE" font-weight="700">90°</text>',c:true},
+       {l:'45°',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">45°</text>',c:false},
+       {l:'180°',svg:'<text x="6" y="30" font-size="14" fill="#8E8E93" font-weight="700">180°</text>',c:false},
+       {l:'Any size',svg:'<text x="5" y="30" font-size="10" fill="#8E8E93" font-weight="600">any°</text>',c:false},
+     ]},
+   ]},
+]},
+{id:'t2',name:'Angles',concepts:[
+  {id:'degree',name:'Degree',
+   icon:'<text x="18" y="55" font-size="36" fill="#FF9500" font-weight="700">°</text><path d="M 40 60 A 20 20 0 0 1 20 40" fill="none" stroke="#FF9500" stroke-width="3"/>',
+   def:'The unit we use to measure angles — there are 360° in a full turn.',
+   teach:{
+     emoji:'🌡️',title:'What is a Degree?',
+     facts:[
+       'A <b>degree (°)</b> is the unit for measuring how much an angle opens — just like inches measure length, degrees measure rotation.',
+       'Imagine standing and spinning in a <b>complete circle</b> back to where you started — that full turn is <b>360°</b>. Ancient mathematicians chose 360 because it divides evenly by so many numbers!',
+       'A <b>half turn</b> (facing the opposite direction, a straight line) is <b>180°</b> — exactly half of 360.',
+       'A <b>quarter turn</b> (like turning a corner) is <b>90°</b> — the square corner you see on books, screens, and doors.',
+       'The little circle symbol <b>°</b> means degrees. So when you see 45°, it means the angle is <b>halfway between 0° (closed) and 90° (a square corner)</b>.',
+       'Bigger numbers mean <b>wider openings</b>: 10° is barely open, 90° is a square corner, 170° is almost a straight line.'
+     ]
+   },
+   mastery:[
+     {type:'protractor',prompt:'Build any angle to see its <b>degree measurement</b>.',detect:'any_angle'},
+     {type:'quiz',q:'How many degrees in a full turn?',opts:[
+       {l:'360°',svg:'<circle cx="25" cy="25" r="16" fill="none" stroke="#FF9500" stroke-width="2.5"/><path d="M 25 9 L 28 15 L 22 15 Z" fill="#FF9500"/>',c:true},
+       {l:'180°',svg:'<text x="8" y="30" font-size="14" fill="#8E8E93" font-weight="700">180°</text>',c:false},
+       {l:'90°',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">90°</text>',c:false},
+       {l:'100°',svg:'<text x="8" y="30" font-size="14" fill="#8E8E93" font-weight="700">100°</text>',c:false},
+     ]},
+     {type:'quiz',q:'A square corner is:',opts:[
+       {l:'90°',svg:'<line x1="10" y1="40" x2="10" y2="10" stroke="#AF52DE" stroke-width="2.5"/><line x1="10" y1="40" x2="42" y2="40" stroke="#AF52DE" stroke-width="2.5"/><path d="M 10 40 L 18 40 L 18 32" fill="none" stroke="#AF52DE" stroke-width="1.5"/>',c:true},
+       {l:'360°',svg:'<text x="6" y="30" font-size="14" fill="#8E8E93" font-weight="700">360°</text>',c:false},
+       {l:'45°',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">45°</text>',c:false},
+       {l:'180°',svg:'<text x="8" y="30" font-size="14" fill="#8E8E93" font-weight="700">180°</text>',c:false},
+     ]},
+   ]},
+  {id:'angle',name:'Angle',
+   icon:'<line x1="16" y1="42" x2="40" y2="10" stroke="#8E8E93" stroke-width="3"/><line x1="16" y1="42" x2="64" y2="42" stroke="#8E8E93" stroke-width="3"/><circle cx="16" cy="42" r="4" fill="#FF3B30"/>',
+   def:'The space between two rays that share a vertex. Measured in degrees.',
+   teach:{
+     emoji:'📐',title:'What is an Angle?',
+     facts:[
+       'An angle is formed by <b>two rays</b> that share the same <b>endpoint</b>.',
+       'That shared endpoint is called the <b>vertex</b>.',
+       'We measure angles in <b>degrees (°)</b>.',
+       'A <b>right angle</b> is 90°. A <b>straight angle</b> is 180°.',
+       'Angles less than 90° are <b>acute</b>. Angles greater than 90° are <b>obtuse</b>.'
+     ]
+   },
+   mastery:[
+     {type:'protractor',prompt:'Tap the <b>vertex</b>, then the arc to make a ray. Do it <b>again</b> to make a second ray.',detect:'any_angle'},
+     {type:'quiz',q:'An angle is formed by:',opts:[
+       {l:'Two rays, one shared point',svg:'<line x1="10" y1="40" x2="35" y2="10" stroke="#1D1D1F" stroke-width="2.5"/><line x1="10" y1="40" x2="45" y2="40" stroke="#1D1D1F" stroke-width="2.5"/><circle cx="10" cy="40" r="4" fill="#FF3B30"/>',c:true},
+       {l:'Two parallel lines',svg:'<line x1="5" y1="15" x2="45" y2="15" stroke="#8E8E93" stroke-width="2.5"/><line x1="5" y1="35" x2="45" y2="35" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'A single straight line',svg:'<line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'A curved path',svg:'<path d="M 5 40 Q 25 5 45 40" fill="none" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'The shared point where two rays meet is called:',opts:[
+       {l:'Vertex',svg:'<circle cx="12" cy="38" r="4" fill="#FF3B30"/><line x1="12" y1="38" x2="8" y2="10" stroke="#8E8E93" stroke-width="2"/><line x1="12" y1="38" x2="42" y2="38" stroke="#8E8E93" stroke-width="2"/><text x="5" y="48" font-size="7" fill="#FF6961" font-weight="600">here</text>',c:true},
+       {l:'Midpoint',svg:'<text x="5" y="30" font-size="10" fill="#8E8E93" font-weight="600">midpoint</text>',c:false},
+       {l:'Intersection',svg:'<text x="2" y="30" font-size="9" fill="#8E8E93" font-weight="600">intersection</text>',c:false},
+       {l:'Endpoint',svg:'<text x="5" y="30" font-size="10" fill="#8E8E93" font-weight="600">endpoint</text>',c:false},
+     ]},
+   ]},
+  {id:'acute_angle',name:'Acute Angle',
+   icon:'<line x1="16" y1="42" x2="30" y2="10" stroke="#007AFF" stroke-width="3"/><line x1="16" y1="42" x2="64" y2="42" stroke="#007AFF" stroke-width="3"/>',
+   def:'Less than 90° — sharper and narrower than a square corner.',
+   teach:{
+     emoji:'🔪',title:'What is an Acute Angle?',
+     facts:[
+       'An acute angle is <b>less than 90°</b>.',
+       'It\'s <b>sharper</b> and <b>narrower</b> than a right angle (square corner).',
+       '"Acute" means <b>sharp</b> — think of a needle point!',
+       'Examples: 30°, 45°, 60°, 89° — all acute.',
+       'If you can see it\'s <b>smaller</b> than a corner of a piece of paper, it\'s acute.'
+     ]
+   },
+   mastery:[
+     {type:'protractor',prompt:'Build an angle <b>less than 90°</b>.',detect:'acute'},
+     {type:'protractor',prompt:'Now build a <b>different</b> acute angle.',detect:'acute'},
+     {type:'quiz',q:'Which angle is less than 90°?',opts:[
+       {l:'A',svg:'<line x1="10" y1="40" x2="25" y2="10" stroke="#007AFF" stroke-width="2.5"/><line x1="10" y1="40" x2="45" y2="40" stroke="#007AFF" stroke-width="2.5"/><text x="22" y="36" font-size="8" fill="#007AFF" font-weight="600">45°</text>',c:true},
+       {l:'B',svg:'<line x1="10" y1="40" x2="10" y2="10" stroke="#8E8E93" stroke-width="2.5"/><line x1="10" y1="40" x2="45" y2="40" stroke="#8E8E93" stroke-width="2.5"/><path d="M 10 40 L 17 40 L 17 33" fill="none" stroke="#8E8E93" stroke-width="1.5"/>',c:false},
+       {l:'C',svg:'<line x1="25" y1="40" x2="8" y2="12" stroke="#8E8E93" stroke-width="2.5"/><line x1="25" y1="40" x2="45" y2="40" stroke="#8E8E93" stroke-width="2.5"/><text x="28" y="35" font-size="8" fill="#8E8E93" font-weight="600">120°</text>',c:false},
+       {l:'D',svg:'<line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+   ]},
+  {id:'right_angle',name:'Right Angle',
+   icon:'<line x1="20" y1="60" x2="20" y2="16" stroke="#AF52DE" stroke-width="3"/><line x1="20" y1="60" x2="64" y2="60" stroke="#AF52DE" stroke-width="3"/><path d="M 32 60 L 32 48 L 20 48" fill="none" stroke="#AF52DE" stroke-width="2"/>',
+   def:'Exactly 90° — a perfectly square corner.',
+   teach:{
+     emoji:'📏',title:'What is a Right Angle?',
+     facts:[
+       'A right angle is <b>exactly 90°</b>.',
+       'It makes a <b>perfectly square corner</b> — like the corner of a book or screen.',
+       'We mark it with a <b>small square</b> symbol instead of an arc.',
+       'It\'s the boundary between <b>acute</b> (< 90°) and <b>obtuse</b> (> 90°).',
+       'Perpendicular lines always form right angles where they cross!'
+     ]
+   },
+   mastery:[
+     {type:'protractor',prompt:'Build <b>exactly 90°</b>.',detect:'right'},
+     {type:'quiz',q:'The small square symbol means:',opts:[
+       {l:'Exactly 90°',svg:'<path d="M 12 38 L 24 38 L 24 26" fill="none" stroke="#AF52DE" stroke-width="2.5"/><text x="8" y="18" font-size="10" fill="#AF52DE" font-weight="700">90°</text>',c:true},
+       {l:'Any angle',svg:'<text x="5" y="30" font-size="10" fill="#8E8E93" font-weight="600">any°</text>',c:false},
+       {l:'45°',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">45°</text>',c:false},
+       {l:'Equal sides',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">=</text>',c:false},
+     ]},
+     {type:'quiz',q:'Which shows a right angle?',opts:[
+       {l:'A',svg:'<line x1="10" y1="40" x2="10" y2="10" stroke="#AF52DE" stroke-width="2.5"/><line x1="10" y1="40" x2="42" y2="40" stroke="#AF52DE" stroke-width="2.5"/><path d="M 10 40 L 18 40 L 18 32" fill="none" stroke="#AF52DE" stroke-width="1.5"/>',c:true},
+       {l:'B',svg:'<line x1="10" y1="40" x2="25" y2="10" stroke="#8E8E93" stroke-width="2.5"/><line x1="10" y1="40" x2="42" y2="40" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'C',svg:'<line x1="25" y1="40" x2="5" y2="15" stroke="#8E8E93" stroke-width="2.5"/><line x1="25" y1="40" x2="42" y2="40" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'D',svg:'<line x1="5" y1="25" x2="45" y2="25" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+   ]},
+  {id:'obtuse_angle',name:'Obtuse Angle',
+   icon:'<line x1="35" y1="42" x2="10" y2="42" stroke="#34C759" stroke-width="3"/><line x1="35" y1="42" x2="60" y2="12" stroke="#34C759" stroke-width="3"/>',
+   def:'Between 90° and 180° — wider than a square corner.',
+   teach:{
+     emoji:'📏',title:'What is an Obtuse Angle?',
+     facts:[
+       'An obtuse angle is <b>greater than 90°</b> but less than 180°.',
+       'It\'s <b>wider</b> than a right angle — more open than a square corner.',
+       '"Obtuse" means <b>blunt or dull</b> — the opposite of sharp.',
+       'Examples: 91°, 120°, 150°, 179° — all obtuse.',
+       'If an angle is bigger than the corner of a book, it\'s obtuse!'
+     ]
+   },
+   mastery:[
+     {type:'protractor',prompt:'Build an angle <b>greater than 90°</b>.',detect:'obtuse'},
+     {type:'quiz',q:'Which is greater than 90°?',opts:[
+       {l:'A',svg:'<line x1="25" y1="40" x2="5" y2="40" stroke="#34C759" stroke-width="2.5"/><line x1="25" y1="40" x2="42" y2="12" stroke="#34C759" stroke-width="2.5"/><text x="12" y="35" font-size="8" fill="#34C759" font-weight="600">135°</text>',c:true},
+       {l:'B',svg:'<line x1="10" y1="40" x2="28" y2="10" stroke="#8E8E93" stroke-width="2.5"/><line x1="10" y1="40" x2="42" y2="40" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'C',svg:'<line x1="10" y1="40" x2="10" y2="10" stroke="#8E8E93" stroke-width="2.5"/><line x1="10" y1="40" x2="42" y2="40" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'D',svg:'<line x1="10" y1="40" x2="40" y2="38" stroke="#8E8E93" stroke-width="2.5"/><line x1="10" y1="40" x2="42" y2="40" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'Classify: acute, right, or obtuse?',opts:[
+       {l:'All three are real types',svg:'<text x="2" y="14" font-size="7" fill="#1D1D1F" font-weight="700">Acute: &lt; 90°</text><text x="2" y="27" font-size="7" fill="#1D1D1F" font-weight="700">Right: = 90°</text><text x="2" y="40" font-size="7" fill="#1D1D1F" font-weight="700">Obtuse: &gt; 90°</text>',c:true},
+       {l:'Only right angles exist',svg:'<text x="5" y="28" font-size="9" fill="#8E8E93" font-weight="600">just 90°?</text>',c:false},
+       {l:'Angles can\'t be measured',svg:'<text x="5" y="28" font-size="9" fill="#8E8E93" font-weight="600">no degrees?</text>',c:false},
+       {l:'Obtuse means small',svg:'<text x="2" y="28" font-size="8" fill="#8E8E93" font-weight="600">obtuse = tiny?</text>',c:false},
+     ]},
+   ]},
+]},
+{id:'t3',name:'Triangles',concepts:[
+  {id:'polygon',name:'Polygon',
+   icon:'<polygon points="40,8 68,28 58,62 22,62 12,28" fill="none" stroke="#FF9500" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A closed shape made of straight line segments — triangles, rectangles, and more are all polygons.',
+   teach:{
+     emoji:'🔶',title:'What is a Polygon?',
+     facts:[
+       'A polygon is a <b>closed, flat shape</b> made entirely of <b>straight sides</b>.',
+       '"Poly" means <b>many</b> and "gon" means <b>angles</b> — many angles!',
+       'A triangle (3 sides) is the <b>simplest polygon</b>. Then quadrilaterals (4), pentagons (5), hexagons (6), and so on.',
+       'Circles are <b>NOT polygons</b> because they have curved sides, not straight ones.',
+       'All the angles inside a polygon add up to a formula: <b>(n − 2) × 180°</b>, where n is the number of sides.'
+     ]
+   },
+   mastery:[
+     {type:'tri_build',prompt:'Build any <b>triangle</b> — the simplest polygon!',detect:'any_tri'},
+     {type:'quiz',q:'Which is a polygon?',opts:[
+       {l:'A',svg:'<polygon points="25,5 45,20 40,42 10,42 5,20" fill="none" stroke="#FF9500" stroke-width="2.5"/>',c:true},
+       {l:'B',svg:'<circle cx="25" cy="25" r="18" fill="none" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'C',svg:'<path d="M 5 25 Q 25 5 45 25 Q 25 45 5 25" fill="none" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+       {l:'D',svg:'<line x1="5" y1="40" x2="45" y2="10" stroke="#8E8E93" stroke-width="2.5"/>',c:false},
+     ]},
+     {type:'quiz',q:'Why is a circle NOT a polygon?',opts:[
+       {l:'No straight sides',svg:'<circle cx="25" cy="25" r="16" fill="none" stroke="#8E8E93" stroke-width="2" stroke-dasharray="4,3"/>',c:true},
+       {l:'Too many sides',svg:'<text x="8" y="30" font-size="10" fill="#8E8E93" font-weight="600">∞ sides?</text>',c:false},
+       {l:'It\'s 3D',svg:'<text x="10" y="30" font-size="10" fill="#8E8E93" font-weight="600">3D?</text>',c:false},
+       {l:'It has no angles',svg:'<text x="5" y="30" font-size="9" fill="#8E8E93" font-weight="600">0 angles?</text>',c:false},
+     ]},
+   ]},
+  {id:'triangle',name:'Triangle',
+   icon:'<polygon points="40,12 12,68 68,68" fill="none" stroke="#007AFF" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A closed shape with exactly 3 sides and 3 vertices.',
+   teach:{
+     emoji:'🔺',title:'What is a Triangle?',
+     facts:[
+       'A triangle has <b>exactly 3 sides</b> and <b>3 vertices</b>.',
+       'The 3 interior angles <b>always add up to 180°</b>.',
+       'It is the simplest <b>polygon</b> — you can\'t make a closed shape with fewer sides.',
+       'Triangles are <b>everywhere</b> — bridges, roofs, pizza slices, mountains!',
+       'We classify triangles by their <b>sides</b> or by their <b>angles</b>.'
+     ]
+   },
+   mastery:[
+     {type:'tri_build',prompt:'Place <b>3 points</b> on the circle to build a triangle.',detect:'any_tri'},
+     {type:'quiz',q:'The angles of a triangle always add up to:',opts:[
+       {l:'180°',svg:'<text x="8" y="30" font-size="14" fill="#007AFF" font-weight="700">180°</text>',c:true},
+       {l:'90°',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">90°</text>',c:false},
+       {l:'360°',svg:'<text x="6" y="30" font-size="14" fill="#8E8E93" font-weight="700">360°</text>',c:false},
+       {l:'It varies',svg:'<text x="8" y="30" font-size="10" fill="#8E8E93" font-weight="600">varies?</text>',c:false},
+     ]},
+   ]},
+  {id:'equilateral',name:'Equilateral',
+   icon:'<polygon points="40,12 12,60 68,60" fill="none" stroke="#34C759" stroke-width="3" stroke-linejoin="round"/><text x="22" y="46" font-size="7" fill="#34C759" font-weight="600">60°</text>',
+   def:'All 3 sides equal, all 3 angles equal (each 60°).',
+   teach:{
+     emoji:'🔺',title:'What is an Equilateral Triangle?',
+     facts:[
+       'An equilateral triangle has <b>3 equal sides</b>.',
+       'All <b>3 angles are exactly 60°</b> (180 ÷ 3 = 60).',
+       '"Equilateral" means <b>equal sides</b>.',
+       'It\'s the most <b>symmetrical</b> triangle possible.',
+       'Think of yield signs, the Triforce, or a slice of pie!'
+     ]
+   },
+   mastery:[
+     {type:'tri_build',prompt:'Build an <b>equilateral</b> triangle — all sides equal!',detect:'equilateral'},
+     {type:'quiz',q:'Each angle in an equilateral triangle is:',opts:[
+       {l:'60°',svg:'<text x="12" y="30" font-size="14" fill="#34C759" font-weight="700">60°</text>',c:true},
+       {l:'90°',svg:'<text x="12" y="30" font-size="14" fill="#8E8E93" font-weight="700">90°</text>',c:false},
+       {l:'45°',svg:'<text x="12" y="30" font-size="14" fill="#8E8E93" font-weight="700">45°</text>',c:false},
+       {l:'120°',svg:'<text x="8" y="30" font-size="14" fill="#8E8E93" font-weight="700">120°</text>',c:false},
+     ]},
+   ]},
+  {id:'isosceles',name:'Isosceles',
+   icon:'<polygon points="40,10 16,64 64,64" fill="none" stroke="#FF9500" stroke-width="3" stroke-linejoin="round"/>',
+   def:'Exactly 2 sides are equal in length, and 2 angles are equal.',
+   teach:{
+     emoji:'🔺',title:'What is an Isosceles Triangle?',
+     facts:[
+       'An isosceles triangle has <b>exactly 2 equal sides</b>.',
+       'The <b>2 angles opposite the equal sides</b> are also equal.',
+       '"Isosceles" comes from Greek: <b>iso</b> (equal) + <b>skelos</b> (leg).',
+       'The unequal side is called the <b>base</b>.',
+       'Many rooftops and arrowheads are isosceles shapes!'
+     ]
+   },
+   mastery:[
+     {type:'tri_build',prompt:'Build an <b>isosceles</b> triangle — exactly 2 equal sides.',detect:'isosceles'},
+     {type:'quiz',q:'An isosceles triangle has:',opts:[
+       {l:'2 equal sides',svg:'<polygon points="25,5 8,42 42,42" fill="none" stroke="#FF9500" stroke-width="2"/><text x="5" y="25" font-size="7" fill="#FF9500">= =</text>',c:true},
+       {l:'3 equal sides',svg:'<polygon points="25,8 8,42 42,42" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'0 equal sides',svg:'<polygon points="5,42 20,5 45,35" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'4 sides',svg:'<rect x="8" y="8" width="34" height="34" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'scalene',name:'Scalene',
+   icon:'<polygon points="15,62 55,68 40,12" fill="none" stroke="#AF52DE" stroke-width="3" stroke-linejoin="round"/>',
+   def:'All 3 sides are different lengths, all 3 angles are different.',
+   teach:{
+     emoji:'🔺',title:'What is a Scalene Triangle?',
+     facts:[
+       'A scalene triangle has <b>no equal sides</b>.',
+       'All <b>3 angles are different</b> too.',
+       '"Scalene" means <b>uneven</b> or <b>unequal</b>.',
+       'Most triangles you see in nature are scalene!',
+       'Even though all sides differ, the angles still add to 180°.'
+     ]
+   },
+   mastery:[
+     {type:'tri_build',prompt:'Build a <b>scalene</b> triangle — all 3 sides different!',detect:'scalene'},
+     {type:'quiz',q:'A scalene triangle has:',opts:[
+       {l:'No equal sides',svg:'<polygon points="5,42 22,5 45,35" fill="none" stroke="#AF52DE" stroke-width="2"/>',c:true},
+       {l:'2 equal sides',svg:'<polygon points="25,5 8,42 42,42" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'3 equal sides',svg:'<polygon points="25,8 8,42 42,42" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'No angles',svg:'<circle cx="25" cy="25" r="16" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'right_triangle',name:'Right Triangle',
+   icon:'<polygon points="14,64 14,16 62,64" fill="none" stroke="#AF52DE" stroke-width="3" stroke-linejoin="round"/><path d="M 14 64 L 26 64 L 26 52" fill="none" stroke="#AF52DE" stroke-width="2"/>',
+   def:'Has one angle that is exactly 90°.',
+   teach:{
+     emoji:'📐',title:'What is a Right Triangle?',
+     facts:[
+       'A right triangle has <b>one 90° angle</b>.',
+       'The side opposite the right angle is the <b>hypotenuse</b> — the longest side.',
+       'The other two angles must <b>add up to 90°</b> (since 180 - 90 = 90).',
+       'Right triangles are used in <b>construction, navigation, and math</b>.',
+       'The Pythagorean theorem (a² + b² = c²) only works on right triangles!'
+     ]
+   },
+   mastery:[
+     {type:'tri_build',prompt:'Build a <b>right triangle</b> — one angle must be exactly 90°.',detect:'right_tri'},
+     {type:'quiz',q:'The longest side of a right triangle is called the:',opts:[
+       {l:'Hypotenuse',svg:'<polygon points="8,42 8,8 42,42" fill="none" stroke="#AF52DE" stroke-width="2"/><line x1="8" y1="8" x2="42" y2="42" stroke="#AF52DE" stroke-width="2.5"/>',c:true},
+       {l:'Base',svg:'<text x="10" y="30" font-size="10" fill="#8E8E93" font-weight="600">base?</text>',c:false},
+       {l:'Vertex',svg:'<text x="8" y="30" font-size="10" fill="#8E8E93" font-weight="600">vertex?</text>',c:false},
+       {l:'Diameter',svg:'<text x="5" y="30" font-size="9" fill="#8E8E93" font-weight="600">diameter?</text>',c:false},
+     ]},
+   ]},
+]},
+{id:'t4',name:'Quadrilaterals',concepts:[
+  {id:'quadrilateral',name:'Quadrilateral',
+   icon:'<polygon points="15,20 65,15 70,60 10,65" fill="none" stroke="#007AFF" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A closed shape with exactly 4 sides, 4 vertices, and 4 angles.',
+   teach:{
+     emoji:'🔷',title:'What is a Quadrilateral?',
+     facts:[
+       'A quadrilateral has <b>exactly 4 sides</b> and <b>4 vertices</b>.',
+       'The 4 interior angles <b>always add up to 360°</b>.',
+       '"Quad" means <b>4</b> and "lateral" means <b>sides</b>.',
+       'Every square, rectangle, and trapezoid is a quadrilateral!',
+       'We classify quadrilaterals by their <b>parallel sides</b>, <b>equal sides</b>, and <b>angles</b>.'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>quadrilateral</b> — place 4 points and connect them.',detect:'any_quad'},
+     {type:'quiz',q:'The angles of a quadrilateral always add up to:',opts:[
+       {l:'360°',svg:'<text x="6" y="30" font-size="14" fill="#007AFF" font-weight="700">360°</text>',c:true},
+       {l:'180°',svg:'<text x="8" y="30" font-size="14" fill="#8E8E93" font-weight="700">180°</text>',c:false},
+       {l:'90°',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">90°</text>',c:false},
+       {l:'It varies',svg:'<text x="8" y="30" font-size="10" fill="#8E8E93" font-weight="600">varies?</text>',c:false},
+     ]},
+   ]},
+  {id:'trapezoid',name:'Trapezoid',
+   icon:'<polygon points="20,18 60,18 72,62 8,62" fill="none" stroke="#FF3B30" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A quadrilateral with exactly 1 pair of parallel sides.',
+   teach:{
+     emoji:'⏢',title:'What is a Trapezoid?',
+     facts:[
+       'A trapezoid has <b>exactly 1 pair of parallel sides</b>.',
+       'The parallel sides are called <b>bases</b>.',
+       'The non-parallel sides are called <b>legs</b>.',
+       'If both legs are equal, it\'s an <b>isosceles trapezoid</b>.',
+       'Think of a table top viewed from the side, or a bucket shape!'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>trapezoid</b> — exactly 1 pair of parallel sides.',detect:'trapezoid'},
+     {type:'quiz',q:'A trapezoid has:',opts:[
+       {l:'Exactly 1 pair of parallel sides',svg:'<polygon points="15,10 35,10 45,40 5,40" fill="none" stroke="#FF3B30" stroke-width="2"/><text x="18" y="8" font-size="5" fill="#FF3B30">∥</text>',c:true},
+       {l:'2 pairs of parallel sides',svg:'<polygon points="12,38 6,12 38,12 44,38" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'No parallel sides',svg:'<polygon points="5,40 20,5 45,15 35,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'3 sides',svg:'<polygon points="25,5 5,42 45,42" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'kite_shape',name:'Kite',
+   icon:'<polygon points="40,8 62,35 40,72 18,35" fill="none" stroke="#FF9500" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A quadrilateral with 2 pairs of consecutive (adjacent) sides that are equal — like a flying kite.',
+   teach:{
+     emoji:'🪁',title:'What is a Kite?',
+     facts:[
+       'A kite has <b>2 pairs of adjacent sides</b> that are equal in length.',
+       'Unlike a parallelogram, the equal sides are <b>next to each other</b>, not across from each other.',
+       'One pair of opposite angles (between the unequal sides) are <b>equal</b>.',
+       'The diagonals cross at <b>right angles</b> (90°).',
+       'Think of a kite you fly in the sky — two short sides at the top, two long sides at the bottom!'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>kite</b> — 2 pairs of adjacent equal sides.',detect:'kite'},
+     {type:'quiz',q:'A kite has equal sides that are:',opts:[
+       {l:'Next to each other',svg:'<polygon points="25,5 42,25 25,45 8,25" fill="none" stroke="#FF9500" stroke-width="2"/><text x="32" y="14" font-size="6" fill="#FF9500" font-weight="600">=</text><text x="32" y="38" font-size="6" fill="#FF9500" font-weight="600">=</text>',c:true},
+       {l:'Across from each other',svg:'<polygon points="12,38 6,12 38,12 44,38" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'All 4 equal',svg:'<polygon points="25,5 45,25 25,45 5,25" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'No equal sides',svg:'<polygon points="5,40 15,10 40,15 45,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'parallelogram',name:'Parallelogram',
+   icon:'<polygon points="20,60 8,20 60,20 72,60" fill="none" stroke="#34C759" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A quadrilateral where both pairs of opposite sides are parallel and equal.',
+   teach:{
+     emoji:'▱',title:'What is a Parallelogram?',
+     facts:[
+       'A parallelogram has <b>2 pairs of parallel sides</b>.',
+       '<b>Opposite sides</b> are equal in length.',
+       '<b>Opposite angles</b> are equal.',
+       'It looks like a rectangle that got <b>pushed sideways</b>.',
+       'Rectangles, rhombuses, and squares are all <b>special parallelograms</b>!'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>parallelogram</b> — opposite sides must be parallel.',detect:'parallelogram'},
+     {type:'quiz',q:'A parallelogram has:',opts:[
+       {l:'2 pairs of parallel sides',svg:'<polygon points="12,38 6,12 38,12 44,38" fill="none" stroke="#34C759" stroke-width="2"/>',c:true},
+       {l:'No parallel sides',svg:'<polygon points="5,40 15,10 40,15 45,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'1 pair of parallel sides',svg:'<polygon points="15,10 35,10 45,40 5,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'5 sides',svg:'<text x="10" y="30" font-size="14" fill="#8E8E93" font-weight="700">5</text>',c:false},
+     ]},
+   ]},
+  {id:'rectangle',name:'Rectangle',
+   icon:'<rect x="10" y="18" width="60" height="44" fill="none" stroke="#AF52DE" stroke-width="3" stroke-linejoin="round"/><path d="M 10 18 L 18 18 L 18 26" fill="none" stroke="#AF52DE" stroke-width="2"/>',
+   def:'A parallelogram with 4 right angles (90°). Opposite sides are equal and parallel.',
+   teach:{
+     emoji:'📋',title:'What is a Rectangle?',
+     facts:[
+       'A rectangle has <b>4 right angles</b> — every corner is exactly 90°.',
+       'It is a special <b>parallelogram</b> — so opposite sides are parallel and equal.',
+       'Doors, books, screens, and paper are all rectangles!',
+       'A square is a <b>special rectangle</b> where all 4 sides are also equal.',
+       'All rectangles are parallelograms, but not all parallelograms are rectangles.'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>rectangle</b> — all 4 corners must be 90°.',detect:'rectangle'},
+     {type:'quiz',q:'A rectangle always has:',opts:[
+       {l:'4 right angles',svg:'<rect x="8" y="8" width="34" height="24" fill="none" stroke="#AF52DE" stroke-width="2"/><path d="M 8 8 L 14 8 L 14 14" fill="none" stroke="#AF52DE" stroke-width="1.5"/>',c:true},
+       {l:'4 equal sides',svg:'<polygon points="25,5 45,25 25,45 5,25" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'No parallel sides',svg:'<polygon points="5,40 15,10 40,10 45,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'3 sides',svg:'<polygon points="25,5 5,42 45,42" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+     {type:'quiz',q:'Every rectangle is also a:',opts:[
+       {l:'Parallelogram',svg:'<polygon points="12,38 6,12 38,12 44,38" fill="none" stroke="#34C759" stroke-width="2"/><text x="5" y="48" font-size="6" fill="#34C759" font-weight="600">2 pairs ∥</text>',c:true},
+       {l:'Trapezoid',svg:'<polygon points="15,10 35,10 45,40 5,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'Kite',svg:'<polygon points="25,5 42,25 25,45 8,25" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'Triangle',svg:'<polygon points="25,5 5,42 45,42" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'rhombus',name:'Rhombus',
+   icon:'<polygon points="40,10 70,40 40,70 10,40" fill="none" stroke="#007AFF" stroke-width="3" stroke-linejoin="round"/>',
+   def:'A parallelogram with 4 equal sides — like a tilted square.',
+   teach:{
+     emoji:'♦️',title:'What is a Rhombus?',
+     facts:[
+       'A rhombus has <b>4 equal sides</b>.',
+       'It is a special <b>parallelogram</b> — opposite sides are parallel and opposite angles are equal.',
+       'It looks like a <b>diamond</b> or a square tilted on its corner.',
+       'A square is a special <b>rhombus</b> where all angles are also 90°.',
+       'All rhombuses are parallelograms, but not all parallelograms are rhombuses.'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>rhombus</b> — all 4 sides must be the same length.',detect:'rhombus'},
+     {type:'quiz',q:'A rhombus always has:',opts:[
+       {l:'4 equal sides',svg:'<polygon points="25,5 45,25 25,45 5,25" fill="none" stroke="#007AFF" stroke-width="2"/>',c:true},
+       {l:'4 right angles',svg:'<rect x="8" y="8" width="34" height="34" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'No parallel sides',svg:'<polygon points="5,40 20,5 45,15 35,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'Different side lengths',svg:'<polygon points="5,40 15,10 40,10 45,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+     {type:'quiz',q:'Every rhombus is also a:',opts:[
+       {l:'Parallelogram',svg:'<polygon points="12,38 6,12 38,12 44,38" fill="none" stroke="#34C759" stroke-width="2"/><text x="5" y="48" font-size="6" fill="#34C759" font-weight="600">2 pairs ∥</text>',c:true},
+       {l:'Rectangle',svg:'<rect x="8" y="12" width="34" height="24" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'Trapezoid',svg:'<polygon points="15,10 35,10 45,40 5,40" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+       {l:'Kite',svg:'<polygon points="25,5 42,25 25,45 8,25" fill="none" stroke="#8E8E93" stroke-width="2"/>',c:false},
+     ]},
+   ]},
+  {id:'square',name:'Square',
+   icon:'<rect x="16" y="16" width="48" height="48" fill="none" stroke="#FF9F0A" stroke-width="3" stroke-linejoin="round"/><path d="M 16 16 L 24 16 L 24 24" fill="none" stroke="#FF9F0A" stroke-width="2"/>',
+   def:'A quadrilateral with 4 equal sides AND 4 right angles — it is both a rectangle and a rhombus.',
+   teach:{
+     emoji:'⬜',title:'What is a Square?',
+     facts:[
+       'A square has <b>4 equal sides</b> AND <b>4 right angles</b> (90°).',
+       'It is both a <b>rectangle</b> (4 right angles) AND a <b>rhombus</b> (4 equal sides).',
+       'All squares are rectangles, but <b>not all rectangles are squares</b>.',
+       'All squares are rhombuses, but <b>not all rhombuses are squares</b>.',
+       'The square sits at the <b>bottom of the quadrilateral family tree</b> — it has the most special properties!'
+     ]
+   },
+   mastery:[
+     {type:'build_quad',prompt:'Build a <b>square</b> — 4 equal sides and 4 right angles.',detect:'square'},
+     {type:'quiz',q:'A square is both a:',opts:[
+       {l:'Rectangle AND Rhombus',svg:'<rect x="8" y="8" width="34" height="34" fill="none" stroke="#FF9F0A" stroke-width="2"/><path d="M 8 8 L 14 8 L 14 14" fill="none" stroke="#FF9F0A" stroke-width="1.5"/><text x="5" y="48" font-size="5" fill="#FF9F0A" font-weight="700">4 = sides + 4 right ∠</text>',c:true},
+       {l:'Trapezoid AND Kite',svg:'<text x="5" y="28" font-size="8" fill="#8E8E93" font-weight="600">trap + kite?</text>',c:false},
+       {l:'Triangle AND Circle',svg:'<text x="3" y="28" font-size="8" fill="#8E8E93" font-weight="600">tri + circle?</text>',c:false},
+       {l:'Pentagon AND Hexagon',svg:'<text x="2" y="28" font-size="7" fill="#8E8E93" font-weight="600">pent + hex?</text>',c:false},
+     ]},
+     {type:'quiz',q:'Which is TRUE?',opts:[
+       {l:'All squares are rectangles',svg:'<text x="2" y="18" font-size="7" fill="#FF9F0A" font-weight="700">□ → ▭ ✓</text><text x="2" y="36" font-size="7" fill="#FF9F0A" font-weight="700">▭ → □ ✗</text>',c:true},
+       {l:'All rectangles are squares',svg:'<text x="2" y="28" font-size="7" fill="#8E8E93" font-weight="600">▭ → □ ?</text>',c:false},
+       {l:'No squares are parallelograms',svg:'<text x="2" y="28" font-size="7" fill="#8E8E93" font-weight="600">□ ≠ ▱ ?</text>',c:false},
+       {l:'Squares have 5 sides',svg:'<text x="8" y="28" font-size="9" fill="#8E8E93" font-weight="600">5 sides?</text>',c:false},
+     ]},
+   ]},
+]},
+];
+
+const ALL=[];TIERS.forEach(t=>t.concepts.forEach(c=>{c.tier=t.id;ALL.push(c)}));
+let disc=new Set(),mast=new Set(),mode='discovery',curTier='t1',mastTgt=null,mastStep=0;
+// Queue for discoveries that happen while a modal is open
+let discQueue=[];
+let modalOpen=false;
+
+const SPRITES={
+  point:{emoji:'📍',name:'Pip the Point'},
+  line_segment:{emoji:'📏',name:'Seg the Segment'},
+  ray:{emoji:'🔦',name:'Rayna the Ray'},
+  line:{emoji:'➖',name:'Linus the Line'},
+  intersection:{emoji:'✖️',name:'Crossy the Intersection'},
+  parallel:{emoji:'🛤️',name:'Para the Parallel'},
+  perpendicular:{emoji:'📐',name:'Perci the Perpendicular'},
+  vertex:{emoji:'🔴',name:'Vex the Vertex'},
+  degree:{emoji:'🌡️',name:'Dee the Degree'},
+  angle:{emoji:'📐',name:'Angie the Angle'},
+  acute_angle:{emoji:'🔪',name:'Acute Ace'},
+  right_angle:{emoji:'📦',name:'Righty 90'},
+  obtuse_angle:{emoji:'🪃',name:'Obi the Obtuse'},
+  triangle:{emoji:'🔺',name:'Tri the Triangle'},
+  polygon:{emoji:'🔶',name:'Polly the Polygon'},
+  equilateral:{emoji:'⚖️',name:'Equi the Equal'},
+  isosceles:{emoji:'🏔️',name:'Iso the Isosceles'},
+  scalene:{emoji:'🦎',name:'Scaly the Scalene'},
+  right_triangle:{emoji:'📐',name:'Righty Triangle'},
+  quadrilateral:{emoji:'🔷',name:'Quaddy the Quad'},
+  trapezoid:{emoji:'⏢',name:'Trappy the Trapezoid'},
+  kite_shape:{emoji:'🪁',name:'Kai the Kite'},
+  parallelogram:{emoji:'▱',name:'Para the Parallelogram'},
+  rectangle:{emoji:'📋',name:'Rex the Rectangle'},
+  rhombus:{emoji:'♦️',name:'Rhombi the Rhombus'},
+  square:{emoji:'⬜',name:'Squarion'},
+};
+function spriteFor(id){return SPRITES[id]||{emoji:'✨',name:'Geo Buddy'}}
+function masteryTip(st){
+  switch(st.detect){
+    case 'point':return 'Tap any grid intersection once.';
+    case 'segment':return 'Tap one point, then another to connect them.';
+    case 'ray':return 'Build a segment, then tap one pulsing arrow.';
+    case 'line':return 'Build a segment, then extend both ends with arrows.';
+    case 'intersection':return 'Build two segments that meet at one endpoint.';
+    case 'vertex_build':return 'Build two segments that share one endpoint — that corner is the vertex.';
+    case 'parallel':return 'Make two segments with the same direction.';
+    case 'parallel_match':return 'Copy the given segment direction exactly.';
+    case 'perpendicular':return 'Make a square-corner crossing.';
+    case 'perp_match':return 'Make a segment at 90° to the given one.';
+    case 'any_angle':return 'Tap the vertex, then tap on the arc to place two rays.';
+    case 'acute':return 'Build an angle less than 90°.';
+    case 'right':return 'Build a perfect 90° angle.';
+    case 'obtuse':return 'Build an angle greater than 90°.';
+    case 'any_tri':return 'Place 3 points on the circle to form a triangle.';
+    case 'equilateral':return 'All 3 sides must be equal length.';
+    case 'isosceles':return 'Exactly 2 sides must be the same length.';
+    case 'scalene':return 'All 3 sides must be different lengths.';
+    case 'right_tri':return 'One angle must be exactly 90°.';
+    case 'any_quad':return 'Place 4 points and connect them into a closed shape.';
+    case 'rectangle':return 'Build a shape with 4 right angles (use grid lines!).';
+    case 'square':return 'Build a shape with 4 equal sides and 4 right angles.';
+    case 'parallelogram':return 'Both pairs of opposite sides must be parallel (same direction).';
+    case 'rhombus':return 'All 4 sides must be the same length.';
+    case 'trapezoid':return 'Exactly 1 pair of opposite sides must be parallel.';
+    case 'kite':return 'Two pairs of adjacent (next-to-each-other) sides must be equal.';
+    default:return 'Use the prompt as your mission target.';
+  }
+}
+
+// TTS
+let currentUtterance=null;
+function stopSpeak(){if(window.speechSynthesis)window.speechSynthesis.cancel()}
+function speak(text,btn){
+  if(!window.speechSynthesis)return;
+  // Strip HTML tags for speech
+  const clean=text.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  if(window.speechSynthesis.speaking){stopSpeak()}
+  if(btn&&btn.classList.contains('speaking')){btn.classList.remove('speaking');return}
+  document.querySelectorAll('.tts-btn.speaking').forEach(b=>b.classList.remove('speaking'));
+  const u=new SpeechSynthesisUtterance(clean);
+  u.rate=0.9;u.pitch=1;
+  if(btn){btn.classList.add('speaking');u.onend=()=>btn.classList.remove('speaking');u.onerror=()=>btn.classList.remove('speaking')}
+  window.speechSynthesis.speak(u);
+}
+function speakAll(textsArray){
+  const combined=textsArray.map(t=>t.replace(/<[^>]*>/g,'')).join('. ');
+  speak(combined);
+}
+
+// PARTICLES
+const pc=document.getElementById('pc'),px=pc.getContext('2d');let parts=[];
+function rsz(){pc.width=innerWidth;pc.height=innerHeight}addEventListener('resize',rsz);rsz();
+function boom(x,y,n=50){const C=['#FF9F0A','#FF9500','#FFCC00','#007AFF','#AF52DE','#34C759','#FF3B30','#FFF'];for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=2+Math.random()*6;parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,sz:2+Math.random()*4,c:C[~~(Math.random()*C.length)],l:1,d:.015+Math.random()*.02})}}
+function aprt(){px.clearRect(0,0,pc.width,pc.height);parts=parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.14;p.l-=p.d;if(p.l<=0)return false;px.globalAlpha=p.l;px.fillStyle=p.c;px.beginPath();px.arc(p.x,p.y,p.sz,0,Math.PI*2);px.fill();return true});if(parts.length)requestAnimationFrame(aprt)}
+
+function tierCleared(tid){return TIERS.find(t=>t.id===tid)?.concepts.every(c=>mast.has(c.id))}
+function tierOpen(tid){const i=TIERS.findIndex(t=>t.id===tid);return i===0||tierCleared(TIERS[i-1].id)}
+function tierConcepts(){return TIERS.find(t=>t.id===curTier)?.concepts||[]}
+
+// ==================== GRID CANVAS (T1) ====================
+let gPts=[],gSegs=[],gSel=-1,challengeSeg=null;
+const S=40,P=20;
+const GRID_HIT_RADIUS=12;
+const EXT_ARROW_OFFSET=30;
+function sameP(a,b){return a.x===b.x&&a.y===b.y}
+function gcd(a,b){while(b){const t=b;b=a%b;a=t}return a}
+function segDir(s){const dx=s.b.x-s.a.x,dy=s.b.y-s.a.y,g=gcd(Math.abs(dx),Math.abs(dy))||1;let ux=dx/g,uy=dy/g;if(ux<0||(ux===0&&uy<0)){ux*=-1;uy*=-1}return{ux,uy}}
+function segsIntersect(s1,s2){
+  // Returns true if two segments actually cross (not just share endpoint)
+  const p=segCrossPoint(s1,s2);
+  return p!==null;
+}
+function segCrossPoint(s1,s2){
+  const x1=s1.a.x,y1=s1.a.y,x2=s1.b.x,y2=s1.b.y;
+  const x3=s2.a.x,y3=s2.a.y,x4=s2.b.x,y4=s2.b.y;
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<.001)return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  const u=-((x1-x2)*(y1-y3)-(y1-y2)*(x1-x3))/d;
+  if(t>0.01&&t<0.99&&u>0.01&&u<0.99){
+    return{x:x1+t*(x2-x1),y:y1+t*(y2-y1)};
+  }
+  return null;
+}
+function findAllIntersections(){
+  const pts=[];
+  // Shared endpoints
+  for(let i=0;i<gSegs.length;i++)for(let j=i+1;j<gSegs.length;j++){
+    if(sameP(gSegs[i].a,gSegs[j].a)||sameP(gSegs[i].a,gSegs[j].b))pts.push({...gSegs[i].a});
+    if(sameP(gSegs[i].b,gSegs[j].a)||sameP(gSegs[i].b,gSegs[j].b))pts.push({...gSegs[i].b});
+    const cp=segCrossPoint(gSegs[i],gSegs[j]);
+    if(cp)pts.push(cp);
+  }
+  return pts;
+}
+function hasSeg(a,b){return gSegs.some(s=>(sameP(s.a,a)&&sameP(s.b,b))||(sameP(s.a,b)&&sameP(s.b,a)))}
+function toSvgPoint(svg,clientX,clientY){
+  const p=svg.createSVGPoint();
+  p.x=clientX;
+  p.y=clientY;
+  const m=svg.getScreenCTM();
+  if(!m)return{x:0,y:0};
+  const pt=p.matrixTransform(m.inverse());
+  return{x:pt.x,y:pt.y};
+}
+
+function removeExtArrows(){}// no-op now, arrows live inside SVG
+
+// Track which point is being hovered so drawGrid can show its arrow
+let hoverPtIdx=-1;
+let hoverRawX=0,hoverRawY=0;
+
+// Build ext arrow data for all segments (used by drawGrid to render inline)
+function getExtArrows(){
+  const arrows=[];
+  gSegs.forEach((seg,si)=>{
+    const dx=seg.b.x-seg.a.x,dy=seg.b.y-seg.a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const ux=dx/len,uy=dy/len;
+    if(!seg.extA){
+      arrows.push({x:seg.a.x-ux*EXT_ARROW_OFFSET,y:seg.a.y-uy*EXT_ARROW_OFFSET,
+        epx:seg.a.x,epy:seg.a.y,ux:-ux,uy:-uy,segIdx:si,end:'A'});
+    }
+    if(!seg.extB){
+      arrows.push({x:seg.b.x+ux*EXT_ARROW_OFFSET,y:seg.b.y+uy*EXT_ARROW_OFFSET,
+        epx:seg.b.x,epy:seg.b.y,ux:ux,uy:uy,segIdx:si,end:'B'});
+    }
+  });
+  return arrows;
+}
+
+// Find the best arrow to show for a hovered point
+function pickArrowForHover(arrows,pt,rawX,rawY){
+  const near=arrows.filter(a=>Math.hypot(a.epx-pt.x,a.epy-pt.y)<2);
+  if(near.length===0)return null;
+  let best=near[0],bestD=Infinity;
+  near.forEach(a=>{const d=Math.hypot(a.x-rawX,a.y-rawY);if(d<bestD){bestD=d;best=a}});
+  return best;
+}
+
+// Hit-test click against ext arrows (in SVG coords)
+function hitExtArrow(arrows,rawX,rawY){
+  const HIT=14;
+  return arrows.find(a=>Math.hypot(a.x-rawX,a.y-rawY)<HIT)||null;
+}
+
+function drawGrid(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  let s='';
+  for(let x=P;x<=420;x+=S)s+=`<line x1="${x}" y1="${P}" x2="${x}" y2="280" stroke="#E8E8ED" stroke-width=".5"/>`;
+  for(let y=P;y<=280;y+=S)s+=`<line x1="${P}" y1="${y}" x2="420" y2="${y}" stroke="#E8E8ED" stroke-width=".5"/>`;
+  for(let x=P;x<=420;x+=S)for(let y=P;y<=280;y+=S)s+=`<circle cx="${x}" cy="${y}" r="1.5" fill="#D1D1D6"/>`;
+  if(challengeSeg){const cs=challengeSeg;s+=`<line x1="${cs.a.x}" y1="${cs.a.y}" x2="${cs.b.x}" y2="${cs.b.y}" stroke="#FF9500" stroke-width="3" stroke-linecap="round" stroke-dasharray="6,4"/><circle cx="${cs.a.x}" cy="${cs.a.y}" r="4" fill="#FF9500"/><circle cx="${cs.b.x}" cy="${cs.b.y}" r="4" fill="#FF9500"/><text x="${(cs.a.x+cs.b.x)/2+10}" y="${(cs.a.y+cs.b.y)/2-8}" font-size="10" fill="#FF9500" font-weight="600">Given</text>`}
+  gSegs.forEach(seg=>{
+    const dx=seg.b.x-seg.a.x,dy=seg.b.y-seg.a.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+    if(seg.extA||seg.extB){
+      if(seg.extA){const nx=-uy,ny=ux;s+=`<line x1="${seg.a.x}" y1="${seg.a.y}" x2="${seg.a.x-ux*600}" y2="${seg.a.y-uy*600}" stroke="#C7C7CC" stroke-width="1.5"/>`;const ax=seg.a.x-ux*25,ay=seg.a.y-uy*25,as=7;s+=`<polygon points="${ax},${ay} ${ax+ux*as+nx*as*.5},${ay+uy*as+ny*as*.5} ${ax+ux*as-nx*as*.5},${ay+uy*as-ny*as*.5}" fill="#C7C7CC"/>`}
+      if(seg.extB){const nx=-uy,ny=ux;s+=`<line x1="${seg.b.x}" y1="${seg.b.y}" x2="${seg.b.x+ux*600}" y2="${seg.b.y+uy*600}" stroke="#C7C7CC" stroke-width="1.5"/>`;const ax=seg.b.x+ux*25,ay=seg.b.y+uy*25,as=7;s+=`<polygon points="${ax},${ay} ${ax-ux*as+nx*as*.5},${ay-uy*as+ny*as*.5} ${ax-ux*as-nx*as*.5},${ay-uy*as-ny*as*.5}" fill="#C7C7CC"/>`}
+    }
+    s+=`<line x1="${seg.a.x}" y1="${seg.a.y}" x2="${seg.b.x}" y2="${seg.b.y}" stroke="#1D1D1F" stroke-width="2.5" stroke-linecap="round"/>`;
+  });
+  gPts.forEach((p,i)=>{
+    const sel=i===gSel;
+    s+=`<circle cx="${p.x}" cy="${p.y}" r="${sel?8:5}" fill="${sel?'#007AFF':'#FF3B30'}"/>`;
+    if(sel)s+=`<circle cx="${p.x}" cy="${p.y}" r="14" fill="none" stroke="#007AFF" stroke-width="1.5" stroke-opacity=".2"/>`;
+  });
+  // Show intersection points (crossing points)
+  if(gSegs.length>=2){
+    const ixPts=findAllIntersections();
+    ixPts.forEach(ip=>{
+      // Don't double-draw on top of existing placed points
+      const isPlaced=gPts.some(p=>Math.hypot(p.x-ip.x,p.y-ip.y)<3);
+      if(!isPlaced){
+        s+=`<circle cx="${ip.x}" cy="${ip.y}" r="5" fill="#34C759" stroke="white" stroke-width="1.5"/>`;
+      }
+    });
+  }
+  // Render ext arrows only for the SELECTED point (gSel), not hover
+  if(gSegs.length>0&&gSel>=0){
+    const pt=gPts[gSel];
+    if(pt){
+      const arrows=getExtArrows();
+      // Show ALL arrows for this selected point
+      const matching=arrows.filter(a=>Math.hypot(a.epx-pt.x,a.epy-pt.y)<2);
+      matching.forEach(best=>{
+        const angle=Math.atan2(best.uy,best.ux)*180/Math.PI;
+        const sz=8;
+        s+=`<g style="cursor:pointer">`;
+        s+=`<circle cx="${best.x}" cy="${best.y}" r="12" fill="rgba(0,122,255,.08)"><animate attributeName="r" values="10;14;10" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;.8;.4" dur="1.4s" repeatCount="indefinite"/></circle>`;
+        s+=`<g transform="translate(${best.x},${best.y}) rotate(${angle})"><polygon points="${sz},0 ${-sz*.5},${-sz*.6} ${-sz*.5},${sz*.6}" fill="#007AFF"><animate attributeName="opacity" values=".5;1;.5" dur="1.4s" repeatCount="indefinite"/></polygon></g>`;
+        s+=`</g>`;
+      });
+    }
+  }
+  svg.innerHTML=s;
+}
+
+function setupGrid(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  svg.onclick=e=>{
+    if(modalOpen)return;
+    const pt=toSvgPoint(svg,e.clientX,e.clientY);
+    const rawX=pt.x,rawY=pt.y;
+
+    // 1. Check if tapping an ext arrow (only visible when gSel is an endpoint)
+    if(gSel>=0&&gSegs.length>0){
+      const selPt=gPts[gSel];
+      if(selPt){
+        const arrows=getExtArrows();
+        const matching=arrows.filter(a=>Math.hypot(a.epx-selPt.x,a.epy-selPt.y)<2);
+        for(const arr of matching){
+          if(Math.hypot(arr.x-rawX,arr.y-rawY)<S*.6){
+            const seg=gSegs[arr.segIdx];if(!seg)continue;
+            if(arr.end==='A')seg.extA=true; else seg.extB=true;
+            gSel=-1;drawGrid();detect();return;
+          }
+        }
+      }
+    }
+
+    // 2. Check if tapping an existing point
+    const hit=gPts.findIndex(p=>Math.hypot(p.x-rawX,p.y-rawY)<GRID_HIT_RADIUS);
+    if(hit>=0){
+      if(gSel===-1){
+        // Nothing selected → select this point
+        gSel=hit;drawGrid();detect();return;
+      }
+      if(gSel===hit){
+        // Tapped the already-selected point → deselect
+        gSel=-1;drawGrid();return;
+      }
+      // Different point selected → connect them with a segment
+      if(!hasSeg(gPts[gSel],gPts[hit])){
+        gSegs.push({a:{...gPts[gSel]},b:{...gPts[hit]},extA:false,extB:false});
+      }
+      gSel=-1;drawGrid();detect();return;
+    }
+
+    // 3. Tapping empty grid — check if snapped position has a point
+    const gx=Math.round((rawX-P)/S)*S+P,gy=Math.round((rawY-P)/S)*S+P;
+    if(gx<P||gx>420||gy<P||gy>280)return;
+    const existIdx=gPts.findIndex(p=>p.x===gx&&p.y===gy);
+    if(existIdx>=0){
+      // Snapped to existing point — treat as point tap
+      if(gSel===-1){gSel=existIdx;drawGrid();detect();return}
+      if(gSel===existIdx){gSel=-1;drawGrid();return}
+      if(!hasSeg(gPts[gSel],gPts[existIdx]))gSegs.push({a:{...gPts[gSel]},b:{...gPts[existIdx]},extA:false,extB:false});
+      gSel=-1;drawGrid();detect();return;
+    }
+
+    // 4. Truly empty grid spot — just create a new point (NOT selected, NOT connected)
+    //    If something was selected, deselect it first
+    gPts.push({x:gx,y:gy});
+    gSel=-1;
+    drawGrid();detect();
+  };
+
+  // Mouse hover — no arrow logic needed anymore, arrows are selection-based
+  svg.onmousemove=null;
+  svg.onmouseleave=null;
+}
+
+// ==================== PROTRACTOR CANVAS (T2) ====================
+// State: protVertex = vertex has been tapped at least once
+// protRays = array of degrees [0-2 items]
+// protSelRay = index of selected ray for moving (-1 = none)
+// protWaitingForArc = true when vertex was just tapped and we're waiting for arc tap
+let protRays=[],protVertex=false,protSelRay=-1,protWaitingForArc=false;
+
+function protAngle(){
+  if(protRays.length<2)return 0;
+  return Math.abs(protRays[1]-protRays[0]);
+}
+
+function drawProt(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  const W=440,H=320,cx=W/2,cy=H-50,R=Math.min(cx-20,cy-20);
+  let s='';
+  // Tick marks every 5°
+  for(let d=0;d<=180;d+=5){
+    const rad=d*Math.PI/180;
+    const is90=d===0||d===90||d===180,is45=d%45===0;
+    const tLen=is90?18:is45?14:10;
+    const x1=cx+Math.cos(Math.PI-rad)*R,y1=cy-Math.sin(Math.PI-rad)*R;
+    const x2=cx+Math.cos(Math.PI-rad)*(R-tLen),y2=cy-Math.sin(Math.PI-rad)*(R-tLen);
+    const sw=is90?1:is45?.7:.4;
+    const col=is90?'#1D1D1F':is45?'#6E6E73':'#AEAEB2';
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${sw}"/>`;
+    if(is90||is45){
+      const lx=cx+Math.cos(Math.PI-rad)*(R-24),ly=cy-Math.sin(Math.PI-rad)*(R-24);
+      s+=`<text x="${lx}" y="${ly}" font-size="${is90?11:9}" fill="${is90?'#1D1D1F':'#8E8E93'}" font-weight="${is90?700:500}" text-anchor="middle" dominant-baseline="middle">${d}°</text>`;
+    }
+  }
+  // Arc and baseline
+  s+=`<path d="M ${cx+R} ${cy} A ${R} ${R} 0 0 0 ${cx-R} ${cy}" fill="none" stroke="#E5E5EA" stroke-width="1"/>`;
+  s+=`<line x1="${cx-R-10}" y1="${cy}" x2="${cx+R+10}" y2="${cy}" stroke="#E5E5EA" stroke-width=".5"/>`;
+  
+  // Vertex point — shows state
+  const vGlow=protWaitingForArc;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${protVertex?7:10}" fill="${protVertex?'#FF3B30':'rgba(255,59,48,.25)'}" ${protVertex?'':'stroke="#FF3B30" stroke-width="2" stroke-dasharray="4,3"'}/>`;
+  if(vGlow){
+    s+=`<circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="#FF3B30" stroke-width="2" stroke-opacity=".4"><animate attributeName="r" values="12;18;12" dur="1.2s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values=".4;.1;.4" dur="1.2s" repeatCount="indefinite"/></circle>`;
+  }
+  // Prompt text
+  if(!protVertex){
+    s+=`<text x="${cx}" y="${cy+22}" font-size="9" fill="#FF3B30" font-weight="600" text-anchor="middle">tap vertex</text>`;
+  }else if(protWaitingForArc){
+    s+=`<text x="${cx}" y="${cy+22}" font-size="9" fill="#007AFF" font-weight="600" text-anchor="middle">now tap the arc</text>`;
+  }else if(protRays.length<2){
+    s+=`<text x="${cx}" y="${cy+22}" font-size="9" fill="#FF3B30" font-weight="600" text-anchor="middle">tap vertex for next ray</text>`;
+  }
+
+  // Angle fill (if two rays)
+  if(protRays.length===2){
+    const a1=Math.min(...protRays),a2=Math.max(...protRays);
+    const deg=a2-a1;
+    const col=deg<88?'rgba(0,122,255,.06)':deg<=92?'rgba(175,82,222,.06)':'rgba(52,199,89,.06)';
+    const sc=deg<88?'#007AFF':deg<=92?'#AF52DE':'#34C759';
+    const arcR=R*.3;
+    const ax1=cx+Math.cos(Math.PI-a1*Math.PI/180)*arcR,ay1=cy-Math.sin(Math.PI-a1*Math.PI/180)*arcR;
+    const ax2=cx+Math.cos(Math.PI-a2*Math.PI/180)*arcR,ay2=cy-Math.sin(Math.PI-a2*Math.PI/180)*arcR;
+    const large=deg>180?1:0;
+    s+=`<path d="M ${cx} ${cy} L ${ax1} ${ay1} A ${arcR} ${arcR} 0 ${large} 0 ${ax2} ${ay2} Z" fill="${col}" stroke="${sc}" stroke-width="1"/>`;
+    if(deg>=88&&deg<=92){
+      const sz=14,r1=a1*Math.PI/180,r2=a2*Math.PI/180;
+      const mx1=cx+Math.cos(Math.PI-r1)*sz,my1=cy-Math.sin(Math.PI-r1)*sz;
+      const mx2=cx+Math.cos(Math.PI-r2)*sz,my2=cy-Math.sin(Math.PI-r2)*sz;
+      s+=`<path d="M ${mx1} ${my1} L ${mx1+Math.cos(Math.PI-r2)*sz} ${my1-Math.sin(Math.PI-r2)*sz} L ${mx2} ${my2}" fill="none" stroke="#AF52DE" stroke-width="2"/>`;
+    }
+  }
+
+  // Rays (drawn as rays with arrowheads)
+  protRays.forEach((deg,i)=>{
+    const rad=deg*Math.PI/180;
+    const dirX=Math.cos(Math.PI-rad),dirY=-Math.sin(Math.PI-rad);
+    const rx=cx+dirX*R*.92,ry=cy+dirY*R*.92;
+    s+=`<line x1="${cx}" y1="${cy}" x2="${rx}" y2="${ry}" stroke="#1D1D1F" stroke-width="2.5" stroke-linecap="round"/>`;
+    // Arrowhead
+    const aLen=8,aW=4;
+    const nx=-dirY,ny=dirX;
+    s+=`<polygon points="${rx},${ry} ${rx-dirX*aLen+nx*aW},${ry-dirY*aLen+ny*aW} ${rx-dirX*aLen-nx*aW},${ry-dirY*aLen-ny*aW}" fill="#1D1D1F"/>`;
+    // Handle on the arc
+    const hx=cx+dirX*R,hy=cy+dirY*R;
+    const isSel=protSelRay===i;
+    s+=`<circle cx="${hx}" cy="${hy}" r="${isSel?12:10}" fill="${isSel?'#FF9500':'#007AFF'}" opacity=".85" style="cursor:pointer"/>`;
+    s+=`<circle cx="${hx}" cy="${hy}" r="3.5" fill="white"/>`;
+    if(isSel)s+=`<circle cx="${hx}" cy="${hy}" r="16" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-opacity=".3"/>`;
+  });
+
+  svg.innerHTML=s;
+  updateProtUI();
+}
+
+function updateProtUI(){
+  const rd=document.getElementById('angRead'),tp=document.getElementById('angType');
+  if(!rd||!tp)return;
+  if(protRays.length<2){
+    rd.textContent='—';
+    tp.textContent=protWaitingForArc?'Tap the arc':protRays.length===1?'Tap vertex':'Place rays';
+    tp.className='angle-type none';return;
+  }
+  const deg=protAngle();
+  rd.textContent=deg+'°';
+  if(deg<88){tp.textContent='Acute';tp.className='angle-type acute'}
+  else if(deg<=92){tp.textContent='Right Angle';tp.className='angle-type right'}
+  else{tp.textContent='Obtuse';tp.className='angle-type obtuse'}
+}
+
+function setupProt(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  const W=440,H=320,cx=W/2,cy=H-50,R=Math.min(cx-20,cy-20);
+  
+  function clickDegFromPoint(mx,my){
+    const dx=mx-cx,dy=cy-my;
+    let deg=Math.atan2(dy,-dx)*180/Math.PI;
+    if(deg<0)deg+=360;
+    // Snap to nearest 5
+    deg=Math.round(deg/5)*5;
+    // Allow 0 and 180 (no clamping away from edges)
+    return Math.max(0,Math.min(180,deg));
+  }
+  
+  function hitRayHandle(mx,my){
+    for(let i=0;i<protRays.length;i++){
+      const rad=protRays[i]*Math.PI/180;
+      const hx=cx+Math.cos(Math.PI-rad)*R,hy=cy-Math.sin(Math.PI-rad)*R;
+      if(Math.hypot(mx-hx,my-hy)<22)return i; // generous touch target
+    }
+    return -1;
+  }
+  
+  function isOnArc(mx,my){
+    const dist=Math.hypot(mx-cx,my-cy);
+    // Very generous: anywhere above-ish center and beyond 35% radius
+    // Also accept taps near the baseline for 0° and 180°
+    return dist>R*0.3&&(cy-my)>-30;
+  }
+  
+  svg.onclick=e=>{
+    if(modalOpen)return;
+    const pt=toSvgPoint(svg,e.clientX,e.clientY);
+    const mx=pt.x,my=pt.y;
+    
+    // Check if clicking an existing ray handle (for moving)
+    if(protRays.length>0&&!protWaitingForArc){
+      const hitRay=hitRayHandle(mx,my);
+      if(hitRay>=0){
+        protSelRay=protSelRay===hitRay?-1:hitRay;
+        drawProt();
+        return;
+      }
+    }
+    
+    // If a ray is selected and clicking the arc, move it
+    if(protSelRay>=0&&isOnArc(mx,my)){
+      protRays[protSelRay]=clickDegFromPoint(mx,my);
+      protSelRay=-1;
+      drawProt();
+      if(protRays.length===2)setTimeout(()=>detect(),300);
+      return;
+    }
+    
+    // Clicking vertex
+    if(Math.hypot(mx-cx,my-cy)<25){
+      if(!protVertex){
+        protVertex=true;
+        protWaitingForArc=true;
+        drawProt();detect();
+        return;
+      }
+      // Already activated — start building a ray
+      if(protRays.length<2){
+        protWaitingForArc=true;
+        protSelRay=-1;
+        drawProt();
+        return;
+      }
+      return;
+    }
+    
+    // Clicking arc while waiting for arc tap (building a ray)
+    if(protWaitingForArc&&isOnArc(mx,my)){
+      const deg=clickDegFromPoint(mx,my);
+      protRays.push(deg);
+      protWaitingForArc=false;
+      drawProt();
+      if(protRays.length===2)setTimeout(()=>detect(),300);
+      else detect();
+      return;
+    }
+  };
+}
+
+// ==================== TRIANGLE CANVAS (T3) ====================
+let triAngA=null,triAngB=null,triSelVert=null;
+const TRI_W=440,TRI_H=400,TRI_BASE_Y=340,TRI_BASE_AX=110,TRI_BASE_BX=330,TRI_R=120;
+
+// Ray from vertex A: angle measured from baseline (A→B direction), going up
+// Ray from vertex B: angle measured from baseline (B→A direction), going up
+function triRayDir(vert,deg){
+  const rad=deg*Math.PI/180;
+  if(vert==='A'){
+    // 0° points right (toward B), 90° points up, 180° points left
+    return{dx:Math.cos(rad),dy:-Math.sin(rad)};
+  }else{
+    // 0° points left (toward A), 90° points up, 180° points right
+    return{dx:-Math.cos(rad),dy:-Math.sin(rad)};
+  }
+}
+
+function triApex(){
+  if(triAngA===null||triAngB===null)return null;
+  const ax=TRI_BASE_AX,bx=TRI_BASE_BX,by=TRI_BASE_Y;
+  const dA=triRayDir('A',triAngA),dB=triRayDir('B',triAngB);
+  const det=dA.dx*dB.dy-dA.dy*dB.dx;
+  if(Math.abs(det)<0.001)return null;
+  const t=((bx-ax)*dB.dy-(by-by)*dB.dx)/det;
+  if(t<0.01)return null;
+  return{x:ax+t*dA.dx,y:by+t*dA.dy};
+}
+
+function triAngles3(){
+  if(triAngA===null||triAngB===null)return null;
+  const a3=180-triAngA-triAngB;
+  if(a3<=0)return null;
+  return[triAngA,triAngB,Math.round(a3*10)/10];
+}
+
+function triSideLens(){
+  const apex=triApex();
+  if(!apex)return null;
+  const ax=TRI_BASE_AX,bx=TRI_BASE_BX,by=TRI_BASE_Y;
+  return[
+    Math.hypot(bx-ax,by-by),
+    Math.hypot(apex.x-ax,apex.y-by),
+    Math.hypot(apex.x-bx,apex.y-by)
+  ];
+}
+
+function classifyTri(){
+  const angs=triAngles3();
+  if(!angs)return{sides:'',angles:''};
+  const sides=triSideLens();
+  if(!sides)return{sides:'',angles:''};
+  const tol=2;
+  const eq=(a,b)=>Math.abs(a-b)<tol;
+  let sideType='scalene';
+  if(eq(sides[0],sides[1])&&eq(sides[1],sides[2]))sideType='equilateral';
+  else if(eq(sides[0],sides[1])||eq(sides[1],sides[2])||eq(sides[0],sides[2]))sideType='isosceles';
+  let angType='acute_tri';
+  const mx=Math.max(...angs);
+  if(mx>=88&&mx<=92)angType='right_tri';
+  else if(mx>92)angType='obtuse_tri';
+  return{sides:sideType,angles:angType,angs};
+}
+
+function drawTriProtractor(s,vcx,vert,R,by){
+  // A: 0° is RIGHT, arc sweeps counterclockwise to 180° LEFT
+  // B: 0° is LEFT, arc sweeps counterclockwise to 180° RIGHT
+  for(let d=0;d<=180;d+=5){
+    const dir=triRayDir(vert,d);
+    const x1=vcx+dir.dx*R,y1=by+dir.dy*R;
+    const x2=vcx+dir.dx*(R-((d%90===0)?14:(d%45===0)?10:(d%30===0)?8:5));
+    const y2=by+dir.dy*(R-((d%90===0)?14:(d%45===0)?10:(d%30===0)?8:5));
+    const is90=d%90===0,is45=d%45===0;
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${is90?'#1D1D1F':is45?'#AEAEB2':'#D1D1D6'}" stroke-width="${is90?.8:is45?.5:.3}"/>`;
+    if(is90||is45){
+      const ldir=triRayDir(vert,d);
+      const lx=vcx+ldir.dx*(R-20),ly=by+ldir.dy*(R-20);
+      s+=`<text x="${lx}" y="${ly}" font-size="${is90?9:7}" fill="${is90?'#1D1D1F':'#8E8E93'}" font-weight="${is90?700:500}" text-anchor="middle" dominant-baseline="middle">${d}°</text>`;
+    }
+  }
+  // Arc
+  const p0=triRayDir(vert,0),p180=triRayDir(vert,180);
+  const sx=vcx+p0.dx*R,sy=by+p0.dy*R;
+  const ex=vcx+p180.dx*R,ey=by+p180.dy*R;
+  s+=`<path d="M ${sx} ${sy} A ${R} ${R} 0 0 ${vert==='A'?0:1} ${ex} ${ey}" fill="none" stroke="rgba(0,122,255,.15)" stroke-width="1"/>`;
+  s+=`<text x="${vcx}" y="${by+18}" font-size="8" fill="#007AFF" font-weight="600" text-anchor="middle">tap arc to set angle</text>`;
+  return s;
+}
+
+function drawTri(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  const W=TRI_W,H=TRI_H,ax=TRI_BASE_AX,bx=TRI_BASE_BX,by=TRI_BASE_Y,R=TRI_R;
+  let s='';
+  
+  const apex=triApex();
+  let vx=0,vy=0,vw=W,vh=H;
+  if(apex&&apex.y<20){
+    const pad=30;
+    const minY=Math.min(apex.y,0)-pad;
+    vy=minY;vh=TRI_BASE_Y-minY+50;
+    vw=W*(vh/H);
+    vx=(W-vw)/2;
+  }
+  svg.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);
+  
+  // Baseline
+  s+=`<line x1="${ax-30}" y1="${by}" x2="${bx+30}" y2="${by}" stroke="#E5E5EA" stroke-width="1"/>`;
+
+  // Active protractor — ONLY when a vertex is selected
+  if(triSelVert){
+    const vcx=triSelVert==='A'?ax:bx;
+    s=drawTriProtractor(s,vcx,triSelVert,R,by);
+  }
+
+  // Draw existing rays
+  if(triAngA!==null){
+    const d=triRayDir('A',triAngA);
+    const rayLen=apex?Math.hypot(apex.x-ax,apex.y-by)+20:R*1.5;
+    const rx=ax+d.dx*rayLen,ry=by+d.dy*rayLen;
+    s+=`<line x1="${ax}" y1="${by}" x2="${rx}" y2="${ry}" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round"/>`;
+    const ul=Math.hypot(d.dx,d.dy),ux=d.dx/ul,uy=d.dy/ul;
+    const al=7,aw=3.5,nx=-uy,ny=ux;
+    s+=`<polygon points="${rx},${ry} ${rx-ux*al+nx*aw},${ry-uy*al+ny*aw} ${rx-ux*al-nx*aw},${ry-uy*al-ny*aw}" fill="#1D1D1F"/>`;
+  }
+  if(triAngB!==null){
+    const d=triRayDir('B',triAngB);
+    const rayLen=apex?Math.hypot(apex.x-bx,apex.y-by)+20:R*1.5;
+    const rx=bx+d.dx*rayLen,ry=by+d.dy*rayLen;
+    s+=`<line x1="${bx}" y1="${by}" x2="${rx}" y2="${ry}" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round"/>`;
+    const ul=Math.hypot(d.dx,d.dy),ux=d.dx/ul,uy=d.dy/ul;
+    const al=7,aw=3.5,nx=-uy,ny=ux;
+    s+=`<polygon points="${rx},${ry} ${rx-ux*al+nx*aw},${ry-uy*al+ny*aw} ${rx-ux*al-nx*aw},${ry-uy*al-ny*aw}" fill="#1D1D1F"/>`;
+  }
+
+  // Triangle fill and apex
+  if(apex){
+    s+=`<polygon points="${ax},${by} ${bx},${by} ${apex.x},${apex.y}" fill="rgba(0,122,255,.04)" stroke="#007AFF" stroke-width="1.5" stroke-linejoin="round"/>`;
+    s+=`<circle cx="${apex.x}" cy="${apex.y}" r="5" fill="#007AFF"/>`;
+    const angs=triAngles3();
+    if(angs){
+      // Draw angle arcs with degree labels at each vertex
+      const arcR=28;
+      // Angle at A (between base AB and ray AC)
+      const aRadStart=0; // base direction is toward B (right)
+      const aRadEnd=triAngA*Math.PI/180; // ray direction
+      const aArc1x=ax+Math.cos(aRadStart)*arcR, aArc1y=by-Math.sin(aRadStart)*arcR;
+      const aArc2x=ax+Math.cos(aRadEnd)*arcR, aArc2y=by-Math.sin(aRadEnd)*arcR;
+      const aLarge=triAngA>180?1:0;
+      s+=`<path d="M ${aArc1x} ${aArc1y} A ${arcR} ${arcR} 0 ${aLarge} 0 ${aArc2x} ${aArc2y}" fill="none" stroke="#007AFF" stroke-width="1.5"/>`;
+      const aMid=aRadEnd/2;
+      const aLx=ax+Math.cos(aMid)*(arcR+12), aLy=by-Math.sin(aMid)*(arcR+12);
+      s+=`<text x="${aLx}" y="${aLy}" font-size="10" fill="#007AFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">${Math.round(angs[0])}°</text>`;
+      
+      // Angle at B (between base BA and ray BC)
+      const bRadStart=Math.PI; // base direction is toward A (left)
+      const bRadEnd=Math.PI-triAngB*Math.PI/180; // ray direction
+      const bArc1x=bx+Math.cos(bRadStart)*arcR, bArc1y=by-Math.sin(bRadStart)*arcR;
+      const bArc2x=bx+Math.cos(bRadEnd)*arcR, bArc2y=by-Math.sin(bRadEnd)*arcR;
+      const bLarge=triAngB>180?1:0;
+      s+=`<path d="M ${bArc1x} ${bArc1y} A ${arcR} ${arcR} 0 ${bLarge} 1 ${bArc2x} ${bArc2y}" fill="none" stroke="#007AFF" stroke-width="1.5"/>`;
+      const bMid=(bRadStart+bRadEnd)/2;
+      const bLx=bx+Math.cos(bMid)*(arcR+12), bLy=by-Math.sin(bMid)*(arcR+12);
+      s+=`<text x="${bLx}" y="${bLy}" font-size="10" fill="#007AFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">${Math.round(angs[1])}°</text>`;
+      
+      // Angle at C (apex) — compute directions from C to A and C to B
+      const cAng=Math.round(angs[2]);
+      const cToAx=ax-apex.x, cToAy=by-apex.y;
+      const cToBx=bx-apex.x, cToBy=by-apex.y;
+      const cAngA=Math.atan2(-cToAy,cToAx), cAngB=Math.atan2(-cToBy,cToBx);
+      // Determine sweep — go from A-direction to B-direction the short way (clockwise in SVG)
+      let cStart=cAngA, cEnd=cAngB;
+      // We want the arc that goes through the interior of the triangle (downward)
+      // Use the cross product to figure out direction
+      const cross=cToAx*cToBy-cToAy*cToBx;
+      const cArc1x=apex.x+Math.cos(cStart)*arcR, cArc1y=apex.y-Math.sin(cStart)*arcR;
+      const cArc2x=apex.x+Math.cos(cEnd)*arcR, cArc2y=apex.y-Math.sin(cEnd)*arcR;
+      const cLarge=cAng>180?1:0;
+      const cSweep=cross>0?0:1;
+      s+=`<path d="M ${cArc1x} ${cArc1y} A ${arcR} ${arcR} 0 ${cLarge} ${cSweep} ${cArc2x} ${cArc2y}" fill="none" stroke="#007AFF" stroke-width="1.5"/>`;
+      const cMidAng=(cStart+cEnd)/2;
+      // Check if midpoint is on the interior side; if not, flip by PI
+      const cMidTestX=apex.x+Math.cos(cMidAng)*10, cMidTestY=apex.y-Math.sin(cMidAng)*10;
+      const midToBaseY=by-cMidTestY;
+      let cLabelAng=cMidAng;
+      if(midToBaseY<0) cLabelAng=cMidAng+Math.PI;
+      const cLx=apex.x+Math.cos(cLabelAng)*(arcR+12), cLy=apex.y-Math.sin(cLabelAng)*(arcR+12);
+      s+=`<text x="${cLx}" y="${cLy}" font-size="10" fill="#007AFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">${cAng}°</text>`;
+      
+      // Right angle square marker if any angle is ~90°
+      if(Math.abs(angs[0]-90)<=2){
+        const sqSz=12;
+        s+=`<path d="M ${ax+sqSz} ${by} L ${ax+sqSz} ${by-sqSz} L ${ax} ${by-sqSz}" fill="none" stroke="#AF52DE" stroke-width="1.5"/>`;
+      }
+      if(Math.abs(angs[1]-90)<=2){
+        const sqSz=12;
+        s+=`<path d="M ${bx-sqSz} ${by} L ${bx-sqSz} ${by-sqSz} L ${bx} ${by-sqSz}" fill="none" stroke="#AF52DE" stroke-width="1.5"/>`;
+      }
+    }
+  }
+  
+  // Base segment
+  s+=`<line x1="${ax}" y1="${by}" x2="${bx}" y2="${by}" stroke="#1D1D1F" stroke-width="2.5" stroke-linecap="round"/>`;
+  
+  // Vertex points — same color, selected one gets highlight
+  const selA=triSelVert==='A';
+  const selB=triSelVert==='B';
+  s+=`<circle cx="${ax}" cy="${by}" r="${selA?8:6}" fill="${selA?'#FF9500':'#007AFF'}" style="cursor:pointer"/>`;
+  s+=`<circle cx="${bx}" cy="${by}" r="${selB?8:6}" fill="${selB?'#FF9500':'#007AFF'}" style="cursor:pointer"/>`;
+  if(selA)s+=`<circle cx="${ax}" cy="${by}" r="12" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-opacity=".3"/>`;
+  if(selB)s+=`<circle cx="${bx}" cy="${by}" r="12" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-opacity=".3"/>`;
+  s+=`<text x="${ax}" y="${by+18}" font-size="9" fill="#007AFF" font-weight="600" text-anchor="middle">A</text>`;
+  s+=`<text x="${bx}" y="${by+18}" font-size="9" fill="#007AFF" font-weight="600" text-anchor="middle">B</text>`;
+  if(apex)s+=`<text x="${apex.x}" y="${apex.y-10}" font-size="9" fill="#007AFF" font-weight="600" text-anchor="middle">C</text>`;
+  
+  // Prompt when nothing selected
+  if(!triSelVert&&triAngA===null)s+=`<text x="${(ax+bx)/2}" y="${by-20}" font-size="9" fill="#007AFF" font-weight="600" text-anchor="middle">tap a vertex to start</text>`;
+
+  svg.innerHTML=s;
+  updateTriUI();
+}
+
+function updateTriUI(){
+  const rd=document.getElementById('triRead'),tp=document.getElementById('triType');
+  if(!rd||!tp)return;
+  if(triAngA===null||triAngB===null){
+    rd.textContent='—';
+    if(triSelVert)tp.textContent=`Tap arc for angle at ${triSelVert}`;
+    else if(triAngA!==null)tp.textContent='Tap vertex B';
+    else tp.textContent='Tap a vertex';
+    tp.className='angle-type none';return;
+  }
+  const a3=180-triAngA-triAngB;
+  if(a3<=0){
+    rd.textContent='No triangle';
+    tp.textContent='Angles must sum to less than 180°';
+    tp.className='angle-type none';return;
+  }
+  const cls=classifyTri();
+  const names={equilateral:'Equilateral',isosceles:'Isosceles',scalene:'Scalene'};
+  const angNames={acute_tri:'Acute',right_tri:'Right',obtuse_tri:'Obtuse'};
+  rd.textContent=`${names[cls.sides]||''} ${angNames[cls.angles]||''}`;
+  const col=cls.angles==='right_tri'?'right':cls.angles==='obtuse_tri'?'obtuse':'acute';
+  tp.textContent=`${Math.round(triAngA)}° + ${Math.round(triAngB)}° + ${Math.round(a3)}° = 180°`;
+  tp.className='angle-type '+col;
+}
+
+function setupTri(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  const ax=TRI_BASE_AX,bx=TRI_BASE_BX,by=TRI_BASE_Y,R=TRI_R;
+  
+  function clickDegForVert(vert,mx,my){
+    const vcx=vert==='A'?ax:bx;
+    // Get the direction from vertex to click point
+    const cdx=mx-vcx,cdy=my-by;
+    // For A: 0° is right (+x), for B: 0° is left (-x). Both: 90° is up (-y).
+    let deg;
+    if(vert==='A'){
+      deg=Math.atan2(-cdy,cdx)*180/Math.PI;
+    }else{
+      deg=Math.atan2(-cdy,-cdx)*180/Math.PI;
+    }
+    if(deg<0)deg+=360;
+    deg=Math.round(deg/5)*5;
+    return Math.max(5,Math.min(175,deg));
+  }
+  
+  svg.onclick=e=>{
+    if(modalOpen)return;
+    const pt=toSvgPoint(svg,e.clientX,e.clientY);
+    const mx=pt.x,my=pt.y;
+    
+    // Tap vertex A?
+    if(Math.hypot(mx-ax,my-by)<22){
+      triSelVert=triSelVert==='A'?null:'A';
+      drawTri();return;
+    }
+    // Tap vertex B?
+    if(Math.hypot(mx-bx,my-by)<22){
+      triSelVert=triSelVert==='B'?null:'B';
+      drawTri();return;
+    }
+    
+    // Tap on active protractor arc?
+    if(triSelVert){
+      const vcx=triSelVert==='A'?ax:bx;
+      const dist=Math.hypot(mx-vcx,my-by);
+      if(dist>R*0.3&&(by-my)>-25){
+        const deg=clickDegForVert(triSelVert,mx,my);
+        if(triSelVert==='A')triAngA=deg; else triAngB=deg;
+        triSelVert=null;
+        drawTri();
+        if(triAngA!==null&&triAngB!==null)setTimeout(()=>detect(),300);
+        return;
+      }
+    }
+  };
+}
+
+// ==================== QUADRILATERAL CANVAS (T4) ====================
+let qPts=[],qSegs=[],qSel=-1,qComplete=false;
+
+function qSameP(a,b){return Math.abs(a.x-b.x)<1&&Math.abs(a.y-b.y)<1}
+function qHasSeg(a,b){return qSegs.some(s=>(qSameP(s.a,a)&&qSameP(s.b,b))||(qSameP(s.a,b)&&qSameP(s.b,a)))}
+
+function qSideLens(){
+  if(qSegs.length<4)return null;
+  return qSegs.map(s=>Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y));
+}
+
+function qSegDir2(s){
+  const dx=s.b.x-s.a.x,dy=s.b.y-s.a.y;
+  const len=Math.hypot(dx,dy)||1;
+  return{ux:dx/len,uy:dy/len};
+}
+
+function qAreParallel(s1,s2){
+  const d1=qSegDir2(s1),d2=qSegDir2(s2);
+  const cross=Math.abs(d1.ux*d2.uy-d1.uy*d2.ux);
+  return cross<0.01;
+}
+
+function qArePerpendicular(s1,s2){
+  const d1=qSegDir2(s1),d2=qSegDir2(s2);
+  const dot=Math.abs(d1.ux*d2.ux+d1.uy*d2.uy);
+  return dot<0.05;
+}
+
+function qOrderedVertices(){
+  // Return vertices in order around the quad from segs
+  if(qSegs.length<4)return null;
+  // Build adjacency from segments
+  const verts=[];
+  const start=qSegs[0].a;
+  let cur={...start};
+  const used=new Set();
+  for(let i=0;i<4;i++){
+    verts.push(cur);
+    let found=false;
+    for(let j=0;j<qSegs.length;j++){
+      if(used.has(j))continue;
+      if(qSameP(qSegs[j].a,cur)){used.add(j);cur={...qSegs[j].b};found=true;break}
+      if(qSameP(qSegs[j].b,cur)){used.add(j);cur={...qSegs[j].a};found=true;break}
+    }
+    if(!found)return null;
+  }
+  // Verify it closes
+  if(!qSameP(cur,start))return null;
+  return verts;
+}
+
+function qGetOppositePairs(){
+  // Return pairs of opposite sides: [[seg0,seg2],[seg1,seg3]]
+  const verts=qOrderedVertices();
+  if(!verts)return null;
+  // Sides: 0-1, 1-2, 2-3, 3-0
+  const sides=[];
+  for(let i=0;i<4;i++){
+    sides.push({a:verts[i],b:verts[(i+1)%4]});
+  }
+  return{sides,pairs:[[sides[0],sides[2]],[sides[1],sides[3]]]};
+}
+
+function classifyQuad(){
+  const info=qGetOppositePairs();
+  if(!info)return{type:'unknown'};
+  const{sides,pairs}=info;
+  const lens=sides.map(s=>Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y));
+  const tol=3;
+  const eq=(a,b)=>Math.abs(a-b)<tol;
+  
+  const pair0Par=qAreParallel(pairs[0][0],pairs[0][1]);
+  const pair1Par=qAreParallel(pairs[1][0],pairs[1][1]);
+  const parallelPairs=(pair0Par?1:0)+(pair1Par?1:0);
+  
+  // Check for right angles at each vertex
+  const rightAngles=[];
+  for(let i=0;i<4;i++){
+    if(qArePerpendicular(sides[i],sides[(i+1)%4]))rightAngles.push(i);
+  }
+  const allRight=rightAngles.length>=4;
+  const allSidesEq=eq(lens[0],lens[1])&&eq(lens[1],lens[2])&&eq(lens[2],lens[3]);
+  
+  // Kite: 2 pairs of adjacent sides equal (side0==side1 && side2==side3, OR side0==side3 && side1==side2)
+  const isKite=(eq(lens[0],lens[1])&&eq(lens[2],lens[3])&&!eq(lens[0],lens[2]))||
+               (eq(lens[0],lens[3])&&eq(lens[1],lens[2])&&!eq(lens[0],lens[1]));
+  
+  // Build flags for all types this shape qualifies as
+  const is={quadrilateral:true,trapezoid:false,kite:false,parallelogram:false,rectangle:false,rhombus:false,square:false};
+  
+  if(parallelPairs===2){
+    is.parallelogram=true;
+    if(allRight)is.rectangle=true;
+    if(allSidesEq)is.rhombus=true;
+    if(allRight&&allSidesEq)is.square=true;
+  }else if(parallelPairs===1){
+    is.trapezoid=true;
+  }
+  if(isKite)is.kite=true;
+  
+  // Primary type (most specific)
+  let type='quadrilateral';
+  if(is.square)type='square';
+  else if(is.rectangle)type='rectangle';
+  else if(is.rhombus)type='rhombus';
+  else if(is.parallelogram)type='parallelogram';
+  else if(is.trapezoid)type='trapezoid';
+  else if(is.kite)type='kite';
+  
+  return{type,is,parallelPairs,allRight,allSidesEq,lens,rightAngles};
+}
+
+// Rhombille grid constants for quadrilateral tier
+// Creates interlocking diamond pattern for building both rectangles and rhombuses
+const RH_S=40;
+const RH_V=RH_S*Math.sqrt(3)/2; // vertical spacing for 60° rhombus
+const RH_PX=22, RH_PY=20;
+
+function rhombilleGridPoints(){
+const pts=[];
+const COLS=11;
+const ROWS=9;
+for(let r=0;r<ROWS;r++){
+const y=RH_PY+r*RH_V; // proper 60° rhombus vertical spacing
+const isIsoRow=(r%2===1);
+for(let c=0;c<=COLS;c++){
+const xOffset=isIsoRow?RH_S/2:0;
+const x=RH_PX+c*RH_S+xOffset;
+if(x<=420&&y<=290){
+pts.push({x:Math.round(x*10)/10,y:Math.round(y*10)/10,r,c,rowType:isIsoRow?'iso':'sq'});
+}
+}
+}
+return pts;
+}
+
+// Alias functions for backwards compatibility
+function hybridGridPoints(){return rhombilleGridPoints();}
+function isoGridPoints(){return rhombilleGridPoints();}
+function squareGridPoints(){return rhombilleGridPoints();}
+
+const SQ_S=40, SQ_P=20; // snap radius reference
+
+function snapToIso(rawX,rawY){
+const gridPts=rhombilleGridPoints();
+let best=null,bestD=Infinity;
+gridPts.forEach(p=>{
+const d=Math.hypot(p.x-rawX,p.y-rawY);
+if(d<bestD){bestD=d;best=p}
+});
+if(bestD>RH_S*0.7)return null;
+return best;
+}
+
+function drawQuadGrid(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  let s='';
+  
+  // Draw rhombille grid - alternating rows for rectangle and rhombus construction
+const pts=rhombilleGridPoints();
+const byRow={};
+pts.forEach(p=>{
+if(!byRow[p.r])byRow[p.r]=[];
+byRow[p.r].push(p);
+});
+// Sort rows by column
+Object.values(byRow).forEach(row=>row.sort((a,b)=>a.c-b.c));
+// Draw horizontal lines (all rows)
+Object.values(byRow).forEach(row=>{
+for(let i=0;i<row.length-1;i++){
+s+=`<line x1="${row[i].x}" y1="${row[i].y}" x2="${row[i+1].x}" y2="${row[i+1].y}" stroke="#E8E8ED" stroke-width=".35"/>`;
+}
+});
+// Build columns for vertical/diagonal connections
+const byCol={};
+pts.forEach(p=>{
+if(!byCol[p.c])byCol[p.c]=[];
+byCol[p.c].push(p);
+});
+Object.values(byCol).forEach(col=>col.sort((a,b)=>a.r-b.r));
+// Draw vertical lines where columns align (for rectangle construction)
+// A vertical line exists where points share the exact same x-coordinate
+const allX={};
+pts.forEach(p=>{
+const key=`${p.x.toFixed(1)}`;
+if(!allX[key])allX[key]=[];
+allX[key].push(p);
+});
+Object.values(allX).forEach(ptsAtX=>{
+if(ptsAtX.length>=2){
+ptsAtX.sort((a,b)=>a.y-b.y);
+for(let i=0;i<ptsAtX.length-1;i++){
+s+=`<line x1="${ptsAtX[i].x}" y1="${ptsAtX[i].y}" x2="${ptsAtX[i+1].x}" y2="${ptsAtX[i+1].y}" stroke="#E8E8ED" stroke-width=".35"/>`;
+}
+}
+});
+// Draw diagonal connections (for rhombus construction - 60° angles)
+// In a rhombille grid, diagonals connect offset rows to create equal-length sides
+Object.values(byRow).forEach((row,rIdx)=>{
+const nextRow=byRow[rIdx+1];
+if(!nextRow)return;
+row.forEach(p=>{
+// Find the diagonal neighbor - same column on even rows, adjacent on odd
+// This creates equilateral triangle edges (all sides = RH_S)
+const neighbor=nextRow.find(n=>{
+const dx=Math.abs(p.x-n.x);
+const dy=Math.abs(p.y-n.y);
+const dist=Math.hypot(dx,dy);
+// Diagonal should be same length as side (approximately)
+return Math.abs(dist-RH_S)<2;
+});
+if(neighbor){
+s+=`<line x1="${p.x}" y1="${p.y}" x2="${neighbor.x}" y2="${neighbor.y}" stroke="#DDD" stroke-width=".25"/>`;
+}
+});
+});
+// Draw grid dots - different colors for even/odd rows
+pts.forEach(p=>{
+const color=(p.r%2===0)?'#D1D1D6':'#C8B8A8';
+s+=`<circle cx="${p.x}" cy="${p.y}" r="1.5" fill="${color}"/>`;
+});
+  
+  // Draw segments
+  qSegs.forEach(seg=>{
+    s+=`<line x1="${seg.a.x}" y1="${seg.a.y}" x2="${seg.b.x}" y2="${seg.b.y}" stroke="#1D1D1F" stroke-width="2.5" stroke-linecap="round"/>`;
+  });
+  
+  // Fill if complete
+  if(qComplete&&qSegs.length===4){
+    const verts=qOrderedVertices();
+    if(verts){
+      const pts=verts.map(v=>`${v.x},${v.y}`).join(' ');
+      s+=`<polygon points="${pts}" fill="rgba(0,122,255,.06)" stroke="#007AFF" stroke-width="1.5" stroke-linejoin="round"/>`;
+      // Show classification
+      const cls=classifyQuad();
+      if(cls.rightAngles){
+        cls.rightAngles.forEach(i=>{
+          const v=verts[i];
+          const prev=verts[(i+3)%4],next=verts[(i+1)%4];
+          const d1x=prev.x-v.x,d1y=prev.y-v.y,l1=Math.hypot(d1x,d1y)||1;
+          const d2x=next.x-v.x,d2y=next.y-v.y,l2=Math.hypot(d2x,d2y)||1;
+          const sqSz=10;
+          const p1x=v.x+d1x/l1*sqSz,p1y=v.y+d1y/l1*sqSz;
+          const p2x=v.x+d2x/l2*sqSz,p2y=v.y+d2y/l2*sqSz;
+          const px=p1x+d2x/l2*sqSz,py=p1y+d2y/l2*sqSz;
+          s+=`<path d="M ${p1x} ${p1y} L ${px} ${py} L ${p2x} ${p2y}" fill="none" stroke="#AF52DE" stroke-width="1.5"/>`;
+        });
+      }
+      // Parallel markers
+      const info=qGetOppositePairs();
+      if(info){
+        info.pairs.forEach((pair,pi)=>{
+          if(qAreParallel(pair[0],pair[1])){
+            pair.forEach(seg=>{
+              const mx=(seg.a.x+seg.b.x)/2,my=(seg.a.y+seg.b.y)/2;
+              const dx=seg.b.x-seg.a.x,dy=seg.b.y-seg.a.y,len=Math.hypot(dx,dy)||1;
+              const nx=-dy/len*6,ny=dx/len*6;
+              const col=pi===0?'#34C759':'#FF9500';
+              s+=`<line x1="${mx-nx*.4+dx/len*3}" y1="${my-ny*.4+dy/len*3}" x2="${mx+nx*.4+dx/len*3}" y2="${my+ny*.4+dy/len*3}" stroke="${col}" stroke-width="2"/>`;
+              s+=`<line x1="${mx-nx*.4-dx/len*3}" y1="${my-ny*.4-dy/len*3}" x2="${mx+nx*.4-dx/len*3}" y2="${my+ny*.4-dy/len*3}" stroke="${col}" stroke-width="2"/>`;
+            });
+          }
+        });
+      }
+      // Equal side markers (tick marks)
+      const sideLens=verts.map((v,i)=>{
+        const next=verts[(i+1)%4];
+        return Math.hypot(next.x-v.x,next.y-v.y);
+      });
+      // Group sides by equal length
+      const groups={};
+      sideLens.forEach((len,i)=>{
+        const key=Math.round(len);
+        if(!groups[key])groups[key]=[];
+        groups[key].push(i);
+      });
+      const tickStyles=Object.values(groups).filter(g=>g.length>=2);
+      tickStyles.forEach((group,gi)=>{
+        const ticks=gi+1;
+        group.forEach(i=>{
+          const v=verts[i],next=verts[(i+1)%4];
+          const mx=(v.x+next.x)/2,my=(v.y+next.y)/2;
+          const dx=next.x-v.x,dy=next.y-v.y,len=Math.hypot(dx,dy)||1;
+          const nx=-dy/len*5,ny=dx/len*5;
+          for(let t=0;t<ticks;t++){
+            const off=(t-(ticks-1)/2)*4;
+            const tx=mx+dx/len*off,ty=my+dy/len*off;
+            s+=`<line x1="${tx-nx}" y1="${ty-ny}" x2="${tx+nx}" y2="${ty+ny}" stroke="#007AFF" stroke-width="1.5"/>`;
+          }
+        });
+      });
+    }
+  }
+  
+  // Points
+  qPts.forEach((p,i)=>{
+    const sel=i===qSel;
+    s+=`<circle cx="${p.x}" cy="${p.y}" r="${sel?8:5}" fill="${sel?'#007AFF':'#FF3B30'}"/>`;
+    if(sel)s+=`<circle cx="${p.x}" cy="${p.y}" r="14" fill="none" stroke="#007AFF" stroke-width="1.5" stroke-opacity=".2"/>`;
+    // Label vertices
+    const labels=['A','B','C','D'];
+    if(i<4)s+=`<text x="${p.x+10}" y="${p.y-8}" font-size="10" fill="#007AFF" font-weight="600">${labels[i]}</text>`;
+  });
+  
+  svg.innerHTML=s;
+}
+
+function setupQuadGrid(){
+  const svg=document.getElementById('svg');if(!svg)return;
+  svg.onclick=e=>{
+    if(modalOpen)return;
+    const pt=toSvgPoint(svg,e.clientX,e.clientY);
+    const rawX=pt.x,rawY=pt.y;
+    
+    // Hit existing point
+    const hit=qPts.findIndex(p=>Math.hypot(p.x-rawX,p.y-rawY)<GRID_HIT_RADIUS);
+    if(hit>=0){
+      if(qSel===-1){qSel=hit;drawQuadGrid();return}
+      if(qSel===hit){qSel=-1;drawQuadGrid();return}
+      // Connect
+      if(!qHasSeg(qPts[qSel],qPts[hit])&&qSegs.length<4){
+        qSegs.push({a:{...qPts[qSel]},b:{...qPts[hit]}});
+        // Check if quad is complete (4 segs forming a closed loop)
+        if(qSegs.length===4){
+          const v=qOrderedVertices();
+          if(v)qComplete=true;
+          else{qSegs.pop();showCFB('ok','Connect to close the shape');qSel=-1;drawQuadGrid();return}
+        }
+      }
+      qSel=-1;drawQuadGrid();
+      if(qComplete)setTimeout(()=>detect(),300);
+      return;
+    }
+    
+    // Snap to isometric grid
+    const snapped=snapToIso(rawX,rawY);
+    if(!snapped)return;
+    const gx=snapped.x,gy=snapped.y;
+    const existIdx=qPts.findIndex(p=>Math.abs(p.x-gx)<1&&Math.abs(p.y-gy)<1);
+    if(existIdx>=0){
+      if(qSel===-1){qSel=existIdx;drawQuadGrid();return}
+      if(qSel===existIdx){qSel=-1;drawQuadGrid();return}
+      if(!qHasSeg(qPts[qSel],qPts[existIdx])&&qSegs.length<4){
+        qSegs.push({a:{...qPts[qSel]},b:{...qPts[existIdx]}});
+        if(qSegs.length===4){
+          const v=qOrderedVertices();
+          if(v)qComplete=true;
+          else{qSegs.pop();qSel=-1;drawQuadGrid();return}
+        }
+      }
+      qSel=-1;drawQuadGrid();
+      if(qComplete)setTimeout(()=>detect(),300);
+      return;
+    }
+    
+    // New point (max 4)
+    if(qPts.length>=4){qSel=-1;drawQuadGrid();return}
+    qPts.push({x:gx,y:gy});
+    qSel=-1;drawQuadGrid();detect();
+  };
+}
+
+// ==================== DETECTION ====================
+function detect(){
+  if(mode==='discovery')detectDisc();else detectMast();
+}
+function detectDisc(){
+  if(curTier==='t1')detectDiscT1();else if(curTier==='t2')detectDiscT2();else if(curTier==='t3')detectDiscT3();else if(curTier==='t4')detectDiscT4();
+}
+function detectDiscT1(){
+  const newDisc=[];
+  if(gPts.length>0&&!disc.has('point')){newDisc.push('point')}
+  if(gSegs.length>0&&!disc.has('line_segment')){newDisc.push('line_segment')}
+  // Ray: one end extended, other not
+  if(disc.has('line_segment')&&gSegs.some(s=>(s.extA&&!s.extB)||(s.extB&&!s.extA))&&!disc.has('ray')){newDisc.push('ray')}
+  // Line: both ends extended
+  if(disc.has('line_segment')&&gSegs.some(s=>s.extA&&s.extB)&&!disc.has('line')){newDisc.push('line')}
+  // Intersection: shared endpoint OR actual crossing
+  if(disc.has('line_segment')&&!disc.has('intersection')){
+    let found=false;
+    // Shared endpoints
+    for(let i=0;i<gSegs.length&&!found;i++)for(let j=i+1;j<gSegs.length;j++)if(sameP(gSegs[i].a,gSegs[j].a)||sameP(gSegs[i].a,gSegs[j].b)||sameP(gSegs[i].b,gSegs[j].a)||sameP(gSegs[i].b,gSegs[j].b)){found=true;break}
+    // Actual segment crossings
+    if(!found){
+      for(let i=0;i<gSegs.length&&!found;i++)for(let j=i+1;j<gSegs.length;j++)if(segsIntersect(gSegs[i],gSegs[j])){found=true;break}
+    }
+    if(found)newDisc.push('intersection');
+  }
+  // Vertex: two segments sharing an endpoint (same trigger as intersection, but conceptually distinct)
+  if(disc.has('line_segment')&&!disc.has('vertex')){
+    for(let i=0;i<gSegs.length;i++)for(let j=i+1;j<gSegs.length;j++)if(sameP(gSegs[i].a,gSegs[j].a)||sameP(gSegs[i].a,gSegs[j].b)||sameP(gSegs[i].b,gSegs[j].a)||sameP(gSegs[i].b,gSegs[j].b)){newDisc.push('vertex');i=999;break}
+  }
+  // Parallel
+  if(disc.has('line_segment')&&!disc.has('parallel')){
+    for(let i=0;i<gSegs.length;i++)for(let j=i+1;j<gSegs.length;j++){const d1=segDir(gSegs[i]),d2=segDir(gSegs[j]);if(d1.ux===d2.ux&&d1.uy===d2.uy){newDisc.push('parallel');i=999;break}}
+  }
+  // Perpendicular
+  if(disc.has('line_segment')&&!disc.has('perpendicular')){
+    for(let i=0;i<gSegs.length;i++)for(let j=i+1;j<gSegs.length;j++){const d1=segDir(gSegs[i]),d2=segDir(gSegs[j]);if(d1.ux*d2.ux+d1.uy*d2.uy===0){newDisc.push('perpendicular');i=999;break}}
+  }
+
+  // Process discoveries: show first, queue rest
+  if(newDisc.length>0){
+    newDisc.forEach(id=>disc.add(id));
+    if(modalOpen){
+      discQueue.push(...newDisc);
+    }else{
+      showTeachCel(newDisc[0]);
+      if(newDisc.length>1) discQueue.push(...newDisc.slice(1));
+    }
+    renderDex();updProg();renderComp();
+  }
+}
+function detectDiscT2(){
+  const newDisc=[];
+  // Degree discovered when first angle is measured
+  if(protRays.length>=2&&!disc.has('degree'))newDisc.push('degree');
+  if(protRays.length>=2&&!disc.has('angle'))newDisc.push('angle');
+  if(protRays.length>=2){
+    const deg=protAngle();
+    if(deg>1&&deg<88&&!disc.has('acute_angle'))newDisc.push('acute_angle');
+    if(deg>=88&&deg<=92&&!disc.has('right_angle'))newDisc.push('right_angle');
+    if(deg>92&&deg<179&&!disc.has('obtuse_angle'))newDisc.push('obtuse_angle');
+  }
+  if(newDisc.length>0){
+    newDisc.forEach(id=>disc.add(id));
+    if(modalOpen){discQueue.push(...newDisc)}
+    else{showTeachCel(newDisc[0]);if(newDisc.length>1)discQueue.push(...newDisc.slice(1))}
+    renderDex();updProg();renderComp();
+  }
+}
+function detectDiscT3(){
+  if(triAngA===null||triAngB===null)return;
+  const a3=180-triAngA-triAngB;
+  if(a3<=0)return; // no triangle
+  const cls=classifyTri();
+  const newDisc=[];
+  if(!disc.has('polygon'))newDisc.push('polygon');
+  if(!disc.has('triangle'))newDisc.push('triangle');
+  if(cls.sides==='equilateral'&&!disc.has('equilateral'))newDisc.push('equilateral');
+  if(cls.sides==='isosceles'&&!disc.has('isosceles'))newDisc.push('isosceles');
+  if(cls.sides==='scalene'&&!disc.has('scalene'))newDisc.push('scalene');
+  if(cls.angles==='right_tri'&&!disc.has('right_triangle'))newDisc.push('right_triangle');
+  if(newDisc.length>0){
+    newDisc.forEach(id=>disc.add(id));
+    if(modalOpen){discQueue.push(...newDisc)}
+    else{showTeachCel(newDisc[0]);if(newDisc.length>1)discQueue.push(...newDisc.slice(1))}
+    renderDex();updProg();renderComp();
+  }
+}
+function detectDiscT4(){
+  if(!qComplete||qSegs.length<4)return;
+  const cls=classifyQuad();
+  if(!cls.is)return;
+  const newDisc=[];
+  
+  // Layer 1: Always discover quadrilateral first
+  if(!disc.has('quadrilateral'))newDisc.push('quadrilateral');
+  
+  // Layer 2: Trapezoid, Parallelogram, Kite (the three branches)
+  if(cls.is.trapezoid&&!disc.has('trapezoid'))newDisc.push('trapezoid');
+  if(cls.is.kite&&!disc.has('kite_shape'))newDisc.push('kite_shape');
+  if(cls.is.parallelogram&&!disc.has('parallelogram'))newDisc.push('parallelogram');
+  
+  // Layer 3: Rectangle and Rhombus (children of parallelogram)
+  if(cls.is.rectangle&&disc.has('parallelogram')&&!disc.has('rectangle'))newDisc.push('rectangle');
+  if(cls.is.rhombus&&disc.has('parallelogram')&&!disc.has('rhombus'))newDisc.push('rhombus');
+  
+  // Layer 4: Square (child of both rectangle and rhombus)
+  if(cls.is.square&&disc.has('rectangle')&&disc.has('rhombus')&&!disc.has('square'))newDisc.push('square');
+  
+  if(newDisc.length>0){
+    newDisc.forEach(id=>disc.add(id));
+    if(modalOpen){discQueue.push(...newDisc)}
+    else{showTeachCel(newDisc[0]);if(newDisc.length>1)discQueue.push(...newDisc.slice(1))}
+    renderDex();updProg();renderComp();
+  }
+}
+function detectMast(){
+  if(!mastTgt)return;
+  const c=ALL.find(x=>x.id===mastTgt),st=c.mastery[mastStep];
+  if(!st||st.type==='quiz')return;
+  let ok=false;
+  if(st.type==='tri_build'){
+    if(triAngA===null||triAngB===null)return;
+    const a3=180-triAngA-triAngB;
+    if(a3<=0)return;
+    const cls=classifyTri();
+    switch(st.detect){
+      case 'any_tri':ok=true;break;
+      case 'equilateral':ok=cls.sides==='equilateral';break;
+      case 'isosceles':ok=cls.sides==='isosceles';break;
+      case 'scalene':ok=cls.sides==='scalene';break;
+      case 'right_tri':ok=cls.angles==='right_tri';break;
+    }
+  }else if(st.type==='build_quad'){
+    if(!qComplete||qSegs.length<4)return;
+    const cls=classifyQuad();
+    if(!cls.is)return;
+    switch(st.detect){
+      case 'any_quad':ok=qComplete;break;
+      case 'rectangle':ok=cls.is.rectangle;break;
+      case 'square':ok=cls.is.square;break;
+      case 'parallelogram':ok=cls.is.parallelogram;break;
+      case 'rhombus':ok=cls.is.rhombus;break;
+      case 'trapezoid':ok=cls.is.trapezoid;break;
+      case 'kite':ok=cls.is.kite;break;
+    }
+  }else if(st.type==='protractor'){
+    if(protRays.length<2)return;
+    const deg=protAngle();
+    switch(st.detect){case 'any_angle':ok=deg>5&&deg<175;break;case 'acute':ok=deg>5&&deg<88;break;case 'right':ok=deg>=88&&deg<=92;break;case 'obtuse':ok=deg>92&&deg<175;break}
+  }else{
+    switch(st.detect){
+      case 'point':ok=gPts.length>0;break;
+      case 'segment':ok=gSegs.length>0;break;
+      case 'ray':ok=gSegs.some(s=>(s.extA&&!s.extB)||(s.extB&&!s.extA));break;
+      case 'line':ok=gSegs.some(s=>s.extA&&s.extB);break;
+      case 'intersection':for(let i=0;i<gSegs.length&&!ok;i++)for(let j=i+1;j<gSegs.length;j++){if(sameP(gSegs[i].a,gSegs[j].a)||sameP(gSegs[i].a,gSegs[j].b)||sameP(gSegs[i].b,gSegs[j].a)||sameP(gSegs[i].b,gSegs[j].b)||segsIntersect(gSegs[i],gSegs[j])){ok=true;break}};break;
+      case 'vertex_build':for(let i=0;i<gSegs.length&&!ok;i++)for(let j=i+1;j<gSegs.length;j++)if(sameP(gSegs[i].a,gSegs[j].a)||sameP(gSegs[i].a,gSegs[j].b)||sameP(gSegs[i].b,gSegs[j].a)||sameP(gSegs[i].b,gSegs[j].b)){ok=true;break};break;
+      case 'parallel':for(let i=0;i<gSegs.length&&!ok;i++)for(let j=i+1;j<gSegs.length;j++){const d1=segDir(gSegs[i]),d2=segDir(gSegs[j]);if(d1.ux===d2.ux&&d1.uy===d2.uy){ok=true;break}};break;
+      case 'parallel_match':if(challengeSeg)for(let i=0;i<gSegs.length&&!ok;i++){if(segDir(gSegs[i]).ux===segDir(challengeSeg).ux&&segDir(gSegs[i]).uy===segDir(challengeSeg).uy)ok=true};break;
+      case 'perpendicular':for(let i=0;i<gSegs.length&&!ok;i++)for(let j=i+1;j<gSegs.length;j++){const d1=segDir(gSegs[i]),d2=segDir(gSegs[j]);if(d1.ux*d2.ux+d1.uy*d2.uy===0){ok=true;break}};break;
+      case 'perp_match':if(challengeSeg)for(let i=0;i<gSegs.length&&!ok;i++){const d1=segDir(gSegs[i]),d2=segDir(challengeSeg);if(d1.ux*d2.ux+d1.uy*d2.uy===0)ok=true};break;
+    }
+  }
+  if(ok){showCFB('ok','Got it!');setTimeout(advMast,800)}
+}
+
+// ==================== TEACH + DISCOVERY CELEBRATION ====================
+function showTeachCel(id){
+  const c=ALL.find(x=>x.id===id);
+  boom(innerWidth/2,innerHeight/2,60);requestAnimationFrame(aprt);
+  modalOpen=true;
+
+  // Store facts for TTS safely (avoids template literal escaping issues)
+  window._teachFacts=c.teach.facts;
+  window._teachTitle=c.teach.title;
+  window._teachDef=c.def;
+
+  const factsHtml=c.teach.facts.map((f,i)=>`<div class="teach-fact"><div class="teach-bullet" style="background:var(--acc)"></div><div style="flex:1">${f}</div><button class="tts-btn" onclick="event.stopPropagation();speak(window._teachFacts[${i}],this)" aria-label="Read aloud">🔊</button></div>`).join('');
+
+  const card=document.getElementById('ovc');
+  card.innerHTML=`
+    <div class="cel-badge">Discovered!</div>
+    <div class="cel-iw"><svg viewBox="0 0 80 80">${c.icon}</svg></div>
+    <div class="cel-nm">${c.name}</div>
+    <div class="cel-sub">${c.def} <button class="tts-btn" onclick="event.stopPropagation();speak(window._teachDef,this)" aria-label="Read aloud">🔊</button></div>
+    <div class="teach-section">
+      <h3>${c.teach.emoji} ${c.teach.title} <button class="tts-btn" onclick="event.stopPropagation();speak(window._teachTitle+'. '+window._teachFacts.join('. '),this)" aria-label="Read all" style="margin-left:auto">🔊</button></h3>
+      ${factsHtml}
+    </div>
+    <div style="margin-top:.8rem;display:flex;flex-direction:column;align-items:center;gap:0">
+      <button class="btn gld" onclick="stopSpeak();closeTeachAndMaster('${id}')">Master it now →</button>
+      <button class="btn sec" onclick="stopSpeak();closeTeachModal()">Keep exploring</button>
+    </div>`;
+  document.getElementById('ov').classList.add('on');
+}
+
+function closeTeachAndMaster(id){
+  document.getElementById('ov').classList.remove('on');
+  modalOpen=false;
+  // Process any queued discoveries after a short delay
+  setTimeout(()=>{startMast(id)},300);
+}
+
+function closeTeachModal(){
+  document.getElementById('ov').classList.remove('on');
+  modalOpen=false;
+  // Process queued discoveries
+  setTimeout(processDiscQueue,400);
+}
+
+function processDiscQueue(){
+  if(discQueue.length>0&&!modalOpen){
+    const next=discQueue.shift();
+    showTeachCel(next);
+  }
+}
+
+// ==================== MASTERY ====================
+function startMast(id){
+  const c=ALL.find(x=>x.id===id);if(!c||mast.has(id))return;
+  mode='mastery';mastTgt=id;mastStep=0;
+  document.getElementById('modeLabel').textContent='Mastery';document.getElementById('modeLabel').className='ml mast';
+  renderMastStep();renderDex();
+}
+function exitMast(){
+  mode='discovery';mastTgt=null;mastStep=0;challengeSeg=null;hoverPtIdx=-1;removeExtArrows();
+  document.getElementById('modeLabel').textContent='Discovery';document.getElementById('modeLabel').className='ml disc';
+  renderDisc();renderDex();updProg();
+  // Process any queued discoveries
+  setTimeout(processDiscQueue,400);
+}
+function advMast(){
+  mastStep++;removeExtArrows();
+  const c=ALL.find(x=>x.id===mastTgt);
+  if(mastStep>=c.mastery.length)compMast();else renderMastStep();
+}
+function compMast(){
+  mast.add(mastTgt);
+  const c=ALL.find(x=>x.id===mastTgt);
+  const spr=spriteFor(c.id);
+  const cx=innerWidth/2,cy=innerHeight/2;
+  for(let i=0;i<5;i++)setTimeout(()=>{boom(cx+(Math.random()-.5)*250,cy+(Math.random()-.5)*150,35);requestAnimationFrame(aprt)},i*120);
+  const td=tierCleared(c.tier);
+  modalOpen=true;
+
+  if(td){
+    // HUGE tier unlock celebration
+    const tier=TIERS.find(t=>t.id===c.tier);
+    const tierIdx=TIERS.findIndex(t=>t.id===c.tier);
+    const nextTier=TIERS[tierIdx+1];
+
+    // Multi-wave fireworks
+    for(let w=0;w<8;w++){
+      setTimeout(()=>{
+        const fx=Math.random()*innerWidth;
+        const fy=innerHeight*.15+Math.random()*innerHeight*.5;
+        boom(fx,fy,80);requestAnimationFrame(aprt);
+      },w*300);
+    }
+    // Side cannons
+    for(let i=0;i<6;i++){
+      setTimeout(()=>{
+        boom(0,innerHeight,60);boom(innerWidth,innerHeight,60);requestAnimationFrame(aprt);
+      },200+i*250);
+    }
+    // Center cascade
+    for(let i=0;i<10;i++){
+      setTimeout(()=>{
+        boom(cx+(Math.random()-.5)*400,cy+(Math.random()-.5)*300,40);requestAnimationFrame(aprt);
+      },800+i*200);
+    }
+
+    const sprites=tier.concepts.map((tc,i)=>{
+      const sp=spriteFor(tc.id);
+      return `<div class="ts" style="animation-delay:${.8+i*.12}s">${sp.emoji}</div>`;
+    }).join('');
+
+    const stars=[...Array(5)].map((_,i)=>`<span style="animation-delay:${1.2+i*.15}s">⭐</span>`).join('');
+
+    document.getElementById('ovc').innerHTML=`
+      <div class="tier-unlock-card">
+        <div class="tier-trophy">🏆</div>
+        <div class="tier-stars">${stars}</div>
+        <div class="tier-title">${tier.name} Complete!</div>
+        <div class="tier-sub">You mastered every concept!</div>
+        <div class="tier-sprites">${sprites}</div>
+        ${nextTier?`<div class="tier-next">🔓 <b>${nextTier.name}</b> is now unlocked!</div>`:'<div class="tier-next">🎉 You mastered everything in Geo Lab!</div>'}
+        <button class="btn gld" style="font-size:.9rem;padding:.6rem 1.8rem" onclick="stopSpeak();document.getElementById('ov').classList.remove('on');modalOpen=false;exitMast()">
+          ${nextTier?`Enter ${nextTier.name} →`:'Celebrate! 🎉'}
+        </button>
+      </div>`;
+    document.getElementById('ov').classList.add('on');
+  } else {
+    // Normal single-concept capture celebration
+    document.getElementById('ovc').innerHTML=`<div class="cel-badge" style="background:var(--grn)">Captured!</div><div class="cel-iw" style="background:var(--grnl);border-color:rgba(52,199,89,.15)"><svg viewBox="0 0 80 80">${c.icon}</svg></div><div class="cel-nm">${c.name}</div><div class="cel-sub">${spr.emoji} ${spr.name} joined your collection</div><div class="cel-sub">${mast.size} / ${ALL.length} mastered</div><button class="btn grn" onclick="stopSpeak();document.getElementById('ov').classList.remove('on');modalOpen=false;exitMast()">Continue</button>`;
+    document.getElementById('ov').classList.add('on');
+  }
+  updProg();renderDex();
+}
+
+function renderMastStep(){
+  const c=ALL.find(x=>x.id===mastTgt),st=c.mastery[mastStep],ba=document.getElementById('ba');
+  window._mastPrompt=st.prompt?st.prompt.replace(/<[^>]*>/g,''):'';
+  window._mastTip=masteryTip(st);
+  if(st.type==='build'||st.type==='challenge'){
+    gPts=[];gSegs=[];gSel=-1;challengeSeg=null;hoverPtIdx=-1;removeExtArrows();
+    if(st.detect==='parallel_match')challengeSeg={a:{x:P+S*2,y:P+S*3},b:{x:P+S*5,y:P+S*3}};
+    if(st.detect==='perp_match')challengeSeg={a:{x:P+S*2,y:P+S*3},b:{x:P+S*5,y:P+S*3}};
+    ba.innerHTML=`<div class="mb m"><div class="mnum">${mastStep+1}</div><div class="mtxt">${st.prompt} <button class="tts-btn" onclick="event.stopPropagation();speak(window._mastPrompt,this)" aria-label="Read aloud">🔊</button></div></div>
+      <div class="card"><div class="cw"><button class="cbtn bck" onclick="exitMast()">← Back</button><button class="cbtn sbtn" onclick="showMastBrief()">Mission</button><button class="cbtn clr" onclick="gPts=[];gSegs=[];gSel=-1;hoverPtIdx=-1;drawGrid()">Clear</button><div class="bc"><svg id="svg" viewBox="0 0 440 300"></svg></div></div></div>
+      <div class="msc" style="text-align:center">${c.name} — Step ${mastStep+1} of ${c.mastery.length}</div>`;
+    setupGrid();drawGrid();
+    setTimeout(showMastBrief,120);
+  }else if(st.type==='protractor'){
+    protRays=[];protVertex=false;protSelRay=-1;protWaitingForArc=false;
+    ba.innerHTML=`<div class="mb m"><div class="mnum">${mastStep+1}</div><div class="mtxt">${st.prompt} <button class="tts-btn" onclick="event.stopPropagation();speak(window._mastPrompt,this)" aria-label="Read aloud">🔊</button></div></div>
+      <div class="card"><div class="cw"><button class="cbtn bck" onclick="exitMast()">← Back</button><button class="cbtn sbtn" onclick="showMastBrief()">Mission</button>
+      <button class="cbtn clr" onclick="protRays=[];protVertex=false;protSelRay=-1;protWaitingForArc=false;drawProt()">Clear</button>
+      <div class="bc nocur" style="min-height:320px"><svg id="svg" viewBox="0 0 440 320" style="height:320px"></svg><div class="angle-readout" id="angRead">—</div><div class="angle-type none" id="angType">Place rays</div></div></div></div>
+      <div class="msc" style="text-align:center">${c.name} — Step ${mastStep+1} of ${c.mastery.length}</div>`;
+    setupProt();drawProt();
+    setTimeout(showMastBrief,120);
+  }else if(st.type==='tri_build'){
+    triAngA=null;triAngB=null;triSelVert=null;
+    ba.innerHTML=`<div class="mb m"><div class="mnum">${mastStep+1}</div><div class="mtxt">${st.prompt} <button class="tts-btn" onclick="event.stopPropagation();speak(window._mastPrompt,this)" aria-label="Read aloud">🔊</button></div></div>
+      <div class="card"><div class="cw"><button class="cbtn bck" onclick="exitMast()">← Back</button><button class="cbtn sbtn" onclick="showMastBrief()">Mission</button>
+      <button class="cbtn clr" onclick="triAngA=null;triAngB=null;triSelVert=null;drawTri()">Clear</button>
+      <div class="bc nocur" style="min-height:360px"><svg id="svg" viewBox="0 0 440 400" style="height:360px"></svg><div class="angle-readout" id="triRead">—</div><div class="angle-type none" id="triType">Set angle at A</div></div></div></div>
+      <div class="msc" style="text-align:center">${c.name} — Step ${mastStep+1} of ${c.mastery.length}</div>`;
+    setupTri();drawTri();
+    setTimeout(showMastBrief,120);
+  }else if(st.type==='build_quad'){
+    qPts=[];qSegs=[];qSel=-1;qComplete=false;
+    ba.innerHTML=`<div class="mb m"><div class="mnum">${mastStep+1}</div><div class="mtxt">${st.prompt} <button class="tts-btn" onclick="event.stopPropagation();speak(window._mastPrompt,this)" aria-label="Read aloud">🔊</button></div></div>
+      <div class="card"><div class="cw"><button class="cbtn bck" onclick="exitMast()">← Back</button><button class="cbtn sbtn" onclick="showMastBrief()">Mission</button>
+      <button class="cbtn clr" onclick="qPts=[];qSegs=[];qSel=-1;qComplete=false;drawQuadGrid()">Clear</button>
+      <div class="bc"><svg id="svg" viewBox="0 0 440 300"></svg></div></div></div>
+      <div class="msc" style="text-align:center">${c.name} — Step ${mastStep+1} of ${c.mastery.length}</div>`;
+    setupQuadGrid();drawQuadGrid();
+    setTimeout(showMastBrief,120);
+  }else if(st.type==='quiz'){showMastQuiz(st,c)}
+}
+
+function showMastBrief(){
+  if(!mastTgt)return;
+  const c=ALL.find(x=>x.id===mastTgt),st=c.mastery[mastStep];
+  if(!st||st.type==='quiz')return;
+  const spr=spriteFor(c.id);
+  window._mastPrompt=st.prompt.replace(/<[^>]*>/g,'');
+  window._mastTip=masteryTip(st);
+  modalOpen=true;
+  document.getElementById('ovc').innerHTML=`<div class="msc">Mission Brief</div>
+  <div class="spr-wrap">
+    <div class="spr-char">${spr.emoji}</div>
+    <div class="spr-bub">
+      <div class="spr-name">${spr.name}</div>
+      <div class="spr-text">${window._mastPrompt}</div>
+      <div style="margin-top:.35rem;font-size:.72rem;color:var(--t2)">${window._mastTip}</div>
+    </div>
+  </div>
+  <button class="btn gld" onclick="stopSpeak();document.getElementById('ov').classList.remove('on');modalOpen=false">Let me try</button>
+  <button class="btn sec" onclick="stopSpeak();speak(window._mastPrompt+'. '+window._mastTip)">Read it aloud</button>`;
+  document.getElementById('ov').classList.add('on');
+}
+
+function showMastQuiz(st,c){
+  let ans=false;
+  modalOpen=true;
+  window._mastQ=st.q.replace(/<[^>]*>/g,'');
+  document.getElementById('ovc').innerHTML=`<div class="msc">${c.name} — Step ${mastStep+1} of ${c.mastery.length}</div><div class="qq">${st.q} <button class="tts-btn" onclick="event.stopPropagation();speak(window._mastQ,this)" aria-label="Read question">🔊</button></div><div class="qo" id="qO"></div><div class="qf" id="qF"></div><button class="btn" id="qN" disabled>Next</button>`;
+  const el=document.getElementById('qO');
+  st.opts.forEach(o=>{
+    const d=document.createElement('div');d.className='qi';
+    d.innerHTML=`<svg viewBox="0 0 50 50">${o.svg}</svg><div class="ol">${o.l}</div>`;
+    d.onclick=()=>{if(ans)return;ans=true;const fb=document.getElementById('qF');
+      if(o.c){d.classList.add('correct');fb.textContent='Correct!';fb.className='qf corfb'}
+      else{d.classList.add('wrong');fb.textContent='Not quite.';fb.className='qf wrfb';el.querySelectorAll('.qi').forEach((x,i)=>{if(st.opts[i].c)x.classList.add('correct')})}
+      document.getElementById('qN').disabled=false};
+    el.appendChild(d);
+  });
+  document.getElementById('qN').onclick=()=>{stopSpeak();document.getElementById('ov').classList.remove('on');modalOpen=false;advMast()};
+  document.getElementById('ov').classList.add('on');
+}
+
+function showCFB(t,txt){const cw=document.querySelector('.cw');if(!cw)return;const old=cw.querySelector('.cfb');if(old)old.remove();const el=document.createElement('div');el.className='cfb '+t;el.textContent=txt;cw.appendChild(el);setTimeout(()=>el.remove(),2000)}
+
+// ==================== RENDER ====================
+function renderDisc(){
+  const ba=document.getElementById('ba');removeExtArrows();
+  let nav='<div class="tnav">';
+  TIERS.forEach(t=>{const o=tierOpen(t.id),cl=tierCleared(t.id);let cls='tbtn';if(t.id===curTier)cls+=' active';if(!o)cls+=' locked';if(cl)cls+=' cleared';nav+=`<button class="${cls}" onclick="if(!${o})return;curTier='${t.id}';renderDisc();renderDex();updProg()">${!o?'🔒 ':cl?'✓ ':''}${t.name}</button>`});
+  nav+='</div>';
+  if(curTier==='t1'){
+    gPts=[];gSegs=[];gSel=-1;challengeSeg=null;
+    ba.innerHTML=nav+`<div class="hint">Place points, connect segments, extend into rays & lines. Discover concepts as you build! <button class="tts-btn" onclick="event.stopPropagation();speak('Place points, connect segments, extend into rays and lines. Discover concepts as you build!',this)" aria-label="Read aloud">🔊</button></div><div class="card"><div class="cw"><button class="cbtn clr" onclick="gPts=[];gSegs=[];gSel=-1;hoverPtIdx=-1;drawGrid()">Clear</button><div class="bc"><svg id="svg" viewBox="0 0 440 300"></svg></div></div><div class="cr" id="cR"></div></div>`;
+    setupGrid();drawGrid();
+  }else if(curTier==='t2'){
+    if(!tierOpen('t2')){ba.innerHTML=nav+`<div class="card" style="text-align:center;padding:2rem"><p style="font-size:2rem;margin-bottom:.5rem">🔒</p><h3 style="color:var(--t2)">Locked</h3><p style="color:var(--t3)">Master all Foundations to unlock.</p></div>`;return}
+    protRays=[];protVertex=false;protSelRay=-1;protWaitingForArc=false;
+    ba.innerHTML=nav+`<div class="hint">Tap the vertex, then tap the arc to build a ray. Repeat to build a second ray and form an angle! Tap a handle to move it.</div><div class="card"><div class="cw"><button class="cbtn clr" onclick="protRays=[];protVertex=false;protSelRay=-1;protWaitingForArc=false;drawProt()">Clear</button><div class="bc nocur" style="min-height:320px"><svg id="svg" viewBox="0 0 440 320" style="height:320px"></svg><div class="angle-readout" id="angRead">—</div><div class="angle-type none" id="angType">Place rays</div></div></div><div class="cr" id="cR"></div></div>`;
+    setupProt();drawProt();
+  }else if(curTier==='t3'){
+    if(!tierOpen('t3')){ba.innerHTML=nav+`<div class="card" style="text-align:center;padding:2rem"><p style="font-size:2rem;margin-bottom:.5rem">🔒</p><h3 style="color:var(--t2)">Locked</h3><p style="color:var(--t3)">Master all Angles to unlock.</p></div>`;return}
+    triAngA=null;triAngB=null;triSelVert=null;
+    ba.innerHTML=nav+`<div class="hint">Tap vertex A, then the arc to set its angle. Then tap vertex B and set its angle. The rays will meet to form a triangle!</div><div class="card"><div class="cw"><button class="cbtn clr" onclick="triAngA=null;triAngB=null;triSelVert=null;drawTri()">Clear</button><div class="bc nocur" style="min-height:360px"><svg id="svg" viewBox="0 0 440 400" style="height:360px"></svg><div class="angle-readout" id="triRead">—</div><div class="angle-type none" id="triType">Set angle at A</div></div></div><div class="cr" id="cR"></div></div>`;
+    setupTri();drawTri();
+  }else if(curTier==='t4'){
+    if(!tierOpen('t4')){ba.innerHTML=nav+`<div class="card" style="text-align:center;padding:2rem"><p style="font-size:2rem;margin-bottom:.5rem">🔒</p><h3 style="color:var(--t2)">Locked</h3><p style="color:var(--t3)">Master all Triangles to unlock.</p></div>`;return}
+    qPts=[];qSegs=[];qSel=-1;qComplete=false;
+    ba.innerHTML=nav+`<div class="hint">Place 4 points on the grid and connect them to build quadrilaterals. Discover shapes by their special properties! <button class="tts-btn" onclick="event.stopPropagation();speak('Place 4 points on the grid and connect them to build quadrilaterals. Discover shapes by their special properties!',this)" aria-label="Read aloud">🔊</button></div><div class="card"><div class="cw"><button class="cbtn clr" onclick="qPts=[];qSegs=[];qSel=-1;qComplete=false;drawQuadGrid()">Clear</button><div class="bc"><svg id="svg" viewBox="0 0 440 300"></svg></div></div><div class="cr" id="cR"></div></div>`;
+    setupQuadGrid();drawQuadGrid();
+  }
+  renderComp();document.getElementById('tierLabel').textContent=TIERS.find(t=>t.id===curTier).name;
+}
+function renderComp(){const el=document.getElementById('cR');if(!el)return;el.innerHTML='';tierConcepts().forEach((c,i)=>{if(!disc.has(c.id))return;const m=mast.has(c.id);const ch=document.createElement('div');ch.className='chip '+(m?'mast':'disc');ch.style.animationDelay=i*.05+'s';ch.innerHTML=`<svg viewBox="0 0 80 80">${c.icon}</svg>${c.name}${m?' ✓':''}`;el.appendChild(ch)})}
+function renderDex(){
+  const l=document.getElementById('dList');l.innerHTML='';
+  const discovered=disc.size,total=ALL.length;
+  const dxh=document.querySelector('.dxh p');
+  if(dxh)dxh.textContent=`${discovered}/${total} discovered • ${mast.size}/${total} mastered`;
+  TIERS.forEach(t=>{const o=tierOpen(t.id);const lbl=document.createElement('div');lbl.className='dxtl';lbl.textContent=t.name+(o?'':' 🔒');l.appendChild(lbl);
+    t.concepts.forEach(c=>{const d=disc.has(c.id),m=mast.has(c.id);const el=document.createElement('div');el.className='de '+(m?'mast':d?'disc':'locked');
+      const spr=spriteFor(c.id);
+      el.classList.add('collect');
+      // Always show real icon and name; sprite appears only when mastered
+      let spriteHtml='';
+      if(m) spriteHtml=`<div class="sprite">${spr.emoji}</div>`;
+      else if(d) spriteHtml=`<div class="sprite">❔</div>`;
+      const sub=m?`${spr.name} captured!`:d?`${spr.name} waiting to be captured`:'Undiscovered';
+      const badge=m?'<span class="ds m">Captured</span>':d?'<span class="ds d">Claim</span>':'';
+      el.innerHTML=`<div class="di"><svg viewBox="0 0 80 80">${c.icon}</svg></div>${spriteHtml}<div style="flex:1;min-width:0"><div class="dn">${c.name}</div><div class="dd">${sub}</div></div>${badge}`;
+      if(d&&!m)el.onclick=()=>startMast(c.id);l.appendChild(el)})})
+}
+function updProg(){const tc=tierConcepts(),tm=tc.filter(c=>mast.has(c.id)).length;document.getElementById('pTxt').textContent=`${tm}/${tc.length}`;document.getElementById('pFill').style.width=`${(tm/tc.length*100).toFixed(1)}%`;document.getElementById('fCnt').textContent=`${mast.size} mastered`}
+
+function devSkip(){
+  // Master T1, T2, T3, jump to T4
+  TIERS.forEach(t=>{
+    if(t.id==='t1'||t.id==='t2'||t.id==='t3'){
+      t.concepts.forEach(c=>{disc.add(c.id);mast.add(c.id)});
+    }
+  });
+  curTier='t4';
+  mode='discovery';mastTgt=null;mastStep=0;
+  document.getElementById('modeLabel').textContent='Discovery';document.getElementById('modeLabel').className='ml disc';
+  renderDisc();renderDex();updProg();
+}
+renderDisc();renderDex();updProg();
+</script>
+</body>
+</html>

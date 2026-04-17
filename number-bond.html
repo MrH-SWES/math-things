@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Make 10 | Math Things.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --border: rgba(0,0,0,0.05);
+            --coin-red: #DC143C;
+            --coin-bead: #636366;
+            --success: #34C759;
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --bond-line: #D1D1D6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        header {
+            flex-shrink: 0; position: relative; z-index: 100;
+            background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border); height: 50px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+        }
+        .logo { font-weight: 900; font-size: 1.25rem; letter-spacing: -0.05em; }
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, #fff 0%, #d0d0d0 50%, #a8a8a8 100%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .header-label { font-size: 1rem; font-weight: 600; color: var(--text-gray); }
+
+        main {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+
+        .equation-display {
+            font-size: 4.5rem; font-weight: 900; margin-bottom: 2rem;
+            display: flex; align-items: center; gap: 16px; transition: all 0.3s var(--spring);
+        }
+        .equation-display.solved { color: var(--success); transform: scale(1.1); }
+        .op { color: var(--text-light); font-weight: 300; }
+
+        .bond-container {
+            position: relative; width: 420px; height: 380px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .bond-line {
+            position: absolute; background: var(--bond-line);
+            width: 6px; height: 130px; z-index: 0; top: 100px;
+            border-radius: 3px;
+        }
+        .line-left { transform: rotate(35deg); left: 140px; }
+        .line-right { transform: rotate(-35deg); right: 140px; }
+
+        .circle {
+            background: var(--surface); border-radius: 50%;
+            border: 4px solid var(--bond-line);
+            display: flex; flex-wrap: wrap; align-content: center; justify-content: center;
+            padding: 12px; gap: 6px; position: relative; z-index: 1;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05), 0 10px 40px rgba(0,0,0,0.08);
+            transition: all 0.3s var(--spring);
+        }
+        
+        .circle.whole { 
+            width: 180px; height: 180px; border-color: var(--text-main); 
+            background: #fff;
+        }
+        .circle.whole .target-num {
+            position: absolute; font-size: 5rem; font-weight: 900;
+            color: rgba(0,0,0,0.05); pointer-events: none;
+        }
+        
+        .circle.part { width: 130px; height: 130px; margin-top: 60px; cursor: pointer; }
+        .circle.part:hover { border-color: var(--text-gray); transform: translateY(-2px); }
+        .circle.part:active { transform: scale(0.95); }
+
+        .parts-row { display: flex; gap: 80px; }
+
+        .count-badge {
+            position: absolute; bottom: -18px; background: var(--text-main);
+            color: #fff; font-size: 0.9rem; font-weight: 800;
+            padding: 4px 12px; border-radius: 20px; pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .coin {
+            width: 28px; height: 28px; border-radius: 50%;
+            animation: popIn 0.3s var(--spring) forwards;
+        }
+        .coin.red {
+            background: radial-gradient(circle at 33% 28%, #FF3B30, var(--coin-red));
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .coin.bead {
+            background: radial-gradient(circle at 33% 28%, #fff, #a8a8a8);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.9), 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .controls { margin-top: 50px; display: flex; align-items: center; gap: 24px; }
+        
+        .btn-clear {
+            font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1rem;
+            padding: 16px 32px; border-radius: 99px; border: 1px solid var(--border);
+            background: #fff; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .btn-clear:hover { color: var(--coin-red); border-color: var(--coin-red); transform: scale(1.02); }
+
+        footer {
+            text-align: center; padding: 20px; font-size: 0.6rem;
+            font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--text-light); border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 500px) {
+            .bond-container { transform: scale(0.75); }
+            .equation-display { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+        <div class="header-label">Number Bond: Make 10</div>
+        <div style="width:120px"></div>
+    </header>
+
+    <main>
+        <div class="equation-display" id="equation">0 + 0 = 0</div>
+
+        <div class="bond-container">
+            <div class="bond-line line-left"></div>
+            <div class="bond-line line-right"></div>
+            
+            <div class="circle whole" id="whole">
+                <div class="target-num">10</div>
+                <div class="count-badge" id="badge-whole">0</div>
+            </div>
+
+            <div class="parts-row">
+                <div class="circle part" id="partA" onclick="addCoin('partA', 'red')">
+                    <div class="count-badge" id="badge-A">0</div>
+                </div>
+                <div class="circle part" id="partB" onclick="addCoin('partB', 'bead')">
+                    <div class="count-badge" id="badge-B">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-clear" onclick="clearAll()">Clear Desk</button>
+        </div>
+    </main>
+
+    <footer>
+        Math Things &nbsp;|&nbsp; Math, in your hands
+    </footer>
+
+    <script>
+        const target = 10;
+        const state = { partA: 0, partB: 0 };
+
+        function addCoin(partId, color) {
+            if (state.partA + state.partB >= 15) return; // Prevent overcrowding
+            
+            state[partId]++;
+            const partEl = document.getElementById(partId);
+            const coin = document.createElement('div');
+            coin.className = `coin ${color}`;
+            
+            // Clicking a coin removes it
+            coin.onclick = (e) => {
+                e.stopPropagation();
+                state[partId]--;
+                coin.remove();
+                update();
+            };
+            
+            partEl.appendChild(coin);
+            update();
+        }
+
+        function update() {
+            const whole = document.getElementById('whole');
+            const total = state.partA + state.partB;
+            
+            // Update Text Badges
+            document.getElementById('badge-A').innerText = state.partA;
+            document.getElementById('badge-B').innerText = state.partB;
+            document.getElementById('badge-whole').innerText = total;
+
+            // Sync the Whole Circle (Mirroring the parts)
+            whole.querySelectorAll('.coin').forEach(c => c.remove());
+            for(let i=0; i<state.partA; i++) {
+                const c = document.createElement('div');
+                c.className = 'coin red';
+                whole.appendChild(c);
+            }
+            for(let i=0; i<state.partB; i++) {
+                const c = document.createElement('div');
+                c.className = 'coin bead';
+                whole.appendChild(c);
+            }
+
+            // Equation Feedback
+            const eq = document.getElementById('equation');
+            eq.innerHTML = `${state.partA} <span class="op">+</span> ${state.partB} <span class="op">=</span> ${total}`;
+            
+            if (total === target) {
+                eq.classList.add('solved');
+            } else {
+                eq.classList.remove('solved');
+            }
+        }
+
+        function clearAll() {
+            state.partA = 0;
+            state.partB = 0;
+            document.querySelectorAll('.circle .coin').forEach(c => c.remove());
+            update();
+        }
+    </script>
+</body>
+</html>

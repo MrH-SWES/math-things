@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Math Things | Decimal Alignment & Operations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F5F7;
+      --glass: rgba(245,245,247,0.85);
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --accent: #007AFF;
+      --border: rgba(0,0,0,0.05);
+      --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+      --shadow-block: 0 8px 20px rgba(0,0,0,0.12), 1px -1px 0 rgba(0,0,0,0.08);
+      
+      /* Master Palette */
+      --h:    #FFD700; 
+      --t:        #4169E1; 
+      --o:        #DC143C; 
+      --tth:      #64D2FF; 
+      --hth:  #FF9F0A; 
+      --thth: #7B00FF; 
+      --bead:        #a8a8a8;
+      --kelly:       #4CBB17;
+      
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      /* Rigid Mathematics Grid */
+      --char-w: 38px; 
+      --card-cols: 7;
+      --row-cols: 15; 
+      --row-w: calc(var(--char-w) * var(--row-cols));
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: var(--glass);
+      backdrop-filter: blur(40px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; display: inline-flex; align-items: baseline; }
+    .logo-bead {
+      width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+      border-radius: 50%; display: inline-block;
+      background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+    }
+
+    .app-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      pointer-events: none;
+    }
+
+    .controls { display: flex; gap: 20px; align-items: center; }
+    
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; color: var(--text-gray); cursor: pointer; }
+    .toggle { width: 44px; height: 24px; background: #E5E5EA; border-radius: 12px; position: relative; transition: background 0.3s; }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.3s var(--spring); }
+    .toggle.active { background: #34C759; }
+    .toggle.active::after { transform: translateX(20px); }
+
+    .color-wheel-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: conic-gradient(var(--o), var(--hth), var(--h), var(--kelly), var(--t), var(--thth), var(--o));
+      box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.05);
+    }
+
+    .icon-btn {
+      width: 44px; height: 44px;
+      border-radius: 12px; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s var(--spring), background 0.2s, box-shadow 0.2s;
+    }
+    .icon-btn.btn-secondary { background: rgba(0,0,0,0.05); color: var(--text-main); }
+    .icon-btn.btn-secondary:hover { background: rgba(0,0,0,0.1); }
+    .icon-btn.btn-secondary:active { transform: scale(0.92); }
+    
+    .icon-btn.check-btn { background: var(--kelly); color: white; box-shadow: 0 4px 12px rgba(76,187,23,0.3); }
+    .icon-btn.check-btn:active { transform: scale(0.92); box-shadow: 0 2px 6px rgba(76,187,23,0.2); }
+
+    main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; gap: 30px; position: relative; }
+
+    /* The Workspace */
+    .grid-container {
+      width: var(--row-w);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .grid-row {
+      width: 100%;
+      height: 64px;
+      position: relative;
+      background: rgba(0,0,0,0.03);
+      border-radius: 12px;
+      background-image: linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px);
+      background-size: var(--char-w) 100%;
+      transition: background-color 0.4s ease;
+    }
+
+    /* Staging Area */
+    .staging-area {
+      display: flex; flex-wrap: wrap; gap: 20px;
+      min-height: 100px; padding: 20px;
+      width: var(--row-w);
+      justify-content: center; align-items: center;
+      border: 2px dashed var(--text-light);
+      border-radius: 20px;
+    }
+
+    /* Dynamic Width Card - Hitbox */
+    .card {
+      height: 60px;
+      width: calc(var(--active-cols) * var(--char-w));
+      border-radius: 8px;
+      cursor: grab;
+      user-select: none;
+      z-index: 10;
+      position: relative;
+    }
+
+    /* Dynamic Width Card - Visual Background */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0; left: 0;
+      width: 100%;
+      background: var(--surface);
+      box-shadow: var(--shadow-block);
+      border-radius: 8px;
+      transition: left 0.35s var(--spring), width 0.35s var(--spring), box-shadow 0.2s, background 0.3s;
+      z-index: -1;
+    }
+
+    /* Expand background when Show Zeros is active */
+    body.show-zeros .card::before {
+      left: calc(var(--first-active) * -1 * var(--char-w));
+      width: calc(var(--card-cols) * var(--char-w));
+    }
+    
+    .card.snapping { transition: left 0.2s var(--spring), top 0.2s var(--spring); }
+    
+    .grid-row .card {
+      position: absolute;
+      top: 2px;
+    }
+    .grid-row .card::before {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    /* Individual Character Slots */
+    .slot {
+      font-family: 'Roboto Mono', monospace; 
+      width: var(--char-w);
+      height: 100%;
+      position: absolute;
+      top: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: 700;
+      color: var(--text-main);
+      transition: color 0.3s;
+    }
+
+    .slot.dec { font-weight: 900; }
+
+    /* Ghost Zeros */
+    .ghost { 
+      opacity: 0; 
+      color: var(--text-light); 
+      pointer-events: none; 
+      transition: opacity 0.35s var(--spring);
+    }
+    body.show-zeros .ghost { opacity: 0.25; }
+
+    /* Color Coding System */
+    body.color-code .slot.h:not(.ghost) { color: var(--h); }
+    body.color-code .slot.t:not(.ghost) { color: var(--t); }
+    body.color-code .slot.o:not(.ghost) { color: var(--o); }
+    body.color-code .slot.dec:not(.ghost) { color: var(--bead); }
+    body.color-code .slot.tth:not(.ghost) { color: var(--tth); }
+    body.color-code .slot.hth:not(.ghost) { color: var(--hth); }
+    body.color-code .slot.thth:not(.ghost) { color: var(--thth); }
+
+    /* Validation Animations */
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    .error { animation: shake 0.4s var(--spring); background-color: #FFE5E5 !important; }
+    .success { background-color: #E5FDE5 !important; }
+    .dec-error .slot.dec { color: #DC143C !important; }
+
+    /* Empty Row Pulse Animation */
+    @keyframes pulseYellow {
+      0% { background-color: rgba(0,0,0,0.03); }
+      15% { background-color: rgba(255, 215, 0, 0.4); }
+      30% { background-color: rgba(0,0,0,0.03); }
+      45% { background-color: rgba(255, 215, 0, 0.4); }
+      60% { background-color: rgba(0,0,0,0.03); }
+      75% { background-color: rgba(255, 215, 0, 0.4); }
+      100% { background-color: rgba(0,0,0,0.03); }
+    }
+    .empty-warning { animation: pulseYellow 1.2s ease-in-out; }
+
+    /* Neon Celebration Banner */
+    #celebration {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 5rem;
+      font-weight: 900;
+      color: #fff;
+      background: var(--kelly);
+      padding: 20px 80px;
+      border-radius: 24px;
+      text-transform: uppercase;
+      letter-spacing: 10px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+    }
+
+    .celebrate-anim { animation: boomPulseFade 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    @keyframes boomPulseFade {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; box-shadow: none; }
+      15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); }
+      30% { transform: translate(-50%, -50%) scale(1); background: var(--kelly); box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); }
+      40% { background: #6eff29; color: #fff; text-shadow: 0 0 10px #fff; box-shadow: 0 0 60px 20px rgba(110, 255, 41, 0.8); }
+      50% { background: var(--kelly); color: #fff; text-shadow: none; box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); }
+      60% { background: #6eff29; color: #fff; text-shadow: 0 0 10px #fff; box-shadow: 0 0 60px 20px rgba(110, 255, 41, 0.8); }
+      75% { background: var(--kelly); color: #fff; text-shadow: none; box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; box-shadow: none; }
+    }
+
+    footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Math Things<span class="logo-bead"></span></div>
+  
+  <div class="app-title">Align & Stack</div>
+  
+  <div class="controls">
+    <div class="toggle-wrap" onclick="toggleOption('zeros')" title="Toggle Ghost Zeros">
+      <span style="font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 700; letter-spacing: -1px; color: var(--text-main);">000</span>
+      <div id="toggle-zeros" class="toggle"></div>
+    </div>
+    
+    <div class="toggle-wrap" onclick="toggleOption('color')" title="Toggle Color Code">
+      <div class="color-wheel-icon"></div>
+      <div id="toggle-color" class="toggle"></div>
+    </div>
+    
+    <button class="icon-btn btn-secondary" onclick="generateNumbers()" title="New Numbers">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+    </button>
+    
+    <button class="icon-btn check-btn" onclick="checkAnswer()" title="Check Answer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="grid-container">
+    <div class="grid-row" data-row="0"></div>
+    <div class="grid-row" data-row="1"></div>
+    <div class="grid-row" data-row="2"></div>
+    <div class="grid-row" data-row="3"></div>
+    <div class="grid-row" data-row="4"></div>
+  </div>
+  <div class="staging-area" id="staging"></div>
+  <div id="celebration">Correct</div>
+</main>
+
+<footer>Math Things<span class="logo-bead" style="width:0.2em;height:0.2em"></span> &nbsp;|&nbsp; Math, in your hands</footer>
+
+<script>
+  const charW = 38; 
+  const rowCols = 15;
+  
+  function generateNumbers() {
+    document.getElementById('staging').innerHTML = '';
+    document.getElementById('celebration').classList.remove('celebrate-anim');
+    document.querySelectorAll('.grid-row').forEach(r => { 
+      r.innerHTML = ''; 
+      r.classList.remove('success', 'error', 'dec-error', 'empty-warning'); 
+    });
+
+    let numbers = [];
+    for(let i=0; i<5; i++) {
+      let type = Math.floor(Math.random() * 4);
+      let valStr;
+      if (type === 0) valStr = (Math.random() * 9).toFixed(3);     
+      else if (type === 1) valStr = (Math.random() * 99).toFixed(2); 
+      else if (type === 2) valStr = (Math.random() * 999).toFixed(1);
+      else valStr = (Math.random() * 99).toFixed(Math.floor(Math.random()*3)+1);
+      
+      let num = parseFloat(valStr);
+      if(numbers.includes(num) || num === 0) { i--; continue; }
+      numbers.push(num);
+      createCard(valStr);
+    }
+  }
+
+  function createCard(valStr) {
+    let [whole, frac] = valStr.split('.');
+    frac = frac || "";
+
+    let slotsData = [
+      { v: whole.length >= 3 ? whole[whole.length - 3] : null, c: 'h', ghost: whole.length < 3 },
+      { v: whole.length >= 2 ? whole[whole.length - 2] : null, c: 't', ghost: whole.length < 2 },
+      { v: whole[whole.length - 1], c: 'o', ghost: false }, 
+      { v: '.', c: 'dec', ghost: false },
+      { v: frac.length >= 1 ? frac[0] : null, c: 'tth', ghost: frac.length < 1 },
+      { v: frac.length >= 2 ? frac[1] : null, c: 'hth', ghost: frac.length < 2 },
+      { v: frac.length >= 3 ? frac[2] : null, c: 'thth', ghost: frac.length < 3 }
+    ];
+
+    let firstActive = slotsData.findIndex(s => !s.ghost);
+    let lastActive = slotsData.findLastIndex(s => !s.ghost);
+    let activeCols = (lastActive - firstActive) + 1;
+
+    const card = document.createElement('div');
+    card.className = 'card snapping';
+    card.dataset.val = valStr;
+    card.dataset.firstActive = firstActive; 
+    card.dataset.activeCols = activeCols;
+    
+    card.style.setProperty('--active-cols', activeCols);
+    card.style.setProperty('--first-active', firstActive);
+
+    slotsData.forEach((d, i) => {
+      let slot = document.createElement('div');
+      slot.className = `slot ${d.c}`;
+      slot.style.left = `calc(${(i - firstActive)} * var(--char-w))`;
+
+      if (d.ghost) {
+        slot.innerText = '0';
+        slot.classList.add('ghost');
+      } else {
+        slot.innerText = d.v;
+      }
+      card.appendChild(slot);
+    });
+
+    document.getElementById('staging').appendChild(card);
+  }
+
+  function toggleOption(type) {
+    document.getElementById(`toggle-${type}`).classList.toggle('active');
+    document.body.classList.toggle(type === 'zeros' ? 'show-zeros' : 'color-code');
+  }
+
+  let isDragging = false, currentCard = null;
+  let offsetX = 0, offsetY = 0;
+
+  document.addEventListener('pointerdown', e => {
+    const card = e.target.closest('.card');
+    if (!card || e.button !== 0) return;
+
+    isDragging = true;
+    currentCard = card;
+    currentCard.classList.remove('snapping');
+    
+    const rect = currentCard.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    currentCard.style.position = 'fixed';
+    currentCard.style.left = e.clientX - offsetX + 'px';
+    currentCard.style.top = e.clientY - offsetY + 'px';
+    currentCard.style.zIndex = 1000;
+    currentCard.style.pointerEvents = 'none'; 
+    document.body.appendChild(currentCard);
+  });
+
+  document.addEventListener('pointermove', e => {
+    if (!isDragging) return;
+    currentCard.style.left = e.clientX - offsetX + 'px';
+    currentCard.style.top = e.clientY - offsetY + 'px';
+  });
+
+  document.addEventListener('pointerup', e => {
+    if (!isDragging) return;
+    
+    const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    const row = dropTarget ? dropTarget.closest('.grid-row') : null;
+
+    currentCard.style.position = '';
+    currentCard.style.left = '';
+    currentCard.style.top = '';
+    currentCard.style.zIndex = '';
+    currentCard.style.pointerEvents = '';
+    currentCard.classList.add('snapping');
+
+    if (row) {
+      const targetIndex = parseInt(row.dataset.row);
+      const rowsArr = Array.from(document.querySelectorAll('.grid-row'));
+      let currentCards = rowsArr.map(r => r.querySelector('.card'));
+
+      const sourceIndex = currentCards.indexOf(currentCard);
+      if (sourceIndex !== -1) currentCards[sourceIndex] = null;
+
+      const rowRect = row.getBoundingClientRect();
+      const dropX = (e.clientX - offsetX) - rowRect.left;
+      
+      let startCol = Math.round(dropX / charW);
+      let activeCols = parseInt(currentCard.dataset.activeCols);
+      let maxOffsetCol = rowCols - activeCols;
+      startCol = Math.max(0, Math.min(maxOffsetCol, startCol));
+      currentCard.dataset.startCol = startCol; 
+
+      if (currentCards[targetIndex] === null) {
+        currentCards[targetIndex] = currentCard;
+      } else {
+        let nullBelow = -1;
+        for (let i = targetIndex + 1; i < 5; i++) {
+          if (currentCards[i] === null) { nullBelow = i; break; }
+        }
+        
+        let nullAbove = -1;
+        for (let i = targetIndex - 1; i >= 0; i--) {
+          if (currentCards[i] === null) { nullAbove = i; break; }
+        }
+
+        if (nullBelow !== -1) {
+          for (let i = nullBelow; i > targetIndex; i--) currentCards[i] = currentCards[i - 1];
+          currentCards[targetIndex] = currentCard;
+        } else if (nullAbove !== -1) {
+          for (let i = nullAbove; i < targetIndex; i++) currentCards[i] = currentCards[i + 1];
+          currentCards[targetIndex] = currentCard;
+        } else {
+          currentCards[targetIndex] = currentCard;
+        }
+      }
+
+      rowsArr.forEach((r, idx) => {
+        if (currentCards[idx]) {
+          const c = currentCards[idx];
+          c.style.position = 'absolute';
+          c.style.left = `${c.dataset.startCol * charW}px`;
+          r.appendChild(c);
+        }
+      });
+
+    } else {
+      currentCard.style.position = 'relative';
+      currentCard.style.left = '0';
+      document.getElementById('staging').appendChild(currentCard);
+    }
+
+    isDragging = false;
+    currentCard = null;
+  });
+
+  function checkAnswer() {
+    const rows = document.querySelectorAll('.grid-row');
+    let cards = [];
+    let hasEmptyRow = false;
+    
+    document.getElementById('celebration').classList.remove('celebrate-anim');
+    
+    rows.forEach(row => {
+      row.classList.remove('error', 'success', 'dec-error', 'empty-warning');
+      void row.offsetWidth; 
+      
+      const card = row.querySelector('.card');
+      if(card) {
+        cards.push(card);
+      } else {
+        hasEmptyRow = true;
+        row.classList.add('empty-warning');
+      }
+    });
+
+    if (hasEmptyRow) {
+      return;
+    }
+
+    let placedVals = cards.map(c => parseFloat(c.dataset.val));
+    let sortedVals = [...placedVals].sort((a,b) => b - a); 
+
+    let decCols = cards.map(c => parseInt(c.dataset.startCol) + (3 - parseInt(c.dataset.firstActive)));
+    
+    let colCounts = {};
+    decCols.forEach(c => colCounts[c] = (colCounts[c] || 0) + 1);
+    let targetDecCol = parseInt(Object.keys(colCounts).reduce((a, b) => colCounts[a] > colCounts[b] ? a : b));
+
+    let allCorrect = true;
+
+    for(let i = 0; i < cards.length; i++) {
+      const c = cards[i];
+      const val = parseFloat(c.dataset.val);
+      const myDecCol = decCols[i];
+
+      const isValCorrect = (val === sortedVals[i]);
+      const isAligned = (myDecCol === targetDecCol);
+
+      if (isValCorrect && isAligned) {
+        c.parentElement.classList.add('success');
+      } else {
+        c.parentElement.classList.add('error');
+        if (!isAligned) c.parentElement.classList.add('dec-error');
+        allCorrect = false;
+      }
+    }
+
+    if(allCorrect) {
+      const celeb = document.getElementById('celebration');
+      void celeb.offsetWidth; 
+      celeb.classList.add('celebrate-anim');
+    }
+  }
+
+  generateNumbers();
+</script>
+</body>
+</html>

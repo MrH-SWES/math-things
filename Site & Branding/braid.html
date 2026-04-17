@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Things. | The NBT Braid (39-Point Full Roadmap)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-center: #F5F5F7;
+            --bg-edge: #D1D1D6;
+            --alum-base: #E8E9ED;
+            --text-main: #1D1D1F;
+            --text-gray: #7A7D8A;
+            
+            --strand-system:    #7B00FF; 
+            --strand-sense:     #DC143C; 
+            --strand-basic:     #4CBB17; 
+            --strand-advanced:  #FF9F0A; 
+
+            --raised: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.9);
+            --depressed: inset 4px 4px 10px rgba(0, 0, 0, 0.15), inset -4px -4px 10px rgba(255, 255, 255, 0.6);
+            --milled: inset 3px 3px 6px rgba(166, 171, 189, 0.9), inset -3px -3px 6px rgba(255, 255, 255, 1);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-edge) 150%);
+            color: var(--text-main);
+            min-height: 100vh; overflow-y: auto; overflow-x: hidden;
+        }
+
+        .framework-container { max-width: 1500px; margin: 0 auto; padding: 100px 40px; }
+        .matrix-grid { display: grid; grid-template-columns: 140px repeat(4, 1fr); gap: 40px 24px; position: relative; }
+
+        .track-bg { grid-row: 1 / span 6; display: flex; justify-content: center; pointer-events: none; z-index: 0; }
+        .milled-groove { width: 14px; height: 100%; background: var(--alum-base); box-shadow: var(--milled); border-radius: 7px; position: relative; }
+        .color-line { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; background: var(--strand-color); opacity: 0.2; }
+
+        .grade-marker { grid-column: 1; display: flex; align-items: flex-start; justify-content: flex-end; padding-top: 15px; }
+        .grade-header { font-size: 2rem; font-weight: 900; color: var(--text-gray); opacity: 0.4; }
+
+        .grid-cell { display: flex; flex-direction: column; gap: 12px; z-index: 10; }
+
+        .node {
+            background: var(--alum-base); box-shadow: var(--raised); border-radius: 12px;
+            padding: 12px 16px; display: flex; flex-direction: column;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-left: 4px solid var(--strand-color); position: relative;
+        }
+        .node:hover { transform: translateY(-3px); box-shadow: 15px 15px 30px rgba(166,171,189,0.5); }
+        
+        .std-code { font-size: 0.55rem; color: var(--text-gray); font-weight: 800; letter-spacing: 0.8px; margin-bottom: 2px; }
+        .std-desc { font-size: 0.8rem; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+
+        .sub { margin-left: 15px; border-left-width: 2px; border-radius: 8px; padding: 8px 12px; opacity: 0.85; }
+        .sub .std-desc { font-size: 0.75rem; font-weight: 500; }
+
+        .engine-badge {
+            position: absolute; top: 8px; right: 8px;
+            font-size: 0.55rem; font-weight: 900; color: #fff;
+            padding: 1px 5px; border-radius: 3px; background: var(--text-gray); opacity: 0.3;
+        }
+
+        .brand-header { position: fixed; top: 24px; left: 24px; z-index: 100; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.02em; }
+        .legend {
+            position: fixed; bottom: 24px; right: 24px; background: var(--alum-base); padding: 16px;
+            border-radius: 16px; box-shadow: var(--raised); z-index: 100;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: 800; color: var(--text-gray); margin-bottom: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .e-tag { font-family: monospace; font-size: 0.65rem; padding: 1px 4px; background: var(--text-main); color: #fff; border-radius: 3px; margin-right: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="brand-header">MATH THINGS. <span style="font-weight:300; color:var(--text-gray)">| NBT BRAID</span></div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="dot" style="background: var(--strand-system);"></div> The System</div>
+        <div class="legend-item"><div class="dot" style="background: var(--strand-sense);"></div> Number Sense</div>
+        <div class="legend-item"><div class="dot" style="background: var(--strand-basic);"></div> Basic Ops</div>
+        <div class="legend-item"><div class="dot" style="background: var(--strand-advanced);"></div> Adv. Ops</div>
+        <div style="border-top:1px solid rgba(0,0,0,0.1); margin-top:10px; padding-top:10px;">
+            <div class="legend-item"><span class="e-tag">A</span> Assembler</div>
+            <div class="legend-item"><span class="e-tag">N</span> Navigator</div>
+            <div class="legend-item"><span class="e-tag">S</span> Slider</div>
+            <div class="legend-item"><span class="e-tag">E</span> Excavator</div>
+            <div class="legend-item"><span class="e-tag">C</span> Collector</div>
+        </div>
+    </div>
+
+    <div class="framework-container">
+        <div class="matrix-grid">
+            
+            <div class="track-bg" style="grid-column: 2;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-system);"></div></div></div>
+            <div class="track-bg" style="grid-column: 3;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-sense);"></div></div></div>
+            <div class="track-bg" style="grid-column: 4;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-basic);"></div></div></div>
+            <div class="track-bg" style="grid-column: 5;"><div class="milled-groove"><div class="color-line" style="--strand-color: var(--strand-advanced);"></div></div></div>
+
+            <div class="grade-marker" style="grid-row: 1;"><div class="grade-header">K</div></div>
+            <div class="grid-cell" style="grid-column: 2; grid-row: 1;">
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">A</div><div class="std-code">K.NBT.A.1</div><div class="std-desc">Teens as 10 + ones.</div></div>
+            </div>
+
+            <div class="grade-marker" style="grid-row: 2;"><div class="grade-header">G1</div></div>
+            <div class="grid-cell" style="grid-column: 2; grid-row: 2;">
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">N</div><div class="std-code">1.NBT.A.1</div><div class="std-desc">Count to 120.</div></div>
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">A</div><div class="std-code">1.NBT.B.2</div><div class="std-desc">Tens and Ones logic.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">1.NBT.B.2.a</div><div class="std-desc">1 Ten = 10 Ones.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">1.NBT.B.2.b</div><div class="std-desc">11–19 structure.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">1.NBT.B.2.c</div><div class="std-desc">Multiples of 10.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 3; grid-row: 2;">
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">1.NBT.B.3</div><div class="std-desc">Compare 2-digits.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 4; grid-row: 2;">
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">1.NBT.C.4</div><div class="std-desc">Add within 100.</div></div>
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">1.NBT.C.5</div><div class="std-desc">Mental +/- 10.</div></div>
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">1.NBT.C.6</div><div class="std-desc">Subtract multiples of 10.</div></div>
+            </div>
+
+            <div class="grade-marker" style="grid-row: 3;"><div class="grade-header">G2</div></div>
+            <div class="grid-cell" style="grid-column: 2; grid-row: 3;">
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">A</div><div class="std-code">2.NBT.A.1</div><div class="std-desc">H, T, O Logic.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">2.NBT.A.1.a</div><div class="std-desc">100 = 10 Tens.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-system);"><div class="std-code">2.NBT.A.1.b</div><div class="std-desc">Multiples of 100.</div></div>
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">N</div><div class="std-code">2.NBT.A.2</div><div class="std-desc">Skip-count 5, 10, 100.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 3; grid-row: 3;">
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">A</div><div class="std-code">2.NBT.A.3</div><div class="std-desc">Expanded form.</div></div>
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">2.NBT.A.4</div><div class="std-desc">Compare 3-digits.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 4; grid-row: 3;">
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.5</div><div class="std-desc">Fluent within 100.</div></div>
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.6</div><div class="std-desc">Add four 2-digits.</div></div>
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.7</div><div class="std-desc">Add/Sub within 1000.</div></div>
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.8</div><div class="std-desc">Mental +/- 10, 100.</div></div>
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">2.NBT.B.9</div><div class="std-desc">Explain strategies.</div></div>
+            </div>
+
+            <div class="grade-marker" style="grid-row: 4;"><div class="grade-header">G3</div></div>
+            <div class="grid-cell" style="grid-column: 3; grid-row: 4;">
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">3.NBT.A.1</div><div class="std-desc">Round to 10 or 100.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 4; grid-row: 4;">
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">3.NBT.A.2</div><div class="std-desc">Add/Sub to 1000.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 5; grid-row: 4;">
+                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">A</div><div class="std-code">3.NBT.A.3</div><div class="std-desc">Multiply by tens.</div></div>
+            </div>
+
+            <div class="grade-marker" style="grid-row: 5;"><div class="grade-header">G4</div></div>
+            <div class="grid-cell" style="grid-column: 2; grid-row: 5;">
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">S</div><div class="std-code">4.NBT.A.1</div><div class="std-desc">10x shift logic.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 3; grid-row: 5;">
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">4.NBT.A.2</div><div class="std-desc">Compare big numbers.</div></div>
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">4.NBT.A.3</div><div class="std-desc">Round to any place.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 4; grid-row: 5;">
+                <div class="node" style="--strand-color: var(--strand-basic);"><div class="engine-badge">C</div><div class="std-code">4.NBT.B.4</div><div class="std-desc">Standard Algorithm +/-.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 5; grid-row: 5;">
+                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">E</div><div class="std-code">4.NBT.B.5</div><div class="std-desc">Multi-digit Multiplication.</div></div>
+                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">E</div><div class="std-code">4.NBT.B.6</div><div class="std-desc">Division with remainders.</div></div>
+            </div>
+
+            <div class="grade-marker" style="grid-row: 6;"><div class="grade-header">G5</div></div>
+            <div class="grid-cell" style="grid-column: 2; grid-row: 6;">
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">S</div><div class="std-code">5.NBT.A.1</div><div class="std-desc">10x / 0.1x logic.</div></div>
+                <div class="node" style="--strand-color: var(--strand-system);"><div class="engine-badge">S</div><div class="std-code">5.NBT.A.2</div><div class="std-desc">Exponents & 10^n.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 3; grid-row: 6;">
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">5.NBT.A.3</div><div class="std-desc">Decimal Literacy.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-sense);"><div class="engine-badge">A</div><div class="std-code">5.NBT.A.3.a</div><div class="std-desc">Expanded Decimal form.</div></div>
+                <div class="node sub" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">5.NBT.A.3.b</div><div class="std-desc">Compare thousandths.</div></div>
+                <div class="node" style="--strand-color: var(--strand-sense);"><div class="engine-badge">N</div><div class="std-code">5.NBT.A.4</div><div class="std-desc">Round Decimals.</div></div>
+            </div>
+            <div class="grid-cell" style="grid-column: 5; grid-row: 6;">
+                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">C</div><div class="std-code">5.NBT.B.5</div><div class="std-desc">Standard Algorithm (X).</div></div>
+                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">E</div><div class="std-code">5.NBT.B.6</div><div class="std-desc">Divide by 2-digits.</div></div>
+                <div class="node" style="--strand-color: var(--strand-advanced);"><div class="engine-badge">C</div><div class="std-code">5.NBT.B.7</div><div class="std-desc">All Decimal Operations.</div></div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,3307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Prime Altar | Math Things.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <style>
+    :root {
+      --brand-bg: #F5F5F7;
+      --brand-glass: rgba(245,245,247,0.85);
+      --brand-surface: #FFFFFF;
+      --brand-text-main: #1D1D1F;
+      --brand-text-gray: #86868B;
+      --brand-text-light: #AEAEB2;
+      --brand-border: rgba(0,0,0,0.05);
+      --brand-shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+      
+      /* COLD VAULT THEME */
+      --bg: #1a1b1a; 
+      --u: 44px; 
+      --spring: cubic-bezier(0.34,1.56,0.64,1);
+      --ease-heavy: cubic-bezier(0.15,0.6,0.3,1.0);
+    }
+    
+    *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { font-family:'Lexend',sans-serif; background:var(--bg); height:100vh; height:100dvh; overflow:hidden; display:flex; flex-direction:column; color:#fff; user-select:none; -webkit-font-smoothing: antialiased; }
+
+    /* SCREENS */
+    .screen { position:fixed; inset:0; display:flex; flex-direction:column; transition:opacity 0.4s ease; background:var(--bg); }
+    .screen.hidden { opacity:0; pointer-events:none; }
+
+    /* BRAND HEADER */
+    .fixed-logo {
+      position: absolute; top: 16px; left: 24px; z-index: 100;
+      font-weight: 900; font-size: 1.5rem; color: rgba(255,255,255,0.4); letter-spacing: -0.05em;
+      cursor: pointer; display: inline-flex; align-items: baseline; transition: color 0.2s; user-select: none;
+    }
+    .fixed-logo:hover { color: #fff; }
+
+    .logo-bead {
+      display:inline-block; width:0.22em; height:0.22em; margin-left:0.04em; margin-bottom:0.08em; border-radius:50%; flex-shrink:0;
+      background: radial-gradient(circle at 33% 28%,rgba(255,255,255,0.92) 0%,rgba(255,255,255,0.3) 40%,transparent 65%),
+                  radial-gradient(circle at 67% 72%,rgba(0,0,0,0.15) 0%,transparent 55%),
+                  linear-gradient(135deg,#efefef 0%,#d0d0d0 25%,#a8a8a8 50%,#c0c0c0 75%,#e0e0e0 100%);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8),inset -1px -1px 2px rgba(0,0,0,0.2),0 2px 5px rgba(0,0,0,0.22);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .footer-bead {
+      display:inline-block; width:0.22em; height:0.22em; border-radius:50%;
+      margin-bottom:0.08em;
+      background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      vertical-align: baseline;
+    }
+
+    /* GRID SCREEN */
+    #grid-screen { background: var(--brand-bg); color: var(--brand-text-main); }
+    #grid-screen .fixed-logo { display: none; } 
+    .grid-screen-header { 
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 32px; height:60px; flex-shrink:0; 
+      background: var(--brand-glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+      border-bottom: 1px solid var(--brand-border); z-index: 100; 
+    }
+    .logo { display: inline-flex; align-items: baseline; font-weight:900; font-size:1.5rem; color: var(--brand-text-main); letter-spacing:-0.05em; user-select: none; }
+    .grid-mode-toggle { display:flex; gap:2px; background:rgba(0,0,0,0.06); border-radius:12px; padding:3px; }
+    .gmt-btn { padding:6px 12px; border-radius:9px; border:none; background:transparent; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; justify-content:center; line-height:0; }
+    .gmt-btn.active { background:var(--brand-surface); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    .gmt-btn svg { width:32px; height:28px; opacity:0.45; transition:opacity 0.2s; }
+    .gmt-btn.active svg { opacity:0.85; }
+    
+    .num-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(70px, 1fr)); gap:16px; padding:24px 20px; flex:1; align-content:start; overflow-y:auto; }
+    .nc { 
+      aspect-ratio:1; border-radius: 24px; cursor:pointer; transition:transform 0.2s var(--spring), box-shadow 0.2s ease; 
+      position:relative; display:flex; flex-direction:column; align-items:center; padding:16px 8px;
+      background: var(--brand-surface); border:1px solid var(--brand-border); box-shadow: var(--brand-shadow-soft); 
+    }
+    .nc.avail:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04); }
+    .nc.avail:active { transform:scale(0.95) translateY(2px); box-shadow: inset 4px 4px 10px rgba(0,0,0,0.05); }
+    .nc.done { border: 1px solid rgba(76, 187, 23, 0.3); background: #fdfdfd; }
+    .nc.locked { background:rgba(255,255,255,0.5); opacity:0.5; box-shadow:none; pointer-events:none; }
+    .nc.done::after { content:''; position:absolute; width:6px; height:6px; border-radius:50%; background:#4CBB17; top:10px; right:10px; box-shadow:0 0 6px rgba(76, 187, 23, 0.4); }
+    .nc-num { position:relative; font-size:32px; font-weight:800; color:var(--brand-text-main); margin-bottom:auto; letter-spacing:-1px; }
+    .nc.locked .nc-num { color:var(--brand-text-light); }
+    .nc-trinkets { position:relative; display:flex; justify-content:center; flex-wrap:wrap; gap:4px; width:100%; margin-top:8px; }
+    .nc-t { width:20px; height:24px; font-size:10px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0; box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 1px 1px 0 rgba(255,255,255,0.4); }
+    .nc-t.nc-tc {
+      background: repeating-linear-gradient(180deg,rgba(255,255,255,0.04) 0px,transparent 1px,transparent 2px),
+        linear-gradient(90deg,rgba(0,0,0,0.14) 0%,rgba(255,255,255,0.06) 50%,rgba(0,0,0,0.1) 100%),
+        linear-gradient(135deg,#e0e0e2,#c0c0c4,#9a9aa0,#b0b0b5,#d0d0d4);
+      color: rgba(38,40,46,0.9);
+      border: 1px solid rgba(0,0,0,0.12);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.35), 0 2px 4px rgba(0,0,0,0.12);
+    }
+    .nc-t.nc-tp { background:linear-gradient(135deg,#FFD700,#FF8C00); color:#fff; border:none; text-shadow:0 1px 2px rgba(0,0,0,0.3); }
+    .nc-t.nc-tm { background:var(--brand-bg); border:1px solid #d0d0d0; color:var(--brand-text-gray); box-shadow:none; }
+
+    /* BRAND FOOTER */
+    .app-footer {
+      text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--brand-text-light);
+      background: var(--brand-bg);
+      flex-shrink: 0; z-index: 10;
+    }
+    .altar-screen-footer { background: #1a1b1a; border-top: 1px solid #2a2928; color: #555; }
+
+    /* ALTAR HEADER — overlays the altar, doesn't consume vertical space */
+    .altar-header { 
+      position: absolute; top: 0; left: 0; right: 0; z-index: 150;
+      display:flex; justify-content:center; align-items:center; padding:12px 0; 
+      pointer-events: none;
+    }
+    .altar-numeral { font-weight:900; font-size:48px; letter-spacing:-2px; color:rgba(255,255,255,0.12); line-height:1; position:relative; pointer-events: auto; }
+    .altar-numeral.solved { color:#01B069; animation:solvedBreathe 5s ease-in-out infinite; cursor:pointer; }
+    @keyframes solvedBreathe {
+      0%, 100% { color:rgba(1,176,105,0.25); text-shadow:0 0 4px rgba(1,176,105,0.1),0 0 8px rgba(1,176,105,0.05); }
+      50% { color:#34c98a; text-shadow:0 0 8px rgba(52,185,120,0.85),0 0 22px rgba(1,176,105,0.55),0 0 50px rgba(1,176,105,0.25),0 0 90px rgba(1,176,105,0.1); }
+    }
+    .altar-numeral.celebrate { animation:celebFlash 1.4s ease-out forwards; }
+    @keyframes celebFlash {
+      0% { color:#fff; text-shadow:0 0 20px #fff,0 0 60px #01B069,0 0 120px #01B069; }
+      30% { color:#01B069; text-shadow:0 0 40px #01B069,0 0 80px rgba(1,176,105,0.8),0 0 160px rgba(1,176,105,0.5),0 0 300px rgba(1,176,105,0.2); }
+      100% { color:rgba(255,255,255,0.15); text-shadow:none; }
+    }
+    .altar-numeral.celebrate::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(1,176,105,0.7) 0%,rgba(52,185,120,0.4) 30%,rgba(1,176,105,0.15) 60%,transparent 80%); animation:celebBloom 1.4s cubic-bezier(0.2,0,0.4,1) forwards; pointer-events:none; z-index:-1; }
+    @keyframes celebBloom { 0% { transform:translate(-50%,-50%) scale(0); opacity:1; } 40% { transform:translate(-50%,-50%) scale(2.5); opacity:1; } 100% { transform:translate(-50%,-50%) scale(0.5); opacity:0; } }
+
+    /* ═══ 1. SUBTERRANEAN ARCHITECTURE (3D Bunker) ═══ */
+    .altar {
+      flex: 1; position: relative; overflow: hidden;
+      background-color: #1a1b1a;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% 85%, rgba(255,255,255,0.02) 0%, transparent 50%),
+        linear-gradient(180deg, #1e1f1e 0%, #1a1b1a 44%, #1c1d1c 100%);
+    }
+    .three-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      display: block; pointer-events: none; z-index: 100;
+    }
+
+    /* ZOOM WRAPPER & OBELISK STAGE — sits on the back stage, behind the podium */
+    /* No filter here — filter on an ancestor flattens fine mirror-cube gradients inside the stage */
+    .seg-zoom { position: absolute; bottom: 40%; left: 50%; transform: translateX(0) scale(0.31); transform-origin: 50% 100%; z-index: 110; }
+    .seg-zoom.folded { transform: scale(0.31); z-index: 110; }
+    .seg-stage {
+      display: flex; align-items: flex-end; gap: 3px;
+      box-shadow: 0 22px 34px rgba(0,0,0,0.38);
+      position: relative;
+    }
+    .seg-stage.seg-array {
+      box-shadow: 0 16px 26px rgba(0,0,0,0.28);
+      gap: 0;
+    }
+    .seg-stage.obelisk-pillar::before { content: none; }
+    /* Monolith obelisk: contact AO + pedestal spread so the pillar reads grounded */
+    .seg-stage.obelisk-pillar::after {
+      content: ''; position: absolute; left: 50%; bottom: 0;
+      transform: translate(-50%, 35%);
+      width: min(120%, calc(var(--u) * 1.25)); max-width: 58px; height: 16px; border-radius: 50%;
+      background: radial-gradient(ellipse 100% 100% at 50% 38%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.22) 45%, transparent 72%);
+      pointer-events: none; z-index: 0;
+    }
+    .seg-stage.obelisk-pillar > .blk { position: relative; z-index: 1; }
+    .seg-stage.obelisk-pillar .blk-c {
+      box-shadow:
+        inset 2px 2px 4px rgba(255,255,255,0.4), inset -2px -2px 4px rgba(0,0,0,0.12),
+        inset 0 -10px 22px rgba(0,0,0,0.24),
+        0 4px 0 rgba(0,0,0,0.12), 3px 6px 18px rgba(0,0,0,0.48), 0 22px 40px rgba(0,0,0,0.26);
+    }
+    .seg-stage.obelisk-pillar .blk-p {
+      box-shadow:
+        inset 0 0 12px rgba(255,200,100,0.12), inset 0 0 28px rgba(255,120,20,0.15),
+        inset 0 -10px 22px rgba(0,0,0,0.35), 0 4px 0 rgba(0,0,0,0.18),
+        0 0 15px rgba(255,120,30,0.22), 0 22px 40px rgba(0,0,0,0.28);
+    }
+
+    /* GREEN NUDGES */
+    @keyframes hingeNudge {
+      0%, 100% { filter: brightness(1); box-shadow: inset 2px 2px 3px rgba(255,255,255,0.22), inset -4px -3px 8px rgba(0,0,0,0.5), inset 4px 0 6px rgba(0,0,0,0.18), 0 2px 5px rgba(0,0,0,0.45); }
+      50% { filter: brightness(1.25); box-shadow: inset 2px 2px 3px rgba(255,255,255,0.28), inset -4px -3px 8px rgba(0,0,0,0.45), inset 4px 0 6px rgba(0,0,0,0.15), 0 0 10px rgba(1,176,105,0.75), 0 0 18px rgba(1,176,105,0.35); }
+    }
+    .hz.nudge::after { animation: hingeNudge 1.5s infinite ease-in-out; }
+    .drag-hint-bar {
+      position: absolute; left: -2px; right: -2px; top: 0; height: 4px;
+      background: #01B069; box-shadow: 0 0 12px 3px #01B069, 0 0 24px 6px rgba(1,176,105,0.3);
+      animation: pulseHint 1.5s infinite alternate; z-index: 20; border-radius: 2px 2px 0 0;
+      pointer-events: none;
+    }
+    @keyframes pulseHint { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+
+    /* MATERIALS */
+    .blk { position: relative; flex-shrink: 0; touch-action: none; cursor: grab; }
+    .seg-stage .blk {
+      opacity: 0.96;
+      background: transparent !important;
+      box-shadow: none !important;
+      border-color: rgba(255,255,255,0.18) !important;
+    }
+    .seg-stage .blk-c {
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 20%, transparent 42%),
+        radial-gradient(circle at 50% 50%, rgba(232,236,242,0.98) 0%, rgba(196,202,212,0.94) 34%, rgba(138,144,156,0.92) 68%, rgba(88,94,106,0.9) 100%) !important;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.2),
+        inset 0 0 22px rgba(255,255,255,0.12),
+        0 0 18px rgba(210,220,245,0.14),
+        0 10px 18px rgba(0,0,0,0.2),
+        0 0 36px rgba(220,228,240,0.12) !important;
+    }
+    .seg-stage .blk-p {
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,238,178,0.2) 0%, rgba(255,202,96,0.16) 18%, rgba(255,132,34,0.18) 40%, rgba(188,64,14,0.14) 58%, rgba(40,14,6,0.2) 76%, rgba(5,2,2,0.98) 100%) !important;
+      box-shadow:
+        inset 0 0 18px rgba(255,220,132,0.1),
+        inset 0 0 40px rgba(255,162,40,0.18),
+        inset 0 0 76px rgba(214,84,18,0.16),
+        0 0 18px rgba(255,156,64,0.14),
+        0 0 40px rgba(255,92,18,0.1) !important;
+    }
+    .seg-stage .blk::before,
+    .seg-stage .blk::after,
+    .seg-stage .blk .n-stamp,
+    .seg-stage .blk .n-glow,
+    .seg-stage .blk .n-mirror {
+      opacity: 1 !important;
+    }
+    .anim-overlay .blk,
+    .three-proxy-layer .blk {
+      opacity: 0.88;
+      background: linear-gradient(180deg, rgba(230,234,240,0.92), rgba(164,170,182,0.9)) !important;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 8px 16px rgba(0,0,0,0.18) !important;
+      border-color: rgba(255,255,255,0.08) !important;
+      filter: none !important;
+      backface-visibility: hidden;
+    }
+    .anim-overlay .blk-p,
+    .three-proxy-layer .blk-p {
+      opacity: 1 !important;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,238,176,0.16) 0%, rgba(255,214,110,0.18) 16%, rgba(255,150,44,0.18) 34%, rgba(224,84,16,0.16) 54%, rgba(52,16,6,0.2) 72%, rgba(4,2,2,0.98) 100%) !important;
+      border: 1px solid rgba(255,188,110,0.18) !important;
+      box-shadow:
+        inset 0 0 18px rgba(255,226,144,0.1),
+        inset 0 0 42px rgba(255,186,52,0.2),
+        inset 0 0 92px rgba(232,86,14,0.18),
+        0 0 24px rgba(255,166,72,0.18),
+        0 0 56px rgba(255,92,18,0.14),
+        0 4px 12px rgba(0,0,0,0.5) !important;
+      animation: cosmicPulse 1.7s ease-in-out infinite alternate !important;
+    }
+    .anim-overlay .blk-c,
+    .three-proxy-layer .blk-c {
+      background: linear-gradient(180deg, rgba(228,232,238,0.94), rgba(156,162,174,0.9)) !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 16px rgba(0,0,0,0.18) !important;
+    }
+    .anim-overlay .blk::before,
+    .anim-overlay .blk::after,
+    .anim-overlay .blk .n-stamp,
+    .anim-overlay .blk .n-mirror,
+    .three-proxy-layer .blk::before,
+    .three-proxy-layer .blk::after,
+    .three-proxy-layer .blk .n-stamp,
+    .three-proxy-layer .blk .n-mirror {
+      opacity: 0 !important;
+      animation: none !important;
+    }
+    /* Let prime blocks in animation overlays show their pseudo-elements and glow numerals */
+    .anim-overlay .blk-p::before,
+    .anim-overlay .blk-p::after,
+    .three-proxy-layer .blk-p::before,
+    .three-proxy-layer .blk-p::after {
+      opacity: 1 !important;
+      animation: revert !important;
+    }
+    .anim-overlay .blk-p .n-glow,
+    .three-proxy-layer .blk-p .n-glow,
+    .anim-overlay .blk-c .n-stamp,
+    .three-proxy-layer .blk-c .n-stamp {
+      opacity: 1 !important;
+    }
+    /* Composite material — obelisk, factor tray, grid composite chips */
+    .blk-c,
+    .fs.fc,
+    .fs.fn-identity.fn-comp {
+      border-radius: 2px;
+      position: relative;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 18%, transparent 38%),
+        radial-gradient(circle at 50% 50%, rgba(228,231,236,0.98) 0%, rgba(194,200,210,0.95) 34%, rgba(146,152,164,0.92) 68%, rgba(102,108,120,0.9) 100%);
+      box-shadow: inset 0 0 18px rgba(255,255,255,0.18), inset 0 0 30px rgba(0,0,0,0.1), 3px 6px 18px rgba(0,0,0,0.45);
+      border: none;
+    }
+    .fs.fc,
+    .fs.fn-identity.fn-comp { overflow: hidden; }
+    .blk-c::before,
+    .fs.fc::before,
+    .fs.fn-identity.fn-comp::before {
+      content: ''; position: absolute; inset: 2px; z-index: 1; pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.08) 22%, transparent 46%);
+      border-radius: 2px;
+    }
+
+    .blk-p, .blk-p-static, .fs.fp, .dex-trinket {
+      border-radius: 4px;
+      will-change: box-shadow, filter;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,238,176,0.16) 0%, rgba(255,214,110,0.18) 16%, rgba(255,150,44,0.18) 34%, rgba(224,84,16,0.16) 54%, rgba(52,16,6,0.2) 72%, rgba(4,2,2,0.98) 100%);
+      border: 1px solid rgba(255,188,110,0.18);
+      box-shadow:
+        inset 0 0 18px rgba(255,226,144,0.1),
+        inset 0 0 42px rgba(255,186,52,0.2),
+        inset 0 0 92px rgba(232,86,14,0.18),
+        0 0 24px rgba(255,166,72,0.18),
+        0 0 56px rgba(255,92,18,0.14),
+        0 4px 12px rgba(0,0,0,0.5);
+      overflow: hidden; position: relative;
+      animation: cosmicPulse 1.7s ease-in-out infinite alternate;
+    }
+    @keyframes cosmicPulse {
+      0% {
+        box-shadow:
+          inset 0 0 12px rgba(255,228,154,0.06),
+          inset 0 0 30px rgba(255,208,106,0.14),
+          inset 0 0 64px rgba(255,120,24,0.14),
+          0 0 18px rgba(255,170,80,0.14),
+          0 0 34px rgba(255,96,24,0.1),
+          0 4px 12px rgba(0,0,0,0.5);
+        filter: saturate(1.08) brightness(0.98);
+      }
+      100% {
+        box-shadow:
+          inset 0 0 24px rgba(255,242,184,0.14),
+          inset 0 0 54px rgba(255,224,132,0.24),
+          inset 0 0 104px rgba(255,128,20,0.22),
+          0 0 34px rgba(255,184,88,0.24),
+          0 0 72px rgba(255,98,20,0.18),
+          0 4px 12px rgba(0,0,0,0.5);
+        filter: saturate(1.24) brightness(1.14);
+      }
+    }
+    .blk-p::before {
+      content: ''; position: absolute; inset: 3px; border-radius: 2px; pointer-events: none; z-index: 1;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,246,198,0.48) 0%, rgba(255,214,112,0.38) 14%, rgba(255,160,50,0.34) 30%, rgba(234,92,16,0.24) 50%, rgba(92,22,8,0.08) 70%, transparent 84%),
+        radial-gradient(circle at 34% 38%, rgba(255,218,120,0.2) 0%, transparent 36%),
+        radial-gradient(circle at 66% 62%, rgba(255,140,38,0.18) 0%, transparent 34%),
+        radial-gradient(circle at 56% 28%, rgba(255,176,60,0.14) 0%, transparent 26%),
+        radial-gradient(circle at 44% 70%, rgba(255,110,24,0.14) 0%, transparent 28%);
+      mix-blend-mode: screen;
+      transform-origin: 50% 50%;
+      animation: cosmicBloom 1.45s ease-in-out infinite;
+    }
+    .blk-p::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 3px; z-index: 2;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,168,58,0.14) 0%, rgba(255,122,28,0.1) 24%, transparent 54%),
+        radial-gradient(circle at 36% 34%, rgba(255,212,118,0.1) 0%, transparent 26%),
+        radial-gradient(circle at 68% 58%, rgba(255,120,24,0.1) 0%, transparent 24%),
+        radial-gradient(circle at 50% 50%, transparent 54%, rgba(255,178,84,0.12) 72%, rgba(0,0,0,0.26) 96%, transparent 100%);
+      opacity: 0.84;
+      mix-blend-mode: screen;
+      transform-origin: 50% 50%;
+      animation: cosmicHalo 2.2s ease-in-out infinite;
+    }
+    @keyframes cosmicBloom {
+      0% { transform: scale(0.95) translate(-1px, 1px); opacity: 0.74; filter: blur(2.2px) saturate(1.04); }
+      35% { transform: scale(1.03) translate(1px, -1px); opacity: 0.98; filter: blur(0.8px) saturate(1.16); }
+      65% { transform: scale(1.06) translate(-1px, -2px); opacity: 1; filter: blur(0.5px) saturate(1.22); }
+      100% { transform: scale(0.98) translate(2px, 1px); opacity: 0.8; filter: blur(2.4px) saturate(1.06); }
+    }
+    @keyframes cosmicHalo {
+      0% { transform: scale(0.96) translate(0px, 0px); opacity: 0.56; filter: blur(2px); }
+      50% { transform: scale(1.08) translate(1px, -1px); opacity: 0.9; filter: blur(0.8px); }
+      100% { transform: scale(0.99) translate(-1px, 1px); opacity: 0.64; filter: blur(2.1px); }
+    }
+    
+    /* Unity "1" — tall-room glass: stretched gradient + per-block --reflect-y (JS); bottom tint vs soapstone */
+    .mirror-cube {
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      border-radius: 4px;
+      isolation: isolate;
+      -webkit-backdrop-filter: blur(10px) saturate(1.12);
+      backdrop-filter: blur(10px) saturate(1.12);
+      background-image:
+        linear-gradient(to top, rgba(0,0,0,0.16) 0%, rgba(0,0,0,0.06) 14%, transparent 26%),
+        linear-gradient(138deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.07) 40%, transparent 55%),
+        radial-gradient(ellipse 72% 58% at 50% 100%, rgba(55,130,165,0.34) 0%, rgba(140,200,225,0.15) 40%, transparent 64%),
+        radial-gradient(ellipse 95% 82% at 50% 10%, rgba(255,255,255,0.62) 0%, rgba(235,250,255,0.26) 30%, transparent 54%),
+        linear-gradient(185deg, rgba(248,252,255,0.78) 0%, rgba(215,235,248,0.72) 36%, rgba(198,228,242,0.74) 58%, rgba(236,246,252,0.8) 100%);
+      background-size: 100% 800%;
+      background-position:
+        center var(--reflect-y, 55%), center var(--reflect-y, 55%), center var(--reflect-y, 55%),
+        center var(--reflect-y, 55%), center var(--reflect-y, 55%);
+      background-repeat: no-repeat;
+      border: 1px solid rgba(95,150,175,0.48);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.58),
+        inset 0 12px 28px rgba(255,255,255,0.5),
+        inset 0 -26px 42px rgba(35,95,138,0.2);
+    }
+    .mirror-cube::before {
+      content: ''; position: absolute; inset: 2px; z-index: 1; pointer-events: none; border-radius: 3px;
+      background-image:
+        linear-gradient(122deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.1) 34%, transparent 50%),
+        linear-gradient(208deg, transparent 56%, rgba(50,100,130,0.08) 100%);
+      background-size: 100% 800%;
+      background-position: center var(--reflect-y, 55%), center var(--reflect-y, 55%);
+      background-repeat: no-repeat;
+      border: 1px solid rgba(255,255,255,0.42);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    /* NUMERALS */
+    .n-stamp, .n-mirror { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(var(--rot, 0deg)); font-weight:900; letter-spacing:-1px; z-index:2; }
+    /* Single-column monolith: optical vertical center for stamped product numeral */
+    .blk-pillar .n-stamp,
+    .blk-pillar .n-glow,
+    .blk-pillar .n-mirror {
+      line-height: 0.88;
+      transform: translate(-50%, calc(-50% - 0.1em)) rotate(var(--rot, 0deg));
+    }
+    .mirror-cube .n-mirror { z-index: 3; }
+    .n-stamp {
+      color: rgba(38, 40, 46, 0.88);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.32), 0 -1px 1px rgba(0,0,0,0.22);
+    }
+    .n-mirror, .mirror-cube .dt-one {
+      color: rgba(8, 10, 14, 0.92);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+    }
+    .mirror-cube .dt-one { position: relative; z-index: 2; font-weight: 900; }
+    /* Dex + tray "1": same .n-mirror as obelisk; explicit size in compact tiles */
+    .dex-mirror.mirror-cube .n-mirror { font-size: 13px; letter-spacing: -0.5px; }
+    .fs.mirror.mirror-cube .n-mirror {
+      font-size: clamp(14px, calc(var(--u) * 0.38), 22px);
+      letter-spacing: -0.06em;
+    }
+    
+    .n-glow, .n-glow-static, .dt-num {
+      position: absolute; top: 50%; left: 50%; font-weight: 900; letter-spacing: -1px; z-index: 3; color: #fff; 
+      transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+      text-shadow:
+        0 0 2px rgba(255,255,255,0.95),
+        0 0 8px rgba(255,255,255,0.9),
+        0 0 16px rgba(255,228,162,0.72),
+        0 0 28px rgba(255,178,84,0.48),
+        0 0 48px rgba(255,120,32,0.3),
+        0 0 72px rgba(140,40,10,0.18);
+    }
+
+    /* ═══ 3. SIGNATURE BEAD HINGE (Door-hinge profile) ═══ */
+    .hz { position:absolute; left:-7px; width:14px; height:14px; transform:translate(0%, -50%); cursor:pointer; z-index:25; touch-action:none; }
+    .hz::after {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 26%, rgba(210,214,222,0.75) 0%, rgba(160,166,176,0.35) 38%, transparent 62%),
+        radial-gradient(circle at 68% 74%, rgba(0,0,0,0.28) 0%, transparent 55%),
+        linear-gradient(135deg, #8e929c, #6a6e78, #4e525a, #5c6068, #787c86);
+      box-shadow:
+        inset 2px 2px 3px rgba(255,255,255,0.22),
+        inset -4px -3px 8px rgba(0,0,0,0.52),
+        inset 4px 0 7px rgba(0,0,0,0.28),
+        0 2px 5px rgba(0,0,0,0.45);
+      transition: transform 0.1s var(--spring), filter 0.2s;
+    }
+    .hz:hover::after { filter: brightness(1.3); transform: scale(1.15); }
+    .hz:active::after { filter: brightness(0.85); transform: scale(0.9); }
+
+    /* FACTOR TRAY (On Concrete Podium) */
+    .f-tray {
+      position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%);
+      width: 85vw; max-width: 450px; padding: 8px 10px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      z-index: 120; pointer-events: all;
+    }
+    .fs {
+      width: var(--tray-trinket-size, calc(var(--u) * 0.9)); height: var(--tray-trinket-size, calc(var(--u) * 0.9)); border-radius: 2px; background: transparent;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; pointer-events: all;
+    }
+    .fs.empty { display: none; }
+    .fs.fn-identity {
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .fs.fn-identity.fn-prime {
+      border: 1px solid rgba(190,210,255,0.18);
+      box-shadow:
+        0 10px 14px rgba(0,0,0,0.55),
+        0 0 18px rgba(120,180,255,0.18),
+        0 0 36px rgba(255,150,220,0.12),
+        0 0 62px rgba(255,236,170,0.08);
+    }
+    .fs.fc > div,
+    .fs.fn-identity.fn-comp > div {
+      position: relative;
+      z-index: 2;
+      color: rgba(38,40,46,0.88);
+      font-weight: 900;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.32), 0 -1px 1px rgba(0,0,0,0.18);
+    }
+    .fs.fn-identity.fn-prime > div {
+      color: #fff;
+      font-weight: 900;
+      text-shadow:
+        0 0 2px rgba(255,255,255,0.95),
+        0 0 8px rgba(255,255,255,0.9),
+        0 0 16px rgba(170,210,255,0.68),
+        0 0 28px rgba(120,180,255,0.42),
+        0 0 48px rgba(255,120,220,0.28),
+        0 0 72px rgba(80,40,140,0.2);
+    }
+    .fs.fp { 
+      border: 1px solid rgba(190,210,255,0.18);
+      box-shadow:
+        0 10px 10px rgba(0,0,0,0.8),
+        0 0 16px rgba(120,180,255,0.16),
+        0 0 32px rgba(255,150,220,0.12),
+        0 0 58px rgba(255,236,170,0.08); 
+    }
+
+    /* GLOBAL PRIME DEX */
+    .dex-container {
+      flex-shrink: 0; background: #1a1b1a; border-top: 1px solid #2a2928;
+      position: relative; height: 72px; display: flex; flex-direction: column;
+      z-index: 20; box-shadow: inset 0 10px 20px rgba(0,0,0,0.6);
+    }
+    .dex-viewport {
+      flex: 1; display: flex; align-items: center; padding: 0 30vw 0 10vw; gap: 10px;
+      overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .dex-viewport::-webkit-scrollbar { display: none; }
+    
+    .dex-slot {
+      width: 46px; height: 46px; border-radius: 4px; background: #111211;
+      box-shadow: inset 3px 3px 10px rgba(0,0,0,0.8), inset -1px -1px 2px rgba(255,255,255,0.05);
+      position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .dex-slot.locked { opacity: 0.4; }
+    .dex-slot.locked::after { content: '?'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; color: rgba(255,255,255,0.1); font-size: 1.1rem; }
+    .dex-num { font-size:6px; font-weight:600; color:rgba(255,255,255,0.05); position:absolute; bottom:-10px; }
+    .dex-slot.has-prime .dex-num { color:rgba(255,255,255,0.4); }
+    .dex-trinket-wrap { width:100%; height:100%; position:relative; display:flex; align-items:center; justify-content:center; }
+
+    .dex-trinket { 
+      width: 36px; height: 36px; 
+      flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; border-radius: 4px;
+      border: 1px solid rgba(190,210,255,0.18);
+      box-shadow:
+        0 4px 10px rgba(0,0,0,0.8),
+        0 0 16px rgba(120,180,255,0.16),
+        0 0 32px rgba(255,150,220,0.12),
+        0 0 58px rgba(255,236,170,0.08); 
+    }
+    .dex-mirror {
+      width: 36px; height: 36px; flex-shrink: 0; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    
+    .dex-slot.dimmed { opacity: 0.12; transition: opacity 0.3s ease; }
+    .dex-slot.land-flash .dex-trinket-wrap { animation: landFlash 0.6s ease-out forwards; }
+    @keyframes landFlash { 0% { filter: brightness(1); } 20% { filter: brightness(2.5) saturate(1.5); transform: translateY(-10px) scale(1.1); } 100% { filter: brightness(1); transform: translateY(0px) scale(1); } }
+
+    /* BUILD SCREEN SPECIFICS */
+    .build-tray-area {
+      position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%);
+      width: 85vw; max-width: 450px; padding: 8px 10px; display: flex; gap: 12px; flex-wrap: wrap;
+      justify-content: center; z-index: 120; pointer-events: all; min-height: 0; background: transparent;
+      border-top: none; box-shadow: none;
+    }
+    .bt-trinket { width: var(--tray-trinket-size, calc(var(--u) * 0.9)); height: var(--tray-trinket-size, calc(var(--u) * 0.9)); border-radius: 2px; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; pointer-events: all; background: transparent; }
+    .bt-empty { display: none; }
+    .build-ledger { display:flex; align-items:center; justify-content:center; gap:4px; padding:5px 8px; min-height:30px; flex-shrink:0; flex-wrap:wrap; background:#1a1b1a; border-top:1px solid #2a2928; z-index:20;}
+    .ledger-factor { font-weight:900; font-size:13px; color:#FFD700; text-shadow:0 0 4px #FF8C00; }
+    .ledger-times { font-size:9px; color:rgba(255,255,255,0.2); font-weight:600; }
+    .ledger-eq { font-size:10px; color:rgba(255,255,255,0.2); font-weight:700; margin:0 2px; }
+    .ledger-product { font-weight:900; font-size:13px; color:rgba(255,255,255,0.5); }
+    .ceil-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent 5%,rgba(255,40,40,0.9) 20%,rgba(255,40,40,0.9) 80%,transparent 95%); box-shadow: 0 0 8px rgba(255,40,40,0.6), 0 0 20px rgba(255,40,40,0.3); pointer-events:none; z-index:115; }
+    
+    .bundo-zone { position:absolute; left:-4px; right:-4px; height:28px; z-index:25; cursor:pointer; display:flex; align-items:center; transform:translateY(-50%); touch-action:none; }
+    .bundo-mark { width:44%; height:2px; margin:0 auto; border-radius:1px; opacity:0.55; transition:opacity 0.15s, box-shadow 0.12s, background 0.12s;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22) 20%, rgba(0,0,0,0.18) 50%, rgba(255,255,255,0.18) 80%, transparent);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .bundo-zone:hover .bundo-mark { opacity: 0.95; }
+    .bundo-zone:active .bundo-mark { opacity: 1; background: linear-gradient(90deg, transparent, rgba(200,210,220,0.45) 35%, rgba(100,110,120,0.35) 50%, rgba(200,210,220,0.4) 65%, transparent); box-shadow: 0 0 6px rgba(255,255,255,0.15); }
+
+    /* UTILS */
+    .fade-overlay { position:fixed; inset:0; background:#1a1b1a; opacity:0; pointer-events:none; z-index:8000; transition:opacity 0.4s ease; }
+    .fade-overlay.fading { opacity:1; }
+    .affirm-flash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:9999; transition:opacity 0.3s; }
+    .affirm-flash.show { opacity:0.1; }
+    .shatter-piece { position:absolute; pointer-events:none; z-index:8500; border-radius:1px; }
+    .shatter-piece.shard { background:linear-gradient(135deg,rgba(200,200,210,0.9),rgba(140,140,150,0.7)); border:1px solid rgba(255,255,255,0.3); }
+    .shatter-piece.spark { border-radius:50%; background:radial-gradient(circle,#fff 0%,rgba(255,200,80,0.9) 40%,rgba(255,100,20,0.6) 70%,transparent 100%); box-shadow:0 0 4px rgba(255,160,40,0.8),0 0 8px rgba(255,80,20,0.4); }
+    .shatter-piece.ember { border-radius:50%; background:rgba(255,100,40,0.9); box-shadow:0 0 3px rgba(255,60,20,0.6); }
+    @keyframes shatterFly { 0% { opacity:1; transform:translate(0,0) rotate(0deg); } 100% { opacity:0; transform:var(--tx) rotate(var(--rot)); } }
+  </style>
+</head>
+<body>
+<div class="fade-overlay" id="fade-overlay"></div>
+<div class="affirm-flash" id="affirm"></div>
+
+<div class="screen hidden" id="grid-screen">
+  <div class="grid-screen-header">
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <div class="grid-mode-toggle">
+      <button class="gmt-btn active" id="gmt-factor"><svg viewBox="0 0 32 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="gmtFcomp" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e6e8ec"/><stop offset="35%" stop-color="#b8bac2"/><stop offset="70%" stop-color="#d0d2da"/><stop offset="100%" stop-color="#9a9ca4"/></linearGradient>
+          <linearGradient id="gmtFsh" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.5)"/><stop offset="100%" stop-color="rgba(0,0,0,0.12)"/></linearGradient>
+        </defs>
+        <g transform="translate(2,1)">
+          <rect x="3" y="16" width="10" height="9" rx="0.8" fill="url(#gmtFcomp)" stroke="rgba(0,0,0,0.15)" stroke-width="0.6"/>
+          <rect x="3" y="16" width="10" height="9" rx="0.8" fill="url(#gmtFsh)" opacity="0.35"/>
+          <g transform="rotate(-30 3 16)">
+            <rect x="3" y="5" width="10" height="11" rx="0.8" fill="url(#gmtFcomp)" stroke="rgba(0,0,0,0.18)" stroke-width="0.6"/>
+            <rect x="3" y="5" width="10" height="11" rx="0.8" fill="url(#gmtFsh)" opacity="0.4"/>
+          </g>
+          <path d="M6 24 L4 26.5" stroke="#86868B" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M6 24 L7.5 26.5" stroke="#86868B" stroke-width="1.4" stroke-linecap="round"/>
+        </g>
+      </svg></button>
+      <button class="gmt-btn" id="gmt-build"><svg viewBox="0 0 32 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="gmtPprime" x1="0.5" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#fff2d8"/><stop offset="40%" stop-color="#f0a040"/><stop offset="100%" stop-color="#c06018"/></linearGradient>
+          <radialGradient id="gmtPglow" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="rgba(255,240,200,0.9)"/><stop offset="55%" stop-color="rgba(255,140,40,0.35)"/><stop offset="100%" stop-color="rgba(40,20,10,0.5)"/></radialGradient>
+        </defs>
+        <g transform="translate(14,1)">
+          <rect x="3" y="16" width="10" height="9" rx="0.8" fill="#1a1010" stroke="rgba(255,160,80,0.35)" stroke-width="0.6"/>
+          <rect x="3" y="16" width="10" height="9" rx="0.8" fill="url(#gmtPglow)" opacity="0.5"/>
+          <g transform="translate(8,16) rotate(-60)">
+            <rect x="-5" y="-11" width="10" height="11" rx="0.8" fill="url(#gmtPprime)" stroke="rgba(255,200,120,0.5)" stroke-width="0.65"/>
+            <rect x="-5" y="-11" width="10" height="4" rx="0.5" fill="rgba(255,255,255,0.25)" opacity="0.7"/>
+          </g>
+          <path d="M10 6 L8 3.5" stroke="#86868B" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M10 6 L11.5 3.5" stroke="#86868B" stroke-width="1.4" stroke-linecap="round"/>
+        </g>
+      </svg></button>
+    </div>
+  </div>
+  <div class="num-grid" id="num-grid"></div>
+  <div class="dex-container">
+    <div class="dex-viewport" id="grid-vp"></div>
+  </div>
+  <footer class="app-footer">
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+</div>
+
+<div class="screen" id="altar-screen">
+  <div class="fixed-logo" onclick="goToGrid()">Math Things<span class="logo-bead"></span></div>
+  <div class="altar-header">
+    <div class="altar-numeral" id="altar-numeral">12</div>
+  </div>
+  <div class="altar" id="fa">
+    <canvas class="three-canvas" id="three-canvas-fa"></canvas>
+    <div class="seg-zoom" id="fz"><div class="seg-stage" id="fo"></div></div>
+    <div class="soapstone-altar"></div>
+    <div class="f-tray" id="ft"></div>
+  </div>
+  <div class="dex-container" id="altar-dex-container">
+    <div class="dex-viewport" id="altar-dex-vp"></div>
+  </div>
+  <footer class="app-footer altar-screen-footer">
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+</div>
+
+<div class="screen hidden" id="build-screen">
+  <div class="fixed-logo" onclick="goToGrid()">Math Things<span class="logo-bead"></span></div>
+  <div class="altar-header">
+    <div class="altar-numeral" id="build-numeral">2</div>
+  </div>
+  <div class="altar" id="ba">
+    <canvas class="three-canvas" id="three-canvas-ba"></canvas>
+    <div class="ceil-line" id="bceil"></div>
+    <div class="seg-zoom" id="bz"><div class="seg-stage" id="bo"></div></div>
+    <div class="soapstone-altar"></div>
+    <div class="f-tray" id="bt"></div>
+  </div>
+  <div class="build-ledger" id="bl"></div>
+  <div class="dex-container" id="build-dex-container">
+    <div class="dex-viewport" id="build-dex-vp"></div>
+  </div>
+  <footer class="app-footer altar-screen-footer">
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+<script>
+console.log('Three.js Loaded:', !!window.THREE);
+const isPrime = n => { if(n<2)return false; for(let i=2;i*i<=n;i++) if(n%i===0)return false; return true; };
+const allFactors = n => { const f=[1]; for(let i=2;i<=n;i++) if(n%i===0)f.push(i); return f; };
+const properFactors = n => { const f=[]; for(let i=2;i<n;i++) if(n%i===0)f.push(i); return f; };
+const haptic = p => { try{navigator.vibrate?.(p)}catch(e){} };
+
+const S = {
+  primeDex: new Set(), maxLevel: 1,
+  fDone: new Set([1]), fNum: null, fDisc: new Set(),
+  fDiscMap: {},
+  segs: [], unitH: 44, unitW: 44, folding: false,
+  foldDir: -1, segSize: 0,
+  newPrimes: new Set(), handleTimer: null, hingeIdleTimer: null, handleIndex: 0, handleInverted: false,
+  gridMode: 'factor', bDone: new Set([1]), bNum: null, bStack: [], bProduct: 0, bUnitH: 44, bUnitW: 44, bAnimating: false,
+  fZoom: 1, bZoom: 1, currentFoldZoom: 1, refAltarH: 0,
+  trayIdentityReady: true,
+  _deferredRoomCelebration: null,
+};
+
+const THREE_WORLD = {
+  rooms: {},
+  brushedMetalMat: null,
+  concreteMat: null,
+  primeMat: null,
+  unityMat: null,
+  clock: null,
+  resizeBound: false,
+};
+
+const WORLD_UNIT = 80;
+const FOREGROUND_Z = 1800;
+const TRAY_BLOCK_Z = 1900;
+const PEDESTAL_Z = -600;
+const OBELISK_Z = 200;
+let SEG_STAGE_BOTTOM = 214; /* Default — overwritten by calibrateOverlayPositions */
+const OBELISK_X = 0;
+const ALTAR_X = 0;
+
+function getObeliskBase(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  return (room && room._obeliskBasePx) ? room._obeliskBasePx : SEG_STAGE_BOTTOM;
+}
+function getTrayBase(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  return (room && room._trayBottomPx) ? (room._trayBottomPx + 8) : 132;
+}
+
+function createConcreteTexture(lightHex = '#666964', darkHex = '#3f413e') {
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, lightHex);
+  grad.addColorStop(0.5, darkHex);
+  grad.addColorStop(1, lightHex);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  /* Dense aggregate noise — concrete speckle */
+  for (let i = 0; i < 18000; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const a = Math.random() * 0.18;
+    const gray = 30 + Math.floor(Math.random() * 100);
+    ctx.fillStyle = `rgba(${gray},${gray},${gray},${a})`;
+    const s = 1 + Math.random() * 3;
+    ctx.fillRect(x, y, s, s);
+  }
+  /* Larger aggregate patches */
+  for (let i = 0; i < 200; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const a = Math.random() * 0.08;
+    const gray = 50 + Math.floor(Math.random() * 60);
+    ctx.fillStyle = `rgba(${gray},${gray},${gray},${a})`;
+    const s = 4 + Math.random() * 12;
+    ctx.fillRect(x, y, s, s * (0.3 + Math.random() * 0.7));
+  }
+
+  /* Formwork seams — horizontal and vertical */
+  ctx.strokeStyle = 'rgba(12,12,12,0.18)';
+  ctx.lineWidth = 2.5;
+  for (let x = 48; x < size; x += 64 + Math.random() * 20) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + (Math.random() * 8 - 4), size);
+    ctx.stroke();
+  }
+  for (let y = 56; y < size; y += 72 + Math.random() * 20) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(size, y + (Math.random() * 8 - 4));
+    ctx.stroke();
+  }
+  /* Subtle tie-hole marks */
+  ctx.fillStyle = 'rgba(20,20,20,0.12)';
+  for (let x = 80; x < size; x += 128) {
+    for (let y = 90; y < size; y += 140) {
+      ctx.beginPath();
+      ctx.arc(x + Math.random()*6, y + Math.random()*6, 3 + Math.random()*2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(4, 4);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function ensureThreeMaterials() {
+  if (THREE_WORLD.brushedMetalMat && THREE_WORLD.obeliskMetalMat && THREE_WORLD.concreteMat && THREE_WORLD.primeMat && THREE_WORLD.unityMat) return;
+  THREE_WORLD.clock = new THREE.Clock();
+  if (!THREE_WORLD.concreteTex) {
+    THREE_WORLD.concreteTex = createConcreteTexture('#7a7d78', '#4e504c');
+    THREE_WORLD.concreteTexBump = createConcreteTexture('#9a9e98', '#5c5f5a');
+    THREE_WORLD.concreteTexBump.repeat.copy(THREE_WORLD.concreteTex.repeat);
+  }
+  THREE_WORLD.brushedMetalMat = new THREE.MeshStandardMaterial({
+    color: 0x99a0aa, // Brighter aluminum base
+    metalness: 0.45, // Let diffuse light illuminate it
+    roughness: 0.35, // Catch broader specular highlights
+    emissive: 0x1c2129,
+    emissiveIntensity: 0.38,
+  });
+  THREE_WORLD.obeliskMetalMat = new THREE.MeshStandardMaterial({
+    color: 0xc4cad3,
+    metalness: 0.22,
+    roughness: 0.42,
+    emissive: 0x343c48,
+    emissiveIntensity: 0.85,
+  });
+  THREE_WORLD.concreteMat = new THREE.MeshStandardMaterial({
+    color: 0x6e706b,
+    metalness: 0.02,
+    roughness: 0.96,
+    emissive: 0x0c0d0c,
+    emissiveIntensity: 0.12,
+    map: THREE_WORLD.concreteTex,
+    bumpMap: THREE_WORLD.concreteTexBump,
+    bumpScale: 1.4,
+  });
+  THREE_WORLD.primeMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uGlow: { value: 2.8 },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormalW;
+      void main() {
+        vUv = uv;
+        vNormalW = normalize(mat3(modelMatrix) * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float uGlow;
+      varying vec2 vUv;
+      varying vec3 vNormalW;
+
+      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
+      vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+      float snoise(vec3 v) {
+        const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+        vec3 i = floor(v + dot(v, C.yyy));
+        vec3 x0 = v - i + dot(i, C.xxx);
+        vec3 g = step(x0.yzx, x0.xyz);
+        vec3 l = 1.0 - g;
+        vec3 i1 = min(g.xyz, l.zxy);
+        vec3 i2 = max(g.xyz, l.zxy);
+        vec3 x1 = x0 - i1 + C.xxx;
+        vec3 x2 = x0 - i2 + C.yyy;
+        vec3 x3 = x0 - D.yyy;
+        i = mod289(i);
+        vec4 p = permute(permute(permute(
+          i.z + vec4(0.0, i1.z, i2.z, 1.0))
+          + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+          + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+        float n_ = 0.142857142857;
+        vec3 ns = n_ * D.wyz - D.xzx;
+        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+        vec4 x_ = floor(j * ns.z);
+        vec4 y_ = floor(j - 7.0 * x_);
+        vec4 x = x_ * ns.x + ns.yyyy;
+        vec4 y = y_ * ns.x + ns.yyyy;
+        vec4 h = 1.0 - abs(x) - abs(y);
+        vec4 b0 = vec4(x.xy, y.xy);
+        vec4 b1 = vec4(x.zw, y.zw);
+        vec4 s0 = floor(b0) * 2.0 + 1.0;
+        vec4 s1 = floor(b1) * 2.0 + 1.0;
+        vec4 sh = -step(h, vec4(0.0));
+        vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+        vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+        vec3 p0 = vec3(a0.xy, h.x);
+        vec3 p1 = vec3(a0.zw, h.y);
+        vec3 p2 = vec3(a1.xy, h.z);
+        vec3 p3 = vec3(a1.zw, h.w);
+        vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+        vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+        m = m * m;
+        return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+      }
+      float fbm(vec3 p) {
+        float total = 0.0;
+        float amp = 0.5;
+        for (int i = 0; i < 3; i++) {
+          total += amp * snoise(p);
+          p *= 2.15;
+          amp *= 0.55;
+        }
+        return total;
+      }
+      void main() {
+        vec2 centered = vUv - 0.5;
+        float radius = length(centered * vec2(1.0, 1.45));
+        vec3 p = vec3(vUv.x * 3.6 + uTime * 0.34, vUv.y * 5.2 - uTime * 1.36, uTime * 0.76);
+        float n1 = fbm(p);
+        float n2 = fbm(p * 2.35 + vec3(0.0, uTime * 0.62, uTime * 0.34));
+        float swirl = fbm(vec3(centered * 5.6, uTime * 0.44));
+        float cloud = smoothstep(-0.5, 0.92, n1 * 0.86 + n2 * 0.68 - radius * 0.78 + swirl * 0.26);
+        float coreMask = smoothstep(0.72, 0.08, radius);
+        float rim = smoothstep(0.18, 0.88, radius) * cloud;
+        vec3 deepSpace = vec3(0.03, 0.01, 0.005);
+        vec3 ember = vec3(0.62, 0.14, 0.03);
+        vec3 plasma = vec3(1.0, 0.46, 0.08);
+        vec3 corona = vec3(1.0, 0.76, 0.24);
+        vec3 starlight = vec3(1.0, 0.99, 0.96);
+        vec3 color = mix(deepSpace, ember, smoothstep(0.06, 0.4, cloud));
+        color = mix(color, plasma, smoothstep(0.26, 0.7, cloud + swirl * 0.16));
+        color = mix(color, corona, smoothstep(0.4, 0.92, rim + coreMask * 0.2));
+        color = mix(color, starlight, coreMask * 0.62);
+        float fresnel = pow(1.0 - abs(dot(normalize(vNormalW), vec3(0.0, 0.0, 1.0))), 2.1);
+        vec3 glow = (plasma * 1.12 + corona * 1.0) * (0.9 + rim * 2.45) * uGlow;
+        glow += starlight * coreMask * 0.78 * uGlow;
+        glow += ember * (1.0 - cloud) * 0.28;
+        gl_FragColor = vec4(color + glow * 0.42 + fresnel * vec3(0.42, 0.2, 0.08), 1.0);
+      }
+    `,
+  });
+  THREE_WORLD.unityMat = new THREE.MeshStandardMaterial({
+    color: 0xe8ecf4,
+    metalness: 0.6,
+    roughness: 0.18,
+    emissive: 0x8898b0,
+    emissiveIntensity: 0.25,
+  });
+}
+
+function initThreeRoom(roomId, canvasId) {
+  if (!window.THREE) return null;
+  ensureThreeMaterials();
+  const altarEl = document.getElementById(roomId);
+  const canvas = document.getElementById(canvasId);
+  if (!altarEl || !canvas || THREE_WORLD.rooms[roomId]) return THREE_WORLD.rooms[roomId];
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a1b1a);
+  scene.fog = new THREE.FogExp2(0x1a1b1a, 0.00008);
+
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 12000);
+  /* Camera position is set dynamically in resizeThreeRoom to match CSS overlay positions */
+  camera.position.set(0, 360, 2400);
+  camera.lookAt(0, 80, -400);
+
+  const root = new THREE.Group();
+  const stageGroup = new THREE.Group();
+  const overlayGroup = new THREE.Group();
+  scene.add(root);
+  scene.add(stageGroup);
+  scene.add(overlayGroup);
+
+  /* ═══ LIGHTING: dim-but-visible room + hero obelisk spotlight + lit altar ═══ */
+
+  /* Ambient: enough to see all room geometry — conference room during a presentation */
+  const ambient = new THREE.AmbientLight(0xd8dad6, 0.85);
+  scene.add(ambient);
+
+  /* Hemisphere: sky=cool concrete ceiling, ground=warm floor bounce */
+  const hemi = new THREE.HemisphereLight(0xc0c4c0, 0x484640, 0.7);
+  scene.add(hemi);
+
+  /* === ROOM FILL — see the walls, corners, ceiling clearly === */
+  
+  /* Left wall wash — shows wall texture */
+  const leftWash = new THREE.SpotLight(0xe8e8e4, 3200, 6000, Math.PI / 3.5, 0.7, 1.1);
+  leftWash.position.set(-600, 1200, 200);
+  leftWash.target.position.set(-2000, 400, -200);
+  leftWash.castShadow = false;
+  scene.add(leftWash, leftWash.target);
+
+  /* Center back wall wash — reveals the back wall */
+  const centerWash = new THREE.SpotLight(0xf0f0ec, 4000, 6000, Math.PI / 4, 0.6, 1.1);
+  centerWash.position.set(0, 1500, -400);
+  centerWash.target.position.set(0, 400, -1500);
+  centerWash.castShadow = false;
+  scene.add(centerWash, centerWash.target);
+
+  /* Right wall wash */
+  const rightWash = new THREE.SpotLight(0xe8e8e4, 3200, 6000, Math.PI / 3.5, 0.7, 1.1);
+  rightWash.position.set(600, 1200, 200);
+  rightWash.target.position.set(2000, 400, -200);
+  rightWash.castShadow = false;
+  scene.add(rightWash, rightWash.target);
+
+  /* Floor grazer — low angle across the full floor, reveals texture everywhere */
+  const floorGraze = new THREE.SpotLight(0xd0d0cc, 2400, 6000, Math.PI / 2.5, 0.9, 1.2);
+  floorGraze.position.set(0, 30, 2400);
+  floorGraze.target.position.set(0, -100, -600);
+  floorGraze.castShadow = false;
+  scene.add(floorGraze, floorGraze.target);
+
+  /* Ceiling bounce — overhead fill */
+  const ceilFill = new THREE.PointLight(0xc8cac6, 500, 6000, 1.2);
+  ceilFill.position.set(0, 1700, 200);
+  scene.add(ceilFill);
+
+  /* Corner fills — prevent any pitch-black corners */
+  const leftSpot = new THREE.PointLight(0xc8cac6, 400, 5000, 1.2);
+  leftSpot.position.set(-2000, 600, 0);
+  scene.add(leftSpot);
+
+  const rightSpot = new THREE.PointLight(0xc8cac6, 400, 5000, 1.2);
+  rightSpot.position.set(2000, 600, 0);
+  scene.add(rightSpot);
+
+  /* Back corner fills */
+  const backLeft = new THREE.PointLight(0xb0b2ae, 250, 4000, 1.3);
+  backLeft.position.set(-1800, 400, -1200);
+  scene.add(backLeft);
+
+  const backRight = new THREE.PointLight(0xb0b2ae, 250, 4000, 1.3);
+  backRight.position.set(1800, 400, -1200);
+  scene.add(backRight);
+
+  /* General fill — center of room */
+  const fill = new THREE.PointLight(0xd0d2ce, 300, 5000, 1.2);
+  fill.position.set(0, 400, 600);
+  scene.add(fill);
+
+  /* === HERO OBELISK SPOTLIGHT — the star === */
+  /* Dramatic top-down cone creating bright pool on floor disc */
+  const obeliskSpot = new THREE.SpotLight(0xffffff, 16000, 4500, Math.PI / 7.5, 0.18, 0.85);
+  obeliskSpot.position.set(OBELISK_X, 1800, OBELISK_Z + 60);
+  obeliskSpot.castShadow = true;
+  obeliskSpot.shadow.mapSize.set(1024, 1024);
+  obeliskSpot.shadow.radius = 5;
+  obeliskSpot.target.position.set(OBELISK_X, -100, OBELISK_Z);
+  scene.add(obeliskSpot, obeliskSpot.target);
+
+  /* Secondary obelisk front key — catches the face of the pillar */
+  const obeliskFill = new THREE.PointLight(0xeaeae4, 350, 3000, 1.1);
+  obeliskFill.position.set(OBELISK_X, 300, OBELISK_Z + 500);
+  scene.add(obeliskFill);
+
+  /* Obelisk back rim — subtle edge separation */
+  const obeliskRim = new THREE.PointLight(0xa0a2a0, 80, 2400, 1.2);
+  obeliskRim.position.set(OBELISK_X, 200, OBELISK_Z - 400);
+  scene.add(obeliskRim);
+
+  /* Obelisk downlight — INTENSE narrow beam from directly above, creates the floor pool */
+  const obeliskDownSpot = new THREE.SpotLight(0xffffff, 22000, 4000, Math.PI / 12, 0.08, 0.8);
+  obeliskDownSpot.position.set(OBELISK_X, 2000, OBELISK_Z);
+  obeliskDownSpot.castShadow = true;
+  obeliskDownSpot.shadow.mapSize.set(1024, 1024);
+  obeliskDownSpot.shadow.radius = 3;
+  obeliskDownSpot.target.position.set(OBELISK_X, -130, OBELISK_Z);
+  scene.add(obeliskDownSpot, obeliskDownSpot.target);
+
+  /* === ALTAR TABLE LIGHTING — well-lit working surface === */
+  const altarSpot = new THREE.SpotLight(0xf8f8f4, 6000, 3200, Math.PI / 5.5, 0.3, 0.95);
+  altarSpot.position.set(ALTAR_X, 800, FOREGROUND_Z + 300);
+  altarSpot.castShadow = true;
+  altarSpot.shadow.mapSize.set(512, 512);
+  altarSpot.shadow.radius = 8;
+  altarSpot.target.position.set(ALTAR_X, -20, FOREGROUND_Z);
+  scene.add(altarSpot, altarSpot.target);
+
+  const altarPoint = new THREE.PointLight(0xe8eae6, 280, 2200, 1.0);
+  altarPoint.position.set(ALTAR_X, 160, FOREGROUND_Z + 150);
+  scene.add(altarPoint);
+
+  const room = {
+    altarEl, canvas, renderer, scene, camera, root, stageGroup, overlayGroup,
+    blockMap: new Map(), leftSpot, rightSpot, fill, obeliskSpot, obeliskFill, obeliskRim, obeliskDownSpot, altarSpot, altarPoint,
+    leftWash, centerWash, rightWash, floorGraze, ceilFill, backLeft, backRight,
+    focusTarget: new THREE.Vector3(0, 100, 0),
+  };
+  THREE_WORLD.rooms[roomId] = room;
+  rebuildThreeEnvironment(roomId);
+  resizeThreeRoom(roomId);
+
+  if (!THREE_WORLD.resizeBound) {
+    THREE_WORLD.resizeBound = true;
+    window.addEventListener('resize', () => {
+      Object.keys(THREE_WORLD.rooms).forEach(resizeThreeRoom);
+      requestThreeRender();
+    });
+  }
+  requestThreeRender();
+  return room;
+}
+
+function clearThreeGroup(group) {
+  while (group.children.length) {
+    group.remove(group.children[0]);
+  }
+}
+
+function rebuildThreeEnvironment(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  if (!room) return;
+  clearThreeGroup(room.root);
+
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: 0x4a4c48, metalness: 0.01, roughness: 0.96,
+    emissive: 0x080908, emissiveIntensity: 0.08,
+    map: THREE_WORLD.concreteTex,
+    bumpMap: THREE_WORLD.concreteTexBump,
+    bumpScale: 1.2,
+  });
+
+  /* Floor — extends from behind obelisk to past the table */
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(6000, 60, 10000), floorMat);
+  floor.position.set(0, -130, 400);
+  floor.receiveShadow = true;
+  room.root.add(floor);
+
+  /* Back wall — textured concrete */
+  const backWall = new THREE.Mesh(new THREE.PlaneGeometry(6000, 3600), THREE_WORLD.concreteMat);
+  backWall.position.set(0, 1200, -1500);
+  backWall.receiveShadow = true;
+  room.root.add(backWall);
+
+  /* Left side wall */
+  const sideWallMat = THREE_WORLD.concreteMat.clone();
+  const leftWallGeo = new THREE.PlaneGeometry(6000, 3600);
+  const leftWall = new THREE.Mesh(leftWallGeo, sideWallMat);
+  leftWall.position.set(-2400, 1200, 0);
+  leftWall.rotation.y = Math.PI / 2;
+  leftWall.receiveShadow = true;
+  room.root.add(leftWall);
+
+  /* Right side wall */
+  const rightWall = new THREE.Mesh(leftWallGeo.clone(), sideWallMat);
+  rightWall.position.set(2400, 1200, 0);
+  rightWall.rotation.y = -Math.PI / 2;
+  rightWall.receiveShadow = true;
+  room.root.add(rightWall);
+
+  /* Ceiling slab */
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(6200, 80, 6000), THREE_WORLD.concreteMat);
+  ceiling.position.set(0, 1820, 0);
+  ceiling.receiveShadow = true;
+  room.root.add(ceiling);
+
+  /* ═══ ALTAR TABLE — thin shelf, close to camera, "right in front of us" ═══ */
+  const tableTopMat = new THREE.MeshStandardMaterial({
+    color: 0x3a3c38, metalness: 0.03, roughness: 0.94,
+    emissive: 0x0c0d0c, emissiveIntensity: 0.1,
+    map: THREE_WORLD.concreteTex,
+    bumpMap: THREE_WORLD.concreteTexBump,
+    bumpScale: 0.6,
+  });
+  const tableEdgeMat = new THREE.MeshStandardMaterial({
+    color: 0x1e1e1c, metalness: 0.01, roughness: 0.97,
+    map: THREE_WORLD.concreteTex,
+    bumpMap: THREE_WORLD.concreteTexBump,
+    bumpScale: 0.3,
+  });
+
+  /* Table top — thin slab, just wide/deep enough for trinkets */
+  const trayShelf = new THREE.Mesh(new THREE.BoxGeometry(600, 24, 80), tableTopMat);
+  trayShelf.position.set(ALTAR_X, 0, FOREGROUND_Z);
+  trayShelf.castShadow = true;
+  trayShelf.receiveShadow = true;
+  room.root.add(trayShelf);
+
+  /* Table edge/frame — thin dark reveal */
+  const trayEdge = new THREE.Mesh(new THREE.BoxGeometry(616, 36, 92), tableEdgeMat);
+  trayEdge.position.set(ALTAR_X, -8, FOREGROUND_Z + 2);
+  trayEdge.castShadow = true;
+  trayEdge.receiveShadow = true;
+  room.root.add(trayEdge);
+
+  /* Slim center pedestal — bridges from floor (-100) to table bottom (-26) */
+  const pedestalHeight = 74; /* -100 to -26 */
+  const tablePedestal = new THREE.Mesh(new THREE.BoxGeometry(160, pedestalHeight, 70), THREE_WORLD.concreteMat);
+  tablePedestal.position.set(ALTAR_X, -100 + pedestalHeight / 2, FOREGROUND_Z + 4);
+  tablePedestal.castShadow = true;
+  tablePedestal.receiveShadow = true;
+  room.root.add(tablePedestal);
+
+  /* ═══ OBELISK DISC — circular target, spotlight pool center ═══ */
+  const discGeo = new THREE.CylinderGeometry(280, 300, 12, 64);
+  const discMat = new THREE.MeshStandardMaterial({
+    color: 0x606260, metalness: 0.02, roughness: 0.9,
+    emissive: 0x0a0b0a, emissiveIntensity: 0.06,
+    map: THREE_WORLD.concreteTex,
+    bumpMap: THREE_WORLD.concreteTexBump,
+    bumpScale: 0.5,
+  });
+  const disc = new THREE.Mesh(discGeo, discMat);
+  disc.position.set(OBELISK_X, -93, OBELISK_Z);
+  disc.castShadow = false;
+  disc.receiveShadow = true;
+  room.root.add(disc);
+}
+
+function resizeThreeRoom(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  if (!room) return;
+  const w = Math.max(1, room.altarEl.clientWidth);
+  const h = Math.max(1, room.altarEl.clientHeight);
+  room.renderer.setSize(w, h, false);
+  room.camera.aspect = w / h;
+  
+  /* Camera: low, looking slightly down toward the obelisk area */
+  const camY = 200;
+  const camZ = 2400;
+  const lookY = 20;
+  const lookZ = OBELISK_Z * 0.6;
+  
+  room.camera.position.set(0, camY, camZ);
+  room.camera.lookAt(0, lookY, lookZ);
+  room.camera.updateProjectionMatrix();
+  
+  room._camPos = { x: 0, y: camY, z: camZ };
+  room._camLook = { x: 0, y: lookY, z: lookZ };
+  
+  /* ═══ PROJECT 3D → SCREEN to calibrate CSS overlay positions ═══ */
+  /* Obelisk base: project from the floor surface where the disc sits */
+  const obeliskBaseWorld = new THREE.Vector3(OBELISK_X, -100, OBELISK_Z);
+  /* Table top surface: Y=12 (shelf is 24 thick centered at Y=0, so top = 12) */
+  const tableTopWorld = new THREE.Vector3(ALTAR_X, 12, FOREGROUND_Z);
+  /* Table left/right edges for width calculation */
+  const tableLeftWorld = new THREE.Vector3(ALTAR_X - 300, 12, FOREGROUND_Z);
+  const tableRightWorld = new THREE.Vector3(ALTAR_X + 300, 12, FOREGROUND_Z);
+  
+  const obeliskScreen = obeliskBaseWorld.clone().project(room.camera);
+  const tableScreen = tableTopWorld.clone().project(room.camera);
+  const tableLeftScreen = tableLeftWorld.clone().project(room.camera);
+  const tableRightScreen = tableRightWorld.clone().project(room.camera);
+  
+  /* NDC → pixel: NDC y goes -1(bottom) to +1(top), screen y goes 0(top) to h(bottom) */
+  const obeliskScreenY = (1 - obeliskScreen.y) * 0.5 * h;
+  const tableScreenY = (1 - tableScreen.y) * 0.5 * h;
+  
+  /* Table width in screen pixels */
+  const tableLeftPx = (1 + tableLeftScreen.x) * 0.5 * w;
+  const tableRightPx = (1 + tableRightScreen.x) * 0.5 * w;
+  room._tableWidthPx = Math.abs(tableRightPx - tableLeftPx);
+  
+  /* Convert to "bottom" positioning (px from bottom of .altar) */
+  const obeliskBottomPx = h - obeliskScreenY;
+  const tableBottomPx = h - tableScreenY;
+  
+  /* Store calibrated positions */
+  room._obeliskBasePx = Math.max(60, obeliskBottomPx);
+  room._trayBottomPx = Math.max(20, tableBottomPx);
+  
+  updateThreeRoomFocus(roomId);
+  calibrateOverlayPositions(roomId);
+}
+
+/* Dynamically position CSS overlays to match 3D projection */
+function calibrateOverlayPositions(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  if (!room) return;
+  
+  const obBase = room._obeliskBasePx || 214;
+  const trayBase = room._trayBottomPx || 132;
+  const tableW = room._tableWidthPx || 600;
+  
+  console.log(`[calibrate ${roomId}] obeliskBase=${obBase.toFixed(1)}px, trayBase=${trayBase.toFixed(1)}px, tableW=${tableW.toFixed(0)}px`);
+  
+  /* Calculate trinket size: fit 16 across the table with small gaps */
+  const maxTrinkets = 16;
+  const trayGap = 4;
+  const trayPad = 8;
+  const availableW = tableW - trayPad * 2;
+  const trinketSize = Math.floor((availableW - (maxTrinkets - 1) * trayGap) / maxTrinkets);
+  const clampedTrinketSize = Math.max(20, Math.min(trinketSize, 52));
+  
+  document.documentElement.style.setProperty('--tray-trinket-size', clampedTrinketSize + 'px');
+  
+  const applyTray = (trayEl) => {
+    if (!trayEl) return;
+    trayEl.style.bottom = trayBase + 'px';
+    trayEl.style.width = tableW + 'px';
+    trayEl.style.maxWidth = tableW + 'px';
+    trayEl.style.gap = trayGap + 'px';
+    trayEl.style.padding = `4px ${trayPad}px`;
+  };
+  
+  if (roomId === 'fa') {
+    const zoomEl = document.getElementById('fz');
+    if (zoomEl) zoomEl.style.bottom = obBase + 'px';
+    applyTray(document.getElementById('ft'));
+  }
+  if (roomId === 'ba') {
+    const zoomEl = document.getElementById('bz');
+    if (zoomEl) zoomEl.style.bottom = obBase + 'px';
+    applyTray(document.getElementById('bt'));
+    const ceil = document.getElementById('bceil');
+    if (ceil && S.bNum) {
+      const ceilPx = S.bNum * S.bUnitH;
+      ceil.style.bottom = `calc(${obBase}px + ${ceilPx * S.bZoom}px)`;
+    }
+  }
+}
+
+function requestThreeRender() {
+  if (THREE_WORLD._rafPending) return;
+  THREE_WORLD._rafPending = true;
+  requestAnimationFrame(threeRenderTick);
+}
+
+/* Continuous animation loop — only runs when prime shader blocks exist on-screen */
+function startThreeAnimLoop() {
+  if (THREE_WORLD._animLoopRunning) return;
+  THREE_WORLD._animLoopRunning = true;
+  const animTick = () => {
+    if (!THREE_WORLD._animLoopRunning) return;
+    threeRenderTick();
+    requestAnimationFrame(animTick);
+  };
+  requestAnimationFrame(animTick);
+}
+function stopThreeAnimLoop() { THREE_WORLD._animLoopRunning = false; }
+
+/* Check if any visible prime-shader blocks exist (need continuous rendering for animation) */
+function needsAnimLoop() {
+  for (const room of Object.values(THREE_WORLD.rooms)) {
+    let found = false;
+    room.stageGroup.traverse(obj => { if (obj.isMesh && obj.material === THREE_WORLD.primeMat) found = true; });
+    if (!found) room.overlayGroup.traverse(obj => { if (obj.isMesh && obj.material === THREE_WORLD.primeMat) found = true; });
+    if (found) return true;
+  }
+  return false;
+}
+
+function threeRenderTick() {
+  THREE_WORLD._rafPending = false;
+  const elapsed = THREE_WORLD.clock ? THREE_WORLD.clock.getElapsedTime() : 0;
+  if (THREE_WORLD.primeMat?.uniforms?.uTime) THREE_WORLD.primeMat.uniforms.uTime.value = elapsed;
+  if (THREE_WORLD.primeMat?.uniforms?.uGlow) {
+    THREE_WORLD.primeMat.uniforms.uGlow.value = 3.5 + Math.sin(Date.now() * 0.005) * 1.5;
+  }
+  Object.values(THREE_WORLD.rooms).forEach(room => {
+    /* Skip rooms whose screen is hidden */
+    const screenEl = room.altarEl?.closest('.screen');
+    if (screenEl && screenEl.classList.contains('hidden')) return;
+
+    /* Use calibrated camera position from resizeThreeRoom */
+    if (room._camPos) {
+      room.camera.position.set(room._camPos.x, room._camPos.y, room._camPos.z);
+      room.camera.lookAt(room._camLook.x, room._camLook.y, room._camLook.z);
+    } else {
+      room.camera.position.set(0, 200, 2400);
+      room.camera.lookAt(0, 20, 120);
+    }
+
+    /* Animate prime block auras/lights in a single combined traverse */
+    const processGroup = (group) => {
+      group.traverse(obj => {
+        if (!obj?.isMesh) return;
+        const primeLight = obj.userData?.primeLight;
+        if (primeLight) primeLight.intensity = 190 + Math.sin(elapsed * 3.6 + obj.position.y * 0.01) * 80;
+        const aura = obj.userData?.auraSprite;
+        if (aura) {
+          const pulse = 1.22 + Math.sin(elapsed * 4.8 + obj.position.y * 0.015) * 0.26;
+          aura.scale.set(
+            Math.max(120, obj.userData.blockWidth * 2.35) * pulse,
+            Math.max(120, Math.min(obj.userData.blockHeight * 1.35, 280)) * pulse,
+            1
+          );
+          aura.material.opacity = 0.94 + Math.sin(elapsed * 4.8 + obj.position.y * 0.015) * 0.18;
+        }
+      });
+    };
+    processGroup(room.stageGroup);
+    processGroup(room.overlayGroup);
+
+    room.renderer.render(room.scene, room.camera);
+  });
+}
+
+function getThreeMaterial(units, forceComposite, useObeliskMetal = false) {
+  if (units === 1 && !forceComposite) return THREE_WORLD.unityMat;
+  if (!forceComposite && isPrime(units)) return THREE_WORLD.primeMat;
+  return useObeliskMetal ? THREE_WORLD.obeliskMetalMat : THREE_WORLD.brushedMetalMat;
+}
+
+function createBlockLabelSprite(text, units, w, h, isPrimeBlock, isUnityBlock) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const fontSize = Math.round(Math.min(260, Math.max(128, 360 / Math.max(1, String(text).length))));
+  ctx.font = `900 ${fontSize}px Lexend, sans-serif`;
+  if (isPrimeBlock) {
+    ctx.fillStyle = '#fffef5';
+    ctx.shadowColor = 'rgba(255,190,80,0.95)';
+    ctx.shadowBlur = 36;
+  } else if (isUnityBlock) {
+    ctx.fillStyle = '#f5f7fa';
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur = 6;
+  } else {
+    ctx.fillStyle = '#f0f0f0';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+  }
+  ctx.fillText(String(text), canvas.width / 2, canvas.height / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 8;
+  texture.needsUpdate = true;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const sprite = new THREE.Sprite(material);
+  const widthScale = Math.max(26, w * 0.78);
+  const heightScale = Math.min(Math.max(28, h * 0.38), 110);
+  sprite.scale.set(widthScale, heightScale, 1);
+  sprite.position.set(0, 0, Math.max(18, w * 0.28));
+  return sprite;
+}
+
+function createPrimeAuraSprite(w, h) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(255,250,242,0.98)');
+  grad.addColorStop(0.18, 'rgba(255,238,204,0.9)');
+  grad.addColorStop(0.38, 'rgba(255,182,88,0.56)');
+  grad.addColorStop(0.62, 'rgba(255,110,26,0.34)');
+  grad.addColorStop(0.84, 'rgba(62,20,8,0.22)');
+  grad.addColorStop(1, 'rgba(8,8,18,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(Math.max(136, w * 2.7), Math.max(132, Math.min(h * 1.55, 320)), 1);
+  sprite.position.set(0, 0, Math.max(22, w * 0.24));
+  return sprite;
+}
+
+function createHingeMesh() {
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(12, 32, 32),
+    THREE_WORLD.brushedMetalMat
+  );
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function attachBlockLabel(mesh, units, w, h, omitNumeral, forceComposite) {
+  if (!mesh || omitNumeral) return;
+  if (mesh.userData.primeLight) {
+    mesh.remove(mesh.userData.primeLight);
+    mesh.userData.primeLight.dispose?.();
+    mesh.userData.primeLight = null;
+  }
+  if (mesh.userData.auraSprite) {
+    mesh.remove(mesh.userData.auraSprite);
+    mesh.userData.auraSprite.material.map?.dispose?.();
+    mesh.userData.auraSprite.material.dispose?.();
+    mesh.userData.auraSprite = null;
+  }
+  if (mesh.userData.labelSprite) {
+    mesh.remove(mesh.userData.labelSprite);
+    mesh.userData.labelSprite.material.map?.dispose?.();
+    mesh.userData.labelSprite.material.dispose?.();
+  }
+  const isUnityBlock = units === 1 && !forceComposite;
+  const isPrimeBlock = !forceComposite && !isUnityBlock && isPrime(units);
+  const sprite = createBlockLabelSprite(units, units, w, h, isPrimeBlock, isUnityBlock);
+  if (!sprite) return;
+  mesh.userData.labelSprite = sprite;
+  mesh.add(sprite);
+  if (isPrimeBlock) {
+    const aura = createPrimeAuraSprite(w, h);
+    if (aura) {
+      mesh.userData.auraSprite = aura;
+      mesh.add(aura);
+    }
+    const primeLight = new THREE.PointLight(0xffb24e, 270, Math.max(640, h * 7.5), 1.08);
+    primeLight.position.set(0, 0, Math.max(34, w * 0.55));
+    mesh.userData.primeLight = primeLight;
+    mesh.add(primeLight);
+  }
+}
+
+function createThreeBlockMesh(units, w, h, forceComposite) {
+  const blockWidth = WORLD_UNIT;
+  const blockHeight = Math.max(WORLD_UNIT, units * WORLD_UNIT);
+  const depth = 60;
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(blockWidth, blockHeight, depth),
+    getThreeMaterial(units, forceComposite)
+  );
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.userData.units = units;
+  mesh.userData.depth = depth;
+  mesh.userData.blockWidth = blockWidth;
+  mesh.userData.blockHeight = blockHeight;
+  mesh.userData.forceComposite = !!forceComposite;
+  return mesh;
+}
+
+function getThreeBounds(room) {
+  const box = new THREE.Box3();
+  const hasStage = room.stageGroup.children.length > 0;
+  const hasOverlay = room.overlayGroup.children.length > 0;
+  if (hasStage) box.expandByObject(room.stageGroup);
+  if (hasOverlay) box.expandByObject(room.overlayGroup);
+  if (!hasStage && !hasOverlay) {
+    box.min.set(-120, -180, -60);
+    box.max.set(120, 220, 120);
+  }
+  return box;
+}
+
+function updateThreeRoomFocus(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  if (!room || room._focusSet) return;
+  room._focusSet = true;
+  room.focusTarget.set(OBELISK_X, 150, OBELISK_Z);
+  room.leftSpot.position.set(-1600, 400, 400);
+  room.rightSpot.position.set(1600, 400, 400);
+  room.obeliskSpot.target.position.set(OBELISK_X, -100, OBELISK_Z);
+  room.obeliskDownSpot.target.position.set(OBELISK_X, -130, OBELISK_Z);
+  room.obeliskSpot.target.updateMatrixWorld();
+  room.obeliskDownSpot.target.updateMatrixWorld();
+  room.altarSpot.target.position.set(ALTAR_X, -20, FOREGROUND_Z);
+  room.altarSpot.target.updateMatrixWorld();
+}
+
+function getRoomIdForElement(el) {
+  const tray = el?.closest('#ft');
+  if (tray) return 'fa';
+  const buildTray = el?.closest('#bt');
+  if (buildTray) return 'ba';
+  const altar = el?.closest('.altar');
+  return altar?.id || null;
+}
+
+function worldFromRect(room, rect) {
+  const altarRect = room.altarEl.getBoundingClientRect();
+  return {
+    x: rect.left - altarRect.left + rect.width / 2 - altarRect.width / 2,
+    y: altarRect.height / 2 - (rect.top - altarRect.top + rect.height / 2),
+  };
+}
+
+function getDirectBlockPosition(el) {
+  const roomId = getRoomIdForElement(el);
+  const trayEl = el?.closest('#ft, #bt');
+  const units = parseInt(el?.dataset?.units || '1', 10) || 1;
+  if (trayEl) {
+    const trayBlocks = Array.from(trayEl.children).filter(child => child._mesh);
+    const index = Math.max(0, trayBlocks.indexOf(el));
+    const spread = 105;
+    const centeredX = (index - (trayBlocks.length - 1) / 2) * spread;
+    return { x: centeredX, y: 12 + WORLD_UNIT / 2, z: TRAY_BLOCK_Z };
+  }
+  if (roomId === 'fa') {
+    const stageEl = document.getElementById('fo');
+    const stageBlocks = stageEl ? Array.from(stageEl.children).filter(child => child.classList?.contains('blk')) : [];
+    const index = Math.max(0, stageBlocks.indexOf(el));
+    let cumulativeUnits = 0;
+    for (let i = 0; i < index; i++) cumulativeUnits += parseInt(stageBlocks[i]?.dataset?.units || '0', 10) || 0;
+    return { x: 0, y: -100 + cumulativeUnits * WORLD_UNIT + units * (WORLD_UNIT / 2), z: OBELISK_Z };
+  }
+  if (roomId === 'ba') {
+    const stageEl = document.getElementById('bo');
+    const stageBlocks = stageEl ? Array.from(stageEl.children).filter(child => child.classList?.contains('blk')) : [];
+    const index = Math.max(0, stageBlocks.indexOf(el));
+    let cumulativeUnits = 0;
+    for (let i = 0; i < index; i++) cumulativeUnits += parseInt(stageBlocks[i]?.dataset?.units || '0', 10) || 0;
+    return { x: 0, y: -100 + cumulativeUnits * WORLD_UNIT + units * (WORLD_UNIT / 2), z: OBELISK_Z };
+  }
+  return { x: 0, y: 20 + units * (WORLD_UNIT / 2), z: TRAY_BLOCK_Z };
+}
+
+function syncThreeBlock(el) {
+  const roomId = getRoomIdForElement(el);
+  if (!roomId) return;
+  const room = initThreeRoom(roomId, `three-canvas-${roomId}`);
+  const mesh = el?._mesh;
+  if (!room || !mesh) return;
+  const rect = el.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const factorStage = document.getElementById('fo');
+  const foldedFactorStage = !!(factorStage && factorStage.classList.contains('seg-array') && el.closest('#fo'));
+  if (foldedFactorStage) {
+    mesh.visible = false;
+    return;
+  }
+  mesh.visible = true;
+  mesh.scale.set(1, 1, 1);
+  const isTray = !!el.closest('#ft, .f-tray');
+  const isObelisk = !!el.closest('#fo, #bo, .seg-stage, .three-proxy-layer');
+  /* Hide 3D meshes for stage blocks — CSS handles their rendering.
+     Only show 3D for tray blocks (which sit on the 3D shelf) and during animations. */
+  if (isObelisk && !el.dataset.animating) {
+    mesh.visible = false;
+    const targetGroup = room.stageGroup;
+    if (mesh.parent !== targetGroup) targetGroup.add(mesh);
+    return;
+  }
+  const units = parseInt(el.dataset.units || '1', 10) || 1;
+  mesh.material = getThreeMaterial(units, !!mesh.userData.forceComposite, isObelisk);
+  if (!el.dataset.animating) {
+    const pos2d = worldFromRect(room, rect);
+    mesh.position.x = pos2d.x;
+    mesh.position.y = pos2d.y;
+    mesh.position.z = isTray ? TRAY_BLOCK_Z : isObelisk ? OBELISK_Z : mesh.position.z;
+    mesh.rotation.z = parseFloat(el.dataset.rotationZ || '0');
+  }
+  const hzEls = Array.from(el.querySelectorAll('.hz'));
+  mesh.userData.hingeMeshes = mesh.userData.hingeMeshes || [];
+  while (mesh.userData.hingeMeshes.length > hzEls.length) {
+    const hinge = mesh.userData.hingeMeshes.pop();
+    mesh.remove(hinge);
+  }
+  hzEls.forEach((hzEl, index) => {
+    let hinge = mesh.userData.hingeMeshes[index];
+    if (!hinge) {
+      hinge = createHingeMesh();
+      mesh.userData.hingeMeshes[index] = hinge;
+      mesh.add(hinge);
+    }
+    const hingePx = parseFloat(hzEl.style.top || '0');
+    const hingeRatio = units > 0 ? hingePx / (units * S.unitH) : 0;
+    const localY = -mesh.userData.blockHeight / 2 + hingeRatio * mesh.userData.blockHeight;
+    hinge.position.set(
+      -mesh.userData.blockWidth / 2 - 12,
+      localY,
+      mesh.userData.depth / 2 + 8
+    );
+    hinge.visible = !el.closest('#ft, .f-tray');
+  });
+  const targetGroup = el.closest('#ft, .f-tray, .three-proxy-layer') ? room.overlayGroup : room.stageGroup;
+  if (mesh.parent !== targetGroup) targetGroup.add(mesh);
+}
+
+function syncThreeBlocks(rootEl) {
+  if (!rootEl) return;
+  rootEl.querySelectorAll('.blk, #ft .fs').forEach(el => {
+    if (el._mesh) syncThreeBlock(el);
+  });
+  requestThreeRender();
+}
+
+function clearThreeStage(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  if (!room) return;
+  clearThreeGroup(room.stageGroup);
+  room.blockMap.clear();
+  requestThreeRender();
+}
+
+function clearThreeOverlay(roomId) {
+  const room = THREE_WORLD.rooms[roomId];
+  if (!room) return;
+  clearThreeGroup(room.overlayGroup);
+  requestThreeRender();
+}
+
+const OBELISK_IDLE_HINT_MS = 3000;
+
+function clearObeliskIdleHints(){
+  clearTimeout(S.handleTimer); S.handleTimer = null;
+  clearTimeout(S.hingeIdleTimer); S.hingeIdleTimer = null;
+}
+
+function scheduleObeliskIdleHints(){
+  if (!S.fNum || S.folding) return;
+  const stage = document.getElementById('fo');
+  if (!stage) return;
+  const isSolved = S.fDone.has(S.fNum);
+  const numSegs = S.segs.length;
+  clearObeliskIdleHints();
+  if (isSolved) return;
+
+  if (numSegs > 1) {
+    S.handleTimer = setTimeout(() => {
+      S.handleTimer = null;
+      if (S.folding || S.segs.length <= 1 || S.fDone.has(S.fNum)) return;
+      const st = document.getElementById('fo');
+      if (!st) return;
+      const blocks = st.querySelectorAll('.blk');
+      const el = blocks[S.handleIndex];
+      if (el && !el.querySelector('.drag-hint-bar')) {
+        const hint = document.createElement('div');
+        hint.className = 'drag-hint-bar';
+        if (S.handleInverted) {
+          hint.style.top = 'auto';
+          hint.style.bottom = '0';
+          hint.style.borderRadius = '0 0 2px 2px';
+        }
+        el.appendChild(hint);
+      }
+    }, OBELISK_IDLE_HINT_MS);
+  } else if (numSegs === 1 && stage.querySelector('.hz')) {
+    S.hingeIdleTimer = setTimeout(() => {
+      S.hingeIdleTimer = null;
+      if (S.folding || S.segs.length !== 1 || S.fDone.has(S.fNum)) return;
+      const st = document.getElementById('fo');
+      st?.querySelectorAll('.hz').forEach(z => z.classList.add('nudge'));
+    }, OBELISK_IDLE_HINT_MS);
+  }
+}
+
+function bindAltarIdleHintReset(altarEl){
+  if (!altarEl || altarEl._obeliskIdleBound) return;
+  altarEl._obeliskIdleBound = true;
+  altarEl.addEventListener('pointerdown', () => {
+    clearObeliskIdleHints();
+    queueMicrotask(() => scheduleObeliskIdleHints());
+  }, true);
+}
+
+/** Same header celebration as composite solve (affirm + celebFlash + solved). */
+function runAltarRoomSolvedVision(opts){
+  opts = opts || {};
+  const numEl = document.getElementById('altar-numeral');
+  if (!numEl) return;
+  setTimeout(() => {
+    showAffirm();
+    if (opts.wasAlreadySolved) numEl.classList.remove('solved');
+    numEl.classList.add('celebrate');
+    haptic([20, 25, 20, 25, 40]);
+    setTimeout(() => {
+      numEl.classList.remove('celebrate');
+      numEl.classList.add('solved');
+      numEl.onclick = () => goToGrid();
+    }, 1400);
+  }, 300);
+}
+
+function syncCSSUnit() {
+  const rootStyles = getComputedStyle(document.documentElement);
+  const uStr = rootStyles.getPropertyValue('--u').trim().replace('px','');
+  const u = parseInt(uStr) || 44;
+  S.unitH = u; S.unitW = u; S.bUnitH = u; S.bUnitW = u;
+}
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function goToAltar(n){
+  const overlay=document.getElementById('fade-overlay');
+  if (window.THREE) initThreeRoom('fa', 'three-canvas-fa');
+  enterAltar(n);
+  overlay.classList.add('fading');
+  setTimeout(()=>{
+    try {
+      document.getElementById('grid-screen').classList.add('hidden');
+      document.getElementById('build-screen').classList.add('hidden');
+      document.getElementById('altar-screen').classList.remove('hidden');
+    } catch(e) { console.error(e); } 
+    finally { overlay.classList.remove('fading'); resizeThreeRoom('fa'); calibrateOverlayPositions('fa'); requestThreeRender(); }
+  },400);
+}
+
+function goToBuild(n){
+  const overlay=document.getElementById('fade-overlay');
+  if (window.THREE) initThreeRoom('ba', 'three-canvas-ba');
+  enterBuild(n);
+  overlay.classList.add('fading');
+  setTimeout(()=>{
+    try {
+      document.getElementById('grid-screen').classList.add('hidden');
+      document.getElementById('altar-screen').classList.add('hidden');
+      document.getElementById('build-screen').classList.remove('hidden');
+      /* Recalculate layout now that screen is visible and has real dimensions */
+      recalcBuildLayout(n);
+    } catch(e) { console.error(e); } 
+    finally { overlay.classList.remove('fading'); resizeThreeRoom('ba'); calibrateOverlayPositions('ba'); requestThreeRender(); }
+  },400);
+}
+
+function goToGrid(){
+  const overlay=document.getElementById('fade-overlay');
+  overlay.classList.add('fading');
+  stopThreeAnimLoop();
+  setTimeout(()=>{
+    try {
+      document.getElementById('altar-screen').classList.add('hidden');
+      document.getElementById('build-screen').classList.add('hidden');
+      document.getElementById('grid-screen').classList.remove('hidden');
+      renderGrid();
+      buildDex('grid-vp');
+    } catch(e) { console.error(e); } 
+    finally { overlay.classList.remove('fading'); }
+  },400);
+}
+
+document.getElementById('gmt-factor').addEventListener('click',()=>{
+  S.gridMode='factor';
+  document.getElementById('gmt-factor').classList.add('active');
+  document.getElementById('gmt-build').classList.remove('active');
+  renderGrid();
+});
+document.getElementById('gmt-build').addEventListener('click',()=>{
+  S.gridMode='build';
+  document.getElementById('gmt-build').classList.add('active');
+  document.getElementById('gmt-factor').classList.remove('active');
+  renderGrid();
+});
+
+// ════════════════════════════════════════
+// FACTOR ALTAR
+// ════════════════════════════════════════
+function enterAltar(n) {
+  syncCSSUnit();
+  if (window.THREE) {
+    initThreeRoom('fa', 'three-canvas-fa');
+    clearThreeOverlay('fa');
+  }
+  S.fNum = n; S.segSize = 0; S.handleIndex = 0; S.handleInverted = false;
+  S.fDisc = S.fDiscMap[n] ? new Set(S.fDiscMap[n]) : new Set([1,n]);
+  S.trayIdentityReady = n === 1; /* primes: defer until after grow animation */
+  S._deferredRoomCelebration = null;
+  const numEl = document.getElementById('altar-numeral');
+  numEl.textContent = n;
+  numEl.classList.remove('solved','celebrate');
+  
+  const presolvedOnEnter = (n===1 || isPrime(n));
+  if(presolvedOnEnter) S.fDone.add(n);
+  const isSolved = S.fDone.has(n);
+  if(isSolved) numEl.classList.add('solved');
+  numEl.onclick = isSolved ? () => goToGrid() : null;
+  
+  const altar = document.getElementById('fa');
+  bindAltarIdleHintReset(document.getElementById('altar-screen'));
+  /* Available height = from obelisk base to top of altar area, minus some header margin */
+  const obBasePx = getObeliskBase('fa');
+  const altarH = altar.clientHeight;
+  let safeAltarH = obBasePx - 30; /* 30px margin from top of altar */
+  if (safeAltarH <= 0) safeAltarH = altarH * 0.5; 
+  S.refAltarH = safeAltarH; 
+  
+  const neededHeight = n * S.unitH;
+  S.fZoom = neededHeight > S.refAltarH ? (S.refAltarH / neededHeight) : 1;
+  S.segs = [{units:n}];
+  buildDex('altar-dex-vp');
+  renderFT();
+
+  growFromUnits(n, () => {
+    if(isPrime(n)){
+      const isNew = !S.primeDex.has(n);
+      if(isNew) {
+          renderSegs();
+          launchTrinketDrop(n, 1, () => {
+            S.trayIdentityReady = true;
+            renderFT();
+            runAltarRoomSolvedVision({ wasAlreadySolved: true });
+          });
+      } else {
+          S.trayIdentityReady = true;
+          renderSegs(); renderFT();
+          runAltarRoomSolvedVision({ wasAlreadySolved: true });
+      }
+    } else {
+      if (n > 1) S.trayIdentityReady = true;
+      renderSegs(); renderFT();
+    }
+  });
+}
+
+function growFromUnits(n, onComplete) {
+  const stage = document.getElementById('fo');
+  stage.innerHTML = '';
+  clearThreeStage('fa');
+  stage.style.visibility = 'visible';
+  stage.style.marginLeft = `${-S.unitW/2}px`;
+  const zoomEl = document.getElementById('fz');
+  zoomEl.style.bottom = `${getObeliskBase("fa")}px`;
+  zoomEl.style.transition = 'none';
+  zoomEl.style.transform = `translateX(0) scale(${S.fZoom})`;
+  S.currentFoldZoom = S.fZoom;
+  
+  const uH = S.unitH, uW = S.unitW;
+  const blocks = [];
+  
+  for(let i=0; i<n; i++) {
+    const blk = makeBlock(1, uW, uH, false, false);
+    applyMirrorReflectY(blk, i, n);
+    blk.style.position = 'absolute';
+    blk.style.bottom = `${i * uH}px`;
+    blk.style.left = '0';
+    blk.style.transform = 'scale(0)';
+    stage.appendChild(blk);
+    blocks.push(blk);
+    syncThreeBlock(blk);
+  }
+  
+  const room = THREE_WORLD.rooms.fa;
+  const tl = gsap.timeline({
+    onStart: () => haptic(15),
+    onComplete: () => {
+      blocks.forEach(blk => delete blk.dataset.animating);
+      const isP = isPrime(n);
+      const flash = document.createElement('div');
+      flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${n*uH}px; z-index:100; opacity:0; border-radius:4px; pointer-events:none;`;
+      if(isP) {
+        flash.style.background = '#FF8C00';
+        flash.style.boxShadow = '0 0 60px 20px rgba(255, 215, 0, 0.8)';
+      } else {
+        flash.style.background = '#ffffff';
+        flash.style.boxShadow = '0 0 50px 20px rgba(255,255,255,0.9)';
+      }
+      stage.appendChild(flash);
+      
+      gsap.to(flash, {
+        opacity: 1, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut",
+        onStart: () => haptic([40, 60]),
+        onComplete: () => { flash.remove(); onComplete(); }
+      });
+    }
+  });
+  blocks.forEach((blk, i) => {
+    const mesh = blk._mesh;
+    /* Don't show 3D mesh during grow — CSS blocks handle the animation visual.
+       The 3D mesh at OBELISK_Z projects at a different scale than the CSS overlay. */
+    mesh.visible = false;
+    
+    tl.to(blk, { scale: 1, duration: 0.6, ease: "back.out(1.5)" }, i * 0.2);
+  });
+}
+
+function showAffirm(){const e=document.getElementById('affirm');e.classList.add('show');haptic([20,25,20,25,40]);setTimeout(()=>e.classList.remove('show'),350);}
+
+function calcFoldZoom(numPieces,segUnits,foldDir){
+  const segW = S.unitW + 3;
+  const totalFrameW = 2 * numPieces * segW;
+  const altarW = document.getElementById('fa').clientWidth;
+  const segH = segUnits * S.unitH;
+  const altarH = S.refAltarH;
+  const zoomW = altarW * 0.8 / totalFrameW;
+  const zoomH = altarH / segH;
+  return Math.min(zoomW, zoomH, S.fZoom); 
+}
+
+function makeBlock(units, w, h, forceComposite=false, omitNumeral=false){
+  const isMirror = units === 1 && !forceComposite;
+  const p = !forceComposite && !isMirror && isPrime(units);
+  const el = document.createElement('div');
+  el.className = 'blk ' + (isMirror ? 'blk-m mirror-cube' : p ? 'blk-p' : 'blk-c');
+  el.style.width = `var(--u)`;
+  el.style.height = `calc(var(--u) * ${units})`;
+  el.dataset.units = units;
+  el._mesh = createThreeBlockMesh(units, w, h, forceComposite);
+  el._meshBase = { w: Math.max(18, w), h: Math.max(18, h) };
+  attachBlockLabel(el._mesh, units, w, h, omitNumeral, forceComposite);
+  el._syncMesh = () => { syncThreeBlock(el); requestThreeRender(); };
+  requestAnimationFrame(el._syncMesh);
+  if(omitNumeral) return el;
+  
+  if(isMirror) {
+    const num = document.createElement('div'); num.className = 'n-mirror'; num.textContent = '1';
+    num.style.fontSize = Math.min(w*0.55, h*0.4, 34)+'px'; el.appendChild(num);
+  } else if(p) {
+    const num = document.createElement('div'); num.className = 'n-glow'; num.textContent = units;
+    num.style.fontSize = Math.min(w*0.6, h*0.45, 38)+'px'; el.appendChild(num);
+  } else {
+    const num = document.createElement('div'); num.className = 'n-stamp'; num.textContent = units;
+    num.style.fontSize = Math.min(w*0.55, h*0.4, 34)+'px'; el.appendChild(num);
+  }
+  return el;
+}
+
+function makeAnimBlock(units, w, h){
+  const el = document.createElement('div');
+  el.className = 'blk blk-c anim-block';
+  el.style.width = `var(--u)`;
+  el.style.height = `calc(var(--u) * ${units})`;
+  el.dataset.units = units;
+  return el;
+}
+
+/** Vertical stack of mirror "1" cells: shift shared tall-room reflection (see .mirror-cube background-size). */
+function applyMirrorReflectY(el, indexInStack, stackTotal){
+  if (!el || !el.classList.contains('mirror-cube')) return;
+  if (!stackTotal || stackTotal <= 1) el.style.setProperty('--reflect-y', '52%');
+  else el.style.setProperty('--reflect-y', `${100 - (indexInStack / (stackTotal - 1)) * 100}%`);
+}
+
+function buildDex(vpId='altar-dex-vp'){
+  const vp=document.getElementById(vpId);
+  if(!vp)return;
+  vp.innerHTML='';
+  for(let i=1;i<=144;i++){
+    const slot=document.createElement('div');
+    slot.className='dex-slot';
+    slot.dataset.n=i;
+    const wrap=document.createElement('div'); wrap.className='dex-trinket-wrap';
+    if(i===1){
+      slot.classList.add('has-prime');
+      const mir=document.createElement('div'); mir.className='dex-mirror mirror-cube';
+      const num=document.createElement('div'); num.className='n-mirror'; num.textContent='1';
+      mir.appendChild(num); wrap.appendChild(mir);
+    } else if(isPrime(i)){
+      if(S.primeDex.has(i)){
+        slot.classList.add('has-prime');
+        const t=document.createElement('div');
+        t.className='dex-trinket';
+        const num=document.createElement('div'); num.className='dt-num'; num.textContent=i;
+        t.appendChild(num); wrap.appendChild(t);
+      } else {
+        slot.classList.add('locked');
+      }
+    }
+    slot.appendChild(wrap);
+    if (!slot.classList.contains('locked')) {
+      const lbl=document.createElement('div'); lbl.className='dex-num'; lbl.textContent=i;
+      slot.appendChild(lbl);
+    }
+    vp.appendChild(slot);
+  }
+  S.newPrimes.clear();
+  vp.scrollLeft=0;
+  if(!vp._scrollBound){
+    vp._scrollBound=true;
+    vp.addEventListener('scroll',()=>{if(vp.scrollLeft<0)vp.scrollLeft=0;},{passive:true});
+  }
+}
+
+function scrollDexToSlot(n, vpId, cb){
+  const vp=document.getElementById(vpId);
+  const container=vp?.closest('.dex-container');
+  if(!vp||!container){cb&&cb();return;}
+  const slotW=46 + 10; 
+  const targetScroll=(n)*slotW - container.clientWidth/2 + slotW/2;
+  vp.scrollTo({left:Math.max(0,targetScroll),behavior:'smooth'});
+  setTimeout(()=>{cb&&cb();},500);
+}
+
+// ════════════════════════════════════════
+// THE TWIN CEREMONY
+// ════════════════════════════════════════
+function flushDeferredRoomCelebration(){
+  const fn = S._deferredRoomCelebration;
+  S._deferredRoomCelebration = null;
+  if (typeof fn === 'function') fn();
+}
+
+function launchTrinketDrop(primeN, segCount, onDone){
+  const vpId = S.gridMode === 'build' ? 'build-dex-vp' : 'altar-dex-vp';
+  const stage = document.getElementById(S.gridMode === 'build' ? 'bo' : 'fo');
+  const vp = document.getElementById(vpId);
+  if(!stage||!vp){ if(typeof onDone==='function') onDone(); return; }
+
+  const segEls=Array.from(stage.querySelectorAll('.blk'));
+  let srcEl=null;
+  if(segCount<=1){
+    srcEl=segEls[0];
+  } else if(segCount%2===1){
+    srcEl=segEls[Math.floor(segCount/2)];
+  } else {
+    srcEl=segEls[segCount/2-1];
+  }
+  if(!srcEl){ if(typeof onDone==='function') onDone(); return; }
+
+  // 1. Ignition (Main Obelisk)
+  if (srcEl && !srcEl.classList.contains('blk-p')) {
+      srcEl.classList.remove('blk-c');
+      srcEl.classList.add('blk-p');
+      const oldStamp = srcEl.querySelector('.n-stamp');
+      if (oldStamp) {
+          oldStamp.className = 'n-glow';
+      }
+  }
+
+  // 2. The Twin Emerges
+  const srcRect=srcEl.getBoundingClientRect();
+  const srcW=srcRect.width;
+  const srcH=srcRect.height;
+  const srcCX=srcRect.left+srcW/2;
+  const srcCY=srcRect.top+srcH/2;
+
+  const tw=36;
+  const th=36;
+
+  const clone=document.createElement('div');
+  clone.style.cssText=`position:fixed;z-index:9000;pointer-events:none;width:${srcW}px;height:${srcH}px;left:${srcRect.left}px;top:${srcRect.top}px;transform-origin:center center;border-radius:4px;overflow:visible;background:radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 18%, transparent 30%), radial-gradient(circle at 50% 50%, rgba(255,244,214,0.12) 0%, rgba(255,214,122,0.14) 18%, rgba(222,116,255,0.12) 40%, rgba(112,178,255,0.1) 58%, rgba(12,10,34,0.18) 72%, rgba(2,2,10,0.98) 100%);border:1px solid rgba(190,210,255,0.18);box-shadow:0 0 16px rgba(120,180,255,0.16),0 0 32px rgba(255,150,220,0.12),0 0 58px rgba(255,236,170,0.08),0 10px 16px rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;`;
+  
+  const numEl=document.createElement('div');
+  const numFontSize=Math.min(srcW*0.6,srcH*0.45,38);
+  numEl.style.cssText=`font-family:'Lexend',sans-serif;font-weight:900;font-size:${numFontSize}px;letter-spacing:-1px;color:#fff;text-shadow:0 0 2px rgba(255,255,255,0.95),0 0 8px rgba(255,255,255,0.9),0 0 16px rgba(170,210,255,0.68),0 0 28px rgba(120,180,255,0.42),0 0 48px rgba(255,120,220,0.28),0 0 72px rgba(80,40,140,0.2);position:relative;z-index:2;`;
+  numEl.textContent=primeN;
+  clone.appendChild(numEl);
+  document.body.appendChild(clone);
+
+  vp.querySelectorAll('.dex-slot[data-n]').forEach(sl=>{
+    sl.classList.toggle('dimmed',parseInt(sl.dataset.n)!==primeN);
+  });
+  scrollDexToSlot(primeN,vpId,null);
+
+  // 4. Compression
+  const compressDur=600;
+  const scaleY=th/srcH;
+  const scaleX=tw/srcW;
+  clone.style.transition=`transform ${compressDur}ms cubic-bezier(0.4,0,0.6,1)`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    clone.style.transform=`scaleX(${scaleX}) scaleY(${scaleY})`;
+  }));
+
+  // 5. The Float
+  setTimeout(()=>{
+    const slot = vp.querySelector(`.dex-slot[data-n="${primeN}"]`);
+    const container = vp.closest('.dex-container');
+    const dexRect = container.getBoundingClientRect();
+    let landX = dexRect.left+dexRect.width/2; 
+    let landY = dexRect.top+dexRect.height/2;
+    if(slot){
+      const slotRect=slot.getBoundingClientRect();
+      landX=slotRect.left+slotRect.width/2;
+      landY=slotRect.top+slotRect.height/2;
+    }
+
+    const dropDur=400;
+    const dx=landX-srcCX;
+    const dy=landY-srcCY;
+    clone.style.transition=`transform ${dropDur}ms cubic-bezier(0.4,0,1,1)`;
+    clone.style.transform=`scaleX(${scaleX}) scaleY(${scaleY}) translate(${dx/scaleX}px,${dy/scaleY}px)`;
+
+    setTimeout(()=>{
+      // 6. Registration
+      haptic([15,10,40]);
+      clone.remove();
+      const targetSlot=vp.querySelector(`.dex-slot[data-n="${primeN}"]`);
+      if(targetSlot){
+        targetSlot.classList.remove('locked');
+        targetSlot.classList.add('has-prime');
+        targetSlot.classList.add('land-flash');
+        const wrap = targetSlot.querySelector('.dex-trinket-wrap');
+        wrap.innerHTML = '';
+        const t = document.createElement('div');
+        t.className = 'dex-trinket';
+        const num = document.createElement('div'); num.className = 'dt-num'; num.textContent = primeN;
+        t.appendChild(num); wrap.appendChild(t);
+      }
+      S.primeDex.add(primeN); // permanent
+      S.newPrimes.add(primeN);
+      buildDex(vpId);
+      setTimeout(()=>scrollDexToSlot(primeN,vpId,null),50);
+      setTimeout(()=>{
+        vp.querySelectorAll('.dex-slot').forEach(sl=>sl.classList.remove('dimmed','spotlight'));
+        if (typeof onDone === 'function') onDone();
+      },800);
+    },dropDur+40);
+  },compressDur+200); 
+}
+
+// ════════════════════════════════════════
+// V11 HYBRID PHYSICS ENGINE
+// ════════════════════════════════════════
+function buildNestTree(numPieces, segH, uW, foldDir, startFolded) {
+  const hinges = [];
+
+  function build(level) {
+    const container = document.createElement('div');
+    container.style.cssText = `position:absolute;bottom:0;left:0;width:${uW}px;height:0;`;
+
+    const blk = makeAnimBlock(S.segSize || S.fNum, uW, segH);
+    blk.style.position = 'absolute';
+    blk.style.bottom = '0';
+    blk.style.left = '0';
+    container.appendChild(blk);
+
+    if (level < numPieces - 1) {
+      const hw = document.createElement('div');
+      
+      const depth = numPieces - 1 - level;
+      const dir = depth % 2 === 0 ? -foldDir : foldDir;
+      const origin = dir < 0 ? '0% 100%' : '100% 100%';
+      const rot = dir < 0 ? -180 : 180;
+
+      hw.style.cssText = `position:absolute;bottom:${segH}px;left:0;width:${uW}px;height:0;transform-origin:${origin};`;
+      if (startFolded) hw.style.transform = `rotate(${rot}deg)`;
+      
+      hw._dir = dir; 
+      hw._rot = rot; 
+      
+      const child = build(level + 1);
+      hw.appendChild(child);
+      container.appendChild(hw);
+      hinges.push({ hw, rot, dir, depth });
+    }
+    return container;
+  }
+  return { root: build(0), hinges };
+}
+
+function renderSegs() {
+  clearObeliskIdleHints();
+  const stage = document.getElementById('fo'); 
+  stage.innerHTML = '';
+  clearThreeStage('fa');
+  if (S.segs.length === 0) return;
+  
+  const uH = S.unitH, uW = S.unitW, numSegs = S.segs.length, gap = 3;
+  const zoomEl = document.getElementById('fz');
+  zoomEl.style.bottom = `${getObeliskBase("fa")}px`;
+  
+  if (numSegs === 1) {
+    zoomEl.classList.remove('folded');
+    stage.style.marginLeft = `${-uW/2}px`;
+    zoomEl.style.transition = 'transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)';
+    zoomEl.style.transform = `translateX(0) scale(${S.fZoom})`;
+    S.currentFoldZoom = S.fZoom;
+  } else {
+    /* Set initial array-center margin */
+    const arrayWidth = numSegs * uW;
+    stage.style.marginLeft = `${-(arrayWidth / 2)}px`;
+    
+    const zoom = S.currentFoldZoom || calcFoldZoom(numSegs, S.segs[0].units, S.foldDir);
+    zoomEl.style.transition = 'none';
+    zoomEl.style.transform = `translateX(0) scale(${zoom})`;
+    zoomEl.classList.add('folded');
+  }
+
+  const isSolved = S.fDone.has(S.fNum);
+  const falls = numSegs - 1;
+  const oddFalls = falls % 2 === 1;
+  const landsLeft = oddFalls ? (S.foldDir < 0) : (S.foldDir > 0);
+
+  stage.classList.toggle('obelisk-pillar', numSegs === 1);
+  stage.classList.toggle('seg-array', numSegs > 1);
+  const mirrorSegCount = S.segs.filter(s => s.units === 1).length;
+
+  S.segs.forEach((seg, i) => {
+    const h = seg.units * uH;
+    const el = makeBlock(seg.units, uW, h);
+    el.classList.toggle('blk-pillar', numSegs === 1);
+    if (el.classList.contains('mirror-cube')) {
+      const idxAmongOnes = S.segs.slice(0, i + 1).filter(s => s.units === 1).length - 1;
+      applyMirrorReflectY(el, idxAmongOnes, mirrorSegCount);
+    }
+    
+    el.dataset.rotationZ = '0';
+
+    if (numSegs === 1) {
+      el.addEventListener('pointerdown', e => { 
+        if(!S.folding) { e.preventDefault(); beginUnspool(); } 
+      });
+      if (!isPrime(seg.units)) {
+        properFactors(seg.units).forEach(f => {
+          const hingeY = f * uH;
+          const zone = document.createElement('div'); zone.className = 'hz'; zone.style.top = hingeY + 'px';
+          zone.addEventListener('pointerdown', e => { e.stopPropagation(); zone.classList.remove('nudge'); });
+          zone.addEventListener('pointerup', e => { e.stopPropagation(); doFold(f, -1, zone); });
+          el.appendChild(zone);
+        });
+      }
+    } else {
+      if (i === S.handleIndex) {
+        el.addEventListener('pointerdown', e => {
+          el.querySelector('.drag-hint-bar')?.remove();
+          if (!S.folding) {
+            e.preventDefault();
+            haptic(12);
+            const z = document.getElementById('fz');
+            const cur = S.currentFoldZoom || S.fZoom;
+            if (z && typeof gsap !== 'undefined') {
+              gsap.killTweensOf(z);
+              gsap.fromTo(z, { scale: cur * 1.04 }, { scale: cur, duration: 0.2, ease: 'elastic.out(1.35)' });
+            }
+            beginUnspool();
+          }
+        });
+      }
+    }
+    stage.appendChild(el);
+    syncThreeBlock(el);
+  });
+  
+  /* After blocks are in the DOM, apply measured correction if we have fold data */
+  if (numSegs > 1 && S._foldedVisualCenter !== undefined) {
+    stage.offsetHeight; /* force reflow */
+    const stageBlocks = stage.querySelectorAll('.blk');
+    if (stageBlocks.length > 0) {
+      let sMinX = Infinity, sMaxX = -Infinity;
+      stageBlocks.forEach(blk => {
+        const r = blk.getBoundingClientRect();
+        if (r.left < sMinX) sMinX = r.left;
+        if (r.right > sMaxX) sMaxX = r.right;
+      });
+      const flatCenter = (sMinX + sMaxX) / 2;
+      const correction = S._foldedVisualCenter - flatCenter;
+      const scale = S.currentFoldZoom || S.fZoom;
+      const currentMargin = parseFloat(stage.style.marginLeft) || 0;
+      const adjustedMargin = currentMargin + correction / scale;
+      stage.style.marginLeft = adjustedMargin + 'px';
+      console.log(`[renderSegs] correction: foldCenter=${S._foldedVisualCenter.toFixed(0)} flatCenter=${flatCenter.toFixed(0)} correction=${correction.toFixed(1)}px adjustedMargin=${adjustedMargin.toFixed(1)}`);
+    }
+    delete S._foldedVisualCenter;
+  }
+  
+  scheduleObeliskIdleHints();
+  syncThreeBlocks(stage);
+  if (needsAnimLoop()) startThreeAnimLoop(); else stopThreeAnimLoop();
+}
+
+function doFold(f, swipeSide, clickedZone) {
+  if (S.folding || S.segs.length !== 1) return;
+  S.folding = true; haptic(50);
+  
+  const totalUnits = S.segs[0].units;
+  if (totalUnits % f !== 0) { S.folding = false; return; }
+  
+  if (clickedZone) clickedZone.style.display = 'none';
+  
+  const numPieces = totalUnits / f;
+  const uH = S.unitH, uW = S.unitW, segH = f * uH;
+  
+  S.foldDir = swipeSide; 
+  S.segSize = f;
+
+  const stage = document.getElementById('fo');
+  stage.querySelectorAll('.n-stamp,.n-glow,.n-radiance').forEach(el => el.remove());
+  stage.style.visibility = 'hidden';
+  clearThreeStage('fa');
+
+  const altar = document.getElementById('fa');
+  const zoomEl = document.getElementById('fz');
+  const overlay = document.createElement('div');
+  overlay.className = 'anim-overlay';
+  clearThreeOverlay('fa');
+  
+  /* Place overlay inside seg-zoom with same margin as stage (single obelisk centered).
+     NO margin animation — the fold tree's CSS transforms handle visual positioning.
+     The measurement correction in renderSegs handles the transition. */
+  overlay.style.cssText = `position:absolute;bottom:0;left:0;margin-left:${-uW/2}px;z-index:110;pointer-events:none;`;
+
+  const foldZoom = calcFoldZoom(numPieces, f, S.foldDir);
+  if (foldZoom < (S.fZoom - 0.02)) {
+    gsap.to(zoomEl, { scale: foldZoom, duration: 1.2, ease: "power2.inOut" });
+    S.currentFoldZoom = foldZoom;
+  } else { 
+    S.currentFoldZoom = S.fZoom; 
+  }
+  
+  zoomEl.appendChild(overlay);
+
+  const { root, hinges } = buildNestTree(numPieces, segH, uW, S.foldDir, false);
+  overlay.appendChild(root);
+  const sorted = [...hinges].sort((a, b) => a.depth - b.depth);
+  const hingeElements = sorted.map(item => item.hw);
+
+  let tl = gsap.timeline({
+    onComplete: () => {
+      gsap.to(document.getElementById('fa'), { y: 4, duration: 0.05, yoyo: true, repeat: 3, ease: "bounce.out" });
+
+      const isNewFactor = !S.fDisc.has(f);
+      const isNewPrime = isPrime(f) && !S.primeDex.has(f);
+      if (isNewFactor) S.fDisc.add(f);
+      if (isNewPrime) S.trayIdentityReady = false;
+      
+      renderFT(); 
+      checkFSolved({ deferVision: isNewPrime });
+      
+      S.segs = []; 
+      for (let i = 0; i < numPieces; i++) S.segs.push({ units: f });
+      
+      const falls = numPieces - 1;
+      const oddFalls = falls % 2 === 1;
+      const landsLeft = oddFalls ? (S.foldDir < 0) : (S.foldDir > 0);
+      S.handleIndex = landsLeft ? 0 : numPieces - 1;
+      S.handleInverted = oddFalls;
+
+      S.folding = false;
+      
+      /* Measure the visual bounding box of ALL blocks in the fold tree */
+      const allBlocks = overlay.querySelectorAll('.blk');
+      let minX = Infinity, maxX = -Infinity;
+      allBlocks.forEach(blk => {
+        const r = blk.getBoundingClientRect();
+        if (r.left < minX) minX = r.left;
+        if (r.right > maxX) maxX = r.right;
+      });
+      const foldedVisualCenter = (minX + maxX) / 2;
+      
+      clearThreeOverlay('fa');
+      overlay.remove(); 
+      stage.style.visibility = 'visible'; 
+      
+      /* Pass the measured center to renderSegs */
+      S._foldedVisualCenter = foldedVisualCenter;
+      renderSegs();
+
+      if (isNewFactor) {
+        setTimeout(() => {
+          const newItems = document.querySelectorAll('#ft .fs');
+          const newTrayItem = Array.from(newItems).find(el => el.textContent == f && !el.dataset.beamed);
+          if (newTrayItem) {
+            newTrayItem.dataset.beamed = "true";
+            gsap.fromTo(newTrayItem, 
+              { opacity: 0, filter: 'brightness(5) blur(15px)', y: -50, scale: 1.5 },
+              { opacity: 1, filter: 'brightness(1) blur(0px)', y: 0, scale: 1, duration: 1.2, ease: 'power2.out' }
+            );
+          }
+        }, 50);
+      }
+      
+      if (isNewPrime) setTimeout(() => launchTrinketDrop(f, numPieces, () => {
+        S.trayIdentityReady = true;
+        renderFT();
+        flushDeferredRoomCelebration();
+      }), isPrime(f) ? 900 : 200);
+      else buildDex('altar-dex-vp');
+    }
+  });
+
+  tl.to(hingeElements, {
+    rotation: (index, target) => target._rot,
+    duration: 1.2, stagger: 0.15, ease: "bounce.out",
+    onStart: () => haptic(40),
+  });
+}
+
+let US = null;
+
+function beginUnspool(){
+  if(S.folding||S.segs.length<=1)return;
+  clearObeliskIdleHints();
+  S.folding=true;
+  const stage=document.getElementById('fo');const altar=document.getElementById('fa');
+  const uH=S.unitH,uW=S.unitW,numSegs=S.segs.length,segH=S.segs[0].units*uH;
+  stage.style.visibility='hidden';
+  clearThreeStage('fa');
+  clearThreeOverlay('fa');
+
+  const overlay=document.createElement('div');
+  overlay.className = 'anim-overlay';
+  /* Use same margin as the fold overlay — the nested tree structure is identical */
+  overlay.style.cssText=`position:absolute;bottom:0;left:0;margin-left:${-uW/2}px;z-index:110;`;
+  const zoomEl = document.getElementById('fz');
+  zoomEl.appendChild(overlay);
+
+  const{root,hinges}=buildNestTree(numSegs,segH,uW,S.foldDir,true);
+  overlay.appendChild(root);
+  const sorted=[...hinges].sort((a,b)=>a.depth-b.depth);
+  sorted.forEach(({hw})=>{hw.style.transition='none';});
+
+  const overlap=0.5;
+  const n=sorted.length;
+  const windowSize=1/(1+(n-1)*(1-overlap));
+  const starts=sorted.map((_,i)=>i*(1-overlap)*windowSize);
+
+  const totalDragDist=(numSegs-1)*segH*1.2;
+  const startZoom=S.currentFoldZoom||S.fZoom;
+  
+  const falls = numSegs - 1;
+  const oddFalls = falls % 2 === 1;
+  const landsLeft = oddFalls ? (S.foldDir < 0) : (S.foldDir > 0);
+  const centerSign = landsLeft ? 1 : -1;
+
+  US={overlay,sorted,starts,windowSize,totalDragDist,startY:null,startX:null,active:true,startZoom,centerSign};
+
+  const onMove=e=>{
+    if(!US||!US.active)return;e.preventDefault();
+    const t=e.touches?e.touches[0]:e;
+    if(US.startY===null){US.startY=t.clientY; US.startX=t.clientX;}
+    
+    const dragY=US.startY-t.clientY; 
+    const dragX=(t.clientX-US.startX)*US.centerSign;
+    const combined=dragY+Math.max(0,dragX)*0.4; 
+    
+    const progress=Math.max(0,Math.min(1,combined/US.totalDragDist));
+    US.sorted.forEach(({hw,rot},i)=>{
+      const hProg=Math.max(0,Math.min(1,(progress-US.starts[i])/US.windowSize));
+      hw.style.transform=`rotate(${rot*(1-hProg)}deg)`;
+    });
+    if(US.startZoom<S.fZoom){
+      const dragZoom=US.startZoom+(S.fZoom-US.startZoom)*progress;
+      zoomEl.style.transition='none';
+      zoomEl.style.transform=`translateX(0) scale(${dragZoom})`;
+    }
+  };
+  const onUp=e=>{
+    if(!US||!US.active)return;
+    const t=e.changedTouches?e.changedTouches[0]:e;
+    if(US.startY===null){cancelUS(onMove,onUp);return;}
+    
+    const dragY=US.startY-t.clientY;
+    const dragX=(t.clientX-US.startX)*US.centerSign;
+    const combined=dragY+Math.max(0,dragX)*0.4;
+    const progress=combined/US.totalDragDist;
+    
+    if(progress>=0.85)completeUS(onMove,onUp);else cancelUS(onMove,onUp);
+  };
+  document.addEventListener('pointermove',onMove,{passive:false});
+  document.addEventListener('pointerup',onUp);
+}
+
+function cancelUS(onMove,onUp){
+  if(!US)return;US.active=false;
+  US.sorted.forEach(({hw,rot})=>{hw.style.transition='transform 0.4s var(--ease-heavy)';hw.style.transform=`rotate(${rot}deg)`;});
+  if(US.startZoom<S.fZoom){
+    const zoomEl=document.getElementById('fz');
+    zoomEl.style.transition='transform 0.4s ease';
+    zoomEl.style.transform=`translateX(0) scale(${US.startZoom})`;
+  }
+  setTimeout(()=>{
+    clearThreeOverlay('fa');
+    US?.overlay?.remove();
+    document.getElementById('fo').style.visibility='visible';
+    S.folding=false;US=null;
+    scheduleObeliskIdleHints();
+  },450);
+  document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);
+}
+
+function completeUS(onMove,onUp){
+  if(!US)return;US.active=false;haptic([20,30,20]);
+  US.sorted.forEach(({hw})=>{hw.style.transition='transform 0.2s var(--spring)';hw.style.transform='rotate(0deg)';});
+  const zoomEl=document.getElementById('fz');
+  zoomEl.style.transition='transform 0.3s var(--spring)';
+  zoomEl.style.transform=`translateX(0) scale(${S.fZoom})`;
+  S.currentFoldZoom=S.fZoom;
+  setTimeout(()=>{
+    clearThreeOverlay('fa');
+    US?.overlay?.remove();
+    document.getElementById('fo').style.visibility='visible';
+    S.segs=[{units:S.fNum}];S.folding=false;US=null;
+    renderSegs();
+  },250);
+  document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);
+}
+
+function checkFSolved(opts){
+  if (!opts) opts = {};
+  const n=S.fNum;if(!n||S.fDone.has(n))return;
+  if(allFactors(n).every(f=>S.fDisc.has(f))){
+    S.fDone.add(n); S.fDiscMap[n]=new Set(S.fDisc); checkLvl();
+    const numEl=document.getElementById('altar-numeral');
+    numEl.onclick=()=>goToGrid();
+    const runVision = () => runAltarRoomSolvedVision({});
+    if (opts.deferVision) S._deferredRoomCelebration = runVision;
+    else runVision();
+  }
+}
+
+function checkLvl(){
+  const max=S.maxLevel*12;
+  for(let i=1;i<=max;i++)if(!S.fDone.has(i))return;
+  S.maxLevel++;
+}
+
+// ════════════════════════════════════════
+// GRID SCREEN
+// ════════════════════════════════════════
+function getPrimeFactors(n){ const f=[];let x=n; for(let p=2;p*p<=x;p++){while(x%p===0){f.push(p);x/=p;}} if(x>1)f.push(x); return f; }
+function makeCellSolved(n, factors, clickFn){
+  const c=document.createElement('div'); c.className='nc done';
+  const num=document.createElement('div');num.className='nc-num';num.textContent=n; c.appendChild(num);
+  if(factors.length>0){
+    const wrap=document.createElement('div');wrap.className='nc-trinkets';
+    factors.slice(0,12).forEach(f=>{
+      const t=document.createElement('div'); t.className='nc-t '+(f===1?'nc-tm':isPrime(f)?'nc-tp':'nc-tc'); t.textContent=f; wrap.appendChild(t);
+    });
+    if(factors.length>12){ const ov=document.createElement('div');ov.className='nc-overflow'; ov.textContent='+';wrap.appendChild(ov); }
+    c.appendChild(wrap);
+  }
+  c.addEventListener('click',clickFn); return c;
+}
+
+function renderGrid(){
+  const g=document.getElementById('num-grid');g.innerHTML='';
+  const max=S.maxLevel*12;
+  if(S.gridMode==='factor'){
+    for(let i=1;i<=max;i++){
+      let c;
+      if(S.fDone.has(i)){ c=makeCellSolved(i,allFactors(i),()=>goToAltar(i)); } 
+      else {
+        c=document.createElement('div'); c.className='nc avail';
+        const num=document.createElement('div');num.className='nc-num';num.textContent=i; c.appendChild(num);
+        c.addEventListener('click',()=>goToAltar(i));
+      }
+      g.appendChild(c);
+    }
+    for(let i=max+1;i<=max+12;i++){
+      const c=document.createElement('div');c.className='nc locked';
+      const num=document.createElement('div');num.className='nc-num';num.textContent=i; c.appendChild(num);g.appendChild(c);
+    }
+  } else {
+    for(let i=1;i<=max;i++){
+      let c;
+      const canBuild=i===1||S.bDone.has(i)||(i>1&&S.bDone.has(i-1));
+      const built=S.bDone.has(i);
+      const neededPrimes=i>1?getPrimeFactors(i):[];
+      const hasAllPrimes=neededPrimes.every(p=>S.primeDex.has(p));
+      if(built||i===1){ c=makeCellSolved(i,i===1?[1]:getPrimeFactors(i),i>1?()=>goToBuild(i):null); } 
+      else if(canBuild&&hasAllPrimes){
+        c=document.createElement('div');c.className='nc avail';
+        const num=document.createElement('div');num.className='nc-num';num.textContent=i; c.appendChild(num);
+        c.addEventListener('click',()=>goToBuild(i));
+      } else {
+        c=document.createElement('div');c.className='nc locked';
+        const num=document.createElement('div');num.className='nc-num'; num.textContent=i; c.appendChild(num);
+      }
+      g.appendChild(c);
+    }
+    for(let i=max+1;i<=max+12;i++){
+      const c=document.createElement('div');c.className='nc locked';
+      const num=document.createElement('div');num.className='nc-num';num.textContent=i; c.appendChild(num);g.appendChild(c);
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// FACTOR TRAY (Soapstone Surface Mapped)
+// ════════════════════════════════════════
+function renderFT() {
+  const tray=document.getElementById('ft');tray.innerHTML='';
+  const n=S.fNum;if(!n)return;
+  allFactors(n).forEach(f=>{
+    const s=document.createElement('div');s.className='fs';
+    s.dataset.units = '1';
+    const txt=document.createElement('div');txt.textContent=f;
+    if(f===1){
+      s.classList.add('mirror','mirror-cube');
+      txt.className='n-mirror';
+    } else {
+      txt.style.position='relative';txt.style.zIndex='2';
+    }
+    s.appendChild(txt);
+    if(f!==1){
+      if(f===n){
+        if(isPrime(n)) {
+          if (S.trayIdentityReady) s.classList.add('fn-identity','fn-prime','fp');
+          else { s.classList.add('empty'); txt.textContent=''; }
+        }
+        else if(S.trayIdentityReady && S.fDisc.has(f)) { s.classList.add('fn-identity','fn-comp'); }
+        else { s.classList.add('empty'); txt.textContent=''; }
+      }
+      else if(S.fDisc.has(f))s.classList.add(isPrime(f)?'fp':'fc');
+      else{s.classList.add('empty');txt.textContent='';}
+    }
+    if(f===n&&!isPrime(n)&&!S.fDisc.has(f))txt.textContent='';
+    tray.appendChild(s);
+  });
+  /* Re-apply calibrated positions after rebuilding tray DOM */
+  calibrateOverlayPositions('fa');
+}
+
+// ════════════════════════════════════════
+// BUILD TAB
+// ════════════════════════════════════════
+function enterBuild(n){
+  syncCSSUnit();
+  if (window.THREE) {
+    initThreeRoom('ba', 'three-canvas-ba');
+    clearThreeStage('ba');
+    clearThreeOverlay('ba');
+  }
+  S.bNum=n;S.bStack=[];S.bProduct=0;S.bAnimating=false;
+  const numEl=document.getElementById('build-numeral');
+  numEl.textContent=n; numEl.classList.remove('solved','celebrate');
+  const isSolved=S.bDone.has(n);
+  if(isSolved){numEl.classList.add('solved');}
+  numEl.onclick=isSolved?()=>goToGrid():null;
+
+  const altar=document.getElementById('ba');
+  /* Use calibrated obelisk base for available height */
+  const obBasePx = getObeliskBase('ba');
+  let safeAltarH = obBasePx - 30;
+  if (safeAltarH <= 0) safeAltarH = window.innerHeight * 0.42;
+  const neededHeight = n * S.bUnitH;
+  S.bZoom = neededHeight > safeAltarH ? (safeAltarH / neededHeight) : 1;
+  const zoomEl = document.getElementById('bz');
+  zoomEl.style.bottom = `${getObeliskBase("ba")}px`;
+  zoomEl.style.transition = 'none';
+  zoomEl.style.transform = `translateX(0) scale(${S.bZoom})`;
+
+  /* Ceil line: position relative to obelisk base + scaled target height */
+  const ceil=document.getElementById('bceil');
+  const ceilPx=n*S.bUnitH;
+  ceil.style.bottom = `calc(${getObeliskBase("ba")}px + ${ceilPx * S.bZoom}px)`;
+  ceil.style.top = 'auto';
+
+  buildDex('build-dex-vp');
+  renderBuildTray(); renderBuildStage(); renderBuildLedger(); setupBuildDexDrag();
+}
+
+function recalcBuildLayout(n) {
+  const altar = document.getElementById('ba');
+  const obBasePx = getObeliskBase('ba');
+  let safeAltarH = obBasePx - 30;
+  if (safeAltarH <= 0) safeAltarH = window.innerHeight * 0.42;
+  const neededHeight = n * S.bUnitH;
+  S.bZoom = neededHeight > safeAltarH ? (safeAltarH / neededHeight) : 1;
+  const zoomEl = document.getElementById('bz');
+  zoomEl.style.bottom = `${getObeliskBase("ba")}px`;
+  zoomEl.style.transition = 'none';
+  zoomEl.style.transform = `translateX(0) scale(${S.bZoom})`;
+  const ceil = document.getElementById('bceil');
+  const ceilPx = n * S.bUnitH;
+  ceil.style.bottom = `calc(${getObeliskBase("ba")}px + ${ceilPx * S.bZoom}px)`;
+  ceil.style.top = 'auto';
+}
+
+function renderBuildStage(){
+  const stage=document.getElementById('bo');stage.innerHTML='';
+  clearThreeStage('ba');
+  if(S.bProduct===0){
+    stage.classList.remove('obelisk-pillar','seg-array');
+    stage.style.marginLeft = `${-S.bUnitW/2}px`;
+    return;
+  }
+  stage.classList.add('obelisk-pillar');
+  stage.classList.remove('seg-array');
+  const uH=S.bUnitH,uW=S.bUnitW, h=S.bProduct*uH;
+  const el=makeBlock(S.bProduct,uW,h);
+  el.classList.add('blk-pillar');
+  stage.style.marginLeft = `${-uW/2}px`;
+  stage.style.left = '50%';
+  
+  if(S.bStack.length>0){
+    const prev=S.bStack[S.bStack.length-1].prevProduct;
+    if(prev>0){
+      const hingeY=prev*uH;
+      const zone=document.createElement('div');zone.className='bundo-zone';zone.style.top=hingeY+'px';
+      const mark=document.createElement('div');mark.className='bundo-mark';zone.appendChild(mark);
+      zone.addEventListener('pointerdown',e=>{e.preventDefault();undoBuild();}); el.appendChild(zone);
+    }
+  }
+  stage.appendChild(el);
+  syncThreeBlock(el);
+  if (needsAnimLoop()) startThreeAnimLoop(); else stopThreeAnimLoop();
+}
+
+function renderBuildTray(){
+  const tray=document.getElementById('bt');tray.innerHTML='';
+  const n=S.bNum;if(!n)return;
+  /* Build the expected prime factorization to know how many slots */
+  const expectedPrimes = getPrimeFactors(n);
+  /* Current placed primes (excluding 1s) */
+  const placedPrimes = S.bStack.filter(e => e.p !== 1).map(e => e.p);
+  
+  /* One slot per expected prime factor — NO mirror-1 slot (build is primes only) */
+  expectedPrimes.forEach((expectedP,i)=>{
+    const s=document.createElement('div');s.className='fs';
+    s.dataset.units='1';
+    if(i < placedPrimes.length){
+      /* This slot is filled */
+      const p = placedPrimes[i];
+      const txt=document.createElement('div');txt.textContent=p;
+      if(isPrime(p)){
+        s.classList.add('fp');
+        txt.className='dt-num';
+      } else {
+        s.classList.add('fc');
+        txt.style.position='relative';txt.style.zIndex='2';
+      }
+      s.appendChild(txt);
+      /* Last placed trinket can be undone by dragging down */
+      if(i===placedPrimes.length-1){
+        s.classList.add('last'); s.style.touchAction='none';
+        s.addEventListener('pointerdown',e=>{
+          if(S.bAnimating)return; e.preventDefault(); s.setPointerCapture(e.pointerId);
+          const startY=e.clientY; let removed=false;
+          const onMove=ev=>{ if(ev.clientY-startY>20&&!removed){ removed=true; s.removeEventListener('pointermove',onMove); s.removeEventListener('pointerup',onUp); undoBuild(); } };
+          const onUp=()=>{ s.removeEventListener('pointermove',onMove); s.removeEventListener('pointerup',onUp); };
+          s.addEventListener('pointermove',onMove,{passive:false}); s.addEventListener('pointerup',onUp);
+        });
+      }
+    } else {
+      /* Empty slot — hidden like factor tray empties */
+      s.classList.add('empty');
+    }
+    tray.appendChild(s);
+  });
+  clearThreeOverlay('ba');
+}
+
+function renderBuildLedger(){
+  const led=document.getElementById('bl');led.innerHTML='';
+  if(S.bStack.length <= 1)return;
+  S.bStack.forEach((entry,i)=>{
+    if(i>0){const x=document.createElement('span');x.className='ledger-times';x.textContent='×';led.appendChild(x);}
+    const t=document.createElement('div');t.className='ledger-factor';t.textContent=entry.p;led.appendChild(t);
+  });
+  const eq=document.createElement('span');eq.className='ledger-eq';eq.textContent='=';led.appendChild(eq);
+  const prod=document.createElement('div');prod.className='ledger-product';prod.textContent=S.bProduct;led.appendChild(prod);
+}
+
+function setupBuildDexDrag(){
+  const vp=document.getElementById('build-dex-vp'); if(!vp)return;
+  vp._dragHandler&&vp.removeEventListener('pointerdown',vp._dragHandler); delete vp._dragHandler;
+  vp.querySelectorAll('.dex-slot[data-n]').forEach(slot=>{
+    const n=parseInt(slot.dataset.n);
+    if(!isPrime(n)||!S.primeDex.has(n))return;
+    const trinket=slot.querySelector('.dex-trinket'); if(!trinket)return;
+    trinket.style.touchAction='none'; trinket.style.cursor='grab';
+    const fresh=trinket.cloneNode(true); fresh.style.touchAction='none';
+    slot.querySelector('.dex-trinket-wrap').replaceChild(fresh,trinket);
+    fresh.addEventListener('pointerdown',e=>{
+      if(S.bAnimating)return; e.preventDefault(); e.stopPropagation(); fresh.setPointerCapture(e.pointerId); startBuildDrag(e,n,fresh);
+    },{passive:false});
+  });
+}
+
+function startBuildDrag(e,p,sourceEl){
+  const size=44; const dexRect=document.getElementById('build-dex-container').getBoundingClientRect();
+  const drag=document.createElement('div'); drag.className='dragging-trinket';
+  drag.style.cssText=`width:${size}px;height:${size}px;font-size:13px;left:${e.clientX-size/2}px;top:${e.clientY-size/2}px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; background:rgba(255,255,255,0.1); backdrop-filter:blur(12px) saturate(1.5); border:1px solid rgba(255,255,255,0.6); box-shadow:inset 0 0 20px 5px rgba(255,255,255,0.8), 0 8px 16px rgba(0,0,0,0.6); text-shadow:0 0 10px #fff, 0 0 20px #FFD700, 0 0 40px #FF8C00; z-index:9500; position:fixed; pointer-events:none; border-radius:4px;`;
+  drag.textContent=p; document.body.appendChild(drag);
+  sourceEl.style.opacity='0.4';
+  const onMove=ev=>{ drag.style.left=(ev.clientX-size/2)+'px'; drag.style.top=(ev.clientY-size/2)+'px'; };
+  const onUp=ev=>{
+    sourceEl.removeEventListener('pointermove',onMove); sourceEl.removeEventListener('pointerup',onUp); sourceEl.removeEventListener('pointercancel',onUp);
+    sourceEl.style.opacity=''; drag.remove();
+    if(ev.clientY<dexRect.top-10) placeBuildPrime(p);
+  };
+  sourceEl.addEventListener('pointermove',onMove,{passive:true}); sourceEl.addEventListener('pointerup',onUp); sourceEl.addEventListener('pointercancel',onUp);
+}
+
+function triggerShatter(rectElement, contactY) {
+    haptic([60,30,60,20,80]);
+    const rect = rectElement.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = contactY != null ? contactY : rect.top;
+    const spawn = (cls, w, h, spread, dur) => {
+      const piece = document.createElement('div');
+      piece.className = 'shatter-piece ' + cls;
+      const dx = (Math.random()-0.5) * spread * 2;
+      const dy = -(Math.random() * spread * 0.6) + (Math.random()-0.5) * spread * 0.8;
+      piece.style.cssText = `width:${w}px;height:${h}px;left:${cx+((Math.random()-0.5)*rect.width*0.4)}px;top:${cy+((Math.random()-0.5)*12)}px;--tx:translate(${dx}px,${dy}px);--rot:${(Math.random()-0.5)*720}deg;animation:shatterFly ${dur}s ease-out forwards;`;
+      document.body.appendChild(piece); setTimeout(()=>piece.remove(), dur*1000+50);
+    };
+    for(let i=0;i<8;i++) spawn('shard', Math.random()*8+3, Math.random()*12+4, 250, 0.5+Math.random()*0.3);
+    for(let i=0;i<12;i++) spawn('spark', Math.random()*5+2, Math.random()*5+2, 300, 0.4+Math.random()*0.4);
+    for(let i=0;i<18;i++) spawn('ember', Math.random()*3+1, Math.random()*3+1, 350, 0.3+Math.random()*0.5);
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:fixed;left:${cx-40}px;top:${cy-40}px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.9) 0%,rgba(255,200,80,0.6) 30%,rgba(255,100,20,0.3) 60%,transparent 80%);pointer-events:none;z-index:8600;opacity:1;transition:all 0.3s ease-out;`;
+    document.body.appendChild(flash);
+    requestAnimationFrame(()=>{ flash.style.transform='scale(3)'; flash.style.opacity='0'; });
+    setTimeout(()=>flash.remove(), 350);
+}
+
+function hideProxyMesh(el) {
+  if (!el?._mesh) return;
+  el._mesh.visible = false;
+}
+
+function placeBuildPrime(p){
+  if(S.bAnimating)return;
+  const n=S.bNum, prevProduct=S.bProduct, newProduct=prevProduct===0?p:prevProduct*p;
+  
+  S.bStack.push({p,prevProduct}); S.bProduct=newProduct;
+  S.bAnimating = true;
+  
+  /* Update tray and ledger immediately so trinket appears on drop */
+  renderBuildTray(); renderBuildLedger();
+
+  if(prevProduct === 0) {
+    if(newProduct > n) {
+      /* FIRST PRIME OVERSHOOT: stack mirror cubes, explode at ceiling */
+      animateBuildFirstPrimeOvershoot(p, n, () => {
+        S.bStack.pop(); S.bProduct=0; S.bAnimating=false;
+        renderBuildTray(); renderBuildStage(); renderBuildLedger();
+      });
+    } else {
+      /* FIRST PRIME: grow mirror-1 cubes then fuse into prime obelisk */
+      animateBuildFirstPrime(p, n, () => {
+        S.bAnimating = false;
+        renderBuildTray(); renderBuildStage(); renderBuildLedger();
+        if(newProduct === n) checkBuildSolved();
+      });
+    }
+  } else if(newProduct > n) {
+    /* OVERSHOOT: sequential hinge with ceiling collision */
+    animateBuildOvershoot(prevProduct, p, newProduct, n, () => { 
+      S.bStack.pop(); S.bProduct=prevProduct; S.bAnimating=false; 
+      renderBuildTray(); renderBuildStage(); renderBuildLedger(); 
+    });
+  } else {
+    /* MULTIPLY: sequential hinge segments then fuse */
+    animateBuildHinge(prevProduct, p, newProduct, n, () => {
+      S.bAnimating=false;
+      renderBuildTray(); renderBuildStage(); renderBuildLedger();
+      if(newProduct===n)checkBuildSolved();
+    });
+  }
+}
+
+function animateBuildFirstPrime(p, target, onComplete) {
+  /* Stack p mirror-1 cubes from bottom up, then flash-fuse into a prime obelisk */
+  const stage = document.getElementById('bo');
+  const uH = S.bUnitH, uW = S.bUnitW;
+  stage.innerHTML = '';
+  stage.style.marginLeft = `${-uW/2}px`;
+  clearThreeStage('ba');
+  stage.style.visibility = 'visible';
+
+  const blocks = [];
+  for(let i=0; i<p; i++) {
+    const blk = makeBlock(1, uW, uH, false, false);
+    applyMirrorReflectY(blk, i, p);
+    blk.style.position = 'absolute';
+    blk.style.bottom = `${i * uH}px`;
+    blk.style.left = '0';
+    blk.style.transform = 'scale(0)';
+    stage.appendChild(blk);
+    blocks.push(blk);
+    syncThreeBlock(blk);
+  }
+
+  const tl = gsap.timeline({
+    onStart: () => haptic(15),
+    onComplete: () => {
+      blocks.forEach(blk => delete blk.dataset.animating);
+      /* Flash and fuse into a prime obelisk */
+      const flash = document.createElement('div');
+      flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${p*uH}px; z-index:100; opacity:0; border-radius:4px; pointer-events:none; background:#FF8C00; box-shadow:0 0 60px 20px rgba(255,215,0,0.8);`;
+      stage.appendChild(flash);
+      gsap.to(flash, {
+        opacity: 1, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut",
+        onStart: () => haptic([40, 60]),
+        onComplete: () => {
+          flash.remove();
+          /* Replace mirror cubes with single prime obelisk */
+          stage.innerHTML = '';
+          clearThreeStage('ba');
+          const primeObelisk = makeBlock(p, uW, p*uH);
+          primeObelisk.classList.add('blk-pillar');
+          stage.appendChild(primeObelisk);
+          syncThreeBlock(primeObelisk);
+          if (needsAnimLoop()) startThreeAnimLoop();
+          onComplete();
+        }
+      });
+    }
+  });
+
+  blocks.forEach((blk, i) => {
+    const mesh = blk._mesh;
+    mesh.visible = false;
+    tl.to(blk, { scale: 1, duration: 0.6, ease: "back.out(1.5)" }, i * 0.2);
+  });
+}
+
+function animateBuildFirstPrimeOvershoot(p, target, onRevert) {
+  /* Stack mirror-1 cubes one by one. When a cube exceeds the target height,
+     it hits the ceiling and the whole stack shatters. */
+  const stage = document.getElementById('bo');
+  const uH = S.bUnitH, uW = S.bUnitW;
+  stage.innerHTML = '';
+  stage.style.marginLeft = `${-uW/2}px`;
+  clearThreeStage('ba');
+  stage.style.visibility = 'visible';
+
+  const blocks = [];
+  for(let i=0; i<p; i++) {
+    const blk = makeBlock(1, uW, uH, false, false);
+    applyMirrorReflectY(blk, i, p);
+    blk.style.position = 'absolute';
+    blk.style.bottom = `${i * uH}px`;
+    blk.style.left = '0';
+    blk.style.transform = 'scale(0)';
+    blk.style.visibility = 'hidden';
+    stage.appendChild(blk);
+    blocks.push(blk);
+    syncThreeBlock(blk);
+  }
+
+  /* Animate cubes appearing one by one, stop at the one that exceeds target */
+  const tl = gsap.timeline({ onStart: () => haptic(15) });
+  const hitIndex = target; /* cube at index target (0-based) is the one that exceeds */
+
+  blocks.forEach((blk, i) => {
+    if(i > hitIndex) return;
+    const mesh = blk._mesh;
+    mesh.visible = false;
+
+    if(i === hitIndex) {
+      tl.to(blk, { scale: 1, visibility: 'visible', duration: 0.3, ease: "power2.out" }, i * 0.2);
+      tl.call(() => {
+        /* Shatter the whole stack */
+        const ceilEl = document.getElementById('bceil');
+        const contactY = ceilEl ? ceilEl.getBoundingClientRect().top : undefined;
+        triggerShatter(stage, contactY);
+        haptic([60,30,60,20,80]);
+        setTimeout(() => {
+          stage.innerHTML = '';
+          clearThreeStage('ba');
+          onRevert();
+        }, 400);
+      }, null, '+=0.05');
+    } else {
+      /* Normal cube landing — CSS only */
+      tl.to(blk, { scale: 1, visibility: 'visible', duration: 0.6, ease: "back.out(1.5)" }, i * 0.2);
+    }
+  });
+}
+
+function makeAnimBlockMaterial(units, w, h, matClass){
+  /* Like makeAnimBlock but with a specified material class */
+  const el = document.createElement('div');
+  el.className = 'blk ' + matClass + ' anim-block';
+  el.style.width = `var(--u)`;
+  el.style.height = `calc(var(--u) * ${units})`;
+  el.dataset.units = units;
+  return el;
+}
+
+function animateBuildHinge(prevH, p, finalH, target, cb){
+  /*
+   * prevH = current obelisk height (units), p = prime multiplier,
+   * finalH = prevH * p, target = S.bNum
+   *
+   * Mechanic: show the existing obelisk as the base.
+   * One at a time, hinge up new prevH-tall segments in PRIME material.
+   * Each segment starts behind the top of the previous one, pointing down (6 o'clock),
+   * then rotates CCW to point up (12 o'clock).
+   * After all p segments are showing, flash-fuse into a single composite obelisk.
+   */
+  const stage = document.getElementById('bo'), altar = document.getElementById('ba');
+  const uH = S.bUnitH, uW = S.bUnitW, segH = prevH * uH;
+  stage.style.visibility = 'hidden';
+  clearThreeStage('ba');
+  clearThreeOverlay('ba');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'three-proxy-layer anim-overlay';
+  overlay.style.cssText = `position:absolute;bottom:${getObeliskBase("ba")}px;left:50%;transform-origin:bottom center;transform:translateX(-50%) scale(${S.bZoom});z-index:110;pointer-events:none;width:${uW}px;overflow:visible;`;
+  altar.appendChild(overlay);
+
+  /* Base segment: the existing obelisk in its current material.
+     prevH is prime only if this is the first multiplication (obelisk is still a raw prime).
+     Any previous multiplication would have made prevH composite. */
+  const isBaseComposite = !isPrime(prevH);
+  const baseMat = isBaseComposite ? 'blk-c' : 'blk-p';
+  const base = makeAnimBlockMaterial(prevH, uW, segH, baseMat);
+  base.style.position = 'absolute'; base.style.bottom = '0'; base.style.left = '0'; base.style.zIndex = '10';
+  /* Add numeral to base */
+  const baseNum = document.createElement('div');
+  baseNum.className = isBaseComposite ? 'n-stamp' : 'n-glow';
+  baseNum.textContent = prevH;
+  baseNum.style.fontSize = Math.min(uW*0.55, segH*0.4, 34)+'px';
+  base.appendChild(baseNum);
+  overlay.appendChild(base);
+
+  /* Create p-1 new segments in PRIME material, each hinging from the top of the last */
+  const copies = p - 1, phaseDur = 600, pause = 150;
+  const arms = [];
+  for(let i=0; i<copies; i++){
+    const pivotBottom = (i + 1) * segH;
+    const hw = document.createElement('div');
+    hw.style.cssText = `position:absolute;bottom:${pivotBottom}px;left:0;width:${uW}px;height:0;transform-origin:50% 0%;transform:rotate(180deg);z-index:${5-i};visibility:hidden;`;
+    const blk = makeAnimBlockMaterial(prevH, uW, segH, 'blk-p');
+    blk.style.position = 'absolute'; blk.style.bottom = '0'; blk.style.left = '0';
+    /* Add glowing numeral to each prime segment */
+    const segNum = document.createElement('div');
+    segNum.className = 'n-glow';
+    segNum.textContent = prevH;
+    segNum.style.fontSize = Math.min(uW*0.6, segH*0.45, 38)+'px';
+    blk.appendChild(segNum);
+    hw.appendChild(blk); overlay.appendChild(hw); arms.push({hw, blk});
+  }
+
+  /* Sequential hinge: each arm waits for the previous to finish */
+  arms.forEach(({hw},i) => {
+    setTimeout(() => {
+      hw.style.visibility = 'visible';
+      gsap.fromTo(hw, 
+        { rotation: 180 },
+        {
+          rotation: 0,
+          duration: phaseDur / 1000,
+          ease: "power2.inOut",
+          overwrite: 'auto',
+          onStart: () => haptic(20),
+        }
+      );
+    }, i * (phaseDur + pause));
+  });
+
+  /* After all arms land, flash and fuse into a single composite obelisk */
+  const allLandedTime = copies * (phaseDur + pause) + 300;
+  setTimeout(() => {
+    /* White flash over entire column */
+    const totalH = finalH * uH;
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${totalH}px; z-index:100; opacity:0; border-radius:4px; pointer-events:none; background:#ffffff; box-shadow:0 0 50px 20px rgba(255,255,255,0.9);`;
+    overlay.appendChild(flash);
+    gsap.to(flash, {
+      opacity: 1, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut",
+      onStart: () => haptic([40, 60]),
+      onComplete: () => {
+        clearThreeOverlay('ba');
+        overlay.remove();
+        stage.style.visibility = 'visible';
+        renderBuildStage();
+        cb && cb();
+      }
+    });
+  }, allLandedTime);
+}
+
+function animateBuildOvershoot(prevH, p, finalH, target, cb){
+  /*
+   * Same as animateBuildHinge but one of the segments will collide with the ceiling.
+   * Sequential hinge, each segment in prime material.
+   * When a segment can't fully rotate to 0deg because it would exceed target height,
+   * it partially rotates, hits the ceiling, and shatters.
+   */
+  const stage = document.getElementById('bo'), altar = document.getElementById('ba');
+  const uH = S.bUnitH, uW = S.bUnitW, segH = prevH * uH, ceilPx = target * uH;
+  stage.style.visibility = 'hidden';
+  clearThreeStage('ba');
+  clearThreeOverlay('ba');
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'anim-overlay';
+  overlay.style.cssText = `position:absolute;bottom:${getObeliskBase("ba")}px;left:50%;transform-origin:bottom center;transform:translateX(-50%) scale(${S.bZoom});z-index:110;pointer-events:none;width:${uW}px;overflow:visible;`;
+  altar.appendChild(overlay);
+  
+  /* Base segment in current material */
+  const isBaseComposite = !isPrime(prevH);
+  const baseMat = isBaseComposite ? 'blk-c' : 'blk-p';
+  const base = makeAnimBlockMaterial(prevH, uW, segH, baseMat);
+  base.style.position = 'absolute'; base.style.bottom = '0'; base.style.left = '0'; base.style.zIndex = '10';
+  const baseNum = document.createElement('div');
+  baseNum.className = isBaseComposite ? 'n-stamp' : 'n-glow';
+  baseNum.textContent = prevH;
+  baseNum.style.fontSize = Math.min(uW*0.55, segH*0.4, 34)+'px';
+  base.appendChild(baseNum);
+  overlay.appendChild(base);
+  
+  const copies = p - 1, phaseDur = 600, pause = 150;
+  const arms = [];
+  for(let i=0; i<copies; i++){
+    const pivotBottom = (i + 1) * segH;
+    const hw = document.createElement('div');
+    hw.style.cssText = `position:absolute;bottom:${pivotBottom}px;left:0;width:${uW}px;height:0;transform-origin:50% 0%;transform:rotate(180deg);z-index:${5-i};visibility:hidden;`;
+    const blk = makeAnimBlockMaterial(prevH, uW, segH, 'blk-p');
+    blk.style.position = 'absolute'; blk.style.bottom = '0'; blk.style.left = '0';
+    hw.appendChild(blk); overlay.appendChild(hw); arms.push(hw);
+  }
+  
+  /* Find which arm collides with the ceiling */
+  let collisionArm = -1, collisionAngle = 0;
+  for(let i=0; i<copies; i++){
+    const pivotY = (i + 1) * segH;
+    const headroom = ceilPx - pivotY;
+    if(headroom >= segH) continue;
+    const cosA = Math.max(-1, Math.min(1, headroom / segH));
+    collisionAngle = Math.acos(cosA) * (180 / Math.PI);
+    collisionArm = i; break;
+  }
+  const safeCount = collisionArm >= 0 ? collisionArm : copies;
+  
+  /* Sequential hinge for safe arms */
+  for(let i=0; i<safeCount; i++){
+    setTimeout(() => {
+      arms[i].style.visibility = 'visible';
+      gsap.fromTo(arms[i], 
+        { rotation: 180 },
+        {
+          rotation: 0,
+          duration: phaseDur / 1000,
+          ease: "power2.inOut",
+          overwrite: 'auto',
+          onStart: () => haptic(20),
+        }
+      );
+    }, i * (phaseDur + pause));
+  }
+  
+  /* Collision arm: partially rotates then shatters */
+  if(collisionArm >= 0){
+    const fraction = (180 - collisionAngle) / 180;
+    const collisionDur = Math.max(120, Math.round(phaseDur * fraction));
+    setTimeout(() => {
+      const hw = arms[collisionArm];
+      hw.style.visibility = 'visible';
+      gsap.fromTo(hw, 
+        { rotation: 180 },
+        {
+          rotation: collisionAngle,
+          duration: collisionDur / 1000,
+          ease: "power2.inOut",
+          overwrite: 'auto',
+          onStart: () => haptic(20),
+        }
+      );
+      setTimeout(() => {
+        arms.forEach(a => { a.style.display = 'none'; });
+        const ceilEl = document.getElementById('bceil');
+        const contactY = ceilEl ? ceilEl.getBoundingClientRect().top : undefined;
+        triggerShatter(overlay, contactY);
+        setTimeout(() => { clearThreeOverlay('ba'); overlay.remove(); stage.style.visibility = 'visible'; cb&&cb(); }, 400);
+      }, collisionDur + 30);
+    }, collisionArm * (phaseDur + pause));
+  }
+}
+
+function undoBuild(){
+  if(S.bAnimating||S.bStack.length===0)return;
+  const entry=S.bStack[S.bStack.length-1], p=entry.p, prevProduct=entry.prevProduct;
+  if(prevProduct===0){ S.bStack.pop(); S.bProduct=0; haptic(20); renderBuildTray();renderBuildStage();renderBuildLedger(); return; }
+  S.bAnimating=true; haptic(20);
+  const stage=document.getElementById('bo'), altar=document.getElementById('ba'), uH=S.bUnitH, uW=S.bUnitW, segH=prevProduct*uH;
+  stage.style.visibility='hidden';
+  clearThreeStage('ba');
+  clearThreeOverlay('ba');
+  const overlay=document.createElement('div');
+  overlay.className = 'anim-overlay';
+  overlay.style.cssText=`position:absolute;bottom:${getObeliskBase("ba")}px;left:50%;transform-origin:bottom center;transform:translateX(-50%) scale(${S.bZoom});z-index:110;pointer-events:none;width:${uW}px;overflow:visible;`;
+  altar.appendChild(overlay);
+  
+  /* Base: show in the material it will revert to */
+  const wasBaseComposite = !isPrime(prevProduct) || (S.bStack.length > 2);
+  const baseMat = wasBaseComposite ? 'blk-c' : 'blk-p';
+  const base=makeAnimBlockMaterial(prevProduct,uW,segH, baseMat);
+  base.style.position='absolute';base.style.bottom='0';base.style.left='0';
+  overlay.appendChild(base);
+  
+  const copies=p-1, phaseDur=350, pause=50;
+  const arms=[];
+  for(let i=0;i<copies;i++){
+    const pivotBottom = (i + 1) * segH;
+    const hw=document.createElement('div');
+    hw.style.cssText=`position:absolute;bottom:${pivotBottom}px;left:0;width:${uW}px;height:0;transform-origin:50% 0%;transform:rotate(0deg);`;
+    /* Segments being peeled back are in prime material (they were the multiplied-in segments) */
+    const blk=makeAnimBlockMaterial(prevProduct,uW,segH,'blk-p');
+    blk.style.position='absolute';blk.style.bottom='0';blk.style.left='0';
+    hw.appendChild(blk); overlay.appendChild(hw); arms.push(hw);
+  }
+  const reversedArms=[...arms].reverse();
+  reversedArms.forEach((hw,i)=>{
+    setTimeout(()=>{
+      gsap.to(hw, {
+        rotation: 180,
+        duration: phaseDur / 1000,
+        ease: "power2.inOut",
+        overwrite: 'auto',
+        onStart: () => haptic(15),
+      });
+    },i*(phaseDur+pause));
+  });
+  setTimeout(()=>{ clearThreeOverlay('ba'); overlay.remove(); S.bStack.pop(); S.bProduct=prevProduct; stage.style.visibility='visible'; S.bAnimating=false; renderBuildTray();renderBuildStage();renderBuildLedger(); }, reversedArms.length*(phaseDur+pause)+150);
+}
+
+function checkBuildSolved(){
+  const n=S.bNum;if(!n||S.bDone.has(n))return;
+  S.bDone.add(n); const numEl=document.getElementById('build-numeral'); numEl.onclick=()=>goToGrid();
+  setTimeout(()=>{
+    showAffirm(); numEl.classList.add('celebrate'); haptic([20,25,20,25,40]);
+    setTimeout(()=>{ numEl.classList.remove('celebrate'); numEl.classList.add('solved'); },1100);
+  },300);
+}
+
+// INIT
+S.fDone.add(1); buildDex('altar-dex-vp'); buildDex('grid-vp');
+if (window.THREE) { 
+  enterAltar(12);
+  /* Recalibrate after first paint — layout may not be settled during script execution */
+  requestAnimationFrame(() => {
+    resizeThreeRoom('fa');
+    calibrateOverlayPositions('fa');
+    requestThreeRender();
+  });
+}
+
+</script>
+</body>
+</html>
