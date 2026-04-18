@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build-A-Sentence</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Fredoka', sans-serif; background: #f0f4f8; min-height: 100vh; overflow-x: hidden; }
+
+  .header {
+    background: linear-gradient(135deg, #2d9cdb, #56ccf2);
+    color: white; text-align: center; padding: 16px 20px 12px;
+    box-shadow: 0 4px 15px rgba(45,156,219,0.3);
+  }
+  .header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: 1px; }
+  .header p { font-family: 'Patrick Hand', cursive; font-size: 1rem; opacity: 0.9; margin-top: 2px; }
+
+  .main-layout { display: flex; flex-direction: column; max-width: 1100px; margin: 0 auto; padding: 14px; gap: 14px; }
+
+  /* SENTENCE ZONE */
+  .sentence-zone {
+    background: white; border-radius: 16px; padding: 18px 18px 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 3px dashed #d0d8e0;
+    min-height: 90px; position: relative;
+  }
+  .sentence-zone-label {
+    position: absolute; top: -12px; left: 20px; background: #2d9cdb; color: white;
+    padding: 2px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+  }
+  .sentence-cards { display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; align-items: flex-start; padding-top: 4px; }
+  .sentence-cards .card { cursor: grab; animation: popIn 0.2s ease-out; margin-bottom: 4px; }
+  .sentence-cards .card:active { cursor: grabbing; }
+  .sentence-cards .card.dragging { opacity: 0.4; transform: scale(0.95); }
+  .sentence-cards .card .remove-btn {
+    position: absolute; top: -6px; right: -6px; width: 16px; height: 16px;
+    background: #e74c3c; color: white; border: none; border-radius: 50%;
+    font-size: 0.55rem; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; opacity: 0; transition: opacity 0.15s; line-height: 1;
+  }
+  .sentence-cards .card:hover .remove-btn { opacity: 1; }
+
+  /* Sentence type bar */
+  .sentence-type-bar { display: flex; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 2px solid #eef2f6; flex-wrap: wrap; }
+  .stype-label { font-size: 0.75rem; font-weight: 600; color: #555; }
+  .stype-btn {
+    padding: 3px 10px; border-radius: 6px; border: 2px solid #ccc;
+    background: white; font-family: 'Fredoka', sans-serif; font-size: 0.72rem;
+    font-weight: 600; color: #555; cursor: pointer; transition: all 0.15s;
+  }
+  .stype-btn:hover { background: #f5f5f5; }
+  .stype-btn.active { background: #2d9cdb; color: white; border-color: #2d9cdb; }
+
+  .sentence-preview {
+    margin-top: 10px; padding-top: 20px; border-top: 2px solid #eef2f6;
+    font-family: 'Patrick Hand', cursive; font-size: 1.4rem; color: #333;
+    min-height: 60px; line-height: 2.2; text-align: center;
+  }
+  .empty-prompt { color: #aab; font-style: italic; font-family: 'Fredoka', sans-serif; font-size: 0.9rem; }
+
+  /* PREVIEW DIAGRAM STYLES */
+  .pw { padding: 0 2px; }
+  
+  /* The overarching groups */
+  .diagram-group { 
+    display: inline-block; text-align: center; vertical-align: bottom; 
+    position: relative; margin: 0 2px;
+  }
+  .diagram-label {
+    position: absolute; top: -18px; left: 0; right: 0;
+    font-family: 'Fredoka', sans-serif; font-size: 0.65rem; font-weight: 700;
+    color: #888; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  
+  /* Sub-groups for Verb / DO / IO */
+  .sub-group { 
+    display: inline-block; position: relative; margin: 0 4px; padding-bottom: 20px; 
+  }
+  .sub-label {
+    position: absolute; bottom: 0; left: 0; right: 0; text-align: center;
+    font-family: 'Fredoka', sans-serif; font-size: 0.65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* Specific Underlines & Label Colors */
+  .pw-subject { border-bottom: 3px solid #b71c1c; }
+  
+  .pw-verb { border-bottom: 3px double #0d47a1; }
+  .verb-grp .sub-label { color: #0d47a1; }
+
+  .pw-do { border-bottom: 3px dashed #e65100; }
+  .do-grp .sub-label { color: #e65100; }
+
+  .pw-io { border-bottom: 3px dotted #f39c12; }
+  .io-grp .sub-label { color: #f39c12; }
+
+  .sp-divider {
+    display: inline-block; width: 2px; border-left: 2px solid #333; 
+    height: 1.6em; vertical-align: middle; margin: 0 10px; position: relative; top: 4px;
+  }
+
+  /* STEPS */
+  .steps-bar { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+  .step-pill {
+    padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;
+    background: #e8ecf0; color: #667; transition: all 0.3s; white-space: nowrap;
+  }
+  .step-pill.active { background: #2d9cdb; color: white; transform: scale(1.05); }
+  .step-pill.done { background: #27ae60; color: white; }
+
+  /* WORD BANK */
+  .word-bank { background: white; border-radius: 16px; padding: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .category-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+  
+  /* Filter Bars */
+  .filter-bar { display: flex; gap: 5px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
+  .filter-label { font-size: 0.75rem; font-weight: 600; color: #555; margin-right: 3px; }
+  .filter-btn {
+    padding: 3px 10px; border-radius: 7px; border: 2px solid #ccc;
+    background: white; font-family: 'Fredoka', sans-serif; font-size: 0.72rem;
+    font-weight: 600; color: #555; cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn:hover { background: #f0f0f0; }
+  
+  /* Verb Filters */
+  .filter-btn.verb-btn { border-color: #bde; color: #146; }
+  .filter-btn.verb-btn:hover { background: #e8f4fc; }
+  .filter-btn.verb-btn.active { background: #bde; border-color: #146; }
+  
+  /* Noun Filters */
+  .filter-btn.noun-btn { border-color: #fcc; color: #900; }
+  .filter-btn.noun-btn:hover { background: #fee; }
+  .filter-btn.noun-btn.active { background: #fcc; border-color: #900; }
+
+  .advanced-toggle {
+    margin-left: auto; padding: 3px 10px; border-radius: 6px; border: 1.5px solid #aaa;
+    background: white; font-family: 'Fredoka', sans-serif; font-size: 0.68rem;
+    font-weight: 600; color: #666; cursor: pointer; transition: all 0.15s;
+  }
+  .advanced-toggle:hover { background: #f0f0f0; }
+  .advanced-toggle.active { background: #555; color: white; border-color: #555; }
+
+  /* Tabs */
+  .cat-tab {
+    padding: 6px 12px; border-radius: 9px; border: 2px solid transparent;
+    font-family: 'Fredoka', sans-serif; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cat-tab:hover { transform: translateY(-2px); }
+  .cat-tab.active { border-color: #333; transform: scale(1.05); }
+  .cat-tab[data-cat="noun"]        { background: #fcc; color: #900; }
+  .cat-tab[data-cat="pronoun"]     { background: #f5c6c6; color: #7a1a1a; }
+  .cat-tab[data-cat="verb"]        { background: #bde; color: #146; }
+  .cat-tab[data-cat="preposition"] { background: #c8e0f4; color: #1a3a5c; }
+  .cat-tab[data-cat="adjective"]   { background: #ffedb3; color: #765a00; }
+  .cat-tab[data-cat="adverb"]      { background: #b8e6c8; color: #1a5c2e; }
+  .cat-tab[data-cat="conjunction"] { background: #d4e8d4; color: #2d5a2d; }
+  .cat-tab[data-cat="article"]     { background: #f0f0f0; color: #555; }
+  .cat-tab[data-cat="determiner"]  { background: #e0e0e0; color: #444; }
+
+  .word-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  /* CARDS */
+  .card {
+    display: inline-flex; flex-direction: column; align-items: center;
+    border: 2px solid #333; border-radius: 7px; padding: 3px 10px 5px;
+    cursor: pointer; transition: all 0.12s; user-select: none; position: relative;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+  .card:active { transform: scale(0.96); }
+  .card .card-label { font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; opacity: 0.7; margin-bottom: 1px; }
+  .card .card-word { font-family: 'Patrick Hand', cursive; font-size: 1.15rem; line-height: 1.2; }
+  
+  .card[data-cat="noun"]        { background: #fcc; }
+  .card[data-cat="pronoun"]     { background: #f5c6c6; }
+  .card[data-cat="verb"]        { background: #bde; }
+  .card[data-cat="adjective"]   { background: #ffedb3; }
+  .card[data-cat="article"]     { background: #f5f5f5; }
+  .card[data-cat="determiner"]  { background: #e8e8e8; }
+  .card[data-cat="adverb"]      { background: #b8e6c8; }
+  .card[data-cat="conjunction"] { background: #d4e8d4; }
+  .card[data-cat="preposition"] { background: #c8e0f4; }
+  .card.used { opacity: 0.3; pointer-events: none; transform: scale(0.95); }
+
+  .verb-tense-toggle { display: flex; gap: 2px; margin-top: 2px; flex-wrap: wrap; justify-content: center; }
+  .verb-tense-toggle button {
+    font-family: 'Fredoka', sans-serif; font-size: 0.5rem; font-weight: 600;
+    padding: 1px 5px; border-radius: 3px; border: 1.5px solid #146;
+    background: white; color: #146; cursor: pointer; transition: all 0.1s;
+  }
+  .verb-tense-toggle button:hover { background: #d5eaf5; }
+  .verb-tense-toggle button.active { background: #146; color: white; }
+
+  .noun-plural-toggle { margin-top: 2px; }
+  .noun-plural-toggle button {
+    font-family: 'Fredoka', sans-serif; font-size: 0.5rem; font-weight: 600;
+    padding: 1px 5px; border-radius: 3px; border: 1.5px solid #900;
+    background: white; color: #900; cursor: pointer; transition: all 0.1s;
+  }
+  .noun-plural-toggle button:hover { background: #fee; }
+  .noun-plural-toggle button.active { background: #900; color: white; }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  .btn {
+    padding: 7px 16px; border-radius: 9px; border: none;
+    font-family: 'Fredoka', sans-serif; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-clear { background: #e74c3c; color: white; }
+  .btn-undo  { background: #f39c12; color: white; }
+  .btn-read  { background: #8e44ad; color: white; }
+
+  /* GRAMMAR LABELS (Auto-Label only) */
+  .label-bar { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 8px; padding-top: 12px; border-top: 2px solid #eef2f6; }
+  .label-auto {
+    padding: 6px 14px; border-radius: 7px; font-family: 'Fredoka', sans-serif;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    border: 2px solid #2d9cdb; background: white; color: #2d9cdb;
+  }
+  .label-auto:hover { background: #e8f4fc; }
+  .label-auto.active { background: #2d9cdb; color: white; }
+
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.4rem; }
+    .card .card-word { font-size: 1rem; }
+    .step-pill { font-size: 0.6rem; padding: 3px 7px; }
+    .cat-tab { font-size: 0.7rem; padding: 5px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Build-A-Sentence</h1>
+  <p>Click words to add · Drag to reorder · ✕ to remove</p>
+</div>
+
+<div class="main-layout">
+  <div class="steps-bar" id="stepsBar">
+    <div class="step-pill" data-step="noun">1. Subject + Verb</div>
+    <div class="step-pill" data-step="article">2. + Article / Det.</div>
+    <div class="step-pill" data-step="adjective">3. + Adjective</div>
+    <div class="step-pill" data-step="adverb">4. + Adverb</div>
+    <div class="step-pill" data-step="preposition">5. + Preposition</div>
+  </div>
+
+  <div class="sentence-zone">
+    <div class="sentence-zone-label">YOUR SENTENCE</div>
+    <div class="sentence-cards" id="sentenceCards">
+      <span class="empty-prompt">Click words below to start building!</span>
+    </div>
+    
+    <div class="sentence-type-bar">
+      <span class="stype-label">Type:</span>
+      <button class="stype-btn active" data-type="statement" onclick="setSentenceType('statement')">Statement .</button>
+      <button class="stype-btn" data-type="question" onclick="setSentenceType('question')">Question ?</button>
+      <button class="stype-btn" data-type="exclamation" onclick="setSentenceType('exclamation')">Exclamation !</button>
+    </div>
+    
+    <div class="sentence-preview" id="sentencePreview"></div>
+    
+    <div class="label-bar" id="labelBar">
+      <button class="label-auto" id="autoLabelBtn" onclick="toggleAutoLabel()">Diagram Sentence</button>
+    </div>
+    
+    <div class="btn-row">
+      <button class="btn btn-undo" onclick="undoLast()">Undo Last Word</button>
+      <button class="btn btn-clear" onclick="clearSentence()">Clear All</button>
+      <button class="btn btn-read" onclick="readAloud()">Read Aloud</button>
+    </div>
+  </div>
+
+  <div class="word-bank">
+    <div class="category-tabs" id="catTabs"></div>
+    
+    <div id="tenseBar" class="filter-bar" style="display:none;">
+      <span class="filter-label">Tense:</span>
+      <button class="filter-btn verb-btn active" data-tense="present" onclick="setTense('present')">Present</button>
+      <button class="filter-btn verb-btn" data-tense="past" onclick="setTense('past')">Past</button>
+      <button class="filter-btn verb-btn" data-tense="future" onclick="setTense('future')">Future</button>
+      <button class="advanced-toggle" id="advancedTenseBtn" onclick="toggleAdvancedTenses()">Advanced</button>
+    </div>
+    <div id="advancedTenseBar" class="filter-bar" style="display:none;">
+      <span class="filter-label">Advanced:</span>
+      <button class="filter-btn verb-btn" data-tense="present_prog" onclick="setTense('present_prog')">Pres. Prog.</button>
+      <button class="filter-btn verb-btn" data-tense="past_prog" onclick="setTense('past_prog')">Past Prog.</button>
+      <button class="filter-btn verb-btn" data-tense="present_perf" onclick="setTense('present_perf')">Pres. Perf.</button>
+      <button class="filter-btn verb-btn" data-tense="past_perf" onclick="setTense('past_perf')">Past Perf.</button>
+    </div>
+    
+    <div id="nounBar" class="filter-bar" style="display:none;">
+      <span class="filter-label">Number:</span>
+      <button class="filter-btn noun-btn active" data-num="singular" onclick="setNounNumber('singular')">Singular</button>
+      <button class="filter-btn noun-btn" data-num="plural" onclick="setNounNumber('plural')">Plural</button>
+    </div>
+    <div id="nounTypeBar" class="filter-bar" style="display:none;">
+      <span class="filter-label">Category:</span>
+      <button class="filter-btn noun-btn active" data-ntype="person" onclick="setNounType('person')">People</button>
+      <button class="filter-btn noun-btn" data-ntype="animal" onclick="setNounType('animal')">Animals</button>
+      <button class="filter-btn noun-btn" data-ntype="place" onclick="setNounType('place')">Places</button>
+      <button class="filter-btn noun-btn" data-ntype="thing" onclick="setNounType('thing')">Things</button>
+    </div>
+    
+    <div class="word-grid" id="wordGrid"></div>
+  </div>
+
+</div>
+
+<script>
+// === VERB DATA ===
+const VERB_DATA = [
+  { base:"be",      present:"is",      past:"was",      pp:"been",      prog:"being",  irregular_agreement:true, present_pl:"are", past_pl:"were" },
+  { base:"have",    present:"has",     past:"had",      pp:"had",       prog:"having", irregular_agreement:true, present_pl:"have", past_pl:"had" },
+  { base:"run",     present:"runs",    past:"ran",      pp:"run",       prog:"running" },
+  { base:"walk",    present:"walks",   past:"walked",   pp:"walked",    prog:"walking" },
+  { base:"sprint",  present:"sprints", past:"sprinted", pp:"sprinted",  prog:"sprinting" },
+  { base:"move",    present:"moves",   past:"moved",    pp:"moved",     prog:"moving" },
+  { base:"jump",    present:"jumps",   past:"jumped",   pp:"jumped",    prog:"jumping" },
+  { base:"jog",     present:"jogs",    past:"jogged",   pp:"jogged",    prog:"jogging" },
+  { base:"slide",   present:"slides",  past:"slid",     pp:"slid",      prog:"sliding" },
+  { base:"creep",   present:"creeps",  past:"crept",    pp:"crept",     prog:"creeping" },
+  { base:"crawl",   present:"crawls",  past:"crawled",  pp:"crawled",   prog:"crawling" },
+  { base:"slip",    present:"slips",   past:"slipped",  pp:"slipped",   prog:"slipping" },
+  { base:"hike",    present:"hikes",   past:"hiked",    pp:"hiked",     prog:"hiking" },
+  { base:"trip",    present:"trips",   past:"tripped",  pp:"tripped",   prog:"tripping" },
+  { base:"fall",    present:"falls",   past:"fell",      pp:"fallen",    prog:"falling" },
+  { base:"hop",     present:"hops",    past:"hopped",   pp:"hopped",    prog:"hopping" },
+  { base:"sip",     present:"sips",    past:"sipped",   pp:"sipped",    prog:"sipping" },
+  { base:"talk",    present:"talks",   past:"talked",   pp:"talked",    prog:"talking" },
+  { base:"smile",   present:"smiles",  past:"smiled",   pp:"smiled",    prog:"smiling" },
+  { base:"bake",    present:"bakes",   past:"baked",    pp:"baked",     prog:"baking" },
+  { base:"rake",    present:"rakes",   past:"raked",    pp:"raked",     prog:"raking" },
+  { base:"hug",     present:"hugs",    past:"hugged",   pp:"hugged",    prog:"hugging" },
+  { base:"scream",  present:"screams", past:"screamed", pp:"screamed",  prog:"screaming" },
+  { base:"sleep",   present:"sleeps",  past:"slept",    pp:"slept",     prog:"sleeping" },
+  { base:"climb",   present:"climbs",  past:"climbed",  pp:"climbed",   prog:"climbing" },
+  { base:"eat",     present:"eats",    past:"ate",      pp:"eaten",     prog:"eating" },
+  { base:"bike",    present:"bikes",   past:"biked",    pp:"biked",     prog:"biking" },
+  { base:"swim",    present:"swims",   past:"swam",     pp:"swum",      prog:"swimming" },
+  { base:"open",    present:"opens",   past:"opened",   pp:"opened",    prog:"opening" },
+  { base:"win",     present:"wins",    past:"won",      pp:"won",       prog:"winning" },
+  { base:"sing",    present:"sings",   past:"sang",     pp:"sung",      prog:"singing" },
+  { base:"write",   present:"writes",  past:"wrote",    pp:"written",   prog:"writing" },
+  { base:"read",    present:"reads",   past:"read",     pp:"read",      prog:"reading" },
+  { base:"give",    present:"gives",   past:"gave",     pp:"given",     prog:"giving" },
+  { base:"think",   present:"thinks",  past:"thought",  pp:"thought",   prog:"thinking" },
+  { base:"see",     present:"sees",    past:"saw",      pp:"seen",      prog:"seeing" },
+  { base:"go",      present:"goes",    past:"went",     pp:"gone",      prog:"going" },
+  { base:"make",    present:"makes",   past:"made",     pp:"made",      prog:"making" },
+  { base:"sit",     present:"sits",    past:"sat",      pp:"sat",       prog:"sitting" },
+  { base:"stand",   present:"stands",  past:"stood",    pp:"stood",     prog:"standing" },
+];
+
+const TENSE_NAMES = { present:"Present", past:"Past", future:"Future", present_prog:"Pres. Prog.", past_prog:"Past Prog.", present_perf:"Pres. Perf.", past_perf:"Past Perf." };
+
+function getVerbWord(vi, tense, number) {
+  const v = VERB_DATA[vi];
+  const pl = (number === 'plural');
+  const hasIrr = v.irregular_agreement;
+
+  switch(tense) {
+    case 'past': return (hasIrr && pl && v.past_pl) ? v.past_pl : v.past;
+    case 'future': return 'will '+v.base;
+    case 'present_prog':
+      if (hasIrr && v.base === 'be') return pl ? 'are being' : 'is being';
+      return (pl?'are ':'is ')+v.prog;
+    case 'past_prog':
+      if (hasIrr && v.base === 'be') return pl ? 'were being' : 'was being';
+      return (pl?'were ':'was ')+v.prog;
+    case 'present_perf':
+      if (hasIrr && v.base === 'be') return pl ? 'have been' : 'has been';
+      if (hasIrr && v.base === 'have') return pl ? 'have had' : 'has had';
+      return (pl?'have ':'has ')+v.pp;
+    case 'past_perf': return 'had '+v.pp;
+    default:
+      if (hasIrr && pl && v.present_pl) return v.present_pl;
+      return pl ? v.base : v.present;
+  }
+}
+
+const SINGULAR_PRONOUNS = new Set(["i","he","him","she","her","it","myself","himself","herself","itself","who","whom"]);
+const PLURAL_PRONOUNS = new Set(["we","us","they","them","ourselves","themselves"]);
+
+function getPronounNumber(word) {
+  const w = word.toLowerCase();
+  if (SINGULAR_PRONOUNS.has(w)) return 'singular';
+  if (PLURAL_PRONOUNS.has(w)) return 'plural';
+  return 'plural'; 
+}
+
+function applyAgreement() {
+  const firstVerbIdx = sentence.findIndex(s => s.cat === 'verb');
+  if (firstVerbIdx === -1) return;
+
+  let subjectNumber = 'singular';
+  let isFirstPerson = false;
+  let hasConjunction = false;
+
+  for (let i = 0; i < firstVerbIdx; i++) {
+    const s = sentence[i];
+    if (s.word.toLowerCase() === 'i') isFirstPerson = true;
+    if (s.cat === 'conjunction' && s.word.toLowerCase() === 'and') hasConjunction = true;
+    if (s.cat === 'noun' && s.number === 'plural') subjectNumber = 'plural';
+    if (s.cat === 'pronoun' && getPronounNumber(s.word) === 'plural') subjectNumber = 'plural';
+  }
+
+  // Compound subject
+  if (hasConjunction) subjectNumber = 'plural';
+
+  sentence.forEach(item => {
+    if (item.cat === 'verb' && item.verbIndex !== undefined) {
+      item.number = subjectNumber;
+      let word = getVerbWord(item.verbIndex, item.tense, subjectNumber);
+      
+      // Special "I" handling for 'be'
+      if (isFirstPerson && !hasConjunction && VERB_DATA[item.verbIndex].base === 'be') {
+        if (item.tense === 'present') word = 'am';
+      }
+      item.word = word;
+    }
+  });
+}
+
+// === NOUN DATA ===
+const NOUN_DATA = [
+  // Animals
+  {s:"dog",p:"dogs",t:"animal"},{s:"cat",p:"cats",t:"animal"},{s:"bird",p:"birds",t:"animal"},
+  {s:"eagle",p:"eagles",t:"animal"},{s:"whale",p:"whales",t:"animal"},{s:"crab",p:"crabs",t:"animal"},
+  {s:"pig",p:"pigs",t:"animal"},{s:"fish",p:"fish",t:"animal"},{s:"turtle",p:"turtles",t:"animal"},
+  {s:"monkey",p:"monkeys",t:"animal"},{s:"bunny",p:"bunnies",t:"animal"},{s:"mouse",p:"mice",t:"animal"},
+  {s:"bear",p:"bears",t:"animal"},{s:"deer",p:"deer",t:"animal"},{s:"fox",p:"foxes",t:"animal"},
+  {s:"horse",p:"horses",t:"animal"},{s:"wolf",p:"wolves",t:"animal"},
+  // People
+  {s:"girl",p:"girls",t:"person"},{s:"boy",p:"boys",t:"person"},{s:"mom",p:"moms",t:"person"},
+  {s:"dad",p:"dads",t:"person"},{s:"brother",p:"brothers",t:"person"},{s:"sister",p:"sisters",t:"person"},
+  {s:"uncle",p:"uncles",t:"person"},{s:"aunt",p:"aunts",t:"person"},{s:"grandma",p:"grandmas",t:"person"},
+  {s:"grandpa",p:"grandpas",t:"person"},{s:"teacher",p:"teachers",t:"person"},{s:"doctor",p:"doctors",t:"person"},
+  {s:"student",p:"students",t:"person"},{s:"child",p:"children",t:"person"},{s:"person",p:"people",t:"person"},
+  {s:"man",p:"men",t:"person"},{s:"woman",p:"women",t:"person"},{s:"baby",p:"babies",t:"person"},
+  // Places
+  {s:"school",p:"schools",t:"place"},{s:"park",p:"parks",t:"place"},{s:"store",p:"stores",t:"place"},
+  {s:"library",p:"libraries",t:"place"},{s:"beach",p:"beaches",t:"place"},{s:"forest",p:"forests",t:"place"},
+  {s:"island",p:"islands",t:"place"},{s:"ferry",p:"ferries",t:"place"},{s:"mountain",p:"mountains",t:"place"},
+  {s:"ocean",p:"oceans",t:"place"},{s:"river",p:"rivers",t:"place"},{s:"lake",p:"lakes",t:"place"},
+  {s:"city",p:"cities",t:"place"},{s:"town",p:"towns",t:"place"},{s:"farm",p:"farms",t:"place"},
+  {s:"house",p:"houses",t:"place"},{s:"room",p:"rooms",t:"place"},
+  // Things
+  {s:"book",p:"books",t:"thing"},{s:"ball",p:"balls",t:"thing"},{s:"car",p:"cars",t:"thing"},
+  {s:"tree",p:"trees",t:"thing"},{s:"flower",p:"flowers",t:"thing"},{s:"rock",p:"rocks",t:"thing"},
+  {s:"chair",p:"chairs",t:"thing"},{s:"table",p:"tables",t:"thing"},{s:"door",p:"doors",t:"thing"},
+  {s:"box",p:"boxes",t:"thing"},{s:"bag",p:"bags",t:"thing"},{s:"hat",p:"hats",t:"thing"},
+  {s:"shoe",p:"shoes",t:"thing"},{s:"shirt",p:"shirts",t:"thing"},{s:"boat",p:"boats",t:"thing"},
+  {s:"bike",p:"bikes",t:"thing"},{s:"bus",p:"buses",t:"thing"},{s:"phone",p:"phones",t:"thing"},
+  {s:"apple",p:"apples",t:"thing"},{s:"cookie",p:"cookies",t:"thing"},{s:"sandwich",p:"sandwiches",t:"thing"},
+  {s:"leaf",p:"leaves",t:"thing"}
+];
+
+function getNounWord(ni, num) { return num === 'plural' ? NOUN_DATA[ni].p : NOUN_DATA[ni].s; }
+
+// === WORD LISTS ===
+const WORDS = {
+  article: ["the","a","an"],
+  determiner: ["this","that","these","those","every","each","some","any","no","many","few","several","all","both","my","your","his","her","our","their","its"],
+  noun: [],
+  pronoun: ["I","me","you","he","him","she","her","it","we","us","they","them","who","whom","myself","yourself","himself","herself","itself","ourselves","themselves"],
+  verb: [],
+  preposition: [
+    "in","on","at","to","for","with","from","by","about","between",
+    "through","during","before","after","above","below","under","over",
+    "near","beside","around","behind","across","along","against","toward",
+    "into","onto","upon","within","without","beneath","among","beyond",
+    "inside","outside","past","since","until","off","up","down"
+  ],
+  adjective: [
+    "big","small","short","black","blue","tall","smooth","soft","purple","sour","loud","quiet","huge","tiny",
+    "tart","sweet","rough","kind","beautiful","ugly","tasty","brilliant","rude","smart","bright","caring",
+    "young","red","eight","old","colorful","hot","windy","bumpy","four","crazy","sweaty","sticky"
+  ],
+  adverb: [
+    "occasionally","gently","here","extremely","loudly","accidentally","very","carefully","quietly",
+    "tomorrow","bravely","lazily","lovingly","briskly","yesterday","madly","never",
+    "early","late","already","weekly","backwards","really","there","yearly",
+    "slowly","quickly","suddenly","happily","sadly","angrily","softly","proudly","eagerly","silently","gracefully"
+  ],
+  conjunction: ["and","but","or","so","because","although","while","if","when","since","unless","yet","nor","both","either","neither","whether"]
+};
+
+const CAT_LABELS = {
+  article:"Articles", determiner:"Determiners", noun:"Nouns", pronoun:"Pronouns", verb:"Verbs",
+  preposition:"Prepositions", adjective:"Adjectives", adverb:"Adverbs", conjunction:"Conjunctions"
+};
+const CAT_SINGULAR = {
+  article:"Article", determiner:"Determiner", noun:"Noun", pronoun:"Pronoun", verb:"Verb",
+  preposition:"Preposition", adjective:"Adjective", adverb:"Adverb", conjunction:"Conjunction"
+};
+
+// === STATE ===
+let sentence = [];
+let activeCat = "noun";
+let activeTense = "present";
+let activeNounNum = "singular";
+let activeNounType = "person";
+let advancedTenses = false;
+let sentenceType = "statement";
+let dragIndex = null, dragOverIndex = null, touchStartX = 0, touchStartY = 0, isDragging = false;
+let autoLabelOn = false;
+
+// === SENTENCE TYPE ===
+function setSentenceType(type) {
+  sentenceType = type;
+  document.querySelectorAll('.stype-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  render();
+}
+
+function getEndPunctuation() {
+  if (sentenceType === 'question') return '?';
+  if (sentenceType === 'exclamation') return '!';
+  return '.';
+}
+
+// === TABS & GRID ===
+function buildTabs() {
+  const tabs = document.getElementById('catTabs');
+  tabs.innerHTML = '';
+  for (const cat of Object.keys(WORDS)) {
+    const t = document.createElement('button');
+    t.className = 'cat-tab' + (cat === activeCat ? ' active' : '');
+    t.dataset.cat = cat;
+    t.textContent = CAT_LABELS[cat];
+    t.onclick = () => { activeCat = cat; buildTabs(); buildGrid(); };
+    tabs.appendChild(t);
+  }
+  document.getElementById('tenseBar').style.display = activeCat === 'verb' ? 'flex' : 'none';
+  document.getElementById('advancedTenseBar').style.display = (activeCat === 'verb' && advancedTenses) ? 'flex' : 'none';
+  document.getElementById('nounBar').style.display = activeCat === 'noun' ? 'flex' : 'none';
+  document.getElementById('nounTypeBar').style.display = activeCat === 'noun' ? 'flex' : 'none';
+}
+
+function setTense(tense) {
+  activeTense = tense;
+  document.querySelectorAll('.verb-btn').forEach(b => b.classList.toggle('active', b.dataset.tense === tense));
+  buildGrid();
+}
+
+function setNounNumber(num) {
+  activeNounNum = num;
+  document.querySelectorAll('[data-num]').forEach(b => b.classList.toggle('active', b.dataset.num === num));
+  buildGrid();
+}
+
+function setNounType(type) {
+  activeNounType = type;
+  document.querySelectorAll('[data-ntype]').forEach(b => b.classList.toggle('active', b.dataset.ntype === type));
+  buildGrid();
+}
+
+function toggleAdvancedTenses() {
+  advancedTenses = !advancedTenses;
+  document.getElementById('advancedTenseBtn').classList.toggle('active', advancedTenses);
+  document.getElementById('advancedTenseBar').style.display = advancedTenses ? 'flex' : 'none';
+  if (!advancedTenses && ['present_prog','past_prog','present_perf','past_perf'].includes(activeTense)) setTense('present');
+}
+
+function buildGrid() {
+  const grid = document.getElementById('wordGrid');
+  grid.innerHTML = '';
+  if (activeCat === 'verb') {
+    VERB_DATA.forEach((v, i) => {
+      const word = getVerbWord(i, activeTense, 'singular');
+      const id = 'verb_' + i;
+      const card = mkCard(id, 'verb', `Verb · ${TENSE_NAMES[activeTense]||activeTense}`, word);
+      card.onclick = () => addVerb(i, id);
+      grid.appendChild(card);
+    });
+  } else if (activeCat === 'noun') {
+    NOUN_DATA.forEach((n, i) => {
+      if (n.t !== activeNounType) return;
+      const word = getNounWord(i, activeNounNum);
+      const id = 'noun_' + i;
+      const typeLabel = n.t === 'person' ? 'Person' : n.t === 'animal' ? 'Animal' : n.t === 'place' ? 'Place' : 'Thing';
+      const card = mkCard(id, 'noun', `Noun · ${typeLabel} · ${activeNounNum}`, word);
+      card.onclick = () => addNoun(i, id);
+      grid.appendChild(card);
+    });
+  } else {
+    WORDS[activeCat].forEach((word, i) => {
+      const id = activeCat + '_' + i;
+      const card = mkCard(id, activeCat, CAT_SINGULAR[activeCat], word);
+      card.onclick = () => addWord(activeCat, word, id);
+      grid.appendChild(card);
+    });
+  }
+}
+
+function mkCard(id, cat, label, word) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.cat = cat;
+  card.innerHTML = `<span class="card-label">${label}</span><span class="card-word">${word}</span>`;
+  return card;
+}
+
+// === ADD / REMOVE ===
+function addWord(cat, word, id) {
+  // Assign a unique instance ID so multiple instances don't break dragging/removal
+  sentence.push({ cat, word, id: id + '_' + Math.random(), originalId: id });
+  if (autoLabelOn) applyAutoLabels();
+  applyAgreement();
+  render();
+}
+
+function addVerb(vi, id) {
+  sentence.push({ cat:'verb', word: getVerbWord(vi, activeTense, 'singular'), id: id + '_' + Math.random(), originalId: id, verbIndex:vi, tense:activeTense, number:'singular' });
+  if (autoLabelOn) applyAutoLabels();
+  applyAgreement();
+  render();
+}
+
+function addNoun(ni, id) {
+  sentence.push({ cat:'noun', word: getNounWord(ni, activeNounNum), id: id + '_' + Math.random(), originalId: id, nounIndex:ni, number:activeNounNum });
+  if (autoLabelOn) applyAutoLabels();
+  applyAgreement();
+  render();
+}
+
+function setVerbTenseInSentence(idx, tense) {
+  const item = sentence[idx]; if (item.cat!=='verb'||item.verbIndex===undefined) return;
+  item.tense = tense; item.word = getVerbWord(item.verbIndex, tense, item.number || 'singular'); render();
+}
+
+function setNounNumberInSentence(idx, num) {
+  const item = sentence[idx]; if (item.cat!=='noun'||item.nounIndex===undefined) return;
+  item.number = num; item.word = getNounWord(item.nounIndex, num);
+  applyAgreement();
+  render();
+}
+
+function undoLast() {
+  if (!sentence.length) return;
+  sentence.pop();
+  if (autoLabelOn) applyAutoLabels();
+  applyAgreement();
+  render();
+}
+
+function clearSentence() {
+  sentence = []; 
+  render();
+}
+
+function removeFromSentence(idx) {
+  sentence.splice(idx, 1)[0];
+  if (autoLabelOn) applyAutoLabels();
+  applyAgreement();
+  render();
+}
+
+// === SMART AUTO-LABELING ===
+function toggleAutoLabel() {
+  autoLabelOn = !autoLabelOn;
+  document.getElementById('autoLabelBtn').classList.toggle('active', autoLabelOn);
+  if (autoLabelOn) applyAutoLabels();
+  else sentence.forEach(s => { delete s.role; delete s.role2; delete s.npGroup; });
+  render();
+}
+
+function applyAutoLabels() {
+  sentence.forEach(s => { delete s.role; delete s.role2; delete s.npGroup; });
+  const firstVerbIdx = sentence.findIndex(s => s.cat === 'verb');
+  
+  if (firstVerbIdx === -1) { 
+    sentence.forEach(s => s.role = 'subject'); 
+    return; 
+  }
+
+  // Identify Subject & Base Predicate
+  sentence.forEach((s, i) => {
+    if (i < firstVerbIdx) s.role = 'subject';
+    else {
+      s.role = 'predicate';
+      if (s.cat === 'verb') {
+        s.role2 = 'verb';
+        s.npGroup = 'Verb';
+      }
+    }
+  });
+
+  // Find DO and IO within the predicate
+  let nounPhrases = [];
+  let currentNP = [];
+  
+  for (let i = firstVerbIdx + 1; i < sentence.length; i++) {
+    let s = sentence[i];
+    // Stop looking for DO/IO when we hit a preposition
+    if (s.cat === 'preposition') break; 
+    
+    // Skip adverbs and trailing verbs
+    if (s.cat === 'verb' || s.cat === 'adverb') continue; 
+    
+    if (['noun', 'pronoun', 'article', 'determiner', 'adjective'].includes(s.cat)) {
+      currentNP.push(i);
+      // Noun or pronoun terminates the noun phrase
+      if (s.cat === 'noun' || s.cat === 'pronoun') {
+        nounPhrases.push(currentNP);
+        currentNP = [];
+      }
+    }
+  }
+
+  // Assign IO/DO roles based on number of consecutive noun phrases found
+  if (nounPhrases.length >= 2) {
+    nounPhrases[0].forEach(idx => { sentence[idx].role2 = 'io'; sentence[idx].npGroup = 'Ind. Object'; });
+    nounPhrases[1].forEach(idx => { sentence[idx].role2 = 'do'; sentence[idx].npGroup = 'Direct Object'; });
+  } else if (nounPhrases.length === 1) {
+    nounPhrases[0].forEach(idx => { sentence[idx].role2 = 'do'; sentence[idx].npGroup = 'Direct Object'; });
+  }
+}
+
+// === RENDER ===
+function render() {
+  const sc = document.getElementById('sentenceCards');
+  
+  if (!sentence.length) {
+    sc.innerHTML = '<span class="empty-prompt">Click words below to start building!</span>';
+  } else {
+    sc.innerHTML = '';
+    const allTenses = Object.keys(TENSE_NAMES);
+
+    sentence.forEach((item, i) => {
+      const card = document.createElement('div');
+      card.className = 'card'; card.dataset.cat = item.cat; card.dataset.index = i;
+      card.draggable = true;
+
+      let labelText = CAT_SINGULAR[item.cat] || item.cat;
+      if (item.cat === 'verb' && item.tense) {
+        const numTag = item.number === 'plural' ? ' (pl)' : ' (sg)';
+        labelText += ' · ' + (TENSE_NAMES[item.tense]||item.tense) + numTag;
+      }
+      if (item.cat === 'noun' && item.number) labelText += ' · ' + item.number;
+
+      let inner = `<span class="card-label">${labelText}</span><span class="card-word">${item.word}</span>`;
+      inner += `<button class="remove-btn" onclick="event.stopPropagation(); removeFromSentence(${i})">✕</button>`;
+      
+      // Verb tense toggles
+      if (item.cat === 'verb' && item.verbIndex !== undefined) {
+        const tenses = advancedTenses ? allTenses : ['present','past','future'];
+        const labels = advancedTenses ? ['Pres','Past','Fut','P.Pg','Pt.Pg','P.Pf','Pt.Pf'] : ['Pres','Past','Fut'];
+        inner += '<div class="verb-tense-toggle">';
+        tenses.forEach((t, ti) => { inner += `<button class="${item.tense===t?'active':''}" onclick="event.stopPropagation();setVerbTenseInSentence(${i},'${t}')">${labels[ti]}</button>`; });
+        inner += '</div>';
+      }
+      // Noun number toggle
+      if (item.cat === 'noun' && item.nounIndex !== undefined) {
+        inner += `<div class="noun-plural-toggle">
+          <button class="${item.number==='singular'?'active':''}" onclick="event.stopPropagation();setNounNumberInSentence(${i},'singular')">Sing</button>
+          <button class="${item.number!=='singular'?'active':''}" onclick="event.stopPropagation();setNounNumberInSentence(${i},'plural')">Plur</button>
+        </div>`;
+      }
+
+      card.innerHTML = inner;
+      
+      // Drag events
+      card.addEventListener('dragstart', e => { dragIndex = i; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      card.addEventListener('dragend', () => { card.classList.remove('dragging'); clearDI(); dragIndex = null; dragOverIndex = null; });
+      card.addEventListener('dragover', e => { e.preventDefault(); if (dragIndex===null||dragIndex===i) return; e.dataTransfer.dropEffect='move'; showDI(i,e); });
+      card.addEventListener('drop', e => { e.preventDefault(); if (dragIndex===null||dragIndex===i) return; reorder(dragIndex,i); });
+      card.addEventListener('touchstart', e => { const t=e.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY; isDragging=false; dragIndex=i; }, {passive:true});
+      card.addEventListener('touchmove', e => {
+        const t=e.touches[0]; if(Math.abs(t.clientX-touchStartX)>10||Math.abs(t.clientY-touchStartY)>10)isDragging=true;
+        if(!isDragging)return; e.preventDefault();
+        const el=document.elementFromPoint(t.clientX,t.clientY);
+        if(el){const tc=el.closest('.sentence-cards .card');if(tc&&tc.dataset.index!==undefined){const ti=parseInt(tc.dataset.index);if(ti!==dragIndex){clearDI();tc.style.borderLeft='4px solid #2d9cdb';}dragOverIndex=ti;}}
+      }, {passive:false});
+      card.addEventListener('touchend', () => { if(isDragging&&dragIndex!==null&&dragOverIndex!==null&&dragIndex!==dragOverIndex)reorder(dragIndex,dragOverIndex); clearDI(); dragIndex=null; dragOverIndex=null; isDragging=false; });
+      
+      sc.appendChild(card);
+    });
+  }
+  renderPreview();
+  buildGrid(); 
+  updateSteps();
+}
+
+function renderPreview() {
+  const preview = document.getElementById('sentencePreview');
+  const punct = getEndPunctuation();
+
+  if (!sentence.length) {
+    preview.innerHTML = '';
+    return;
+  }
+
+  // Pre-pass to fix 'a' vs 'an' in the sentence array before generating HTML
+  for (let i = 0; i < sentence.length - 1; i++) {
+    let w = sentence[i].word.toLowerCase();
+    if (w === 'a' || w === 'an') {
+      let nextWord = sentence[i+1].word;
+      let startsWithVowel = /^[aeiouAEIOU]/.test(nextWord);
+      sentence[i].word = startsWithVowel ? (sentence[i].word === 'A' ? 'An' : 'an') : (sentence[i].word === 'An' ? 'A' : 'a');
+    }
+  }
+
+  if (!autoLabelOn) {
+    let text = sentence.map(s => s.word).join(' ');
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+    if (!/[.!?]$/.test(text)) text += punct;
+    preview.textContent = text;
+    return;
+  }
+
+  // --- DIAGRAM RENDERER ---
+  let subjectHtml = '';
+  let predicateHtml = '';
+  
+  // Track grouping to wrap multi-word IO/DO into sub-containers
+  let currentGroup = null;
+  let groupContent = '';
+
+  sentence.forEach((s, i) => {
+    let w = s.word;
+    if (i === 0) w = w.charAt(0).toUpperCase() + w.slice(1);
+    
+    // Base classes
+    let classes = ['pw'];
+    if (s.role === 'subject') classes.push('pw-subject');
+    if (s.role2 === 'verb') classes.push('pw-verb');
+    if (s.role2 === 'do') classes.push('pw-do');
+    if (s.role2 === 'io') classes.push('pw-io');
+    
+    let spanHtml = `<span class="${classes.join(' ')}">${w}</span> `;
+
+    if (s.role === 'subject') {
+      subjectHtml += spanHtml;
+    } else {
+      // Grouping logic for Verb / DO / IO
+      if (s.npGroup) {
+        if (currentGroup !== s.npGroup) {
+          // Close previous group if switching directly
+          if (currentGroup) {
+             let groupClass = currentGroup === 'Verb' ? 'verb-grp' : (currentGroup === 'Direct Object' ? 'do-grp' : 'io-grp');
+             predicateHtml += `<span class="sub-group ${groupClass}"><span class="sub-label">${currentGroup}</span>${groupContent}</span> `;
+          }
+          currentGroup = s.npGroup;
+          groupContent = spanHtml;
+        } else {
+          groupContent += spanHtml;
+        }
+      } else {
+        // Not in a specialized group. Close open groups if any exist.
+        if (currentGroup) {
+           let groupClass = currentGroup === 'Verb' ? 'verb-grp' : (currentGroup === 'Direct Object' ? 'do-grp' : 'io-grp');
+           predicateHtml += `<span class="sub-group ${groupClass}"><span class="sub-label">${currentGroup}</span>${groupContent}</span> `;
+           currentGroup = null;
+           groupContent = '';
+        }
+        predicateHtml += spanHtml;
+      }
+    }
+  });
+
+  // Flush any remaining groups
+  if (currentGroup) {
+    let groupClass = currentGroup === 'Verb' ? 'verb-grp' : (currentGroup === 'Direct Object' ? 'do-grp' : 'io-grp');
+    predicateHtml += `<span class="sub-group ${groupClass}"><span class="sub-label">${currentGroup}</span>${groupContent}</span> `;
+  }
+
+  let finalHtml = '';
+  
+  if (subjectHtml.trim()) {
+    finalHtml += `
+      <span class="diagram-group">
+        <span class="diagram-label">Subject</span>
+        ${subjectHtml.trim()}
+      </span>
+    `;
+  }
+
+  if (subjectHtml.trim() && predicateHtml.trim()) {
+    finalHtml += `<span class="sp-divider"></span>`;
+  }
+
+  if (predicateHtml.trim()) {
+    finalHtml += `
+      <span class="diagram-group">
+        <span class="diagram-label">Predicate</span>
+        ${predicateHtml.trim()}
+      </span>
+    `;
+  }
+
+  finalHtml = finalHtml.trim();
+  if (!/[.!?]$/.test(finalHtml.replace(/<[^>]*>?/gm, ''))) finalHtml += punct;
+  
+  preview.innerHTML = finalHtml;
+}
+
+// === DRAG HELPERS ===
+function showDI(ti, e) {
+  clearDI();
+  document.querySelectorAll('.sentence-cards .card').forEach(c => {
+    if (parseInt(c.dataset.index)===ti) {
+      const r=c.getBoundingClientRect();
+      if(e.clientX<r.left+r.width/2) c.style.borderLeft='4px solid #2d9cdb';
+      else c.style.borderRight='4px solid #2d9cdb';
+    }
+  });
+}
+function clearDI() { document.querySelectorAll('.sentence-cards .card').forEach(c => { c.style.borderLeft=''; c.style.borderRight=''; }); }
+function reorder(from, to) { const item=sentence.splice(from,1)[0]; sentence.splice(to,0,item); if(autoLabelOn)applyAutoLabels(); applyAgreement(); render(); }
+
+// === STEPS ===
+function updateSteps() {
+  const cats = new Set(sentence.map(s => s.cat));
+  document.querySelectorAll('.step-pill').forEach(p => {
+    const step = p.dataset.step; let done = false;
+    if (step==='noun') done = (cats.has('noun')||cats.has('pronoun')) && cats.has('verb');
+    else if (step==='article') done = cats.has('article') || cats.has('determiner');
+    else if (step==='adjective') done = cats.has('adjective');
+    else if (step==='adverb') done = cats.has('adverb');
+    else if (step==='preposition') done = cats.has('preposition');
+    p.classList.toggle('done', done); p.classList.remove('active');
+  });
+  for (const step of ['noun','article','adjective','adverb','preposition']) {
+    const pill = document.querySelector(`.step-pill[data-step="${step}"]`);
+    if (!pill.classList.contains('done')) { pill.classList.add('active'); break; }
+  }
+}
+
+// === READ ===
+function readAloud() {
+  if (!sentence.length) return;
+  let text = sentence.map(s => s.word).join(' ');
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  if (!/[.!?]$/.test(text)) text += getEndPunctuation();
+  const u = new SpeechSynthesisUtterance(text); u.rate = 0.85;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+buildTabs(); buildGrid(); updateSteps();
+</script>
+</body>
+</html>
