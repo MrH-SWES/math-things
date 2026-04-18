@@ -1006,6 +1006,8 @@ buildTabs(); buildGrid(); updateSteps();
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.1';
 
 const MODEL_ID = 'onnx-community/Qwen2.5-0.5B-Instruct';
+const GRAMMAR_PROMPT = 'You are a friendly grammar helper for elementary school students. Check the grammar of the sentence. If correct, praise the student. If there are errors, explain them simply and suggest a fix. Keep your response to 2-3 short sentences.';
+const SAYDO_PROMPT = 'You are a helpful teacher for young students. Classify the sentence as either a "Say" sentence (someone is speaking, telling, asking, or communicating) or a "Do" sentence (someone is performing a physical action). Respond with "Say" or "Do" first, then give a brief 1-sentence kid-friendly explanation.';
 let generator = null;
 let aiReady = false;
 
@@ -1042,15 +1044,15 @@ function getSentenceText() {
   return text;
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.appendChild(document.createTextNode(str));
-  return div.innerHTML;
-}
-
 function showResult(text, type) {
   resultEl.className = 'ai-result visible ' + type;
-  resultEl.innerHTML = escapeHtml(text) + '<button class="ai-close" onclick="document.getElementById(\'aiResult\').className=\'ai-result\'">&times;</button>';
+  resultEl.textContent = '';
+  resultEl.appendChild(document.createTextNode(text));
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'ai-close';
+  closeBtn.textContent = '\u00d7';
+  closeBtn.addEventListener('click', () => { resultEl.className = 'ai-result'; });
+  resultEl.appendChild(closeBtn);
 }
 
 function setButtonsLoading(loading) {
@@ -1085,7 +1087,7 @@ window.aiGrammarCheck = async function() {
 
   try {
     const result = await runPrompt(
-      'You are a friendly grammar helper for elementary school students. Check the grammar of the sentence. If correct, praise the student. If there are errors, explain them simply and suggest a fix. Keep your response to 2-3 short sentences.',
+      GRAMMAR_PROMPT,
       'Check this sentence: "' + text + '"'
     );
     showResult(result || 'Great job building that sentence!', 'grammar');
@@ -1108,7 +1110,7 @@ window.aiSayOrDo = async function() {
 
   try {
     const result = await runPrompt(
-      'You are a helpful teacher for young students. Classify the sentence as either a "Say" sentence (someone is speaking, telling, asking, or communicating) or a "Do" sentence (someone is performing a physical action). Respond with "Say" or "Do" first, then give a brief 1-sentence kid-friendly explanation.',
+      SAYDO_PROMPT,
       'Is this a Say or Do sentence? "' + text + '"'
     );
     const isSay = result && result.toLowerCase().startsWith('say');
