@@ -223,6 +223,53 @@
   .label-auto:hover { background: #e8f4fc; }
   .label-auto.active { background: #2d9cdb; color: white; }
 
+  /* AI Feature Styles */
+  .ai-toolbar {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px;
+    padding-top: 10px; border-top: 2px solid #eef2f6; flex-wrap: wrap;
+  }
+  .ai-btn {
+    padding: 6px 14px; border-radius: 8px; border: 2px solid #7c3aed;
+    background: white; font-family: 'Fredoka', sans-serif; font-size: 0.78rem;
+    font-weight: 600; color: #7c3aed; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ai-btn:hover { background: #7c3aed; color: white; }
+  .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ai-btn:disabled:hover { background: white; color: #7c3aed; }
+  .ai-btn .ai-icon { font-size: 1rem; }
+  .ai-result {
+    margin-top: 10px; padding: 12px 16px; border-radius: 10px;
+    font-family: 'Patrick Hand', cursive; font-size: 1.1rem; line-height: 1.5;
+    display: none; position: relative; animation: popIn 0.25s ease-out;
+  }
+  .ai-result.visible { display: block; }
+  .ai-result.grammar {
+    background: linear-gradient(135deg, #f3e8ff, #ede9fe);
+    border: 2px solid #c4b5fd; color: #4c1d95;
+  }
+  .ai-result.saydo {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 2px solid #fbbf24; color: #78350f;
+  }
+  .ai-result .ai-close {
+    position: absolute; top: 6px; right: 10px; background: none; border: none;
+    font-size: 1rem; cursor: pointer; color: inherit; opacity: 0.6;
+  }
+  .ai-result .ai-close:hover { opacity: 1; }
+  .ai-loading {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor;
+    border-right-color: transparent; border-radius: 50%;
+    animation: aiSpin 0.6s linear infinite; vertical-align: middle;
+  }
+  @keyframes aiSpin { to { transform: rotate(360deg); } }
+  .ai-status {
+    font-size: 0.72rem; color: #7c3aed; font-weight: 500;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .ai-status.ready { color: #059669; }
+  .ai-status.error { color: #dc2626; }
+
   @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @media (max-width: 600px) {
     .header h1 { font-size: 1.4rem; }
@@ -272,6 +319,17 @@
       <button class="btn btn-clear" onclick="clearSentence()">Clear All</button>
       <button class="btn btn-read" onclick="readAloud()">Read Aloud</button>
     </div>
+
+    <div class="ai-toolbar">
+      <span class="ai-status" id="aiStatus">🤖 AI loading…</span>
+      <button class="ai-btn" id="aiGrammarBtn" onclick="aiGrammarCheck()" disabled>
+        <span class="ai-icon">✨</span> Grammar Check
+      </button>
+      <button class="ai-btn" id="aiSayDoBtn" onclick="aiSayOrDo()" disabled>
+        <span class="ai-icon">🎭</span> Say or Do?
+      </button>
+    </div>
+    <div class="ai-result" id="aiResult"></div>
   </div>
 
   <div class="word-bank">
@@ -941,6 +999,132 @@ function readAloud() {
 }
 
 buildTabs(); buildGrid(); updateSteps();
+</script>
+
+<script type="module">
+// === AI INTEGRATION (Qwen2.5-0.5B via Transformers.js) ===
+import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.1';
+
+const MODEL_ID = 'onnx-community/Qwen2.5-0.5B-Instruct';
+let generator = null;
+let aiReady = false;
+
+const statusEl = document.getElementById('aiStatus');
+const grammarBtn = document.getElementById('aiGrammarBtn');
+const sayDoBtn = document.getElementById('aiSayDoBtn');
+const resultEl = document.getElementById('aiResult');
+
+async function initAI() {
+  try {
+    statusEl.innerHTML = '🤖 <span class="ai-loading"></span> Loading Qwen2.5-0.5B…';
+    generator = await pipeline('text-generation', MODEL_ID, {
+      dtype: 'q4',
+      device: 'wasm'
+    });
+    aiReady = true;
+    statusEl.textContent = '🤖 AI Ready';
+    statusEl.className = 'ai-status ready';
+    grammarBtn.disabled = false;
+    sayDoBtn.disabled = false;
+  } catch (err) {
+    console.error('AI init failed:', err);
+    statusEl.textContent = '🤖 AI unavailable';
+    statusEl.className = 'ai-status error';
+  }
+}
+
+function getSentenceText() {
+  if (typeof sentence === 'undefined' || !sentence.length) return '';
+  let text = sentence.map(s => s.word).join(' ');
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  const punct = typeof getEndPunctuation === 'function' ? getEndPunctuation() : '.';
+  if (!/[.!?]$/.test(text)) text += punct;
+  return text;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function showResult(text, type) {
+  resultEl.className = 'ai-result visible ' + type;
+  resultEl.innerHTML = escapeHtml(text) + '<button class="ai-close" onclick="document.getElementById(\'aiResult\').className=\'ai-result\'">&times;</button>';
+}
+
+function setButtonsLoading(loading) {
+  grammarBtn.disabled = loading;
+  sayDoBtn.disabled = loading;
+}
+
+async function runPrompt(systemMsg, userMsg) {
+  if (!generator) return null;
+  const messages = [
+    { role: 'system', content: systemMsg },
+    { role: 'user', content: userMsg }
+  ];
+  const out = await generator(messages, {
+    max_new_tokens: 150,
+    temperature: 0.3,
+    do_sample: true
+  });
+  const generated = out[0].generated_text;
+  // The last message in the generated conversation is the assistant's reply
+  const assistantMsg = generated[generated.length - 1];
+  return assistantMsg ? assistantMsg.content.trim() : '';
+}
+
+window.aiGrammarCheck = async function() {
+  const text = getSentenceText();
+  if (!text) { showResult('Build a sentence first, then check its grammar!', 'grammar'); return; }
+  if (!aiReady) return;
+
+  setButtonsLoading(true);
+  grammarBtn.innerHTML = '<span class="ai-loading"></span> Checking…';
+
+  try {
+    const result = await runPrompt(
+      'You are a friendly grammar helper for elementary school students. Check the grammar of the sentence. If correct, praise the student. If there are errors, explain them simply and suggest a fix. Keep your response to 2-3 short sentences.',
+      'Check this sentence: "' + text + '"'
+    );
+    showResult(result || 'Great job building that sentence!', 'grammar');
+  } catch (err) {
+    console.error('Grammar check failed:', err);
+    showResult('Oops, something went wrong. Try again!', 'grammar');
+  } finally {
+    grammarBtn.innerHTML = '<span class="ai-icon">✨</span> Grammar Check';
+    setButtonsLoading(false);
+  }
+};
+
+window.aiSayOrDo = async function() {
+  const text = getSentenceText();
+  if (!text) { showResult('Build a sentence first, then I\'ll tell you if it\'s a "Say" or "Do"!', 'saydo'); return; }
+  if (!aiReady) return;
+
+  setButtonsLoading(true);
+  sayDoBtn.innerHTML = '<span class="ai-loading"></span> Thinking…';
+
+  try {
+    const result = await runPrompt(
+      'You are a helpful teacher for young students. Classify the sentence as either a "Say" sentence (someone is speaking, telling, asking, or communicating) or a "Do" sentence (someone is performing a physical action). Respond with "Say" or "Do" first, then give a brief 1-sentence kid-friendly explanation.',
+      'Is this a Say or Do sentence? "' + text + '"'
+    );
+    const isSay = result && result.toLowerCase().startsWith('say');
+    const emoji = isSay ? '💬' : '🏃';
+    showResult(emoji + ' ' + (result || 'That looks like a "Do" sentence — someone is taking an action!'), 'saydo');
+  } catch (err) {
+    console.error('Say/Do check failed:', err);
+    showResult('Oops, something went wrong. Try again!', 'saydo');
+  } finally {
+    sayDoBtn.innerHTML = '<span class="ai-icon">🎭</span> Say or Do?';
+    setButtonsLoading(false);
+  }
+};
+
+// Start loading the model in the background
+initAI();
 </script>
 </body>
 </html>
