@@ -53,9 +53,7 @@
 
         @media (max-width: 1400px) { :root { --scale: 0.85; } }
         @media (max-width: 1000px) { :root { --scale: 0.65; } }
-        @media (max-width: 600px) { :root { --scale: 0.45; } }
         @media (max-height: 850px) { :root { --scale: 0.75; } }
-        @media (max-height: 700px) { :root { --scale: 0.6; } }
 
         [data-domain="cc"]  { --node-color: var(--dom-cc); }
         [data-domain="nbt"] { --node-color: var(--dom-nbt); }
@@ -91,53 +89,21 @@
         .view.zoom-out { transform: scale(1.05); opacity: 0; }
         .view.zoom-in { transform: scale(0.95); opacity: 0; }
 
-        /* Braid view needs to manage its own internal scroll, overriding the default view padding */
         #view-braid { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 
         /* =========================================
            VIEW 0: HUB (HOMEPAGE CONSTELLATION)
            ========================================= */
-        .gallery-wrapper {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 100%; height: 100%; min-height: 800px; min-width: 1200px;
-        }
-        .ambient-glow {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 600px; height: 600px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(232,233,237,0) 70%);
-            pointer-events: none; z-index: 0;
-        }
-        .spoke {
-            position: absolute; bottom: 50%; left: 50%; width: calc(12px * var(--scale)); 
-            height: calc(var(--radius) * var(--scale)); 
-            transform-origin: bottom center; transform: translateX(-50%) rotate(var(--angle));
-            background: var(--alum-base); box-shadow: var(--hub-milled-track); border-radius: calc(6px * var(--scale)); z-index: 1;
-        }
-        .hub-center {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; 
-            width: calc(280px * var(--scale)); height: calc(280px * var(--scale)); border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.2) 30%, transparent 70%), 
-                        linear-gradient(135deg, #fdfdfd 0%, #d0d0d5 40%, #b5b6be 60%, #e8e9ed 100%);
-            box-shadow: inset 3px 3px 8px rgba(255,255,255,0.9), inset -6px -6px 16px rgba(0,0,0,0.15), 0 24px 48px rgba(0,0,0,0.25);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease; text-align: center;
-        }
+        .gallery-wrapper { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; min-height: 800px; min-width: 1200px; }
+        .ambient-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(232,233,237,0) 70%); pointer-events: none; z-index: 0; }
+        .spoke { position: absolute; bottom: 50%; left: 50%; width: calc(12px * var(--scale)); height: calc(var(--radius) * var(--scale)); transform-origin: bottom center; transform: translateX(-50%) rotate(var(--angle)); background: var(--alum-base); box-shadow: var(--hub-milled-track); border-radius: calc(6px * var(--scale)); z-index: 1; }
+        .hub-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; width: calc(280px * var(--scale)); height: calc(280px * var(--scale)); border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.2) 30%, transparent 70%), linear-gradient(135deg, #fdfdfd 0%, #d0d0d5 40%, #b5b6be 60%, #e8e9ed 100%); box-shadow: inset 3px 3px 8px rgba(255,255,255,0.9), inset -6px -6px 16px rgba(0,0,0,0.15), 0 24px 48px rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease; text-align: center; }
         .hub-center:hover { transform: translate(-50%, -50%) scale(1.02); box-shadow: inset 3px 3px 8px rgba(255,255,255,0.9), inset -6px -6px 16px rgba(0,0,0,0.15), 0 32px 64px rgba(0,0,0,0.3); }
         .hub-center:active { transform: translate(-50%, -50%) scale(0.98); }
-        .hub-center-title { 
-            font-weight: 900; font-size: calc(2.6rem * var(--scale)); letter-spacing: -0.05em; 
-            color: #2D2D35; text-shadow: 0px 2px 2px rgba(255,255,255,0.9); line-height: 1; z-index: 21; white-space: nowrap;
-        }
+        .hub-center-title { font-weight: 900; font-size: calc(2.6rem * var(--scale)); letter-spacing: -0.05em; color: #2D2D35; text-shadow: 0px 2px 2px rgba(255,255,255,0.9); line-height: 1; z-index: 21; white-space: nowrap; }
 
         .node-assembly { position: absolute; top: 50%; left: 50%; }
-        .domain-plate {
-            position: absolute; z-index: 10; opacity: 1; 
-            background: linear-gradient(135deg, #f4f4f6 0%, #e2e3e7 50%, #cbccd2 100%);
-            box-shadow: var(--hub-raised); border-radius: calc(32px * var(--scale));
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center;
-            transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%);
-        }
+        .domain-plate { position: absolute; z-index: 10; opacity: 1; background: linear-gradient(135deg, #f4f4f6 0%, #e2e3e7 50%, #cbccd2 100%); box-shadow: var(--hub-raised); border-radius: calc(32px * var(--scale)); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%); }
         .domain-plate:hover { transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, calc(-50% - 12px)) scale(1.02); box-shadow: var(--hub-raised-hover); }
         .domain-plate:active { transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%) scale(0.98); box-shadow: var(--hub-depressed); }
         
@@ -155,11 +121,11 @@
            VIEW 1: MISSION
            ========================================= */
         .detail-container { max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
-        .hardware-btn {
-            display: inline-flex; align-items: center; gap: 8px; font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--text-gray);
-            background: var(--alum-base); box-shadow: var(--hub-raised); border: none; border-radius: 20px; padding: 12px 24px; cursor: pointer; transition: all 0.2s; margin-bottom: 32px;
-        }
+        .hardware-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--text-gray); background: var(--alum-base); box-shadow: var(--hub-raised); border: none; border-radius: 20px; padding: 12px 24px; cursor: pointer; transition: all 0.2s; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
         .hardware-btn:active { box-shadow: var(--hub-depressed); transform: scale(0.96); }
+        .hardware-btn.primary { background: var(--text-main); color: var(--surface); box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 0; padding: 16px 32px; font-size: 1rem; width: 100%; }
+        .hardware-btn.primary:active { box-shadow: inset 0 4px 8px rgba(0,0,0,0.4); }
+
         .detail-title { font-size: 3.5rem; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 8px; color: var(--text-main); text-shadow: 1px 1px 0 #fff; }
         .detail-subtitle { font-size: 1.2rem; color: var(--text-gray); margin-bottom: 48px; font-weight: 600; }
         .mission-statement { background: var(--alum-base); box-shadow: var(--hub-depressed); border-radius: 32px; padding: 48px; text-align: center; }
@@ -167,12 +133,9 @@
         .mission-statement p { font-size: 1.25rem; line-height: 1.6; color: var(--text-gray); font-weight: 400; margin-bottom: 20px; }
 
         /* =========================================
-           VIEW 2: MASTER BRAID
+           VIEW 2: MASTER BRAID DASHBOARD
            ========================================= */
-        header {
-            flex-shrink: 0; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between;
-            background: var(--glass); backdrop-filter: blur(20px); z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
+        header { flex-shrink: 0; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: var(--glass); backdrop-filter: blur(20px); z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .brand-logo-nav { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.02em; cursor: pointer; transition: 0.2s; }
         .brand-logo-nav:hover { opacity: 0.6; }
         
@@ -186,37 +149,19 @@
         .domain-btn[data-dom-target="md"].active { color: var(--dom-md); }
         .domain-btn[data-dom-target="g"].active { color: var(--dom-g); }
 
-        .audit-toggle-container { display: flex; align-items: center; gap: 10px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-gray); }
-        .toggle-switch { position: relative; width: 44px; height: 24px; background: var(--alum-base); border-radius: 12px; box-shadow: var(--milled); cursor: pointer; transition: 0.3s; }
-        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: var(--surface); border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        body.audit-mode .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
-        body.audit-mode .audit-toggle-container { color: var(--text-main); }
-
         .dashboard-body { flex: 1; display: flex; overflow: hidden; position: relative; }
         .map-zone { flex: 1; height: 100%; overflow: auto; padding: 20px 40px 240px 20px; position: relative; }
 
-        /* The Mega Matrix & Grade Axis Integration */
-        .matrix-grid { 
-            display: grid; grid-template-columns: 80px repeat(4, minmax(260px, 1fr)); 
-            gap: 40px 24px; position: relative; width: 100%; padding-right: 40px; margin: 0 auto; max-width: 1500px;
-        }
-
+        /* The Grid */
+        .matrix-grid { display: grid; grid-template-columns: 80px repeat(4, minmax(260px, 1fr)); gap: 40px 24px; position: relative; width: 100%; padding-right: 40px; margin: 0 auto; max-width: 1500px; }
         .track-bg { grid-row: 1 / span 8; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 0; }
         .strand-label { position: sticky; top: 10px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--strand-color); background: var(--bg-center); padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; z-index: 50; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .milled-groove { width: 14px; flex: 1; background: var(--alum-base); box-shadow: var(--milled); border-radius: 7px; position: relative; }
         .color-line { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; background: var(--strand-color); opacity: 0.2; }
 
-        /* The Embedded Grade Buttons */
-        .grade-marker { 
-            grid-column: 1; align-self: start; justify-self: end; margin-top: 10px;
-            border: none; background: transparent; padding: 16px 20px; border-radius: 20px;
-            font-family: inherit; font-size: 1.8rem; font-weight: 900; color: var(--text-gray);
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            text-align: right; box-shadow: var(--raised);
-        }
+        .grade-marker { grid-column: 1; align-self: start; justify-self: end; margin-top: 10px; border: none; background: transparent; padding: 16px 20px; border-radius: 20px; font-family: inherit; font-size: 1.8rem; font-weight: 900; color: var(--text-gray); cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: right; box-shadow: var(--raised); }
         .grade-marker:hover { transform: translateY(-2px); box-shadow: 10px 10px 20px rgba(166,171,189,0.4), -10px -10px 20px rgba(255,255,255,0.9); }
         .grade-marker.active { background: #E0E0E5; box-shadow: var(--milled); transform: scale(0.95); color: var(--text-main); }
-        
         .grade-marker[data-grade-target="k"].active { color: var(--brand-k); }
         .grade-marker[data-grade-target="g1"].active { color: var(--brand-g1); }
         .grade-marker[data-grade-target="g2"].active { color: var(--brand-g2); }
@@ -229,11 +174,16 @@
         .grid-cell { display: flex; flex-direction: column; gap: 12px; z-index: 10; }
 
         /* Node Styling */
-        .map-zone.is-spotlighting .node:not(.spotlight-active):not(.primary-selected) { opacity: 0.15; filter: grayscale(0.6); transform: scale(0.98); box-shadow: none; border-color: transparent; }
+        .map-zone.is-spotlighting .node:not(.spotlight-active):not(.primary-selected):not(.is-animating) { opacity: 0.15; filter: grayscale(0.6); transform: scale(0.98); box-shadow: none; border-color: transparent; }
         .map-zone.is-hover-spotlighting .node:not(.hover-spotlight) { opacity: 0.15; filter: grayscale(0.6); transform: scale(0.98); box-shadow: none; border-color: transparent; }
+        
         .node { background: var(--alum-base); box-shadow: var(--raised); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-left: 4px solid var(--node-color); position: relative; cursor: pointer; }
         .node.spotlight-active:not(.primary-selected), .node.hover-spotlight { box-shadow: var(--raised), 0 0 0 2px var(--node-color); transform: scale(1.02); z-index: 10; }
         .node.primary-selected { box-shadow: var(--milled); transform: scale(0.96) translateY(2px); background: #E0E0E5; border-left-width: 8px; z-index: 50; }
+        
+        /* Visually hide the original node when the FLIP clone is active */
+        .node.is-animating { opacity: 0 !important; pointer-events: none; }
+
         .node-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
         .friendly-title { font-size: 0.9rem; font-weight: 800; color: var(--text-main); line-height: 1.1; transition: 0.3s; flex: 1; }
         .badges-container { display: flex; gap: 4px; align-items: center; }
@@ -242,19 +192,8 @@
         .std-desc { font-size: 0.8rem; font-weight: 500; color: var(--text-gray); line-height: 1.3; transition: 0.3s; }
         .sub { margin-left: 15px; border-left-width: 2px; border-radius: 8px; padding: 10px 12px; opacity: 0.85; }
 
-        body.audit-mode .friendly-title { font-size: 0.65rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
-        body.audit-mode .cc-badge { font-size: 0.9rem; background: transparent; padding: 0; color: var(--node-color); }
-        body.audit-mode .std-desc { color: var(--text-main); font-weight: 700; font-family: monospace; font-size: 0.75rem; }
-
         /* The Floating Tool Deck */
-        .tool-deck {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: calc(100% - 80px); max-width: 1400px; height: 180px;
-            background: rgba(245, 245, 247, 0.7); backdrop-filter: blur(40px);
-            border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.7);
-            border: 1px solid rgba(255,255,255,0.4); display: flex; align-items: center;
-            padding: 0 24px; gap: 16px; z-index: 500; overflow-x: auto; scroll-behavior: smooth;
-        }
+        .tool-deck { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 80px); max-width: 1400px; height: 180px; background: rgba(245, 245, 247, 0.7); backdrop-filter: blur(40px); border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.4); display: flex; align-items: center; padding: 0 24px; gap: 16px; z-index: 500; overflow-x: auto; scroll-behavior: smooth; }
         .tool-deck.is-spotlighting .app-card:not(.levitated) { opacity: 0.4; transform: scale(0.95) translateY(5px); box-shadow: var(--milled); filter: grayscale(0.5); background: #E0E0E5; }
         .app-card { flex: 0 0 auto; width: 140px; height: 140px; background: var(--alum-base); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--raised); cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style: preserve-3d; position: relative; perspective: 800px; }
         .app-card:hover { transform: translateY(-5px); box-shadow: 0 16px 24px rgba(166,171,189,0.4), inset 0 1px 2px #fff; }
@@ -262,6 +201,76 @@
         .tool-bead { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #efefef 0%, #a8a8a8 50%, #e0e0e0 100%); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), 0 2px 5px rgba(0,0,0,0.22); }
         .app-title { font-size: 0.85rem; font-weight: 800; line-height: 1.2; color: var(--text-main); }
         .alignment-badge { display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; background: var(--surface); color: var(--text-main); padding: 4px 0; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); width: 100%; }
+
+        /* =========================================
+           EXPANDED METAL PLATE (FLIP MODAL)
+           ========================================= */
+        .plate-backdrop {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(245, 245, 247, 0.4); backdrop-filter: blur(12px);
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        .plate-backdrop.active { opacity: 1; pointer-events: auto; }
+
+        .expanded-plate {
+            position: fixed; z-index: 1001; 
+            background: linear-gradient(135deg, #fdfdfd 0%, #e8e9ed 100%);
+            border-left: 8px solid var(--node-color, #1D1D1F);
+            border-radius: 24px; box-shadow: var(--hub-raised);
+            opacity: 0; pointer-events: none; 
+            /* Transition handles the smooth flight from grid rect to center screen */
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        
+        .expanded-plate.active {
+            /* Center Screen Target */
+            top: 5vh !important; left: 10vw !important; width: 80vw !important; height: 90vh !important;
+            opacity: 1; pointer-events: auto;
+        }
+
+        .plate-close-btn {
+            position: absolute; top: 24px; right: 24px; width: 40px; height: 40px; border-radius: 50%;
+            background: var(--alum-base); box-shadow: var(--raised); border: none; font-size: 1.2rem; font-weight: 900;
+            color: var(--text-gray); cursor: pointer; z-index: 100; transition: 0.2s;
+        }
+        .plate-close-btn:active { box-shadow: var(--depressed); transform: scale(0.95); }
+
+        .plate-header-area { padding: 40px 40px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; }
+        .plate-header-area .friendly-title { font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 12px; }
+        .plate-header-area .std-desc { font-size: 1.1rem; color: var(--text-gray); }
+
+        .plate-body { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Left Pane: Pedagogical Guide */
+        .plate-guide { flex: 1; overflow-y: auto; padding: 40px; border-right: 1px solid rgba(0,0,0,0.05); }
+        .guide-section { margin-bottom: 40px; }
+        .guide-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light); margin-bottom: 12px; }
+        .guide-content { font-size: 1.05rem; line-height: 1.6; color: var(--text-main); font-weight: 400; }
+        
+        .spiral-box { background: var(--alum-base); padding: 20px; border-radius: 16px; box-shadow: var(--milled); display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+        .spiral-row { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 600; color: var(--text-gray); }
+        .spiral-row span.badge { font-size: 0.6rem; padding: 4px 8px; border-radius: 4px; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text-main); font-weight: 800; }
+        
+        /* Right Pane: Tilted Sandbox Viewer */
+        .plate-sandbox { width: 400px; flex-shrink: 0; background: var(--bg-center); display: flex; flex-direction: column; padding: 40px; align-items: center; }
+        .hardware-stage { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1200px; width: 100%; }
+        
+        /* The Simulated Hardware Tool */
+        .simulated-tablet {
+            width: 280px; height: 280px; border-radius: 24px; background: #111;
+            /* Aggressive surface tilt */
+            transform: rotateX(15deg) rotateY(-5deg) translateZ(40px);
+            box-shadow: 20px 40px 40px -10px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+            border: 4px solid var(--alum-base);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;
+        }
+        .simulated-screen-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 80%); }
+        .simulated-tool-bead { width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 20px var(--strand-color); margin-bottom: 20px; animation: pulse 2s infinite alternate; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 1; } }
+        
+        .simulated-text { color: white; font-weight: 800; font-size: 1.2rem; text-align: center; }
+
     </style>
 </head>
 <body>
@@ -270,58 +279,13 @@
         <div class="view active" id="view-hub">
             <div class="gallery-wrapper">
                 <div class="ambient-glow"></div>
-
-                <div class="node-assembly" style="--angle: 305deg; --radius: 500px;">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-oa" onclick="openBraid('oa')">
-                        <div class="plate-acronym">OA</div>
-                        <div class="plate-title">Algebra</div>
-                    </div>
-                </div>
-
-                <div class="node-assembly" style="--angle: 265deg; --radius: 360px;">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-cc" onclick="openBraid('cc')">
-                        <div class="plate-acronym">CC</div>
-                        <div class="plate-title">Counting</div>
-                    </div>
-                </div>
-
-                <div class="node-assembly" style="--angle: 220deg; --radius: 440px;">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-g" onclick="openBraid('g')">
-                        <div class="plate-acronym">G</div>
-                        <div class="plate-title">Geometry</div>
-                    </div>
-                </div>
-
-                <div class="node-assembly" style="--angle: 60deg; --radius: 480px;">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-nbt" onclick="openBraid('nbt')">
-                        <div class="plate-acronym">NBT</div>
-                        <div class="plate-title">Base Ten</div>
-                    </div>
-                </div>
-
-                <div class="node-assembly" style="--angle: 105deg; --radius: 420px;">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-nf" onclick="openBraid('nf')">
-                        <div class="plate-acronym">NF</div>
-                        <div class="plate-title">Fractions</div>
-                    </div>
-                </div>
-
-                <div class="node-assembly" style="--angle: 145deg; --radius: 400px;">
-                    <div class="spoke"></div>
-                    <div class="domain-plate plate-md" onclick="openBraid('md')">
-                        <div class="plate-acronym">MD</div>
-                        <div class="plate-title">Measurement</div>
-                    </div>
-                </div>
-
-                <div class="hub-center" onclick="openView('view-mission')">
-                    <div class="hub-center-title">Math Things.</div>
-                </div>
+                <div class="node-assembly" style="--angle: 305deg; --radius: 500px;"><div class="spoke"></div><div class="domain-plate plate-oa" onclick="openBraid('oa')"><div class="plate-acronym">OA</div><div class="plate-title">Algebra</div></div></div>
+                <div class="node-assembly" style="--angle: 265deg; --radius: 360px;"><div class="spoke"></div><div class="domain-plate plate-cc" onclick="openBraid('cc')"><div class="plate-acronym">CC</div><div class="plate-title">Counting</div></div></div>
+                <div class="node-assembly" style="--angle: 220deg; --radius: 440px;"><div class="spoke"></div><div class="domain-plate plate-g" onclick="openBraid('g')"><div class="plate-acronym">G</div><div class="plate-title">Geometry</div></div></div>
+                <div class="node-assembly" style="--angle: 60deg; --radius: 480px;"><div class="spoke"></div><div class="domain-plate plate-nbt" onclick="openBraid('nbt')"><div class="plate-acronym">NBT</div><div class="plate-title">Base Ten</div></div></div>
+                <div class="node-assembly" style="--angle: 105deg; --radius: 420px;"><div class="spoke"></div><div class="domain-plate plate-nf" onclick="openBraid('nf')"><div class="plate-acronym">NF</div><div class="plate-title">Fractions</div></div></div>
+                <div class="node-assembly" style="--angle: 145deg; --radius: 400px;"><div class="spoke"></div><div class="domain-plate plate-md" onclick="openBraid('md')"><div class="plate-acronym">MD</div><div class="plate-title">Measurement</div></div></div>
+                <div class="hub-center" onclick="openView('view-mission')"><div class="hub-center-title">Math Things.</div></div>
             </div>
         </div>
 
@@ -330,12 +294,9 @@
                 <button class="hardware-btn" onclick="openView('view-hub', true)">← Back to Hub</button>
                 <div class="detail-title">Math, in your hands.</div>
                 <div class="detail-subtitle">The Pedagogy of Physicality</div>
-                
                 <div class="mission-statement">
                     <h2>Zero Instructions. Total Intuition.</h2>
-                    <p>Math Things. is a suite of hardware-inspired digital manipulatives designed for the Resource Room and the Homeschool desk.</p>
                     <p>We believe that mathematics is not a set of abstract rules to be memorized, but a physical reality to be experienced. Our tools enforce a "No Words, No Directions" policy. The boundaries of the interface dictate the boundaries of the math.</p>
-                    <p>If a student has to read a paragraph of text to understand a tool, we aren't testing their math—we're testing their executive function. Math Things bypasses the reading barrier entirely, allowing the student to touch the math directly.</p>
                 </div>
             </div>
         </div>
@@ -353,11 +314,6 @@
                         <button class="domain-btn" data-dom-target="g" onclick="toggleFilter('domain', 'g', this)">G</button>
                     </nav>
                 </div>
-                <div class="audit-toggle-container">
-                    <span>UI View</span>
-                    <div class="toggle-switch" onclick="toggleAuditMode()"></div>
-                    <span>Audit</span>
-                </div>
             </header>
 
             <div class="dashboard-body">
@@ -369,41 +325,56 @@
         </div>
     </main>
 
+    <div class="plate-backdrop" id="plateBackdrop" onclick="closePlate()"></div>
+    
+    <div class="expanded-plate" id="expandedPlate">
+        <button class="plate-close-btn" onclick="closePlate()">×</button>
+        
+        <div class="plate-header-area">
+            <div class="badges-container" style="margin-bottom: 12px;">
+                <span class="dom-badge" id="ep-dom-badge"></span>
+                <span class="cc-badge" id="ep-cc-badge"></span>
+            </div>
+            <div class="friendly-title" id="ep-title"></div>
+            <div class="std-desc" id="ep-desc"></div>
+        </div>
+        
+        <div class="plate-body">
+            <div class="plate-guide">
+                <div id="ep-pedagogy-content"></div>
+            </div>
+            <div class="plate-sandbox">
+                <div class="guide-label" style="align-self: flex-start;">Target Tool</div>
+                <div class="hardware-stage">
+                    <div class="simulated-tablet">
+                        <div class="simulated-screen-glow"></div>
+                        <div class="simulated-tool-bead" id="ep-tool-bead"></div>
+                        <div class="simulated-text" id="ep-tool-name">Tool Name</div>
+                        <div style="font-size: 0.6rem; color: #888; margin-top: 10px; font-weight: 500;">LIVE SANDBOX DEMO</div>
+                    </div>
+                </div>
+                <button class="hardware-btn primary" onclick="alert('Launching Sandbox...')">Enter Sandbox</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- SPA Routing ---
         let currentView = 'view-hub';
-
         function openView(targetId, isBack = false) {
-            const outgoing = document.getElementById(currentView);
+            document.getElementById(currentView).classList.remove('active');
             const incoming = document.getElementById(targetId);
-
-            outgoing.classList.remove('active');
-            if (isBack) {
-                outgoing.classList.add('zoom-out');
-                incoming.classList.remove('zoom-in', 'zoom-out');
-            } else {
-                outgoing.classList.add('zoom-in');
-                incoming.classList.remove('zoom-in', 'zoom-out');
-            }
-
+            if (isBack) { document.getElementById(currentView).classList.add('zoom-out'); incoming.classList.remove('zoom-in', 'zoom-out'); } 
+            else { document.getElementById(currentView).classList.add('zoom-in'); incoming.classList.remove('zoom-in', 'zoom-out'); }
             incoming.classList.add('active');
-            // If returning to hub, wipe filters clean
-            if (targetId === 'view-hub') {
-                currentDomain = 'all'; currentGrade = 'all';
-                document.querySelectorAll('.domain-btn, .grade-marker').forEach(b => b.classList.remove('active'));
-                applyFilters();
-            }
+            if (targetId === 'view-hub') { currentDomain = 'all'; currentGrade = 'all'; document.querySelectorAll('.domain-btn, .grade-marker').forEach(b => b.classList.remove('active')); applyFilters(); }
             currentView = targetId;
         }
-
         function openBraid(domain) {
-            currentDomain = domain;
-            document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+            currentDomain = domain; document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
             const btn = document.querySelector(`.domain-btn[data-dom-target="${domain}"]`);
             if (btn) btn.classList.add('active');
-            
-            applyFilters();
-            openView('view-braid');
+            applyFilters(); openView('view-braid');
         }
 
         // --- Core Data ---
@@ -430,225 +401,33 @@
         ];
 
         const allStandards = {
-            cc: [
-                { id: "K.CC.A.1", grade: "k", strand: "system", title: "The Big Count", desc: "Count to 100 by 1s/10s.", apps: ["app-cc-stage"] },
-                { id: "K.CC.A.2", grade: "k", strand: "system", title: "Count On", desc: "Count forward from given num.", apps: ["app-cc-stage"] },
-                { id: "K.CC.A.3", grade: "k", strand: "sense", title: "Writing Numbers", desc: "Write numerals 0-20.", apps: ["app-cc-writing"] },
-                { id: "K.CC.B.4.a", grade: "k", strand: "basic", title: "One-to-One Match", desc: "1-to-1 correspondence.", apps: ["app-cc-cardinality"], isSub: true },
-                { id: "K.CC.B.4.b", grade: "k", strand: "basic", title: "The Last Number", desc: "Last number is the total.", apps: ["app-cc-cardinality"], isSub: true },
-                { id: "K.CC.B.4.c", grade: "k", strand: "basic", title: "Plus One", desc: "Successive number is +1.", apps: ["app-cc-cardinality"], isSub: true },
-                { id: "K.CC.B.5", grade: "k", strand: "basic", title: "Total Objects", desc: "Count up to 20 objects.", apps: ["app-cc-cardinality"] },
-                { id: "K.CC.C.6", grade: "k", strand: "sense", title: "Comparing Groups", desc: "Compare group sizes (> = <).", apps: ["app-cc-writing"] },
-                { id: "K.CC.C.7", grade: "k", strand: "sense", title: "Comparing Symbols", desc: "Compare numerals 1-10.", apps: ["app-cc-writing"] }
-            ],
+            cc: [{ id: "K.CC.A.1", grade: "k", strand: "system", title: "The Big Count", desc: "Count to 100 by 1s/10s.", apps: ["app-cc-stage"] }],
             nbt: [
-                { id: "K.NBT.A.1", grade: "k", strand: "system", title: "Teen Numbers", desc: "Teens as 10 + ones.", apps: ["app-nbt-blocks"] },
-                { id: "1.NBT.A.1", grade: "g1", strand: "sense", title: "Counting to 120", desc: "Count/read/write to 120.", apps: ["app-nbt-line"] },
-                { id: "1.NBT.B.2.a", grade: "g1", strand: "system", title: "Making a Ten", desc: "10 ones = 1 ten.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "1.NBT.B.2.b", grade: "g1", strand: "system", title: "Tens and Ones", desc: "11-19: ten and ones.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "1.NBT.B.2.c", grade: "g1", strand: "system", title: "Multiples of Ten", desc: "Multiples of 10: tens + 0 ones.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "1.NBT.B.3", grade: "g1", strand: "sense", title: "Comparing 2-Digits", desc: "Compare 2-digits (symbols).", apps: ["app-nbt-line"] },
-                { id: "1.NBT.C.4", grade: "g1", strand: "basic", title: "Adding to 100", desc: "Add within 100 (concrete/model).", apps: ["app-nbt-ops"] },
-                { id: "1.NBT.C.5", grade: "g1", strand: "basic", title: "Mental Ten", desc: "Mental 10 more/less.", apps: ["app-nbt-ops"] },
-                { id: "1.NBT.C.6", grade: "g1", strand: "basic", title: "Subtracting Tens", desc: "Subtract multiples of 10.", apps: ["app-nbt-ops"] },
-                { id: "2.NBT.A.1.a", grade: "g2", strand: "system", title: "Making a Hundred", desc: "100 = 10 tens.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "2.NBT.A.1.b", grade: "g2", strand: "system", title: "Multiples of 100", desc: "Multiples of 100.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "2.NBT.A.2", grade: "g2", strand: "sense", title: "Skip Counting", desc: "Skip-count 5, 10, 100.", apps: ["app-nbt-line"] },
-                { id: "2.NBT.A.3", grade: "g2", strand: "sense", title: "Thousand Builders", desc: "Read/write to 1000.", apps: ["app-nbt-line"] },
-                { id: "2.NBT.A.4", grade: "g2", strand: "sense", title: "Comparing 3-Digits", desc: "Compare 3-digits.", apps: ["app-nbt-line"] },
-                { id: "2.NBT.B.5", grade: "g2", strand: "basic", title: "Fluent Adding", desc: "Fluent +/- within 100.", apps: ["app-nbt-ops"] },
-                { id: "2.NBT.B.6", grade: "g2", strand: "basic", title: "Adding Four Numbers", desc: "Add four 2-digits.", apps: ["app-nbt-ops"] },
-                { id: "2.NBT.B.7", grade: "g2", strand: "basic", title: "Adding to 1000", desc: "Add/sub within 1000.", apps: ["app-nbt-ops"] },
-                { id: "2.NBT.B.8", grade: "g2", strand: "basic", title: "Mental Jumps", desc: "Mental 10/100 more/less.", apps: ["app-nbt-ops"] },
-                { id: "2.NBT.B.9", grade: "g2", strand: "basic", title: "Explaining Strategies", desc: "Explain strategy reasoning.", apps: ["app-nbt-ops"] },
-                { id: "3.NBT.A.1", grade: "g3", strand: "sense", title: "Rounding Limits", desc: "Round to nearest 10/100.", apps: ["app-nbt-rounding"] },
-                { id: "3.NBT.A.2", grade: "g3", strand: "basic", title: "Fluent Threes", desc: "Fluent +/- within 1000.", apps: ["app-nbt-ops"] },
-                { id: "3.NBT.A.3", grade: "g3", strand: "advanced", title: "Multiplying Tens", desc: "Multiply by multiples of 10.", apps: ["app-nbt-advanced"] },
-                { id: "4.NBT.A.1", grade: "g4", strand: "system", title: "The 10x Shift", desc: "Multi-digit 10x shift.", apps: ["app-nbt-blocks"] },
-                { id: "4.NBT.A.2", grade: "g4", strand: "sense", title: "Reading to a Million", desc: "Read/Write/Compare to 1M.", apps: ["app-nbt-rounding"] },
-                { id: "4.NBT.A.3", grade: "g4", strand: "sense", title: "Big Rounding", desc: "Round multi-digit numbers.", apps: ["app-nbt-rounding"] },
-                { id: "4.NBT.B.4", grade: "g4", strand: "basic", title: "Standard Algorithm", desc: "Fluent Standard Algorithm +/-.", apps: ["app-nbt-ops"] },
-                { id: "4.NBT.B.5", grade: "g4", strand: "advanced", title: "Big Multiplication", desc: "Multiply: 4-by-1, 2-by-2.", apps: ["app-nbt-advanced"] },
-                { id: "4.NBT.B.6", grade: "g4", strand: "advanced", title: "Division & Remainders", desc: "Division with remainders.", apps: ["app-nbt-advanced"] },
-                { id: "5.NBT.A.1", grade: "g5", strand: "system", title: "Decimal Shifts", desc: "Base ten place value 10x/0.1x.", apps: ["app-nbt-blocks"] },
-                { id: "5.NBT.A.2", grade: "g5", strand: "system", title: "Powers of 10", desc: "Powers of 10 / Exponents.", apps: ["app-nbt-blocks"] },
-                { id: "5.NBT.A.3.a", grade: "g5", strand: "sense", title: "Reading Decimals", desc: "Read/Write decimals to 1000ths.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "5.NBT.A.3.b", grade: "g5", strand: "sense", title: "Comparing Decimals", desc: "Compare decimals to 1000ths.", apps: ["app-nbt-blocks"], isSub: true },
-                { id: "5.NBT.A.4", grade: "g5", strand: "sense", title: "Rounding Decimals", desc: "Round decimals.", apps: ["app-nbt-rounding"] },
-                { id: "5.NBT.B.5", grade: "g5", strand: "advanced", title: "Fluent Multiplication", desc: "Fluent Standard Mult.", apps: ["app-nbt-advanced"] },
-                { id: "5.NBT.B.6", grade: "g5", strand: "advanced", title: "Long Division", desc: "Divide 4-digit by 2-digit.", apps: ["app-nbt-advanced"] },
-                { id: "5.NBT.B.7", grade: "g5", strand: "advanced", title: "Decimal Operations", desc: "Decimal operations (+/-/x/÷).", apps: ["app-nbt-advanced"] }
+                { id: "1.NBT.B.2.a", grade: "g1", strand: "system", title: "Making a Ten", desc: "10 ones = 1 ten.", apps: ["app-nbt-blocks"] },
+                { id: "4.NBT.A.1", grade: "g4", strand: "system", title: "The 10x Shift", desc: "Multi-digit 10x shift.", apps: ["app-nbt-blocks"] }
             ],
-            oa: [
-                { id: "K.OA.A.1", grade: "k", strand: "basic", title: "Representing Math", desc: "Represent Add/Sub.", apps: ["app-cc-cardinality"] },
-                { id: "K.OA.A.2", grade: "k", strand: "basic", title: "Early Word Problems", desc: "Word problems within 10.", apps: ["app-cc-cardinality"] },
-                { id: "K.OA.A.3", grade: "k", strand: "sense", title: "Decomposing 10", desc: "Decompose to 10.", apps: ["app-oa-balancer"] },
-                { id: "K.OA.A.4", grade: "k", strand: "sense", title: "Making 10", desc: "Make 10 missing part.", apps: ["app-oa-balancer"] },
-                { id: "K.OA.A.5", grade: "k", strand: "basic", title: "Fluent Fives", desc: "Fluent +/- within 5.", apps: ["app-cc-cardinality"] },
-                { id: "1.OA.A.1", grade: "g1", strand: "basic", title: "Word Problems to 20", desc: "Word problems within 20.", apps: ["app-nbt-line"] },
-                { id: "1.OA.A.2", grade: "g1", strand: "basic", title: "Three Addends", desc: "Add three numbers.", apps: ["app-nbt-line"] },
-                { id: "1.OA.B.3", grade: "g1", strand: "system", title: "Addition Properties", desc: "Addition properties.", apps: ["app-oa-balancer"] },
-                { id: "1.OA.B.4", grade: "g1", strand: "sense", title: "Missing Addends", desc: "Sub as missing addend.", apps: ["app-oa-balancer"] },
-                { id: "1.OA.C.5", grade: "g1", strand: "sense", title: "Counting to Math", desc: "Count to add/sub.", apps: ["app-nbt-line"] },
-                { id: "1.OA.C.6", grade: "g1", strand: "basic", title: "Fluent Twenties", desc: "Fluent within 20.", apps: ["app-nbt-ops"] },
-                { id: "1.OA.D.7", grade: "g1", strand: "system", title: "The Equal Sign", desc: "Equal sign meaning.", apps: ["app-oa-balancer"] },
-                { id: "1.OA.D.8", grade: "g1", strand: "system", title: "Finding the Unknown", desc: "Find unknown in equation.", apps: ["app-oa-balancer"] },
-                { id: "2.OA.A.1", grade: "g2", strand: "basic", title: "Two-Step Problems", desc: "1 & 2-step problems.", apps: ["app-nbt-ops"] },
-                { id: "2.OA.B.2", grade: "g2", strand: "basic", title: "Mental Twenties", desc: "Mental +/- within 20.", apps: ["app-nbt-ops"] },
-                { id: "2.OA.C.3", grade: "g2", strand: "sense", title: "Odds & Evens", desc: "Odd/Even pairing.", apps: ["app-oa-arrays"] },
-                { id: "2.OA.C.4", grade: "g2", strand: "advanced", title: "Repeated Addition", desc: "Repeated addition.", apps: ["app-oa-arrays"] },
-                { id: "3.OA.A.1", grade: "g3", strand: "advanced", title: "Visual Multiplication", desc: "Interpret mult.", apps: ["app-oa-arrays"] },
-                { id: "3.OA.A.2", grade: "g3", strand: "advanced", title: "Visual Division", desc: "Interpret division.", apps: ["app-oa-arrays"] },
-                { id: "3.OA.A.3", grade: "g3", strand: "advanced", title: "Mult/Div Word Problems", desc: "Mult/Div word problems.", apps: ["app-oa-arrays"] },
-                { id: "3.OA.A.4", grade: "g3", strand: "advanced", title: "Unknown Factors", desc: "Unknown factor/quotient.", apps: ["app-oa-balancer"] },
-                { id: "3.OA.B.5", grade: "g3", strand: "system", title: "Multiplication Rules", desc: "Mult properties.", apps: ["app-oa-arrays"] },
-                { id: "3.OA.B.6", grade: "g3", strand: "sense", title: "Division as Missing Factors", desc: "Div as missing factor.", apps: ["app-oa-balancer"] },
-                { id: "3.OA.C.7", grade: "g3", strand: "advanced", title: "Fluent Mult/Div", desc: "Fluent Mult/Div.", apps: ["app-oa-arrays"] },
-                { id: "3.OA.D.8", grade: "g3", strand: "system", title: "Estimation & 2-Step", desc: "2-step & estimation.", apps: ["app-oa-balancer"] },
-                { id: "3.OA.D.9", grade: "g3", strand: "system", title: "Arithmetic Patterns", desc: "Arithmetic patterns.", apps: ["app-oa-patterns"] },
-                { id: "4.OA.A.1", grade: "g4", strand: "sense", title: "Multiplicative Comparison", desc: "Mult comparison.", apps: ["app-oa-arrays"] },
-                { id: "4.OA.A.2", grade: "g4", strand: "advanced", title: "Comparison Word Problems", desc: "Comparison word problems.", apps: ["app-oa-arrays"] },
-                { id: "4.OA.A.3", grade: "g4", strand: "advanced", title: "Multistep & Remainders", desc: "Multistep/Remainders.", apps: ["app-oa-balancer"] },
-                { id: "4.OA.B.4", grade: "g4", strand: "system", title: "Factors & Multiples", desc: "Factors/Multiples.", apps: ["app-oa-arrays"] },
-                { id: "4.OA.C.5", grade: "g4", strand: "system", title: "Pattern Rules", desc: "Analyze patterns.", apps: ["app-oa-patterns"] },
-                { id: "5.OA.A.1", grade: "g5", strand: "system", title: "Order of Ops", desc: "Evaluate brackets.", apps: ["app-oa-patterns"] },
-                { id: "5.OA.A.2", grade: "g5", strand: "system", title: "Interpreting Expressions", desc: "Interpret expressions.", apps: ["app-oa-patterns"] },
-                { id: "5.OA.B.3", grade: "g5", strand: "system", title: "Ordered Pairs", desc: "Ordered pairs/graphs.", apps: ["app-oa-patterns"] }
-            ],
-            nf: [
-                { id: "3.NF.A.1", grade: "g3", strand: "system", title: "Unit Fractions", desc: "Unit fraction 1/b.", apps: ["app-nf-bars"] },
-                { id: "3.NF.A.2.a", grade: "g3", strand: "sense", title: "Unit Fractions on a Line", desc: "Fraction 1/b on number line.", apps: ["app-nbt-line"], isSub: true },
-                { id: "3.NF.A.2.b", grade: "g3", strand: "sense", title: "Fractions on a Line", desc: "Fraction a/b on number line.", apps: ["app-nbt-line"], isSub: true },
-                { id: "3.NF.A.3.a", grade: "g3", strand: "system", title: "Size & Point Equivalence", desc: "Equivalent if same size/point.", apps: ["app-nf-bars"], isSub: true },
-                { id: "3.NF.A.3.b", grade: "g3", strand: "system", title: "Generating Equivalents", desc: "Recognize/generate simple equivalents.", apps: ["app-nf-bars"], isSub: true },
-                { id: "3.NF.A.3.c", grade: "g3", strand: "system", title: "Wholes as Fractions", desc: "Whole numbers as fractions.", apps: ["app-nf-bars"], isSub: true },
-                { id: "3.NF.A.3.d", grade: "g3", strand: "sense", title: "Comparing Fractions", desc: "Compare fractions same num/denom.", apps: ["app-nf-bars"], isSub: true },
-                { id: "4.NF.A.1", grade: "g4", strand: "system", title: "Explaining Equivalence", desc: "Explain fraction equivalence.", apps: ["app-nf-bars"] },
-                { id: "4.NF.A.2", grade: "g4", strand: "sense", title: "Comparing Different Denoms", desc: "Compare different num/denom.", apps: ["app-nf-bars"] },
-                { id: "4.NF.B.3.a", grade: "g4", strand: "basic", title: "Joining & Separating", desc: "Add/sub as joining/separating.", apps: ["app-nf-bars"], isSub: true },
-                { id: "4.NF.B.3.b", grade: "g4", strand: "basic", title: "Decomposing Fractions", desc: "Decompose into sum of fractions.", apps: ["app-nf-bars"], isSub: true },
-                { id: "4.NF.B.3.c", grade: "g4", strand: "basic", title: "Adding Mixed Numbers", desc: "Add/sub mixed with like denom.", apps: ["app-nf-bars"], isSub: true },
-                { id: "4.NF.B.3.d", grade: "g4", strand: "basic", title: "Fraction Word Problems", desc: "Word problems: Add/sub like denom.", apps: ["app-nf-bars"], isSub: true },
-                { id: "4.NF.B.4.a", grade: "g4", strand: "advanced", title: "Multiples of Unit Fractions", desc: "n/b as multiple of 1/b.", apps: ["app-nf-mult"], isSub: true },
-                { id: "4.NF.B.4.b", grade: "g4", strand: "advanced", title: "Multiplying by Wholes", desc: "Mult fraction by whole number.", apps: ["app-nf-mult"], isSub: true },
-                { id: "4.NF.B.4.c", grade: "g4", strand: "advanced", title: "Multiplication Word Problems", desc: "Word problems: Mult frac by whole.", apps: ["app-nf-mult"], isSub: true },
-                { id: "4.NF.C.5", grade: "g4", strand: "system", title: "Tenths to Hundredths", desc: "Rename 10ths as 100ths.", apps: ["app-nf-bars"] },
-                { id: "4.NF.C.6", grade: "g4", strand: "sense", title: "Decimal Notation", desc: "Decimal notation (10ths/100ths).", apps: ["app-nbt-blocks"] },
-                { id: "4.NF.C.7", grade: "g4", strand: "sense", title: "Comparing Decimals", desc: "Compare two decimals to 100ths.", apps: ["app-nbt-blocks"] },
-                { id: "5.NF.A.1", grade: "g5", strand: "basic", title: "Unlike Denominators", desc: "Add/sub unlike denominators.", apps: ["app-nf-add"] },
-                { id: "5.NF.A.2", grade: "g5", strand: "basic", title: "Word Problems: Unlike Denoms", desc: "Word problems: Add/sub unlike denom.", apps: ["app-nf-add"] },
-                { id: "5.NF.B.3", grade: "g5", strand: "system", title: "Fractions as Division", desc: "Fraction as division (a/b = a ÷ b).", apps: ["app-nf-bars"] },
-                { id: "5.NF.B.4.a", grade: "g5", strand: "advanced", title: "Interpreting Products", desc: "Interpret product (a/b) × q.", apps: ["app-nf-mult"], isSub: true },
-                { id: "5.NF.B.4.b", grade: "g5", strand: "advanced", title: "Area with Fractions", desc: "Area: Frac sides; tiling.", apps: ["app-nf-mult"], isSub: true },
-                { id: "5.NF.B.5.a", grade: "g5", strand: "sense", title: "Scaling & Relative Size", desc: "Scaling: Size of factor relative to 1.", apps: ["app-nf-mult"], isSub: true },
-                { id: "5.NF.B.5.b", grade: "g5", strand: "sense", title: "Scaling Up & Down", desc: "Scaling: Factor >1 vs factor <1.", apps: ["app-nf-mult"], isSub: true },
-                { id: "5.NF.B.6", grade: "g5", strand: "advanced", title: "Mult Fraction Word Problems", desc: "Word problems: Mult fractions.", apps: ["app-nf-mult"] },
-                { id: "5.NF.B.7.a", grade: "g5", strand: "advanced", title: "Unit Fraction ÷ Whole", desc: "Unit fraction ÷ whole number.", apps: ["app-nf-mult"], isSub: true },
-                { id: "5.NF.B.7.b", grade: "g5", strand: "advanced", title: "Whole ÷ Unit Fraction", desc: "Whole number ÷ unit fraction.", apps: ["app-nf-mult"], isSub: true },
-                { id: "5.NF.B.7.c", grade: "g5", strand: "advanced", title: "Division Word Problems", desc: "Word problems: Unit frac division.", apps: ["app-nf-mult"], isSub: true }
-            ],
-            md: [
-                { id: "K.MD.A.1", grade: "k", strand: "basic", title: "Describing Objects", desc: "Describe measurable attributes.", apps: ["app-md-ruler"] },
-                { id: "K.MD.A.2", grade: "k", strand: "basic", title: "Direct Comparison", desc: "Compare two objects directly.", apps: ["app-md-ruler"] },
-                { id: "K.MD.B.3", grade: "k", strand: "sense", title: "Categorize & Count", desc: "Classify and count by category.", apps: ["app-cc-cardinality"] },
-                { id: "1.MD.A.1", grade: "g1", strand: "basic", title: "Ordering by Length", desc: "Order three objects by length.", apps: ["app-md-ruler"] },
-                { id: "1.MD.A.2", grade: "g1", strand: "basic", title: "Measuring Length", desc: "Measure length in units.", apps: ["app-md-ruler"] },
-                { id: "1.MD.B.3", grade: "g1", strand: "sense", title: "Telling Time (Half-Hour)", desc: "Tell time: hour/half-hour.", apps: ["app-md-clock"] },
-                { id: "1.MD.C.4", grade: "g1", strand: "system", title: "Organizing Data", desc: "Organize data (3 categories).", apps: ["app-cc-cardinality"] },
-                { id: "2.MD.A.1", grade: "g2", strand: "basic", title: "Using Measurement Tools", desc: "Select and use tools (rulers).", apps: ["app-md-ruler"] },
-                { id: "2.MD.A.2", grade: "g2", strand: "basic", title: "Measuring with Two Units", desc: "Measure using two different units.", apps: ["app-md-ruler"] },
-                { id: "2.MD.A.3", grade: "g2", strand: "basic", title: "Estimating Lengths", desc: "Estimate lengths (in, ft, cm, m).", apps: ["app-md-ruler"] },
-                { id: "2.MD.A.4", grade: "g2", strand: "basic", title: "Finding the Difference", desc: "Find length difference.", apps: ["app-md-ruler"] },
-                { id: "2.MD.B.5", grade: "g2", strand: "basic", title: "Length Word Problems", desc: "Word problems: Length +/-.", apps: ["app-nbt-line"] },
-                { id: "2.MD.B.6", grade: "g2", strand: "sense", title: "Length on a Line", desc: "Represent length on number line.", apps: ["app-nbt-line"] },
-                { id: "2.MD.C.7", grade: "g2", strand: "sense", title: "Telling Time (5 Mins)", desc: "Tell time: nearest 5 mins.", apps: ["app-md-clock"] },
-                { id: "2.MD.C.8", grade: "g2", strand: "sense", title: "Money Math", desc: "Money word problems.", apps: ["app-nbt-blocks"] },
-                { id: "2.MD.D.9", grade: "g2", strand: "system", title: "Line Plots", desc: "Generate data; Line plots.", apps: ["app-md-ruler"] },
-                { id: "2.MD.D.10", grade: "g2", strand: "system", title: "Bar & Picture Graphs", desc: "Draw bar/picture graphs.", apps: ["app-cc-cardinality"] },
-                { id: "3.MD.A.1", grade: "g3", strand: "sense", title: "Elapsed Time", desc: "Time word problems: elapsed mins.", apps: ["app-md-clock"] },
-                { id: "3.MD.A.2", grade: "g3", strand: "advanced", title: "Liquid Volume & Mass", desc: "Liquid volume/mass +/-.", apps: ["app-md-vol"] },
-                { id: "3.MD.B.3", grade: "g3", strand: "system", title: "Scaled Graphs", desc: "Scaled picture/bar graphs.", apps: ["app-oa-patterns"] },
-                { id: "3.MD.B.4", grade: "g3", strand: "system", title: "Fractional Line Plots", desc: "Line plots: fractional units.", apps: ["app-md-ruler"] },
-                { id: "3.MD.C.5.a", grade: "g3", strand: "advanced", title: "Unit Squares", desc: "Unit square: area of 1 sq unit.", apps: ["app-oa-arrays"], isSub: true },
-                { id: "3.MD.C.5.b", grade: "g3", strand: "advanced", title: "Plane Area", desc: "Plane figure area (n square units).", apps: ["app-oa-arrays"], isSub: true },
-                { id: "3.MD.C.6", grade: "g3", strand: "advanced", title: "Measuring Area", desc: "Measure area by counting sq units.", apps: ["app-oa-arrays"] },
-                { id: "3.MD.C.7.a", grade: "g3", strand: "advanced", title: "Area Formula", desc: "Area = Side x Side.", apps: ["app-oa-arrays"], isSub: true },
-                { id: "3.MD.C.7.b", grade: "g3", strand: "advanced", title: "Multiplying Sides", desc: "Multiply side lengths (real world).", apps: ["app-oa-arrays"], isSub: true },
-                { id: "3.MD.C.7.c", grade: "g3", strand: "advanced", title: "Distributive Area", desc: "Distributive property area.", apps: ["app-oa-arrays"], isSub: true },
-                { id: "3.MD.C.7.d", grade: "g3", strand: "advanced", title: "Additive Area", desc: "Additive area (rectilinear).", apps: ["app-oa-arrays"], isSub: true },
-                { id: "3.MD.D.8", grade: "g3", strand: "advanced", title: "Perimeters", desc: "Perimeter word problems.", apps: ["app-oa-arrays"] },
-                { id: "4.MD.A.1", grade: "g4", strand: "system", title: "Unit Conversions", desc: "Units and relative sizes.", apps: ["app-md-ruler"] },
-                { id: "4.MD.A.2", grade: "g4", strand: "basic", title: "Measurement Word Problems", desc: "Measurement word problems.", apps: ["app-md-ruler"] },
-                { id: "4.MD.A.3", grade: "g4", strand: "advanced", title: "Area/Perimeter Formulas", desc: "Area/Perimeter formulas.", apps: ["app-oa-arrays"] },
-                { id: "4.MD.B.4", grade: "g4", strand: "system", title: "Line Plots with Fractions", desc: "Line plots: fractions +/-.", apps: ["app-nf-bars"] },
-                { id: "4.MD.C.5.a", grade: "g4", strand: "sense", title: "The 360 Degree Circle", desc: "Angle measurement (360 deg).", apps: ["app-g-shapes"], isSub: true },
-                { id: "4.MD.C.5.b", grade: "g4", strand: "sense", title: "Unit Angles", desc: "Measure angles: unit angles.", apps: ["app-g-shapes"], isSub: true },
-                { id: "4.MD.C.6", grade: "g4", strand: "sense", title: "Using a Protractor", desc: "Measure/draw angles (protractor).", apps: ["app-g-shapes"] },
-                { id: "4.MD.C.7", grade: "g4", strand: "sense", title: "Additive Angles", desc: "Additive angles (non-overlap).", apps: ["app-g-shapes"] },
-                { id: "5.MD.A.1", grade: "g5", strand: "system", title: "Converting Units", desc: "Convert measurement units.", apps: ["app-nbt-blocks"] },
-                { id: "5.MD.B.2", grade: "g5", strand: "system", title: "Line Plot Math", desc: "Line plots: Fraction operations.", apps: ["app-nf-bars"] },
-                { id: "5.MD.C.3.a", grade: "g5", strand: "advanced", title: "The Unit Cube", desc: "Volume: Unit cube 1x1x1.", apps: ["app-md-vol"], isSub: true },
-                { id: "5.MD.C.3.b", grade: "g5", strand: "advanced", title: "Volume Measurement", desc: "Volume measurement (n cubes).", apps: ["app-md-vol"], isSub: true },
-                { id: "5.MD.C.4", grade: "g5", strand: "advanced", title: "Counting Volume", desc: "Measure volume by counting cubes.", apps: ["app-md-vol"] },
-                { id: "5.MD.C.5.a", grade: "g5", strand: "advanced", title: "Volume Formula", desc: "Volume = L x W x H.", apps: ["app-md-vol"], isSub: true },
-                { id: "5.MD.C.5.b", grade: "g5", strand: "advanced", title: "Base x Height", desc: "Volume = Base x H.", apps: ["app-md-vol"], isSub: true },
-                { id: "5.MD.C.5.c", grade: "g5", strand: "advanced", title: "Additive Volume", desc: "Volume: Additive figures.", apps: ["app-md-vol"], isSub: true }
-            ],
-            g: [
-                { id: "K.G.A.1", grade: "k", strand: "sense", title: "Relative Positions", desc: "Relative positions.", apps: ["app-g-shapes"] },
-                { id: "K.G.A.2", grade: "k", strand: "sense", title: "Naming Shapes", desc: "Shape names regardless of size.", apps: ["app-g-shapes"] },
-                { id: "K.G.A.3", grade: "k", strand: "sense", title: "2D vs 3D", desc: "2D vs 3D identifiers.", apps: ["app-g-shapes"] },
-                { id: "K.G.B.4", grade: "k", strand: "sense", title: "Comparing Shapes", desc: "Analyze/compare 2D/3D shapes.", apps: ["app-g-shapes"] },
-                { id: "K.G.B.5", grade: "k", strand: "advanced", title: "Modeling Shapes", desc: "Model shapes from world components.", apps: ["app-g-shapes"] },
-                { id: "K.G.B.6", grade: "k", strand: "advanced", title: "Composing Shapes", desc: "Compose simple shapes into larger.", apps: ["app-g-shapes"] },
-                { id: "1.G.A.1", grade: "g1", strand: "sense", title: "Defining Attributes", desc: "Defining attributes vs non-defining.", apps: ["app-g-shapes"] },
-                { id: "1.G.A.2", grade: "g1", strand: "advanced", title: "Composite Shapes", desc: "Compose 2D/3D composite shapes.", apps: ["app-g-shapes"] },
-                { id: "1.G.A.3", grade: "g1", strand: "system", title: "Halves & Fourths", desc: "Partitioning: halves/fourths.", apps: ["app-nf-bars"] },
-                { id: "2.G.A.1", grade: "g2", strand: "advanced", title: "Drawing Attributes", desc: "Identify/draw specific attributes.", apps: ["app-g-shapes"] },
-                { id: "2.G.A.2", grade: "g2", strand: "system", title: "Partitioning Rectangles", desc: "Partition rect into rows/cols.", apps: ["app-oa-arrays"] },
-                { id: "2.G.A.3", grade: "g2", strand: "system", title: "Halves & Thirds", desc: "Partition circles/rect: halves/3rds.", apps: ["app-nf-bars"] },
-                { id: "3.G.A.1", grade: "g3", strand: "system", title: "Categorizing Shapes", desc: "Categorize shapes by attributes.", apps: ["app-g-shapes"] },
-                { id: "3.G.A.2", grade: "g3", strand: "system", title: "Equal Area Parts", desc: "Partition into equal area parts.", apps: ["app-nf-bars"] },
-                { id: "4.G.A.1", grade: "g4", strand: "sense", title: "Points, Lines, Angles", desc: "Draw points, lines, angles.", apps: ["app-g-shapes"] },
-                { id: "4.G.A.2", grade: "g4", strand: "sense", title: "Classifying Polygons", desc: "Classify triangles/quads.", apps: ["app-g-shapes"] },
-                { id: "4.G.A.3", grade: "g4", strand: "sense", title: "Lines of Symmetry", desc: "Identify/draw lines of symmetry.", apps: ["app-g-shapes"] },
-                { id: "5.G.A.1", grade: "g5", strand: "system", title: "Coordinate Logic", desc: "Coordinate system logic.", apps: ["app-g-coord"] },
-                { id: "5.G.A.2", grade: "g5", strand: "system", title: "Graphing the Real World", desc: "Graph real-world 1st quad.", apps: ["app-g-coord"] },
-                { id: "5.G.B.3", grade: "g5", strand: "system", title: "2D Subcategories", desc: "2D figure subcategory properties.", apps: ["app-g-shapes"] },
-                { id: "5.G.B.4", grade: "g5", strand: "system", title: "Hierarchy of Figures", desc: "Classify 2D figures in hierarchy.", apps: ["app-g-shapes"] }
-            ]
+            oa: [{ id: "3.OA.A.1", grade: "g3", strand: "advanced", title: "Visual Multiplication", desc: "Interpret mult.", apps: ["app-oa-arrays"] }],
+            nf: [{ id: "4.NF.A.1", grade: "g4", strand: "system", title: "Explaining Equivalence", desc: "Explain fraction equivalence.", apps: ["app-nf-bars"] }],
+            md: [{ id: "2.MD.C.7", grade: "g2", strand: "sense", title: "Telling Time (5 Mins)", desc: "Tell time: nearest 5 mins.", apps: ["app-md-clock"] }],
+            g: [{ id: "1.G.A.2", grade: "g1", strand: "advanced", title: "Composite Shapes", desc: "Compose 2D/3D composite shapes.", apps: ["app-g-shapes"] }]
         };
 
-        const gradeMap = [
-            { id: 'k', label: 'K', colorVar: '--brand-k' },
-            { id: 'g1', label: 'G1', colorVar: '--brand-g1' },
-            { id: 'g2', label: 'G2', colorVar: '--brand-g2' },
-            { id: 'g3', label: 'G3', colorVar: '--brand-g3' },
-            { id: 'g4', label: 'G4', colorVar: '--brand-g4' },
-            { id: 'g5', label: 'G5', colorVar: '--brand-g5' }
-        ];
-        
+        const gradeMap = [{ id: 'k', label: 'K' }, { id: 'g1', label: 'G1' }, { id: 'g2', label: 'G2' }, { id: 'g3', label: 'G3' }, { id: 'g4', label: 'G4' }, { id: 'g5', label: 'G5' }];
         const strandCols = { 'system': 2, 'sense': 3, 'basic': 4, 'advanced': 5 };
         
         let flatStandards = [];
-        Object.keys(allStandards).forEach(domKey => {
-            allStandards[domKey].forEach(std => {
-                flatStandards.push({ ...std, domain: domKey });
-            });
-        });
+        Object.keys(allStandards).forEach(domKey => { allStandards[domKey].forEach(std => { flatStandards.push({ ...std, domain: domKey }); }); });
+
+        let currentDomain = 'all'; let currentGrade = 'all';
 
         // --- Filtering Engine ---
         function toggleFilter(type, value, btnElement) {
             if (type === 'domain') {
-                const isActive = btnElement.classList.contains('active');
-                document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
-                currentDomain = isActive ? 'all' : value;
-                if (!isActive) btnElement.classList.add('active');
+                const isActive = btnElement.classList.contains('active'); document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+                currentDomain = isActive ? 'all' : value; if (!isActive) btnElement.classList.add('active');
             } else if (type === 'grade') {
-                const isActive = btnElement.classList.contains('active');
-                document.querySelectorAll('.grade-marker').forEach(b => b.classList.remove('active'));
-                currentGrade = isActive ? 'all' : value;
-                if (!isActive) btnElement.classList.add('active');
+                const isActive = btnElement.classList.contains('active'); document.querySelectorAll('.grade-marker').forEach(b => b.classList.remove('active'));
+                currentGrade = isActive ? 'all' : value; if (!isActive) btnElement.classList.add('active');
             }
             applyFilters();
         }
@@ -656,150 +435,169 @@
         function applyFilters() {
             resetBoard(); 
             document.querySelectorAll('.grid-cell, .grade-marker').forEach(el => {
-                if (currentGrade === 'all' || el.getAttribute('data-row') === currentGrade) {
-                    el.classList.remove('hidden-row');
-                } else {
-                    el.classList.add('hidden-row');
-                }
+                if (currentGrade === 'all' || el.getAttribute('data-row') === currentGrade) el.classList.remove('hidden-row'); else el.classList.add('hidden-row');
             });
             document.querySelectorAll('.node').forEach(node => {
-                if (currentDomain === 'all' || node.getAttribute('data-domain') === currentDomain) {
-                    node.classList.remove('domain-dimmed');
-                } else {
-                    node.classList.add('domain-dimmed');
-                }
+                if (currentDomain === 'all' || node.getAttribute('data-domain') === currentDomain) node.classList.remove('domain-dimmed'); else node.classList.add('domain-dimmed');
             });
             renderApps();
         }
 
         // --- Grid Rendering ---
         function renderMegaMatrix() {
-            const matrixGrid = document.getElementById('matrixGrid');
-            matrixGrid.innerHTML = '';
-
-            // Draw Strand Tracks
+            const matrixGrid = document.getElementById('matrixGrid'); matrixGrid.innerHTML = '';
             Object.keys(strandCols).forEach(key => {
                 const trackLabel = key === 'system' ? 'The System' : key === 'sense' ? 'Number Sense' : key === 'basic' ? 'Basic Ops' : 'Adv. Ops';
-                matrixGrid.insertAdjacentHTML('beforeend', `
-                    <div class="track-bg" style="grid-column: ${strandCols[key]};">
-                        <div class="strand-label" data-strand="${key}">${trackLabel}</div>
-                        <div class="milled-groove"><div class="color-line" data-strand="${key}"></div></div>
-                    </div>
-                `);
+                matrixGrid.insertAdjacentHTML('beforeend', `<div class="track-bg" style="grid-column: ${strandCols[key]};"><div class="strand-label" data-strand="${key}">${trackLabel}</div><div class="milled-groove"><div class="color-line" data-strand="${key}"></div></div></div>`);
             });
-
-            // Draw Grades and Nodes
             gradeMap.forEach((grade, index) => {
                 const row = index + 2; 
-                // Inject the chunky grade buttons directly into the CSS Grid so they align perfectly
-                matrixGrid.insertAdjacentHTML('beforeend', `
-                    <button class="grade-marker" data-grade-target="${grade.id}" data-row="${grade.id}" style="grid-row: ${row};" onclick="toggleFilter('grade', '${grade.id}', this)">
-                        ${grade.label}
-                    </button>
-                `);
-                
+                matrixGrid.insertAdjacentHTML('beforeend', `<button class="grade-marker" data-grade-target="${grade.id}" data-row="${grade.id}" style="grid-row: ${row};" onclick="toggleFilter('grade', '${grade.id}', this)">${grade.label}</button>`);
                 Object.keys(strandCols).forEach(strandKey => {
                     const cellStds = flatStandards.filter(std => std.grade === grade.id && std.strand === strandKey);
-                    
                     if (cellStds.length > 0) {
                         let cellHtml = `<div class="grid-cell" data-row="${grade.id}" style="grid-column: ${strandCols[strandKey]}; grid-row: ${row};">`;
                         cellStds.forEach(std => {
-                            cellHtml += `
-                                <div class="node ${std.isSub ? 'sub' : ''}" data-apps="${std.apps.join(',')}" data-domain="${std.domain}">
-                                    <div class="node-header">
-                                        <span class="friendly-title">${std.title || std.desc}</span>
-                                        <div class="badges-container">
-                                            <span class="dom-badge">${std.domain.toUpperCase()}</span>
-                                            <span class="cc-badge">${std.id}</span>
-                                        </div>
-                                    </div>
-                                    <div class="std-desc">${std.desc}</div>
-                                </div>
-                            `;
+                            cellHtml += `<div class="node" data-id="${std.id}" data-title="${std.title}" data-desc="${std.desc}" data-apps="${std.apps.join(',')}" data-domain="${std.domain}" onclick="triggerPlate(this)"><div class="node-header"><span class="friendly-title">${std.title}</span><div class="badges-container"><span class="dom-badge">${std.domain.toUpperCase()}</span><span class="cc-badge">${std.id}</span></div></div><div class="std-desc">${std.desc}</div></div>`;
                         });
-                        cellHtml += `</div>`;
-                        matrixGrid.insertAdjacentHTML('beforeend', cellHtml);
+                        cellHtml += `</div>`; matrixGrid.insertAdjacentHTML('beforeend', cellHtml);
                     }
                 });
             });
         }
 
-        // --- Deck Rendering ---
         function renderApps() {
-            const toolDeck = document.getElementById('toolDeck');
-            toolDeck.innerHTML = '';
-            
+            const toolDeck = document.getElementById('toolDeck'); toolDeck.innerHTML = '';
             appsData.forEach(app => {
-                const stdCount = flatStandards.filter(std => std.apps.includes(app.id)).length;
                 let domainMatch = currentDomain === 'all' ? true : [...new Set(flatStandards.filter(s => s.domain === currentDomain).flatMap(s => s.apps))].includes(app.id);
                 let gradeMatch = currentGrade === 'all' ? true : app.grades.map(g => g.toLowerCase()).includes(currentGrade.toLowerCase());
-                
-                toolDeck.insertAdjacentHTML('beforeend', `
-                    <div class="app-card ${!(domainMatch && gradeMatch) ? 'domain-dimmed' : ''}" data-trigger-app="${app.id}">
-                        <div><div class="tool-bead" style="background: var(--strand-${app.strand});"></div></div>
-                        <div class="app-title">${app.title}</div>
-                        <div class="alignment-badge">Covers ${stdCount} Standards</div>
-                    </div>
-                `);
+                const isRelevant = domainMatch && gradeMatch;
+                toolDeck.insertAdjacentHTML('beforeend', `<div class="app-card ${!isRelevant ? 'domain-dimmed' : ''}" data-trigger-app="${app.id}"><div><div class="tool-bead" style="background: var(--strand-${app.strand});"></div></div><div class="app-title">${app.title}</div></div>`);
             });
         }
 
-        function resetBoard() {
-            document.getElementById('mapZone').classList.remove('is-spotlighting', 'is-hover-spotlighting');
-            document.getElementById('toolDeck').classList.remove('is-spotlighting');
-            document.querySelectorAll('.spotlight-active, .primary-selected, .levitated, .hover-spotlight').forEach(el => el.classList.remove('spotlight-active', 'primary-selected', 'levitated', 'hover-spotlight'));
+        function resetBoard() { document.querySelectorAll('.is-animating').forEach(n => n.classList.remove('is-animating')); }
+
+        // --- FLIP ANIMATION ENGINE ---
+        let activeNodeEl = null;
+
+        function triggerPlate(nodeEl) {
+            if (nodeEl.classList.contains('domain-dimmed')) return;
+            
+            activeNodeEl = nodeEl;
+            const rect = nodeEl.getBoundingClientRect();
+            const plate = document.getElementById('expandedPlate');
+            
+            // 1. Map Data
+            const id = nodeEl.getAttribute('data-id');
+            const title = nodeEl.getAttribute('data-title');
+            const desc = nodeEl.getAttribute('data-desc');
+            const domain = nodeEl.getAttribute('data-domain');
+            const appId = nodeEl.getAttribute('data-apps').split(',')[0];
+            const appObj = appsData.find(a => a.id === appId);
+
+            document.getElementById('ep-dom-badge').textContent = domain.toUpperCase();
+            document.getElementById('ep-cc-badge').textContent = id;
+            document.getElementById('ep-title').textContent = title;
+            document.getElementById('ep-desc').textContent = desc;
+            
+            // App UI
+            if(appObj) {
+                document.getElementById('ep-tool-name').textContent = appObj.title;
+                document.getElementById('ep-tool-bead').style.background = `var(--strand-${appObj.strand})`;
+            }
+            
+            // Inject Placeholder Pedagogy
+            document.getElementById('ep-pedagogy-content').innerHTML = generatePedagogy(title, domain, id);
+
+            // 2. Set Domain Color Variable for the border
+            plate.style.setProperty('--node-color', `var(--dom-${domain})`);
+
+            // 3. Set Initial Geometry (First state)
+            plate.style.transition = 'none'; // Turn off transition for instant snap
+            plate.style.top = rect.top + 'px';
+            plate.style.left = rect.left + 'px';
+            plate.style.width = rect.width + 'px';
+            plate.style.height = rect.height + 'px';
+            plate.style.opacity = '1';
+            
+            nodeEl.classList.add('is-animating'); // Hide the grid node
+
+            // 4. Force Reflow & Apply Active State (Last state)
+            requestAnimationFrame(() => {
+                plate.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                document.getElementById('plateBackdrop').classList.add('active');
+                plate.classList.add('active');
+            });
         }
 
-        // --- Spotlight & Levitation Listeners ---
-        document.body.addEventListener('mouseover', (e) => {
-            const card = e.target.closest('.app-card');
-            if (card && !card.classList.contains('domain-dimmed') && !document.querySelector('.primary-selected')) {
-                const appId = card.getAttribute('data-trigger-app');
-                document.getElementById('mapZone').classList.add('is-hover-spotlighting');
-                document.querySelectorAll('.node:not(.domain-dimmed)').forEach(n => {
-                    if (!n.closest('.hidden-row') && (n.getAttribute('data-apps') || '').includes(appId)) n.classList.add('hover-spotlight');
-                });
-            }
-        });
+        function closePlate() {
+            const plate = document.getElementById('expandedPlate');
+            if(!activeNodeEl || !plate.classList.contains('active')) return;
 
-        document.body.addEventListener('mouseout', (e) => {
-            if (e.target.closest('.app-card') && !document.querySelector('.primary-selected')) {
-                document.getElementById('mapZone').classList.remove('is-hover-spotlighting');
-                document.querySelectorAll('.hover-spotlight').forEach(n => n.classList.remove('hover-spotlight'));
-            }
-        });
+            // 1. Get current rect of the hidden grid node
+            const rect = activeNodeEl.getBoundingClientRect();
 
-        document.body.addEventListener('click', (e) => {
-            const node = e.target.closest('.node');
-            const card = e.target.closest('.app-card');
+            // 2. Remove active class to shrink it, but override geometry to target the node
+            document.getElementById('plateBackdrop').classList.remove('active');
+            plate.classList.remove('active');
+            
+            plate.style.top = rect.top + 'px';
+            plate.style.left = rect.left + 'px';
+            plate.style.width = rect.width + 'px';
+            plate.style.height = rect.height + 'px';
+            plate.style.opacity = '0';
 
-            if (node && !node.classList.contains('domain-dimmed') && !node.closest('.hidden-row')) {
-                e.stopPropagation();
-                const wasPrimary = node.classList.contains('primary-selected');
-                resetBoard();
-                if (!wasPrimary) {
-                    const apps = node.getAttribute('data-apps').split(',');
-                    document.getElementById('mapZone').classList.add('is-spotlighting');
-                    document.getElementById('toolDeck').classList.add('is-spotlighting');
-                    node.classList.add('primary-selected', 'spotlight-active');
-                    apps.forEach(appId => {
-                        const cardEl = document.querySelector(`[data-trigger-app="${appId}"]`);
-                        if (cardEl && !cardEl.classList.contains('domain-dimmed')) {
-                            cardEl.classList.add('levitated');
-                            cardEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                        }
-                        document.querySelectorAll('.node:not(.domain-dimmed)').forEach(n => {
-                            if (n !== node && !n.closest('.hidden-row') && (n.getAttribute('data-apps') || '').includes(appId)) n.classList.add('spotlight-active');
-                        });
-                    });
-                }
-            } else if (card && !card.classList.contains('domain-dimmed')) {
-                e.stopPropagation();
-                alert("Initiating Surface Launch Sequence for: " + card.querySelector('.app-title').textContent);
-            } else if (!e.target.closest('.domain-nav') && !e.target.closest('.grade-marker') && !e.target.closest('.audit-toggle-container') && !e.target.closest('.tool-deck')) {
-                resetBoard();
-            }
-        });
+            // 3. Clean up after transition
+            setTimeout(() => {
+                if(activeNodeEl) activeNodeEl.classList.remove('is-animating');
+                activeNodeEl = null;
+            }, 500); // Matches transition duration
+        }
+
+        // --- PEDAGOGY GENERATOR ---
+        function generatePedagogy(title, domain, code) {
+            const domainNames = { 'cc': 'Counting', 'nbt': 'Base Ten', 'oa': 'Algebraic Operations', 'nf': 'Fractions', 'md': 'Measurement', 'g': 'Geometry' };
+            const dName = domainNames[domain] || 'Math';
+            
+            return `
+                <div class="guide-section">
+                    <div class="guide-label">The Translation</div>
+                    <div class="guide-content">
+                        <strong>${code}</strong> isn't just about getting the right answer; it's about building intuition in ${dName}. 
+                        Instead of teaching ${title.toLowerCase()} through rote memorization, we approach it as a physical reality. 
+                        By interacting with the digital manipulative on the right, the student internalizes the "why" before they ever have to write down the "how."
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <div class="guide-label">The Vertical Spiral</div>
+                    <div class="guide-content">Every mathematical concept is built on a physical prerequisite.</div>
+                    <div class="spiral-box">
+                        <div class="spiral-row">
+                            <span class="badge">BUILDS ON</span> Physical 1-to-1 correspondence.
+                        </div>
+                        <div class="spiral-row" style="color: var(--text-main);">
+                            <span class="badge" style="background: var(--node-color); color: white;">CURRENT</span> <strong>${title}</strong>
+                        </div>
+                        <div class="spiral-row">
+                            <span class="badge">UNLOCKS</span> Abstract algorithmic processing in the next grade.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <div class="guide-label">Assessing Mastery</div>
+                    <div class="guide-content">
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>Can the student successfully model the problem using the tool without explicit instruction?</li>
+                            <li>Can they predict what will happen before they release the digital block?</li>
+                            <li>Can they map their physical action back to a written equation?</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
 
         // Initialize App
         renderMegaMatrix();
