@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Place Value Visualizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Lexend',sans-serif;background:#F5F5F7;color:#1e293b;height:100vh;height:100dvh;overflow:hidden;user-select:none;display:flex;flex-direction:column}
+    #topBar{padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(245,245,247,0.85);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border-bottom:1px solid rgba(0,0,0,0.05);z-index:10;flex-wrap:wrap;gap:6px}
+    .btns{display:flex;gap:6px;flex-wrap:wrap}
+    .ab{background:#fff;border:2px solid #e5e7eb;color:#1e293b;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
+    .ab:hover{border-color:#6366f1;color:#6366f1}.ab.on{background:#6366f1;color:#fff;border-color:#6366f1}
+    .ab.mult{background:#fff;border-color:#22c55e;color:#22c55e;font-size:14px;padding:6px 12px}
+    .ab.mult:hover{background:#22c55e;color:#fff}
+    .ab.mult:disabled{opacity:0.4;cursor:not-allowed}
+    .ab.divd{background:#fff;border-color:#f59e0b;color:#f59e0b;font-size:14px;padding:6px 12px}
+    .ab.divd:hover{background:#f59e0b;color:#fff}
+    .ab.divd:disabled{opacity:0.4;cursor:not-allowed}
+    #numBar{flex-shrink:0;display:flex;align-items:center;position:relative;padding:10px 16px;min-height:86px;background:#fff;border-bottom:1px solid #f1f5f9}
+    #vp{flex:1;position:relative;overflow:hidden;cursor:grab;touch-action:none}
+    #vp:active{cursor:grabbing}
+    canvas{position:absolute;top:0;left:0}
+    #animCanvas{position:absolute;top:0;left:0;pointer-events:none;z-index:5}
+    #hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:#94a3b8;background:rgba(255,255,255,.9);padding:4px 16px;border-radius:8px;pointer-events:none;transition:opacity 2s}
+    #hint.gone{opacity:0}
+    .digit{cursor:pointer;border-radius:6px;padding:0 4px;transition:background .15s,color .15s}.digit:hover{background:#e2e8f0!important}
+    #animStatus{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:900;color:#6366f1;background:rgba(255,255,255,.95);padding:4px 16px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:10}
+    #animStatus.show{opacity:1}
+    #pmBar{position:absolute;bottom:6px;left:0;right:0;display:flex;justify-content:center;gap:2px;z-index:8;pointer-events:none}
+    .pm-grp{display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:auto}
+    .pm-btn{width:22px;height:18px;border:1.5px solid #cbd5e1;border-radius:4px;background:#fff;font-size:13px;font-weight:900;line-height:14px;text-align:center;cursor:pointer;font-family:'Lexend',sans-serif;color:#64748b;padding:0}
+    .pm-btn:hover{border-color:#6366f1;color:#6366f1;background:#f0f0ff}
+    .pm-btn:disabled{opacity:0.3;cursor:not-allowed}
+    .pm-lbl{font-size:7px;font-weight:900;color:#94a3b8;white-space:nowrap}
+    #footer{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 16px;font-size:10px;font-weight:700;text-transform:uppercase;color:#AEAEB2;letter-spacing:0.5px}
+    .footer-bead{display:inline-block;width:3px;height:3px;border-radius:50%;background:#AEAEB2;vertical-align:baseline;margin:0 4px}
+  </style>
+</head>
+<body>
+<div id="topBar">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" height="28">
+    <text x="0" y="30" font-family="Lexend, sans-serif" font-weight="900" font-size="28" fill="#1e293b">math</text>
+    <text x="88" y="30" font-family="Lexend, sans-serif" font-weight="300" font-size="28" fill="#1e293b">things.</text>
+  </svg>
+  <div class="btns">
+    <button class="ab mult" id="multBtn" title="×10" aria-label="Multiply by 10">×10</button>
+    <button class="ab mult" id="mult100Btn" title="×100" aria-label="Multiply by 100">×100</button>
+    <button class="ab mult" id="mult1000Btn" title="×1,000" aria-label="Multiply by 1000">×1,000</button>
+    <button class="ab divd" id="divBtn" title="÷10" aria-label="Divide by 10">÷10</button>
+    <button class="ab divd" id="div100Btn" title="÷100" aria-label="Divide by 100">÷100</button>
+    <button class="ab divd" id="div1000Btn" title="÷1,000" aria-label="Divide by 1000">÷1,000</button>
+    <button class="ab" id="lblBtn" title="Labels" aria-label="Toggle labels"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5S1 8 1 8z"/><circle cx="8" cy="8" r="2.5"/></svg></button>
+    <button class="ab" id="zeroBtn" title="Show Zeros" aria-label="Toggle show zeros">000</button>
+  </div>
+</div>
+<div id="numBar">
+  <input type="text" id="numInput" placeholder="Type a number…" autocomplete="off" style="font-family:inherit;font-size:20px;font-weight:900;color:#1e293b;border:2px solid #e5e7eb;border-radius:10px;padding:8px 14px;width:190px;text-align:center;outline:none;background:#fff;position:relative;z-index:2" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'" />
+  <span id="numDisplay" style="position:absolute;left:50%;transform:translateX(-50%);font-size:56px;font-weight:900;color:#1e293b;display:flex;align-items:baseline"></span>
+</div>
+<div id="vp">
+  <canvas id="cv"></canvas>
+  <canvas id="animCanvas"></canvas>
+  <div id="hint">drag to pan · scroll to zoom · click a digit to highlight</div>
+  <div id="animStatus"></div>
+  <div id="pmBar"></div>
+</div>
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+<script>
+const CC=['#4A2613', '#15322E', '#702A24', '#1A2B3C', '#A52A2A', '#0047AB', '#FFBF00', '#008080', '#CF3476', '#4CBB17', '#FFD700', '#4169E1', '#DC143C', '#64D2FF', '#FF9F0A', '#7B00FF'];
+const NAMES=['Trillions','Hundred-Billions','Ten-Billions','Billions','Hundred-Millions','Ten-Millions','Millions','Hundred-Thousands','Ten-Thousands','Thousands','Hundreds','Tens','Ones','Tenths','Hundredths','Thousandths'];
+const SHAPES=['cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube'];
+const DEC=13,ONES=12,NP=16;
+const P=NAMES.map((n,i)=>({name:n,color:CC[i],shape:SHAPES[i],exp:12-i}));
+const U=8,N=10,GAP=0.2,DEP=0.3,FLOOR_Y_OFFSET=120,ZOOM_MIN=0.01,ZOOM_MAX=100;
+let digits=Array(NP).fill(0);
+let showLabels=false,showZeros=false,showDecimals=false;
+let panX=0,zoomLvl=1.0,enteredStr='';
+let highlightedPlace=null,animating=false;
+function updateShowDecimals(){showDecimals=showZeros||digits[DEC]>0||digits[DEC+1]>0||digits[DEC+2]>0}
+
+function cs(hex,a){let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgb(${Math.min(255,Math.max(0,r+a))},${Math.min(255,Math.max(0,g+a))},${Math.min(255,Math.max(0,b+a))})`}
+function bp(i,u){return i*u*(1+GAP)}
+function stickLen(u){return bp(N-1,u)+u}
+function fv(v){if(Math.abs(v)>=1)return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,',');if(v===0)return'0';const d=Math.max(1,Math.round(-Math.log10(Math.abs(v))));return String(parseFloat((Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toFixed(d+1)))}
+function addCommas(s){const p=s.split('.');let wf='',w=(p[0]||'0').split('').reverse();for(let i=0;i<w.length;i++){if(i>0&&i%3===0)wf=','+wf;wf=w[i]+wf}return p[1]!==undefined?wf+'.'+p[1]:wf}
+function unitForPlace(pi){const z=U*zoomLvl,sL=stickLen(z),e=P[pi].exp;if(e>=0&&e<=2)return z;if(e>=3&&e<=5)return sL;if(e>=6&&e<=8)return stickLen(sL);if(e>=9&&e<=11)return stickLen(stickLen(sL));if(e===12)return stickLen(stickLen(stickLen(sL)));if(e>=-3&&e<=-1)return z/(stickLen(z)/z);return z}
+function secDims(u,shape){const sL=stickLen(u),d=u*DEP,ds=d*0.6;if(shape==='cube')return{w:u+d,h:sL+d};if(shape==='stick')return{w:sL+d,h:sL+d};return{w:sL+ds*N+d,h:sL+ds*N+d}}
+function getDEC_GAP(){return unitForPlace(ONES)*0.75}
+function colW(pi){const u=unitForPlace(pi),dims=secDims(u,P[pi].shape);return dims.w+Math.max(P[pi].shape==='cube'?u*3:u*0.5,30)}
+function worldX(pi){let x=0;if(pi<ONES){for(let i=ONES-1;i>=pi;i--){x-=colW(i);if(i===DEC)x-=getDEC_GAP()}}else if(pi>ONES){for(let i=ONES+1;i<=pi;i++){x+=colW(i-1);if(i===DEC)x+=getDEC_GAP()}}return x}
+function screenX(pi){return worldX(pi)*zoomLvl-panX+document.getElementById('vp').clientWidth/2}
+function lerpColor(a,b,t){const r1=parseInt(a.slice(1,3),16),g1=parseInt(a.slice(3,5),16),b1=parseInt(a.slice(5,7),16),r2=parseInt(b.slice(1,3),16),g2=parseInt(b.slice(3,5),16),b2=parseInt(b.slice(5,7),16);const r=Math.round(r1+(r2-r1)*t),g=Math.round(g1+(g2-g1)*t),bl=Math.round(b1+(b2-b1)*t);return`#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${bl.toString(16).padStart(2,'0')}`}
+
+// ═══════ NUMBER ═══════
+function setNumber(n){
+  const w=Math.floor(n),f=Math.round((n-w)*1000);
+  digits[0]=Math.floor(w/1e12)%10;digits[1]=Math.floor(w/1e11)%10;digits[2]=Math.floor(w/1e10)%10;
+  digits[3]=Math.floor(w/1e9)%10;digits[4]=Math.floor(w/1e8)%10;digits[5]=Math.floor(w/1e7)%10;
+  digits[6]=Math.floor(w/1e6)%10;digits[7]=Math.floor(w/1e5)%10;digits[8]=Math.floor(w/1e4)%10;
+  digits[9]=Math.floor(w/1e3)%10;digits[10]=Math.floor(w/100)%10;digits[11]=Math.floor(w/10)%10;
+  digits[12]=w%10;digits[13]=Math.floor(f/100)%10;digits[14]=Math.floor(f/10)%10;digits[15]=f%10;
+  enteredStr=String(n);
+}
+function digitsToStr(){
+  let first=-1;for(let i=0;i<=ONES;i++)if(digits[i]>0){first=i;break}
+  if(first<0&&digits[DEC]===0&&digits[DEC+1]===0&&digits[DEC+2]===0)return'0';
+  let w='';const start=first>=0?first:ONES;for(let i=start;i<=ONES;i++)w+=digits[i];
+  let d='',lastDec=-1;for(let i=DEC;i<NP;i++)if(digits[i]>0)lastDec=i;
+  if(lastDec>=0){for(let i=DEC;i<=lastDec;i++)d+=digits[i];return w+'.'+d}
+  return w;
+}
+function getNumericValue(){let v=0;for(let i=0;i<NP;i++)v+=digits[i]*Math.pow(10,P[i].exp);return parseFloat(v.toPrecision(15))}
+function shiftDigitsLeft(){const nd=Array(NP).fill(0);for(let i=1;i<NP;i++)nd[i-1]=digits[i];digits=[...nd];enteredStr=digitsToStr()}
+function shiftDigitsRight(){const nd=Array(NP).fill(0);for(let i=0;i<NP-1;i++)nd[i+1]=digits[i];digits=[...nd];enteredStr=digitsToStr()}
+function rand(){
+  const styles=[()=>String(Math.floor(Math.random()*9+1)),()=>String(Math.floor(Math.random()*90+10)),()=>String(Math.floor(Math.random()*900+100)),()=>String(Math.floor(Math.random()*9000+1000)),()=>String(Math.floor(Math.random()*90000+10000)),()=>String(Math.floor(Math.random()*900000+100000)),()=>String(Math.floor(Math.random()*9000000+1000000)),()=>(Math.random()*9+1).toFixed(1),()=>(Math.random()*9+1).toFixed(2),()=>(Math.random()*900+100).toFixed(2),()=>(Math.floor(Math.random()*9000+1000)+Math.random()).toFixed(2)];
+  const s=styles[Math.floor(Math.random()*styles.length)]();
+  highlightedPlace=null;setNumber(parseFloat(s));enteredStr=s;
+}
+window.toggleHighlight=function(pi){highlightedPlace=(highlightedPlace===pi)?null:pi;renderNum();render()};
+
+// ═══════ DRAW PRIMITIVES ═══════
+function iso(ctx,x,y,u,col,alpha=1){
+  if(u<0.8)return;const d=u*DEP;ctx.save();ctx.globalAlpha=alpha;
+  ctx.fillStyle=col;ctx.fillRect(x,y,u,u);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d,y-d);ctx.lineTo(x+u+d,y-d);ctx.lineTo(x+u,y);ctx.closePath();ctx.fillStyle=cs(col,45);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x+u,y);ctx.lineTo(x+u+d,y-d);ctx.lineTo(x+u+d,y+u-d);ctx.lineTo(x+u,y+u);ctx.closePath();ctx.fillStyle=cs(col,-40);ctx.fill();
+  if(u>3){ctx.strokeStyle=cs(col,-60);ctx.lineWidth=Math.max(.3,u*.012);ctx.strokeRect(x,y,u,u);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d,y-d);ctx.lineTo(x+u+d,y-d);ctx.lineTo(x+u,y);ctx.stroke();ctx.beginPath();ctx.moveTo(x+u,y);ctx.lineTo(x+u+d,y-d);ctx.lineTo(x+u+d,y+u-d);ctx.lineTo(x+u,y+u);ctx.stroke()}
+  if(u>6){ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(x+.5,y+.5,u*.2,u*.2)}
+  ctx.restore();
+}
+function isoBox(ctx,x,y,w,h,col){
+  if(w<0.5||h<0.5)return;const d=w*DEP;
+  ctx.fillStyle=col;ctx.fillRect(x,y,w,h);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d,y-d);ctx.lineTo(x+w+d,y-d);ctx.lineTo(x+w,y);ctx.closePath();ctx.fillStyle=cs(col,45);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x+w,y);ctx.lineTo(x+w+d,y-d);ctx.lineTo(x+w+d,y+h-d);ctx.lineTo(x+w,y+h);ctx.closePath();ctx.fillStyle=cs(col,-40);ctx.fill();
+  if(w>3){ctx.strokeStyle=cs(col,-60);ctx.lineWidth=Math.max(.3,w*.012);ctx.strokeRect(x,y,w,h);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d,y-d);ctx.lineTo(x+w+d,y-d);ctx.lineTo(x+w,y);ctx.stroke();ctx.beginPath();ctx.moveTo(x+w,y);ctx.lineTo(x+w+d,y-d);ctx.lineTo(x+w+d,y+h-d);ctx.lineTo(x+w,y+h);ctx.stroke()}
+  if(w>6){ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(x+.5,y+.5,w*.2,h*.2)}
+}
+function drawFlatHorizontal(ctx,x,y,u,th,col){
+  const sL=stickLen(u),d=u*DEP,tileD=d;
+  ctx.fillStyle=cs(col,-40);ctx.fillRect(x,y,sL,th);
+  if(u>3){ctx.strokeStyle=cs(col,-60);ctx.lineWidth=Math.max(0.3,u*0.012);ctx.strokeRect(x,y,sL,th)}
+  for(let r=N-1;r>=0;r--)for(let c=0;c<N;c++){const tx=x+bp(c,u)+tileD*(N-1-r),ty=y-tileD*(N-1-r);ctx.fillStyle=cs(col,45);ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+tileD,ty-tileD);ctx.lineTo(tx+u+tileD,ty-tileD);ctx.lineTo(tx+u,ty);ctx.closePath();ctx.fill();if(u>3){ctx.strokeStyle=cs(col,-60);ctx.lineWidth=Math.max(0.3,u*0.012);ctx.stroke()}}
+  const rsx=x+sL;ctx.fillStyle=cs(col,-40);ctx.beginPath();ctx.moveTo(rsx,y);ctx.lineTo(rsx+tileD*N,y-tileD*N);ctx.lineTo(rsx+tileD*N,y-tileD*N+th);ctx.lineTo(rsx,y+th);ctx.closePath();ctx.fill();if(u>3){ctx.strokeStyle=cs(col,-60);ctx.lineWidth=Math.max(0.3,u*0.012);ctx.stroke()}
+}
+const GF='rgba(180,190,200,0.12)',GS='rgba(160,170,180,0.35)',GT='rgba(200,210,220,0.15)',GR='rgba(140,150,160,0.18)';
+function ghostCubeCol(ctx,cx,cy,u){const sL=stickLen(u),d=u*DEP,lw=Math.max(.5,u*.025);ctx.fillStyle=GF;ctx.fillRect(cx,cy,u,sL);ctx.strokeStyle=GS;ctx.lineWidth=lw;ctx.strokeRect(cx,cy,u,sL);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+d,cy-d);ctx.lineTo(cx+u+d,cy-d);ctx.lineTo(cx+u,cy);ctx.closePath();ctx.fillStyle=GT;ctx.fill();ctx.strokeStyle=GS;ctx.stroke();ctx.beginPath();ctx.moveTo(cx+u,cy);ctx.lineTo(cx+u+d,cy-d);ctx.lineTo(cx+u+d,cy+sL-d);ctx.lineTo(cx+u,cy+sL);ctx.closePath();ctx.fillStyle=GR;ctx.fill();ctx.strokeStyle=GS;ctx.stroke()}
+function ghostStickGrid(ctx,cx,cy,u){const sL=stickLen(u),d=u*DEP,lw=Math.max(.5,u*.025);ctx.fillStyle=GF;ctx.fillRect(cx,cy,sL,sL);ctx.strokeStyle=GS;ctx.lineWidth=lw;ctx.strokeRect(cx,cy,sL,sL);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+d,cy-d);ctx.lineTo(cx+sL+d,cy-d);ctx.lineTo(cx+sL,cy);ctx.closePath();ctx.fillStyle=GT;ctx.fill();ctx.strokeStyle=GS;ctx.stroke();ctx.beginPath();ctx.moveTo(cx+sL,cy);ctx.lineTo(cx+sL+d,cy-d);ctx.lineTo(cx+sL+d,cy+sL-d);ctx.lineTo(cx+sL,cy+sL);ctx.closePath();ctx.fillStyle=GR;ctx.fill();ctx.strokeStyle=GS;ctx.stroke()}
+function ghostFlatCube(ctx,cx,cy,u){const sL=stickLen(u),d=u*DEP,ds=d*0.6,tdx=ds*N,tdy=ds*N,lw=Math.max(.5,u*.025);ctx.fillStyle=GF;ctx.fillRect(cx+tdx,cy-tdy,sL,sL);ctx.strokeStyle=GS;ctx.lineWidth=lw;ctx.strokeRect(cx+tdx,cy-tdy,sL,sL);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+tdx,cy-tdy);ctx.lineTo(cx+sL+tdx,cy-tdy);ctx.lineTo(cx+sL,cy);ctx.closePath();ctx.fillStyle=GT;ctx.fill();ctx.strokeStyle=GS;ctx.stroke();ctx.beginPath();ctx.moveTo(cx+sL,cy);ctx.lineTo(cx+sL+tdx,cy-tdy);ctx.lineTo(cx+sL+tdx,cy+sL-tdy);ctx.lineTo(cx+sL,cy+sL);ctx.closePath();ctx.fillStyle=GR;ctx.fill();ctx.strokeStyle=GS;ctx.stroke();ctx.fillStyle=GF;ctx.fillRect(cx,cy,sL,sL);ctx.strokeStyle=GS;ctx.lineWidth=lw;ctx.strokeRect(cx,cy,sL,sL)}
+
+// ═══════ DRAW HELPERS ═══════
+// Draw one macro-cube block (thousands+) as a 10×10 grid of sub-cubes.
+// Each sub-cube is drawn with its own isometric top and right faces via iso(),
+// so the block looks like a proper 3D stack of smaller cubes.
+// su = sub-unit (the unit size of the next-smaller place, e.g. hundreds-unit for thousands).
+// bx/by = top-left anchor of this block.
+function isoMacroCube(ctx,bx,by,su,col){
+  // Thousands cube: 10 depth layers of 10×10 sub-cube grids, offset diagonally.
+  // This mirrors how flats render (layers going up-left) but with a square 10×10
+  // face instead of a single-column face, creating a true 3D cube of 1000 sub-cubes.
+  const step=su*(1+GAP);
+  const ds=su*DEP*0.6; // diagonal offset per depth layer (matches flat rendering)
+  // Draw back-to-front: highest layer index first (furthest back)
+  for(let la=N-1;la>=0;la--){
+    const lx=bx+ds*la;      // shift right per layer
+    const ly=by-ds*la;       // shift up per layer
+    // Within each layer, draw the 10×10 grid
+    for(let c=N-1;c>=0;c--)
+      for(let r=0;r<N;r++)
+        iso(ctx,lx+c*step,ly+r*step,su,col);
+  }
+}
+// Ghost outline for one macro-cube slot
+function ghostMacroCube(ctx,bx,by,su){
+  // Ghost matching isoMacroCube: u×u front face with ds*N diagonal depth layers.
+  const u=stickLen(su),ds=su*DEP*0.6,tdx=ds*N,tdy=ds*N,lw=Math.max(.5,su*.025);
+  // Back face (offset by full depth)
+  ctx.fillStyle=GF;ctx.fillRect(bx+tdx,by-tdy,u,u);
+  ctx.strokeStyle=GS;ctx.lineWidth=lw;ctx.strokeRect(bx+tdx,by-tdy,u,u);
+  // Top face connecting front top edge to back top edge
+  ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+tdx,by-tdy);
+  ctx.lineTo(bx+u+tdx,by-tdy);ctx.lineTo(bx+u,by);ctx.closePath();
+  ctx.fillStyle=GT;ctx.fill();ctx.strokeStyle=GS;ctx.stroke();
+  // Right face connecting front right edge to back right edge
+  ctx.beginPath();ctx.moveTo(bx+u,by);ctx.lineTo(bx+u+tdx,by-tdy);
+  ctx.lineTo(bx+u+tdx,by+u-tdy);ctx.lineTo(bx+u,by+u);ctx.closePath();
+  ctx.fillStyle=GR;ctx.fill();ctx.strokeStyle=GS;ctx.stroke();
+  // Front face
+  ctx.fillStyle=GF;ctx.fillRect(bx,by,u,u);
+  ctx.strokeStyle=GS;ctx.lineWidth=lw;ctx.strokeRect(bx,by,u,u);
+}
+
+// ═══════ DRAW PLACE ═══════
+function isPlaceInNumeral(pi,d){d=d||digits;let first=-1;for(let i=0;i<=ONES;i++)if(d[i]>0){first=i;break}let lastDec=-1;for(let i=DEC;i<NP;i++)if(d[i]>0)lastDec=i;if(first<0&&lastDec<0)return pi===ONES;const start=first>=0?first:ONES;if(pi<=ONES)return pi>=start;return lastDec>=0&&pi<=lastDec}
+function drawPlace(ctx,ox,oy,pi,cW,H,zoom,od){
+  const p=P[pi],cnt=(od||digits)[pi],col=p.color,u=unitForPlace(pi);if(u<0.3)return;
+  if(cnt===0&&!showZeros&&!isPlaceInNumeral(pi,od))return;
+  // Sub-unit: the unit of the next smaller place. Used to draw macro-cubes as grids.
+  const subU=(pi<NP-1&&(pi<ONES||(showDecimals&&pi===ONES)))?unitForPlace(pi+1):u;
+  const step=u*(1+GAP),d=u*DEP,sL=stickLen(u),ds=d*0.6;
+  const cx=ox,floor=oy+H-2,cy=floor-sL;
+  const headerY=cy-ds*N-d-u*1.5,hsz=u*1.2;
+  if(p.shape==='cube'){
+    const isMacro=u>unitForPlace(ONES)||(showDecimals&&pi===ONES); // thousands and above use sub-cube grid; ones too when decimals shown
+    if(isMacro){
+      if(u>1){for(let i=N-1;i>=0;i--){const y=cy+bp(i,u),slot=N-1-i;ghostMacroCube(ctx,cx,y,subU);}}
+      for(let i=0;i<N;i++){const y=cy+bp(i,u),slot=N-1-i;if(slot<cnt)isoMacroCube(ctx,cx,y,subU,col);}
+    } else {
+      if(u>1)ghostCubeCol(ctx,cx,cy,u);
+      for(let i=N-1;i>=0;i--){const y=cy+bp(i,u),slot=N-1-i;if(slot<cnt)iso(ctx,cx,y,u,col)}
+    }
+    if(showLabels&&cnt>0&&u*zoom>2){const fsz=u*0.4;for(let i=0;i<N;i++){const y=cy+bp(i,u),slot=N-1-i;if(slot<cnt){ctx.font=`900 ${fsz}px Lexend`;ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(fv((slot+1)*Math.pow(10,p.exp)),cx+u+u*DEP+u*0.1,y+u/2)}}}
+  }else if(p.shape==='stick'){
+    if(u>1)ghostStickGrid(ctx,cx,cy,u);
+    for(let c=0;c<N;c++){const x=cx+bp(c,u);if(c<cnt){for(let r=N-1;r>=0;r--)iso(ctx,x,cy+bp(r,u),u,col)}}
+    if(showLabels&&cnt>0&&u*zoom>2){const fsz=u*0.8;for(let c=0;c<cnt;c++){ctx.save();ctx.translate(cx+bp(c,u)+u*0.5,floor+u*0.3);ctx.rotate(Math.PI/4);ctx.font=`700 ${fsz}px Lexend`;ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(fv((c+1)*Math.pow(10,p.exp)),0,0);ctx.restore()}}
+  }else{
+    const adjCy=floor-sL;
+    if(u>1)ghostFlatCube(ctx,cx,adjCy,u);
+    for(let fl=0;fl<N;fl++){const fx=cx+fl*step;if(fl<cnt){for(let la=N-1;la>=0;la--){const lx=fx+ds*la,ly=adjCy-ds*la;for(let r=N-1;r>=0;r--)iso(ctx,lx,ly+bp(r,u),u,col)}}}
+    if(showLabels&&cnt>0&&u*zoom>2){const fsz=u*0.8;for(let fl=0;fl<cnt;fl++){ctx.save();ctx.translate(cx+fl*step+u*0.5,floor+u*0.3);ctx.rotate(Math.PI/4);ctx.font=`700 ${fsz}px Lexend`;ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(fv((fl+1)*Math.pow(10,p.exp)),0,0);ctx.restore()}}
+  }
+}
+
+// ═══════ RENDER ═══════
+function render(od){
+  updateShowDecimals();
+  const vpEl=document.getElementById('vp'),cv=document.getElementById('cv');
+  const W=vpEl.clientWidth,H=vpEl.clientHeight,dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const vcx=W/2,floorY=H-FLOOR_Y_OFFSET;
+  if(highlightedPlace!==null){const pi=highlightedPlace,wx=worldX(pi),cw=colW(pi),sx=wx*zoomLvl-panX+vcx,sw=cw*zoomLvl;if(sx+sw>0&&sx<W){ctx.save();ctx.fillStyle='rgba(255,250,150,0.45)';ctx.fillRect(sx,0,sw*0.82,H);ctx.restore()}}
+  ctx.strokeStyle='#cbd5e1';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,floorY);ctx.lineTo(W,floorY);ctx.stroke();
+  const grad=ctx.createLinearGradient(0,floorY,0,floorY+30);grad.addColorStop(0,'rgba(0,0,0,0.04)');grad.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=grad;ctx.fillRect(0,floorY,W,30);
+  const end=showDecimals?NP:DEC;
+  for(let i=0;i<end;i++){const wx=worldX(i),cw=colW(i),sx=wx*zoomLvl-panX+vcx,sw=cw*zoomLvl;if(sx+sw<-200||sx>W+200)continue;ctx.save();ctx.translate(sx,0);ctx.scale(zoomLvl,zoomLvl);drawPlace(ctx,0,0,i,cw,floorY/zoomLvl,zoomLvl,od);ctx.restore()}
+  if(showDecimals){const onesU=unitForPlace(ONES)*zoomLvl,onesX=worldX(ONES)*zoomLvl-panX+vcx,onesW2=secDims(unitForPlace(ONES),P[ONES].shape).w*zoomLvl,dotR=onesU*0.35,decX=onesX+onesW2+onesU*0.5+dotR*1.5;if(decX>-40&&decX<W+40){ctx.beginPath();ctx.arc(decX,floorY-dotR-1,dotR,0,Math.PI*2);const bgrad=ctx.createRadialGradient(decX-dotR*0.3,floorY-dotR-1-dotR*0.3,dotR*0.1,decX,floorY-dotR-1,dotR);bgrad.addColorStop(0,'#efefef');bgrad.addColorStop(0.5,'#c0c0c0');bgrad.addColorStop(1,'#a8a8a8');ctx.fillStyle=bgrad;ctx.shadowColor='rgba(0,0,0,0.22)';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.fill();ctx.shadowColor='transparent'}}
+}
+
+// ═══════ ANIMATION ═══════
+function easeInOut(t){if(t<0.5){return 2*t*t}const p=(-2*t+2);return 1-p*p/2+0.08*Math.sin(t*Math.PI*2.2)*(1-t)}
+function easeOut(t){const s=1-t;return 1-s*s*s+0.12*Math.sin(t*Math.PI*1.8)*(1-t)}
+function easeIn(t){return t*t*t}
+function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+function setupAnimCanvas(){const vpEl=document.getElementById('vp'),W=vpEl.clientWidth,H=vpEl.clientHeight,acv=document.getElementById('animCanvas'),dpr=window.devicePixelRatio||1;acv.width=W*dpr;acv.height=H*dpr;acv.style.width=W+'px';acv.style.height=H+'px';const ctx=acv.getContext('2d');ctx.scale(dpr,dpr);return{ctx,W,H,floorY:H-FLOOR_Y_OFFSET}}
+
+// cube→stick (×10): cubes hop left, fill bottom row, stretch up
+function animCubeToStick(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const sC=P[srcPi].color,dC=P[dstPi].color,sU=unitForPlace(srcPi),sSL=stickLen(sU),dU=unitForPlace(dstPi),dSL=stickLen(dU),sWX=worldX(srcPi),dWX=worldX(dstPi),sCy=floorY/zoomLvl-2-sSL,dCy=floorY/zoomLvl-2-dSL,DUR=2800;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);const vcx=document.getElementById('vp').clientWidth/2;
+  for(let b=0;b<cnt;b++){const stg=b*0.025,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt)));
+    if(ft<=0){ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,(sCy+bp(N-1-b,sU))*zoomLvl);ctx.scale(zoomLvl,zoomLvl);iso(ctx,0,0,sU,sC);ctx.restore();continue}
+    if(ft<0.45){const p=ft/0.45,ep=easeInOut(p),sx=sWX,sy=sCy+bp(N-1-b,sU),ex=dWX+bp(b,dU),ey=dCy+bp(N-1,dU),cx2=sx+(ex-sx)*ep,cy2=sy+(ey-sy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.4;ctx.save();ctx.translate(cx2*zoomLvl-panX+vcx,(cy2+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);iso(ctx,0,0,sU,sC);ctx.restore()}
+    else if(ft<0.55){const p=(ft-0.45)/0.10,ep=easeOut(p),px=dWX+bp(b,dU),py=dCy+bp(N-1,dU),bounce=-Math.sin(ep*Math.PI)*dU*0.3*(1-ep);ctx.save();ctx.translate(px*zoomLvl-panX+vcx,(py+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);iso(ctx,0,0,sU,sC);ctx.restore()}
+    else{const p=(ft-0.55)/0.45,ep=easeOut(p),col=lerpColor(sC,dC,ep),px=dWX+bp(b,dU),nC=1+Math.round((N-1)*ep);ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let r=0;r<nC;r++){const ri=N-1-r;let a=1;if(r===nC-1&&nC<N){const ex=1+(N-1)*ep;a=ex-Math.floor(ex);if(a<0.05)a=1}ctx.globalAlpha=a;iso(ctx,0,dCy+bp(ri,dU),dU,col);ctx.globalAlpha=1}ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// stick→cube (÷10): sticks shrink to cubes, hop right
+function animStickToCube(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const sC=P[srcPi].color,dC=P[dstPi].color,sU=unitForPlace(srcPi),sSL=stickLen(sU),dU=unitForPlace(dstPi),dSL=stickLen(dU),sWX=worldX(srcPi),dWX=worldX(dstPi),sCy=floorY/zoomLvl-2-sSL,dCy=floorY/zoomLvl-2-dSL,DUR=2800;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);const vcx=document.getElementById('vp').clientWidth/2;
+  for(let b=0;b<cnt;b++){const stg=b*0.025,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt)));
+    if(ft<=0){const px=sWX+bp(b,sU);ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let r=N-1;r>=0;r--)iso(ctx,0,sCy+bp(r,sU),sU,sC);ctx.restore();continue}
+    if(ft<0.45){const p=ft/0.45,ep=easeInOut(p),col=lerpColor(sC,dC,ep),px=sWX+bp(b,sU),nC=Math.max(1,N-Math.round((N-1)*ep));ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let r=0;r<nC;r++){const ri=N-1-r;let a=1;if(r===nC-1&&nC>1){const ex=N-(N-1)*ep;a=ex-Math.floor(ex);if(a<0.05)a=1}ctx.globalAlpha=a;iso(ctx,0,sCy+bp(ri,sU),sU,col);ctx.globalAlpha=1}ctx.restore()}
+    else if(ft<0.55){const p=(ft-0.45)/0.10,ep=easeOut(p),px=sWX+bp(b,sU),py=sCy+bp(N-1,sU),bounce=-Math.sin(ep*Math.PI)*sU*0.2*(1-ep);ctx.save();ctx.translate(px*zoomLvl-panX+vcx,(py+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);iso(ctx,0,0,dU,dC);ctx.restore()}
+    else{const p=(ft-0.55)/0.45,ep=easeInOut(p),sx=sWX+bp(b,sU),sy=sCy+bp(N-1,sU),ex=dWX,ey=dCy+bp(N-1-b,dU),cx2=sx+(ex-sx)*ep,cy2=sy+(ey-sy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.4;ctx.save();ctx.translate(cx2*zoomLvl-panX+vcx,(cy2+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);iso(ctx,0,0,dU,dC);ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// stick→flat (×10): sticks slide left, stretch into depth
+function animStickToFlat(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const sC=P[srcPi].color,dC=P[dstPi].color,sU=unitForPlace(srcPi),sSL=stickLen(sU),dU=unitForPlace(dstPi),dSL=stickLen(dU),dDs=dU*DEP*0.6,dStep=dU*(1+GAP),sWX=worldX(srcPi),dWX=worldX(dstPi),DUR=2400;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);const vcx=document.getElementById('vp').clientWidth/2,sCy=floorY/zoomLvl-2-sSL;
+  for(let b=0;b<cnt;b++){const stg=b*0.02,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt)));
+    if(ft<=0){const px=sWX+bp(b,sU);ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let r=N-1;r>=0;r--)iso(ctx,0,sCy+bp(r,sU),sU,sC);ctx.restore();continue}
+    if(ft<0.5){const p=ft/0.5,ep=easeInOut(p),sx=sWX+bp(b,sU),ex=dWX+b*dStep,cx2=sx+(ex-sx)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.25;ctx.save();ctx.translate(cx2*zoomLvl-panX+vcx,(sCy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,sU),sU,sC);ctx.restore()}
+    else{const p=(ft-0.5)/0.5,ep=easeOut(p),col=lerpColor(sC,dC,ep),px=dWX+b*dStep,nL=1+Math.round((N-1)*ep),adjCy=floorY/zoomLvl-2-dSL;ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let la=nL-1;la>=0;la--){let a=1;if(la===nL-1&&nL<N){const ex=1+(N-1)*ep;a=ex-Math.floor(ex);if(a<0.05)a=1}ctx.globalAlpha=a;for(let r=N-1;r>=0;r--)iso(ctx,dDs*la,adjCy-dDs*la+bp(r,dU),dU,col);ctx.globalAlpha=1}ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// flat→stick (÷10)
+function animFlatToStick(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const sC=P[srcPi].color,dC=P[dstPi].color,sU=unitForPlace(srcPi),sSL=stickLen(sU),sDs=sU*DEP*0.6,sStep=sU*(1+GAP),dU=unitForPlace(dstPi),dSL=stickLen(dU),sWX=worldX(srcPi),dWX=worldX(dstPi),DUR=2400;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);const vcx=document.getElementById('vp').clientWidth/2,adjCy=floorY/zoomLvl-2-sSL;
+  for(let b=0;b<cnt;b++){const stg=b*0.02,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt)));
+    if(ft<=0){const px=sWX+b*sStep;ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let la=N-1;la>=0;la--)for(let r=N-1;r>=0;r--)iso(ctx,sDs*la,adjCy-sDs*la+bp(r,sU),sU,sC);ctx.restore();continue}
+    if(ft<0.5){const p=ft/0.5,ep=easeInOut(p),col=lerpColor(sC,dC,ep),px=sWX+b*sStep,nL=Math.max(1,N-Math.round((N-1)*ep));ctx.save();ctx.translate(px*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);for(let la=nL-1;la>=0;la--){let a=1;if(la===nL-1&&nL>1){const ex=N-(N-1)*ep;a=ex-Math.floor(ex);if(a<0.05)a=1}ctx.globalAlpha=a;for(let r=N-1;r>=0;r--)iso(ctx,sDs*la,adjCy-sDs*la+bp(r,sU),sU,col);ctx.globalAlpha=1}ctx.restore()}
+    else{const p=(ft-0.5)/0.5,ep=easeInOut(p),sx=sWX+b*sStep,ex=dWX+bp(b,dU),cx2=sx+(ex-sx)*ep,dCy=floorY/zoomLvl-2-dSL,arc=-Math.sin(ep*Math.PI)*dSL*0.25;ctx.save();ctx.translate(cx2*zoomLvl-panX+vcx,(dCy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,dU),dU,dC);ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// flat→cube (×10): flats slide left, lay flat, stretch up
+function animFlatToCube(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const sC=P[srcPi].color,dC=P[dstPi].color,sU=unitForPlace(srcPi),sSL=stickLen(sU),sStep=sU*(1+GAP),sDs=sU*DEP*0.6,dU=unitForPlace(dstPi),dSL=stickLen(dU),sWX=worldX(srcPi),dWX=worldX(dstPi),slTh=sU,DUR=3000;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);const vcx=document.getElementById('vp').clientWidth/2;
+  for(let fl=cnt-1;fl>=0;fl--){const stg=fl*0.02,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt)));
+    if(ft<=0){const sx=sWX*zoomLvl-panX+vcx+fl*sStep*zoomLvl,sy=floorY-sSL*zoomLvl;ctx.save();ctx.translate(sx,sy);ctx.scale(zoomLvl,zoomLvl);for(let la=N-1;la>=0;la--){const lx=sDs*la,ly=-sDs*la;for(let r=N-1;r>=0;r--)iso(ctx,lx,ly+bp(r,sU),sU,sC)}ctx.restore();continue}
+    if(ft<0.40){const p=ft/0.40,ep=easeInOut(p),sx2=sWX+fl*sStep,ex2=dWX,cWX=sx2+(ex2-sx2)*ep,vert=sSL*(1-ep)+slTh*ep,stY=fl*(slTh+sU*0.15)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.3,by=floorY-vert*zoomLvl+arc*zoomLvl-stY*zoomLvl;ctx.save();ctx.translate(cWX*zoomLvl-panX+vcx,by);ctx.scale(zoomLvl,zoomLvl);if(ep<0.5){const sq=1-ep*1.6;for(let la=N-1;la>=0;la--){const lx=sDs*la,ly=-sDs*la;for(let r=N-1;r>=0;r--)iso(ctx,lx,ly+bp(r,sU)*sq,sU,sC)}}else drawFlatHorizontal(ctx,0,0,sU,slTh,sC);ctx.restore()}
+    else if(ft<0.65){const p=(ft-0.40)/0.25,ep=easeOut(p),stY=fl*(slTh+sU*0.15),sy=floorY-slTh*zoomLvl-stY*zoomLvl,bounce=Math.sin(ep*Math.PI)*sU*0.3*(1-ep)*zoomLvl;ctx.save();ctx.translate(dWX*zoomLvl-panX+vcx,sy-bounce);ctx.scale(zoomLvl,zoomLvl);drawFlatHorizontal(ctx,0,0,sU,slTh,sC);ctx.restore()}
+    else{const p=(ft-0.65)/0.35,ep=easeOut(p),col=lerpColor(sC,dC,ep),dCy=floorY/zoomLvl-2-stickLen(dU),finY=dCy+bp(N-1-fl,dU),stStY=fl*(slTh+sU*0.15),stY=floorY/zoomLvl-slTh-stStY,cY=stY+(finY-stY)*ep,cW=sSL+(dU-sSL)*ep,cH=slTh+(dU-slTh)*ep;ctx.save();ctx.translate(dWX*zoomLvl-panX+vcx,cY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);isoBox(ctx,0,0,cW,cH,col);ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// cube→flat (÷10)
+function animCubeToFlat(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const sC=P[srcPi].color,dC=P[dstPi].color,sU=unitForPlace(srcPi),dU=unitForPlace(dstPi),dSL=stickLen(dU),dStep=dU*(1+GAP),dDs=dU*DEP*0.6,sWX=worldX(srcPi),dWX=worldX(dstPi),slTh=dU,DUR=3000;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);const vcx=document.getElementById('vp').clientWidth/2;
+  for(let fl=cnt-1;fl>=0;fl--){const stg=fl*0.02,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt)));
+    if(ft<=0){const sCy=floorY/zoomLvl-2-stickLen(sU),cubeY=sCy+bp(N-1-fl,sU);ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,cubeY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);iso(ctx,0,0,sU,sC);ctx.restore();continue}
+    if(ft<0.35){const p=ft/0.35,ep=easeInOut(p),col=lerpColor(sC,dC,ep),sCy=floorY/zoomLvl-2-stickLen(sU),stY2=sCy+bp(N-1-fl,sU),skY=fl*(slTh+dU*0.15),enY=floorY/zoomLvl-slTh-skY,cY=stY2+(enY-stY2)*ep,cW=sU+(dSL-sU)*ep,cH=sU+(slTh-sU)*ep;ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,cY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);isoBox(ctx,0,0,cW,cH,col);ctx.restore()}
+    else if(ft<0.60){const p=(ft-0.35)/0.25,ep=easeOut(p),skY=fl*(slTh+dU*0.15),sy=floorY-slTh*zoomLvl-skY*zoomLvl,bounce=Math.sin(ep*Math.PI)*dU*0.2*(1-ep)*zoomLvl;ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,sy-bounce);ctx.scale(zoomLvl,zoomLvl);drawFlatHorizontal(ctx,0,0,dU,slTh,dC);ctx.restore()}
+    else{const p=(ft-0.60)/0.40,ep=easeInOut(p),sx2=sWX,ex2=dWX+fl*dStep,cWX=sx2+(ex2-sx2)*ep,vert=slTh*(1-ep)+dSL*ep,skY=fl*(slTh+dU*0.15)*(1-ep),arc=-Math.sin(ep*Math.PI)*dSL*0.3,by=floorY-vert*zoomLvl+arc*zoomLvl-skY*zoomLvl;ctx.save();ctx.translate(cWX*zoomLvl-panX+vcx,by);ctx.scale(zoomLvl,zoomLvl);if(ep<0.5)drawFlatHorizontal(ctx,0,0,dU,slTh,dC);else{const sq=(ep-0.5)*2;for(let la=N-1;la>=0;la--){const lx=dDs*la,ly=-dDs*la;for(let r=N-1;r>=0;r--)iso(ctx,lx,ly+bp(r,dU)*sq,dU,dC)}}ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+
+// ═══════ CARRY ANIMATION ═══════
+function animFullColumnCarry(ctx,W,H,floorY,srcPi,dstPi){
+  const sC=P[srcPi].color,dC=P[dstPi].color;
+  const sU=unitForPlace(srcPi),sSL=stickLen(sU);
+  const dU=unitForPlace(dstPi),dSL=stickLen(dU);
+  const sWX=worldX(srcPi),dColOriginX=worldX(dstPi);
+  const slot=digits[dstPi];
+  const sshape=P[srcPi].shape,dshape=P[dstPi].shape;
+  const dStep=dU*(1+GAP);
+  const dLandX = dshape==='cube'  ? dColOriginX
+               : dshape==='stick' ? dColOriginX + bp(slot,dU)
+               : dColOriginX + slot*dStep;
+  const sCy=floorY/zoomLvl-2-sSL, dCy=floorY/zoomLvl-2-dSL;
+  const sDs=sU*DEP*0.6, dDs=dU*DEP*0.6;
+
+  if(sshape==='stick'&&dshape==='flat'){
+    const DUR=2800;
+    function drawFlatInterp(x,y,u,col,ep){
+      const ds=u*DEP*0.6;
+      for(let la=N-1;la>=0;la--){
+        const ox=ds*la*(1-ep)+bp(la,u)*ep;
+        const oy=-ds*la*(1-ep);
+        for(let r=N-1;r>=0;r--)
+          iso(ctx,x+ox,y+oy+bp(r,u),u,col);
+      }
+    }
+    return new Promise(res=>{
+      const t0=performance.now();
+      function f(now){
+        const t=Math.min(1,(now-t0)/DUR);
+        ctx.clearRect(0,0,W,H);
+        const vcx=document.getElementById('vp').clientWidth/2;
+        if(t<0.28){
+          const ep=1-easeInOut(t/0.28);
+          ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(0,sCy,sU,sC,ep);ctx.restore();
+        } else if(t<0.66){
+          const ep=easeInOut((t-0.28)/0.38);
+          const cx=sWX+(dLandX-sWX)*ep,cy=sCy+(dCy-sCy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.45;
+          ctx.save();ctx.translate(cx*zoomLvl-panX+vcx,(cy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(0,0,sU,sC,0);ctx.restore();
+        } else if(t<0.78){
+          const ep=easeOut((t-0.66)/0.12),bounce=-Math.sin(ep*Math.PI)*dU*0.4*(1-ep*0.5);
+          ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,(dCy+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(0,0,sU,sC,0);ctx.restore();
+        } else {
+          const ep=easeOut((t-0.78)/0.22),col=lerpColor(sC,dC,ep);
+          ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(0,dCy,dU,col,0);ctx.restore();
+        }
+        if(t<1)requestAnimationFrame(f);else res();
+      }
+      requestAnimationFrame(f);
+    });
+  }
+
+  if(sshape==='flat'&&dshape==='cube'){
+    const slot=digits[dstPi];
+    const landY=dCy+bp(N-1-slot,dU);
+    const sDs=sU*DEP*0.6;
+    const DUR=2600;
+    // Sub-unit for drawing the macro cube at the destination
+    const dstSubU=(dstPi<NP-1&&(dstPi<ONES||(showDecimals&&dstPi===ONES)))?unitForPlace(dstPi+1):dU;
+    return new Promise(res=>{
+      const t0=performance.now();
+      function f(now){
+        const t=Math.min(1,(now-t0)/DUR);
+        ctx.clearRect(0,0,W,H);
+        const vcx=document.getElementById('vp').clientWidth/2;
+        function drawAllFlats(wx,wy){
+          ctx.save();ctx.translate(wx*zoomLvl-panX+vcx, wy*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          const step=sU*(1+GAP);
+          for(let fl=N-1;fl>=0;fl--)
+            for(let la=N-1;la>=0;la--)
+              for(let r=N-1;r>=0;r--)
+                iso(ctx, fl*step+sDs*la, -sDs*la+bp(r,sU), sU, sC);
+          ctx.restore();
+        }
+        if(t<0.44){
+          const ep=easeInOut(t/0.44),wx=sWX+(dColOriginX-sWX)*ep,wy=sCy+(landY-sCy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.5;
+          drawAllFlats(wx, wy+arc);
+        } else if(t<0.58){
+          const ep=easeOut((t-0.44)/0.14),bounce=-Math.sin(ep*Math.PI)*sU*0.4*(1-ep*0.5);
+          drawAllFlats(dColOriginX+bounce, landY);
+        } else if(t<0.80){
+          const ep=easeOut((t-0.58)/0.22),col=lerpColor(sC,dC,ep);
+          ctx.save();ctx.translate(dColOriginX*zoomLvl-panX+vcx, landY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          isoMacroCube(ctx,0,0,dstSubU,col);ctx.restore();
+        } else {
+          ctx.save();ctx.translate(dColOriginX*zoomLvl-panX+vcx, landY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          isoMacroCube(ctx,0,0,dstSubU,dC);ctx.restore();
+        }
+        if(t<1)requestAnimationFrame(f);else res();
+      }
+      requestAnimationFrame(f);
+    });
+  }
+
+  const DUR=2000;
+  return new Promise(res=>{
+    const t0=performance.now();
+    function f(now){
+      const t=Math.min(1,(now-t0)/DUR);
+      ctx.clearRect(0,0,W,H);
+      const vcx=document.getElementById('vp').clientWidth/2;
+      if(t<0.40){
+        const ep=easeInOut(t/0.40),cx=sWX+(dLandX-sWX)*ep,cy=sCy+(dCy-sCy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.55;
+        ctx.save();ctx.translate(cx*zoomLvl-panX+vcx,(cy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,sU),sU,sC);ctx.restore();
+      } else if(t<0.54){
+        const ep=easeOut((t-0.40)/0.14),bounce=-Math.sin(ep*Math.PI)*dU*0.55*(1-ep*0.4);
+        ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,(dCy+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,sU),sU,sC);ctx.restore();
+      } else {
+        const ep=easeOut((t-0.54)/0.46),col=lerpColor(sC,dC,ep);
+        ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=0;r--)iso(ctx,0,dCy+bp(r,dU),dU,col);ctx.restore();
+      }
+      if(t<1)requestAnimationFrame(f);else res();
+    }
+    requestAnimationFrame(f);
+  });
+}
+
+// ═══════ BORROW ANIMATION ═══════
+function animFullColumnBorrow(ctx,W,H,floorY,srcPi,dstPi){
+  const sC=P[srcPi].color,dC=P[dstPi].color;
+  const sU=unitForPlace(srcPi),sSL=stickLen(sU);
+  const dU=unitForPlace(dstPi),dSL=stickLen(dU);
+  const sWX=worldX(srcPi),dWX=worldX(dstPi);
+  const sshape=P[srcPi].shape,dshape=P[dstPi].shape;
+  const srcSlot=digits[srcPi];
+  const dStep=dU*(1+GAP);
+  const srcPieceX = sshape==='cube'  ? sWX
+                  : sshape==='stick' ? sWX + bp(srcSlot,sU)
+                  : sWX + srcSlot*sU*(1+GAP);
+  const dLandX = dWX;
+  const sCy=floorY/zoomLvl-2-sSL, dCy=floorY/zoomLvl-2-dSL;
+  const sDs=sU*DEP*0.6, dDs=dU*DEP*0.6;
+
+  if(sshape==='flat'&&dshape==='stick'){
+    const DUR=3600;
+    function drawFlatInterp(ctx,x,y,u,col,ep){
+      const ds=u*DEP*0.6;
+      for(let la=N-1;la>=0;la--){
+        const ox=ds*la*(1-ep)+bp(la,u)*ep;
+        const oy=-ds*la*(1-ep);
+        for(let r=N-1;r>=0;r--)iso(ctx,x+ox,y+oy+bp(r,u),u,col);
+      }
+    }
+    return new Promise(res=>{
+      const t0=performance.now();
+      function f(now){
+        const t=Math.min(1,(now-t0)/DUR);
+        ctx.clearRect(0,0,W,H);
+        const vcx=document.getElementById('vp').clientWidth/2;
+        const flatX=sWX+srcSlot*sU*(1+GAP),flatCy=floorY/zoomLvl-2-sSL;
+        if(t<0.22){
+          const ep=easeInOut(t/0.22);
+          ctx.save();ctx.translate(flatX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(ctx,0,flatCy,sU,sC,ep);ctx.restore();
+        } else if(t<0.58){
+          const ep=easeInOut((t-0.22)/0.36),cx=flatX+(dLandX-flatX)*ep,cy=flatCy+(dCy-flatCy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.4;
+          ctx.save();ctx.translate(cx*zoomLvl-panX+vcx,(cy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(ctx,0,0,dU,sC,1);ctx.restore();
+        } else if(t<0.68){
+          const ep=easeOut((t-0.58)/0.10),bounce=-Math.sin(ep*Math.PI)*dU*0.35*(1-ep*0.5);
+          ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,(dCy+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(ctx,0,0,dU,sC,1);ctx.restore();
+        } else if(t<0.82){
+          const ep=easeOut((t-0.68)/0.14),col=lerpColor(sC,dC,ep);
+          ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatInterp(ctx,0,dCy,dU,col,1);ctx.restore();
+        } else {
+          const ep=easeOut((t-0.82)/0.18),alpha=1-ep;
+          ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          for(let c=0;c<N-1;c++)for(let r=N-1;r>=0;r--)iso(ctx,bp(c,dU),dCy+bp(r,dU),dU,dC);
+          ctx.globalAlpha=alpha;for(let r=N-1;r>=0;r--)iso(ctx,bp(N-1,dU),dCy+bp(r,dU),dU,dC);ctx.globalAlpha=1;
+          ctx.restore();
+        }
+        if(t<1)requestAnimationFrame(f);else res();
+      }
+      requestAnimationFrame(f);
+    });
+  }
+
+  if(sshape==='cube'&&dshape==='flat'){
+    const cubeY=sCy+bp(N-1-srcSlot,sU);
+    const dStep=dU*(1+GAP);
+    function drawFlatFwd2(ctx,x,y,u,col,nC){
+      for(let c=0;c<nC;c++)for(let r=N-1;r>=0;r--)iso(ctx,bp(c,u),y+bp(r,u),u,col);
+    }
+    const DUR=3400;
+    return new Promise(res=>{
+      const t0=performance.now();
+      function f(now){
+        const t=Math.min(1,(now-t0)/DUR);
+        ctx.clearRect(0,0,W,H);
+        const vcx=document.getElementById('vp').clientWidth/2;
+        if(t<0.35){
+          const ep=easeInOut(t/0.35),cx=sWX+(dWX-sWX)*ep,cy=cubeY+(dCy-cubeY)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.5;
+          ctx.save();ctx.translate(cx*zoomLvl-panX+vcx,(cy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,dU),dU,sC);ctx.restore();
+        } else if(t<0.46){
+          const ep=easeOut((t-0.35)/0.11),bounce=-Math.sin(ep*Math.PI)*dU*0.4*(1-ep*0.5);
+          ctx.save();ctx.translate(dWX*zoomLvl-panX+vcx,(dCy+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+          for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,dU),dU,sC);ctx.restore();
+        } else if(t<0.64){
+          const ep=easeOut((t-0.46)/0.18),nC=Math.max(1,Math.round(1+(N-1)*ep));
+          ctx.save();ctx.translate(dWX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatFwd2(ctx,0,dCy,dU,sC,nC);ctx.restore();
+        } else if(t<0.78){
+          const ep=easeOut((t-0.64)/0.14),col=lerpColor(sC,dC,ep);
+          ctx.save();ctx.translate(dWX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatFwd2(ctx,0,dCy,dU,col,N);ctx.restore();
+        } else {
+          const ep=easeOut((t-0.78)/0.22),alpha=1-ep;
+          ctx.save();ctx.translate(dWX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+          drawFlatFwd2(ctx,0,dCy,dU,dC,N-1);
+          ctx.globalAlpha=alpha;for(let r=N-1;r>=0;r--)iso(ctx,bp(N-1,dU),dCy+bp(r,dU),dU,dC);ctx.globalAlpha=1;
+          ctx.restore();
+        }
+        if(t<1)requestAnimationFrame(f);else res();
+      }
+      requestAnimationFrame(f);
+    });
+  }
+
+  const DUR=2600;
+  return new Promise(res=>{
+    const t0=performance.now();
+    function f(now){
+      const t=Math.min(1,(now-t0)/DUR);
+      ctx.clearRect(0,0,W,H);
+      const vcx=document.getElementById('vp').clientWidth/2;
+      if(t<0.38){
+        const ep=easeInOut(t/0.38),cx=srcPieceX+(dLandX-srcPieceX)*ep,cy=sCy+(dCy-sCy)*ep,arc=-Math.sin(ep*Math.PI)*sSL*0.5;
+        ctx.save();ctx.translate(cx*zoomLvl-panX+vcx,(cy+arc)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,sU),sU,sC);ctx.restore();
+      } else if(t<0.50){
+        const ep=easeOut((t-0.38)/0.12),bounce=-Math.sin(ep*Math.PI)*dU*0.5*(1-ep*0.4);
+        ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,(dCy+bounce)*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=0;r--)iso(ctx,0,bp(r,sU),sU,sC);ctx.restore();
+      } else if(t<0.68){
+        const ep=easeOut((t-0.50)/0.18),col=lerpColor(sC,dC,ep);
+        ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=0;r--)iso(ctx,0,dCy+bp(r,dU),dU,col);ctx.restore();
+      } else {
+        const ep=easeOut((t-0.68)/0.32),alpha=1-ep;
+        ctx.save();ctx.translate(dLandX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+        for(let r=N-1;r>=1;r--)iso(ctx,0,dCy+bp(r,dU),dU,dC);
+        ctx.globalAlpha=alpha;iso(ctx,0,dCy+bp(0,dU),dU,dC);ctx.globalAlpha=1;
+        ctx.restore();
+      }
+      if(t<1)requestAnimationFrame(f);else res();
+    }
+    requestAnimationFrame(f);
+  });
+}
+
+function animateTransition(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  const tt=P[srcPi].shape+'→'+P[dstPi].shape;
+  switch(tt){
+    case 'cube→stick':return animCubeToStick(ctx,W,H,floorY,srcPi,dstPi,cnt);
+    case 'stick→flat':return animStickToFlat(ctx,W,H,floorY,srcPi,dstPi,cnt);
+    case 'flat→cube':return animFlatToCube(ctx,W,H,floorY,srcPi,dstPi,cnt);
+    case 'stick→cube':return animStickToCube(ctx,W,H,floorY,srcPi,dstPi,cnt);
+    case 'flat→stick':return animFlatToStick(ctx,W,H,floorY,srcPi,dstPi,cnt);
+    case 'cube→flat':return animCubeToFlat(ctx,W,H,floorY,srcPi,dstPi,cnt);
+    default:return delay(100);
+  }
+}
+
+// ═══════ ×10/÷10 ═══════
+async function animateMult10(){
+  const{ctx,W,H,floorY}=setupAnimCanvas();
+  const sd=[...digits],moves=[];
+  const end=showDecimals?NP:ONES+1;
+  for(let i=0;i<end;i++)if(sd[i]>0&&i>0)moves.push(i);
+  let wd=[...sd];const st=document.getElementById('animStatus');
+  for(let mi=0;mi<moves.length;mi++){
+    const sp=moves[mi],dp=sp-1,cnt=sd[sp];
+    st.textContent=`${P[sp].name} → ${P[dp].name}`;st.classList.add('show');
+    wd[sp]=0;render(wd);
+    await animateTransition(ctx,W,H,floorY,sp,dp,cnt);
+    wd[dp]=Math.min(9,wd[dp]+cnt);ctx.clearRect(0,0,W,H);render(wd);await delay(300);
+  }
+  ctx.clearRect(0,0,W,H);st.classList.remove('show');
+  shiftDigitsLeft();render();renderNum();updatePMBar();
+}
+async function animateDiv10(){
+  const{ctx,W,H,floorY}=setupAnimCanvas();
+  const sd=[...digits],moves=[];
+  const limit=showDecimals?NP-1:ONES;
+  for(let i=limit;i>=0;i--)if(sd[i]>0&&i<limit)moves.push(i);
+  let wd=[...sd];const st=document.getElementById('animStatus');
+  for(let mi=0;mi<moves.length;mi++){
+    const sp=moves[mi],dp=sp+1,cnt=sd[sp];
+    st.textContent=`${P[sp].name} → ${P[dp].name}`;st.classList.add('show');
+    wd[sp]=0;render(wd);
+    await animateTransition(ctx,W,H,floorY,sp,dp,cnt);
+    wd[dp]=Math.min(9,wd[dp]+cnt);ctx.clearRect(0,0,W,H);render(wd);await delay(300);
+  }
+  ctx.clearRect(0,0,W,H);st.classList.remove('show');
+  shiftDigitsRight();render();renderNum();updatePMBar();
+}
+
+// ═══════ +/- BUTTONS ═══════
+async function incrementPlace(pi){
+  if(animating)return;
+  if(digits[pi]<9){digits[pi]++;enteredStr=digitsToStr();render();renderNum();updatePMBar();return}
+  if(pi<=0)return;
+  animating=true;updateMultDivBtns();updatePMBar();
+  const{ctx,W,H,floorY}=setupAnimCanvas();
+  const u=unitForPlace(pi),sSL=stickLen(u);
+  const sWX=worldX(pi),vcx=document.getElementById('vp').clientWidth/2;
+  const sCy=(H-FLOOR_Y_OFFSET)/zoomLvl-2-sSL;
+  const col=P[pi].color,shape=P[pi].shape,ds=u*DEP*0.6,step=u*(1+GAP);
+  ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
+  if(shape==='cube'){iso(ctx,0,sCy+bp(0,u),u,col)}
+  else if(shape==='stick'){for(let r=N-1;r>=0;r--)iso(ctx,bp(9,u),sCy+bp(r,u),u,col)}
+  else{for(let la=N-1;la>=0;la--)for(let r=N-1;r>=0;r--)iso(ctx,9*step+ds*la,sCy-ds*la+bp(r,u),u,col)}
+  ctx.restore();
+  await delay(700);
+  ctx.clearRect(0,0,W,H);
+  const st=document.getElementById('animStatus');
+  st.textContent=`${P[pi].name} → ${P[pi-1].name}`;st.classList.add('show');
+  const srcShape=P[pi].shape,dstShape=P[pi-1].shape;
+  if(srcShape==='flat'&&dstShape==='cube'){
+    const tmp=digits[pi];digits[pi]=0;render();digits[pi]=tmp;
+  } else {
+    digits[pi]=0;render();
+  }
+  await animFullColumnCarry(ctx,W,H,H-FLOOR_Y_OFFSET,pi,pi-1);
+  digits[pi]=0;
+  ctx.clearRect(0,0,W,H);st.classList.remove('show');
+  animating=false;updateMultDivBtns();updatePMBar();
+  if(digits[pi-1]===9){
+    await incrementPlace(pi-1);
+  } else {
+    digits[pi-1]++;enteredStr=digitsToStr();render();renderNum();
+    updateMultDivBtns();updatePMBar();
+  }
+}
+async function decrementPlace(pi){
+  if(animating)return;
+  if(digits[pi]>0){digits[pi]--;enteredStr=digitsToStr();render();renderNum();updatePMBar();return}
+  if(pi<=0)return;
+  let borrowedFromRecursion=false;
+  if(digits[pi-1]<=0){
+    await decrementPlace(pi-1);
+    if(digits[pi-1]<=0)return;
+    borrowedFromRecursion=true;
+  }
+  animating=true;updateMultDivBtns();updatePMBar();
+  const{ctx,W,H,floorY}=setupAnimCanvas();
+  const st=document.getElementById('animStatus');
+  st.textContent=`${P[pi-1].name} → ${P[pi].name}`;st.classList.add('show');
+  if(!borrowedFromRecursion){digits[pi-1]--}
+  render();
+  await animFullColumnBorrow(ctx,W,H,H-FLOOR_Y_OFFSET,pi-1,pi);
+  ctx.clearRect(0,0,W,H);st.classList.remove('show');
+  digits[pi]=9;enteredStr=digitsToStr();render();renderNum();
+  animating=false;updateMultDivBtns();updatePMBar();
+}
+window.incrementPlace=incrementPlace;
+window.decrementPlace=decrementPlace;
+
+function updatePMBar(){
+  updateShowDecimals();
+  const bar=document.getElementById('pmBar'),end=showDecimals?NP:DEC;
+  let lo=ONES,hi=ONES;
+  for(let i=0;i<end;i++)if(digits[i]>0){if(i<lo)lo=i;if(i>hi)hi=i}
+  lo=Math.max(0,lo-1);hi=Math.min(end-1,hi+1);
+  if(hi-lo<3){lo=Math.max(0,ONES-2);hi=Math.min(end-1,ONES+1)}
+  let h='';
+  for(let i=lo;i<=hi;i++){const col=P[i].color;
+    h+=`<div class="pm-grp"><button class="pm-btn" style="color:${col};border-color:${col}" ${animating?'disabled':''} onclick="incrementPlace(${i})">+</button><button class="pm-btn" style="color:${col};border-color:${col}" ${animating?'disabled':''} onclick="decrementPlace(${i})">−</button></div>`}
+  bar.innerHTML=h;
+}
+
+// ═══════ NUMBER DISPLAY ═══════
+function renderNum(){
+  updateShowDecimals();
+  const disp=document.getElementById('numDisplay'),inp=document.getElementById('numInput');
+  let rawStr;
+  if(showZeros){const whole=digits.slice(0,ONES+1).join('');rawStr=addCommas(whole+'.'+digits.slice(ONES+1).join(''))}
+  else{rawStr=addCommas(digitsToStr());if(!showDecimals&&rawStr.includes('.')){const raw2=digitsToStr().split('.')[0];rawStr=addCommas(raw2)}}
+  if(document.activeElement!==inp)inp.value=rawStr;
+  let html='';const parts=rawStr.split('.'),wholePart=parts[0],decPart=parts[1]||'';
+  const wholeLen=wholePart.replace(/,/g,'').length;let ci=ONES-wholeLen+1;
+  for(let i=0;i<wholePart.length;i++){const ch=wholePart[i];if(ch===','){html+='<span style="color:#94a3b8">,</span>';continue}const pi=ci++;if(pi>=0&&pi<=ONES){const hi2=highlightedPlace===pi;html+=`<span class="digit" style="background:${hi2?P[pi].color:'transparent'};color:${hi2?'#fff':'inherit'}" onclick="toggleHighlight(${pi})">${ch}</span>`}else html+=`<span>${ch}</span>`}
+  if(decPart&&showDecimals){html+='<span style="color:#94a3b8">.</span>';let di=DEC;for(let i=0;i<decPart.length;i++){if(di<=NP-1){const hi2=highlightedPlace===di;html+=`<span class="digit" style="background:${hi2?P[di].color:'transparent'};color:${hi2?'#fff':'inherit'}" onclick="toggleHighlight(${di})">${decPart[i]}</span>`;di++}else html+=`<span>${decPart[i]}</span>`}}
+  disp.innerHTML=html;
+}
+
+// ═══════ CONTROLS ═══════
+const SHIFT_MAP={10:1,100:2,1000:3};
+function canMultN(n){const v=getNumericValue();if(v<=0)return false;const shifts=SHIFT_MAP[n]||1;for(let i=0;i<shifts;i++)if(digits[i]>0)return false;return v<1e12}
+function canDivN(n){const v=getNumericValue();if(v<=0)return false;const shifts=SHIFT_MAP[n]||1;if(showDecimals){for(let i=NP-shifts;i<NP;i++)if(digits[i]>0)return false;return true}for(let i=0;i<ONES;i++)if(digits[i]>0)return true;return false}
+function updateMultDivBtns(){
+  document.getElementById('multBtn').disabled=animating||!canMultN(10);
+  document.getElementById('mult100Btn').disabled=animating||!canMultN(100);
+  document.getElementById('mult1000Btn').disabled=animating||!canMultN(1000);
+  document.getElementById('divBtn').disabled=animating||!canDivN(10);
+  document.getElementById('div100Btn').disabled=animating||!canDivN(100);
+  document.getElementById('div1000Btn').disabled=animating||!canDivN(1000);
+}
+document.getElementById('multBtn').addEventListener('click',async()=>{if(animating||!canMultN(10))return;animating=true;updateMultDivBtns();updatePMBar();await animateMult10();animating=false;updateMultDivBtns();updatePMBar()});
+document.getElementById('mult100Btn').addEventListener('click',async()=>{if(animating||!canMultN(100))return;animating=true;updateMultDivBtns();updatePMBar();await animateMult10();await animateMult10();animating=false;updateMultDivBtns();updatePMBar()});
+document.getElementById('mult1000Btn').addEventListener('click',async()=>{if(animating||!canMultN(1000))return;animating=true;updateMultDivBtns();updatePMBar();await animateMult10();await animateMult10();await animateMult10();animating=false;updateMultDivBtns();updatePMBar()});
+document.getElementById('divBtn').addEventListener('click',async()=>{if(animating||!canDivN(10))return;animating=true;updateMultDivBtns();updatePMBar();await animateDiv10();animating=false;updateMultDivBtns();updatePMBar()});
+document.getElementById('div100Btn').addEventListener('click',async()=>{if(animating||!canDivN(100))return;animating=true;updateMultDivBtns();updatePMBar();await animateDiv10();await animateDiv10();animating=false;updateMultDivBtns();updatePMBar()});
+document.getElementById('div1000Btn').addEventListener('click',async()=>{if(animating||!canDivN(1000))return;animating=true;updateMultDivBtns();updatePMBar();await animateDiv10();await animateDiv10();await animateDiv10();animating=false;updateMultDivBtns();updatePMBar()});
+const vpEl=document.getElementById('vp');
+vpEl.addEventListener('wheel',e=>{e.preventDefault();const delta=-e.deltaY*0.002,oldZ=zoomLvl;zoomLvl=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoomLvl*(1+delta)));const rect=vpEl.getBoundingClientRect(),mx=e.clientX-rect.left,vcx=vpEl.clientWidth/2;panX=(mx-vcx+panX)/oldZ*zoomLvl-(mx-vcx);render();document.getElementById('hint').classList.add('gone')},{passive:false});
+let drag=false,dsx=0,dsp=0;
+vpEl.addEventListener('mousedown',e=>{if(e.target.closest('.pm-grp'))return;drag=true;dsx=e.pageX;dsp=panX;document.getElementById('hint').classList.add('gone')});
+window.addEventListener('mousemove',e=>{if(!drag)return;panX=dsp-(e.pageX-dsx);render()});
+window.addEventListener('mouseup',()=>drag=false);
+let tsx=0,tsp=0,lastPD=0,pinching=false;
+function tDist(e){const dx=e.touches[0].pageX-e.touches[1].pageX,dy=e.touches[0].pageY-e.touches[1].pageY;return Math.sqrt(dx*dx+dy*dy)}
+vpEl.addEventListener('touchstart',e=>{if(e.target.closest('.pm-grp'))return;e.preventDefault();document.getElementById('hint').classList.add('gone');if(e.touches.length===2){pinching=true;lastPD=tDist(e)}else if(e.touches.length===1){pinching=false;tsx=e.touches[0].pageX;tsp=panX}},{passive:false});
+vpEl.addEventListener('touchmove',e=>{if(e.target.closest('.pm-grp'))return;e.preventDefault();if(e.touches.length===2&&pinching){const dist=tDist(e),mid=(e.touches[0].pageX+e.touches[1].pageX)/2,scale=dist/lastPD,oldZ=zoomLvl;zoomLvl=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoomLvl*scale));const rect=vpEl.getBoundingClientRect(),mx=mid-rect.left,vcx=vpEl.clientWidth/2;panX=(mx-vcx+panX)/oldZ*zoomLvl-(mx-vcx);lastPD=dist;render()}else if(e.touches.length===1&&!pinching){panX=tsp-(e.touches[0].pageX-tsx);render()}},{passive:false});
+vpEl.addEventListener('touchend',e=>{if(e.touches.length<2)pinching=false;if(e.touches.length===1){tsx=e.touches[0].pageX;tsp=panX}});
+document.getElementById('lblBtn').addEventListener('click',()=>{showLabels=!showLabels;document.getElementById('lblBtn').classList.toggle('on',showLabels);render()});
+document.getElementById('zeroBtn').addEventListener('click',()=>{showZeros=!showZeros;document.getElementById('zeroBtn').classList.toggle('on',showZeros);render();renderNum();updatePMBar()});
+document.getElementById('numInput').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const raw=e.target.value.replace(/,/g,'').trim();if(!raw)return;const n=parseFloat(raw);if(isNaN(n)||n<0||n>=1e13)return;highlightedPlace=null;setNumber(n);enteredStr=raw;e.target.blur();renderNum();render();updateMultDivBtns();updatePMBar()});
+
+window.addEventListener('resize',()=>{render();updatePMBar()});
+rand();renderNum();updateMultDivBtns();updatePMBar();
+requestAnimationFrame(()=>{render();setTimeout(()=>document.getElementById('hint').classList.add('gone'),5000)});
+</script>
+</body>
+</html>
