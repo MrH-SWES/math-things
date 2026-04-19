@@ -18,7 +18,8 @@
     .ab.divd{background:#fff;border-color:#f59e0b;color:#f59e0b;font-size:14px;padding:6px 12px}
     .ab.divd:hover{background:#f59e0b;color:#fff}
     .ab.divd:disabled{opacity:0.4;cursor:not-allowed}
-    #numBar{flex-shrink:0;display:flex;align-items:center;position:relative;padding:10px 16px;min-height:86px;background:#fff;border-bottom:1px solid #f1f5f9}
+    #numBar{flex-shrink:0;display:flex;flex-direction:column;align-items:stretch;position:relative;padding:10px 16px 4px;min-height:100px;background:#fff;border-bottom:1px solid #f1f5f9}
+    #numBarTop{display:flex;align-items:center;position:relative;min-height:66px}
     #vp{flex:1;position:relative;overflow:hidden;cursor:grab;touch-action:none}
     #vp:active{cursor:grabbing}
     canvas{position:absolute;top:0;left:0}
@@ -28,6 +29,10 @@
     .digit{cursor:pointer;border-radius:6px;padding:0 4px;transition:background .15s,color .15s}.digit:hover{background:#e2e8f0!important}
     #animStatus{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:900;color:#6366f1;background:rgba(255,255,255,.95);padding:4px 16px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:10}
     #animStatus.show{opacity:1}
+    #expandedForm{display:flex;align-items:baseline;justify-content:center;gap:0;flex-wrap:wrap;font-size:18px;font-weight:700;min-height:26px;padding:0 16px;letter-spacing:-0.02em}
+    .ef-term{cursor:pointer;padding:1px 4px;border-radius:4px;transition:background .15s,transform .15s}
+    .ef-term:hover{transform:scale(1.08)}
+    .ef-plus{color:#94a3b8;padding:0 4px;font-weight:400}
     #pmBar{position:absolute;bottom:6px;left:0;right:0;display:flex;justify-content:center;gap:2px;z-index:8;pointer-events:none}
     .pm-grp{display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:auto}
     .pm-btn{width:22px;height:18px;border:1.5px solid #cbd5e1;border-radius:4px;background:#fff;font-size:13px;font-weight:900;line-height:14px;text-align:center;cursor:pointer;font-family:'Lexend',sans-serif;color:#64748b;padding:0}
@@ -53,11 +58,15 @@
     <button class="ab divd" id="div1000Btn" title="÷1,000" aria-label="Divide by 1000">÷1,000</button>
     <button class="ab" id="lblBtn" title="Labels" aria-label="Toggle labels"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5S1 8 1 8z"/><circle cx="8" cy="8" r="2.5"/></svg></button>
     <button class="ab" id="zeroBtn" title="Show Zeros" aria-label="Toggle show zeros">000</button>
+    <button class="ab" id="randBtn" title="Random Number" aria-label="Random number" style="font-size:14px">🎲</button>
   </div>
 </div>
 <div id="numBar">
+  <div id="numBarTop">
   <input type="text" id="numInput" placeholder="Type a number…" autocomplete="off" style="font-family:inherit;font-size:20px;font-weight:900;color:#1e293b;border:2px solid #e5e7eb;border-radius:10px;padding:8px 14px;width:190px;text-align:center;outline:none;background:#fff;position:relative;z-index:2" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'" />
   <span id="numDisplay" style="position:absolute;left:50%;transform:translateX(-50%);font-size:56px;font-weight:900;color:#1e293b;display:flex;align-items:baseline"></span>
+  </div>
+  <div id="expandedForm"></div>
 </div>
 <div id="vp">
   <canvas id="cv"></canvas>
@@ -73,7 +82,8 @@ const NAMES=['Trillions','Hundred-Billions','Ten-Billions','Billions','Hundred-M
 const SHAPES=['cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube'];
 const DEC=13,ONES=12,NP=16;
 const P=NAMES.map((n,i)=>({name:n,color:CC[i],shape:SHAPES[i],exp:12-i}));
-const U=8,N=10,GAP=0.2,DEP=0.3,FLOOR_Y_OFFSET=120,ZOOM_MIN=0.01,ZOOM_MAX=100;
+const U=8,N=10,GAP=0.2,DEP=0.3,ZOOM_MIN=0.01,ZOOM_MAX=100;
+function FLOOR_Y_OFFSET(){const vh=document.getElementById('vp').clientHeight;return Math.min(120,Math.max(40,vh*0.12))}
 let digits=Array(NP).fill(0);
 let showLabels=false,showZeros=false,showDecimals=false;
 let panX=0,zoomLvl=1.0,enteredStr='';
@@ -232,7 +242,7 @@ function render(od){
   const W=vpEl.clientWidth,H=vpEl.clientHeight,dpr=window.devicePixelRatio||1;
   cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
   const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
-  const vcx=W/2,floorY=H-FLOOR_Y_OFFSET;
+  const vcx=W/2,floorY=H-FLOOR_Y_OFFSET();
   if(highlightedPlace!==null){const pi=highlightedPlace,wx=worldX(pi),cw=colW(pi),sx=wx*zoomLvl-panX+vcx,sw=cw*zoomLvl;if(sx+sw>0&&sx<W){ctx.save();ctx.fillStyle='rgba(255,250,150,0.45)';ctx.fillRect(sx,0,sw*0.82,H);ctx.restore()}}
   ctx.strokeStyle='#cbd5e1';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,floorY);ctx.lineTo(W,floorY);ctx.stroke();
   const grad=ctx.createLinearGradient(0,floorY,0,floorY+30);grad.addColorStop(0,'rgba(0,0,0,0.04)');grad.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=grad;ctx.fillRect(0,floorY,W,30);
@@ -246,7 +256,7 @@ function easeInOut(t){if(t<0.5){return 2*t*t}const p=(-2*t+2);return 1-p*p/2+0.0
 function easeOut(t){const s=1-t;return 1-s*s*s+0.12*Math.sin(t*Math.PI*1.8)*(1-t)}
 function easeIn(t){return t*t*t}
 function delay(ms){return new Promise(r=>setTimeout(r,ms))}
-function setupAnimCanvas(){const vpEl=document.getElementById('vp'),W=vpEl.clientWidth,H=vpEl.clientHeight,acv=document.getElementById('animCanvas'),dpr=window.devicePixelRatio||1;acv.width=W*dpr;acv.height=H*dpr;acv.style.width=W+'px';acv.style.height=H+'px';const ctx=acv.getContext('2d');ctx.scale(dpr,dpr);return{ctx,W,H,floorY:H-FLOOR_Y_OFFSET}}
+function setupAnimCanvas(){const vpEl=document.getElementById('vp'),W=vpEl.clientWidth,H=vpEl.clientHeight,acv=document.getElementById('animCanvas'),dpr=window.devicePixelRatio||1;acv.width=W*dpr;acv.height=H*dpr;acv.style.width=W+'px';acv.style.height=H+'px';const ctx=acv.getContext('2d');ctx.scale(dpr,dpr);return{ctx,W,H,floorY:H-FLOOR_Y_OFFSET()}}
 
 // cube→stick (×10): cubes hop left, fill bottom row, stretch up
 function animCubeToStick(ctx,W,H,floorY,srcPi,dstPi,cnt){
@@ -629,7 +639,7 @@ async function incrementPlace(pi){
   const{ctx,W,H,floorY}=setupAnimCanvas();
   const u=unitForPlace(pi),sSL=stickLen(u);
   const sWX=worldX(pi),vcx=document.getElementById('vp').clientWidth/2;
-  const sCy=(H-FLOOR_Y_OFFSET)/zoomLvl-2-sSL;
+  const sCy=(H-FLOOR_Y_OFFSET())/zoomLvl-2-sSL;
   const col=P[pi].color,shape=P[pi].shape,ds=u*DEP*0.6,step=u*(1+GAP);
   ctx.save();ctx.translate(sWX*zoomLvl-panX+vcx,0);ctx.scale(zoomLvl,zoomLvl);
   if(shape==='cube'){iso(ctx,0,sCy+bp(0,u),u,col)}
@@ -646,7 +656,7 @@ async function incrementPlace(pi){
   } else {
     digits[pi]=0;render();
   }
-  await animFullColumnCarry(ctx,W,H,H-FLOOR_Y_OFFSET,pi,pi-1);
+  await animFullColumnCarry(ctx,W,H,H-FLOOR_Y_OFFSET(),pi,pi-1);
   digits[pi]=0;
   ctx.clearRect(0,0,W,H);st.classList.remove('show');
   animating=false;updateMultDivBtns();updatePMBar();
@@ -673,7 +683,7 @@ async function decrementPlace(pi){
   st.textContent=`${P[pi-1].name} → ${P[pi].name}`;st.classList.add('show');
   if(!borrowedFromRecursion){digits[pi-1]--}
   render();
-  await animFullColumnBorrow(ctx,W,H,H-FLOOR_Y_OFFSET,pi-1,pi);
+  await animFullColumnBorrow(ctx,W,H,H-FLOOR_Y_OFFSET(),pi-1,pi);
   ctx.clearRect(0,0,W,H);st.classList.remove('show');
   digits[pi]=9;enteredStr=digitsToStr();render();renderNum();
   animating=false;updateMultDivBtns();updatePMBar();
@@ -707,6 +717,33 @@ function renderNum(){
   for(let i=0;i<wholePart.length;i++){const ch=wholePart[i];if(ch===','){html+='<span style="color:#94a3b8">,</span>';continue}const pi=ci++;if(pi>=0&&pi<=ONES){const hi2=highlightedPlace===pi;html+=`<span class="digit" style="background:${hi2?P[pi].color:'transparent'};color:${hi2?'#fff':'inherit'}" onclick="toggleHighlight(${pi})">${ch}</span>`}else html+=`<span>${ch}</span>`}
   if(decPart&&showDecimals){html+='<span style="color:#94a3b8">.</span>';let di=DEC;for(let i=0;i<decPart.length;i++){if(di<=NP-1){const hi2=highlightedPlace===di;html+=`<span class="digit" style="background:${hi2?P[di].color:'transparent'};color:${hi2?'#fff':'inherit'}" onclick="toggleHighlight(${di})">${decPart[i]}</span>`;di++}else html+=`<span>${decPart[i]}</span>`}}
   disp.innerHTML=html;
+  renderExpandedForm();
+}
+
+function renderExpandedForm(){
+  const ef=document.getElementById('expandedForm');
+  const val=getNumericValue();
+  if(val===0){ef.innerHTML='';return}
+  let terms=[];
+  const end=showDecimals?NP:DEC;
+  for(let i=0;i<end;i++){
+    if(digits[i]>0){
+      const placeVal=Math.pow(10,P[i].exp);
+      const termVal=digits[i]*placeVal;
+      let label;
+      if(P[i].exp>=0){label=addCommas(String(Math.round(termVal)))}
+      else{const d=Math.abs(P[i].exp);label=termVal.toFixed(d)}
+      terms.push({label,color:P[i].color,pi:i});
+    }
+  }
+  if(terms.length<=1){ef.innerHTML='';return}
+  let h='';
+  for(let t=0;t<terms.length;t++){
+    if(t>0)h+='<span class="ef-plus">+</span>';
+    const hi=highlightedPlace===terms[t].pi;
+    h+=`<span class="ef-term" style="color:${terms[t].color};${hi?'background:'+terms[t].color+';color:#fff':''}" onclick="toggleHighlight(${terms[t].pi})">${terms[t].label}</span>`;
+  }
+  ef.innerHTML=h;
 }
 
 // ═══════ CONTROLS ═══════
@@ -743,7 +780,8 @@ document.getElementById('zeroBtn').addEventListener('click',()=>{showZeros=!show
 document.getElementById('numInput').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const raw=e.target.value.replace(/,/g,'').trim();if(!raw)return;const n=parseFloat(raw);if(isNaN(n)||n<0||n>=1e13)return;highlightedPlace=null;setNumber(n);enteredStr=raw;e.target.blur();renderNum();render();updateMultDivBtns();updatePMBar()});
 
 window.addEventListener('resize',()=>{render();updatePMBar()});
-rand();renderNum();updateMultDivBtns();updatePMBar();
+highlightedPlace=null;setNumber(1234);enteredStr='1234';renderNum();updateMultDivBtns();updatePMBar();
+document.getElementById('randBtn').addEventListener('click',()=>{if(animating)return;rand();renderNum();render();updateMultDivBtns();updatePMBar()});
 requestAnimationFrame(()=>{render();setTimeout(()=>document.getElementById('hint').classList.add('gone'),5000)});
 </script>
 </body>
