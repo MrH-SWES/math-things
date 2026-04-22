@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <title>Digital Number Line | Math Things.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Brand Palette & UI */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.05);
+            
+            --shadow-soft: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
+            --shadow-heavy: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-block: 
+                inset 2px 2px 0 rgba(255,255,255,0.4),
+                inset -2px -2px 0 rgba(0,0,0,0.12),
+                0 8px 20px rgba(0,0,0,0.12),
+                1px -1px 0 rgba(0,0,0,0.08);
+
+            /* Master Palette — alternating warm/cool from Ones */
+            --tens: #4169E1; /* Cool Blue */
+            --ones: #DC143C; /* Warm Red */
+            
+            /* Interaction Variables */
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --zoom: 1;
+            
+            /* Dynamic Scaling */
+            --slot-w: calc(64px * var(--zoom)); 
+            --cube-base: calc(54px * var(--zoom)); 
+            --depth: calc(12px * var(--zoom));
+            --tray-pad: calc(6px * var(--zoom));
+            --font-anchor: calc(24px * var(--zoom));
+            --font-bottom: calc(16px * var(--zoom));
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--glass);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 80px; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            width: 180px;
+        }
+
+        /* The Bead */
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        /* ── NAV TABS (Icon Only) ── */
+        nav {
+            background: rgba(0,0,0,0.06); padding: 6px; border-radius: 18px; display: flex; gap: 6px;
+        }
+
+        .tab {
+            padding: 10px 36px; border-radius: 14px; color: var(--text-gray);
+            cursor: pointer; border: none; background: transparent; 
+            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;
+        }
+
+        .tab.active { background: white; color: var(--text-main); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+
+        /* ── ZOOM ── */
+        .zoom-controls { display: flex; align-items: center; gap: 12px; width: 180px; justify-content: flex-end; color: var(--text-light); }
+        .zoom-slider { width: 80px; cursor: pointer; accent-color: var(--accent); }
+
+        /* ── WORKSPACE ── */
+        .workspace {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 20px; position: relative;
+            gap: 2vh; 
+        }
+
+        /* ── RUNNING TOTAL DISPLAY ── */
+        .board-total-display {
+            font-size: 7rem; font-weight: 900; color: var(--text-main);
+            letter-spacing: -0.04em; line-height: 1;
+            transition: color 0.2s; z-index: 10; text-align: center;
+            user-select: none; text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 8px; margin-top: 12px;
+        }
+        .anim-total-pop { animation: totalPop 0.3s var(--spring); }
+
+        /* ── PERSISTENT EQUATION BAR ── */
+        .persistent-eq-bar {
+            display: flex; align-items: center; gap: 16px; background: var(--surface);
+            padding: 12px 24px; border-radius: 99px; box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border); margin-bottom: 12px;
+            animation: popIn 0.4s var(--spring);
+        }
+
+        .eq-input {
+            width: 80px; height: 70px; background: var(--bg); border: 2px solid transparent;
+            border-radius: 20px; font-family: var(--f); font-size: 3rem; font-weight: 800;
+            color: var(--text-main); text-align: center; transition: all 0.2s var(--spring);
+            outline: none; padding: 0; caret-color: var(--accent);
+        }
+
+        .eq-input:focus { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); border-color: var(--accent); }
+        .eq-input::-webkit-outer-spin-button, .eq-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .eq-input[type=number] { -moz-appearance: textfield; }
+
+        .op-toggle {
+            display: flex; background: #e5e5ea; border-radius: 20px; padding: 4px;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.06); gap: 4px;
+        }
+
+        .op-btn {
+            width: 50px; height: 50px; border-radius: 16px; border: none; background: transparent;
+            font-family: var(--f); font-size: 2.5rem; font-weight: 800; color: var(--text-light);
+            cursor: pointer; transition: all 0.2s var(--spring);
+            display: flex; align-items: center; justify-content: center; padding-bottom: 4px;
+        }
+
+        .op-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        .btn-refresh {
+            width: 50px; height: 50px; border-radius: 50%; border: none; background: var(--bg);
+            color: var(--text-main); cursor: pointer; transition: all 0.2s var(--spring);
+            display: flex; align-items: center; justify-content: center; margin-left: 8px;
+        }
+        .btn-refresh:hover { background: #e5e5ea; transform: rotate(15deg); }
+        .btn-refresh:active { transform: scale(0.9) rotate(45deg); }
+
+        /* DASHBOARD */
+        .dashboard {
+            display: flex; gap: 40px; align-items: flex-end; justify-content: center;
+            width: 100%; max-width: 900px; margin-bottom: 20px; min-height: 140px; 
+        }
+
+        /* ── ACTION TRAY (BANK) ── */
+        .action-tray {
+            height: 140px; background: var(--surface); border-radius: 28px;
+            display: flex; align-items: center; justify-content: center; gap: 24px;
+            padding: 0 24px; box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+            z-index: 50; transition: background 0.3s ease, transform 0.2s;
+        }
+
+        .action-tray.drag-over { background: #f0fdf4; border-color: #16a34a; transform: scale(1.02); }
+
+        .bank-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;}
+
+        .dispenser {
+            background: var(--bg); border: 2px dashed rgba(0,0,0,0.1);
+            border-radius: 16px; padding: 15px 20px; display: flex;
+            align-items: center; justify-content: center; min-height: 80px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        
+        .dispenser:hover:not(.locked) { border-color: rgba(0,0,0,0.2); }
+        
+        .dispenser.locked {
+            opacity: 0.4; cursor: not-allowed;
+            border-style: solid; pointer-events: none;
+        }
+
+        .guided-dispense-area { padding: 15px; }
+
+        /* ── SUBITIZING GRID ── */
+        .ones-grid { display: grid; grid-template-columns: repeat(5, 24px); gap: 8px 6px; justify-content: center; align-content: center; }
+        .tens-flex { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: center; max-width: 280px; }
+
+        /* Label styling */
+        .pv-label { font-size: 0.8rem; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--text-gray); }
+
+        /* ── PREVIEW BLOCKS & EMPTY DROP TARGETS (Exact 1:10 Ratio) ── */
+        .preview-cube {
+            width: 24px; height: 24px; background: var(--ones); border-radius: 4px;
+            box-shadow: var(--shadow-block); transform: rotateX(10deg); position: relative;
+            flex-shrink: 0; cursor: grab; margin: 4px;
+        }
+
+        .preview-ten {
+            width: 240px; height: 24px; background: var(--tens); border-radius: 4px; position: relative;
+            box-shadow: var(--shadow-block); transform: rotateX(10deg);
+            display: flex; flex-shrink: 0; cursor: grab; margin: 4px;
+        }
+        .preview-ten .ten-segment { flex: 1; border-right: 1px solid rgba(0,0,0,0.15); }
+        .preview-ten .ten-segment:last-child { border-right: none; }
+
+        /* Borrow Cues */
+        .preview-cube-empty {
+            width: 24px; height: 24px; border: 2px dashed var(--ones); position: relative;
+            border-radius: 4px; background: transparent; transform: rotateX(10deg);
+            flex-shrink: 0; cursor: pointer; transition: all 0.2s var(--spring); margin: 4px;
+            animation: emptyTargetPulseOnes 1.5s infinite ease-in-out;
+        }
+        .preview-cube-empty:hover { opacity: 1; transform: rotateX(10deg) scale(1.1); animation: none; border-style: solid; }
+        
+        .preview-ten-empty {
+            width: 240px; height: 24px; border: 2px dashed var(--tens); position: relative;
+            border-radius: 4px; background: transparent; transform: rotateX(10deg);
+            display: flex; flex-shrink: 0; cursor: pointer; transition: all 0.2s var(--spring); margin: 4px;
+            animation: emptyTargetPulseTens 1.5s infinite ease-in-out;
+        }
+        .preview-ten-empty:hover { opacity: 1; transform: rotateX(10deg) scale(1.03); animation: none; border-style: solid; }
+
+        .preview-cube-staged {
+            width: 24px; height: 24px; border: 2px solid var(--ones); background: rgba(220,20,60,0.15); border-radius: 4px;
+            transform: rotateX(10deg); flex-shrink: 0; cursor: pointer; position: relative; transition: all 0.2s var(--spring); margin: 4px;
+        }
+        .preview-cube-staged:hover { background: rgba(220,20,60,0.3); }
+
+        .preview-ten-staged {
+            width: 240px; height: 24px; border: 2px solid var(--tens); background: rgba(65,105,225,0.15); border-radius: 4px;
+            transform: rotateX(10deg); display: flex; flex-shrink: 0; cursor: pointer; position: relative; transition: all 0.2s var(--spring); margin: 4px;
+        }
+        .preview-ten-staged:hover { background: rgba(65,105,225,0.3); }
+
+
+        /* ── ALGORITHM SIDEBAR ── */
+        .sidebar {
+            background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 28px; padding: 32px 40px;
+            box-shadow: var(--shadow-soft); z-index: 100; display: none;
+            flex-direction: column; align-items: center; animation: popIn 0.4s var(--spring);
+        }
+
+        .algorithm-problem {
+            font-size: 48px; font-weight: 800; letter-spacing: -0.05em;
+            display: flex; flex-direction: column; gap: 4px; position: relative;
+            color: var(--text-main); line-height: 1;
+        }
+
+        .alg-row { display: flex; justify-content: flex-end; position: relative; gap: 8px; }
+        .digit-box { width: 36px; text-align: center; position: relative; }
+        .t-dig { color: var(--tens); }
+        .o-dig { color: var(--ones); }
+
+        .alg-operator { position: absolute; left: -32px; top: 0; color: var(--text-light); }
+        .alg-line { height: 4px; background: var(--text-main); width: 100%; margin: 12px 0; border-radius: 2px; }
+        .alg-result { display: flex; justify-content: flex-end; gap: 8px; }
+
+        .carry-row { height: 28px; display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 4px; }
+        .carry-box { width: 36px; text-align: center; font-size: 20px; color: var(--tens); font-weight: 900; transition: all 0.2s ease;}
+
+        /* Explicit Borrow Visuals */
+        .borrow-cross { text-decoration: line-through; opacity: 0.4; color: var(--text-main); }
+        .borrow-mini { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: 800; animation: popIn 0.3s var(--spring); }
+        .borrow-mini.t-dig { color: var(--tens); }
+        .borrow-mini.o-dig { color: var(--ones); }
+
+        /* ── THE NUMBER LINE ── */
+        .tray-scroller {
+            width: 100%; overflow-x: auto; overflow-y: hidden; display: flex;
+            justify-content: flex-start; padding-bottom: 40px; cursor: grab;
+        }
+
+        .tray-scroller::-webkit-scrollbar { display: none; }
+        .tray-scroller { -ms-overflow-style: none; scrollbar-width: none; }
+        .tray-scroller:active { cursor: grabbing; }
+
+        .tray-wrapper { position: relative; display: flex; flex-direction: column; padding: 0 60px; pointer-events: none; }
+        .tray, .number-line-top, .number-line-bottom { pointer-events: auto; }
+
+        .number-line-top, .number-line-bottom { display: flex; position: relative; z-index: 10; }
+        .number-line-top { border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+        .number-line-bottom { padding-top: 6px; }
+
+        .tray {
+            display: flex; background: #E5E5EA; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px; padding: 8px var(--tray-pad); box-shadow: inset 0 4px 15px rgba(0,0,0,0.1);
+            position: relative; min-height: calc(var(--slot-w) + 16px); transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        .tray::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 6px;
+            background: var(--surface); z-index: 999; pointer-events: none; border-radius: 0 0 14px 14px;
+        }
+
+        .slot {
+            width: var(--slot-w); height: var(--slot-w); position: relative; flex-shrink: 0;
+            display: flex; justify-content: center; align-items: flex-end; padding-bottom: calc(4px * var(--zoom));
+        }
+        
+        .slot.bg-light { background: #FFFFFF; border-right: 1px solid rgba(0,0,0,0.04); box-shadow: inset 0 2px 8px rgba(0,0,0,0.02); }
+        .slot.bg-dark { background: #D1D1D6; border-right: 1px solid rgba(0,0,0,0.1); box-shadow: inset 0 2px 8px rgba(0,0,0,0.08); }
+        .slot:first-child { border-radius: 8px 0 0 8px; }
+        .slot.last-visible { border-radius: 0 8px 8px 0 !important; border-right: none !important; }
+
+        .number-label { width: var(--slot-w); text-align: center; font-size: calc(20px * var(--zoom)); font-weight: 300; color: var(--text-light); flex-shrink: 0; }
+        .number-label.anchor { font-weight: 800; color: var(--text-main); font-size: var(--font-anchor); }
+        .number-label.bottom { font-weight: 600; font-size: var(--font-bottom); }
+
+        /* ── BLOCKS ON TRACK ── */
+        .cube {
+            width: var(--cube-base); height: var(--cube-base); border-radius: calc(6px * var(--zoom));
+            background: var(--ones); cursor: grab; position: absolute; transform: rotateX(10deg);
+            box-shadow: var(--shadow-block); z-index: 20; transition: transform 0.3s var(--spring), box-shadow 0.3s ease, filter 0.3s ease;
+        }
+
+        .ten-bar {
+            width: calc(var(--slot-w) * 10 - var(--depth)); height: var(--cube-base); border-radius: calc(6px * var(--zoom));
+            background: var(--tens); cursor: grab; position: absolute; transform: rotateX(10deg);
+            display: flex; box-shadow: var(--shadow-block); z-index: 15; transition: transform 0.3s var(--spring), box-shadow 0.3s ease, filter 0.3s ease;
+        }
+        
+        .ten-segment { flex: 1; border-right: 1px solid rgba(0,0,0,0.15); }
+        .ten-segment:last-child { border-right: none; }
+
+        .cube:active, .ten-bar:active {
+            transform: scale(0.95) translateY(2px) rotateX(10deg);
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .cube.staged {
+            transform: translateY(-16px) rotateX(10deg);
+            box-shadow: 0 16px 24px rgba(220, 20, 60, 0.4), inset 2px 2px 0 rgba(255,255,255,0.6);
+            filter: brightness(1.15);
+        }
+        .ten-bar.staged {
+            transform: translateY(-16px) rotateX(10deg);
+            box-shadow: 0 16px 24px rgba(65, 105, 225, 0.4), inset 2px 2px 0 rgba(255,255,255,0.6);
+            filter: brightness(1.15);
+        }
+
+        .locked-strict { cursor: not-allowed !important; }
+        .locked-strict:active { transform: rotateX(10deg) !important; box-shadow: var(--shadow-block) !important; }
+
+        /* ── NUMBER STAMPS (The "1" and "10" inside the blocks) ── */
+        .cube::after {
+            content: '1'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6); font-size: calc(22px * var(--zoom)); pointer-events: none;
+        }
+        .ten-bar::before {
+            content: '10'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6); font-size: calc(22px * var(--zoom)); pointer-events: none; z-index: 5;
+        }
+        .preview-cube::after, .preview-cube-empty::after, .preview-cube-staged::after {
+            content: '1'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6); font-size: 14px; pointer-events: none;
+        }
+        .preview-ten::before, .preview-ten-empty::before, .preview-ten-staged::before {
+            content: '10'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6); font-size: 14px; pointer-events: none; z-index: 5;
+        }
+        .preview-cube-empty::after { color: rgba(220,20,60,0.5); transition: color 0.2s; }
+        .preview-cube-empty:hover::after { color: rgba(220,20,60,0.8); }
+        .preview-cube-staged::after { color: rgba(220,20,60,0.8); }
+        .preview-ten-empty::before { color: rgba(65,105,225,0.5); transition: color 0.2s; }
+        .preview-ten-empty:hover::before { color: rgba(65,105,225,0.8); }
+        .preview-ten-staged::before { color: rgba(65,105,225,0.8); }
+
+        /* ── FOOTER ── */
+        footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); background: var(--bg); }
+        .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes dropIn { 0% { transform: translateY(-40px) rotateX(10deg) scale(1.1); opacity: 0; } 100% { transform: translateY(0) rotateX(10deg) scale(1); opacity: 1; } }
+        @keyframes magicSnap { 0% { filter: brightness(1); } 50% { filter: brightness(1.5); transform: scale(1.05) rotateX(10deg); } 100% { filter: brightness(1); transform: scale(1) rotateX(10deg); } }
+        @keyframes shatterShake { 0%, 100% { transform: rotateX(10deg) translateX(0); } 25% { transform: rotateX(10deg) translateX(-4px); } 75% { transform: rotateX(10deg) translateX(4px); } }
+
+        @keyframes totalPop { 0% { transform: scale(1); } 50% { transform: scale(1.15); color: var(--accent); } 100% { transform: scale(1); color: var(--text-main); } }
+        .anim-total-pop { animation: totalPop 0.3s var(--spring); }
+
+        @keyframes blockPulseLink { 0%, 100% { filter: brightness(1) drop-shadow(0 0 0px rgba(65, 105, 225, 0)); transform: scale(1) rotateX(10deg); } 50% { filter: brightness(1.2) drop-shadow(0 0 15px rgba(65, 105, 225, 0.8)); transform: scale(1.02) rotateX(10deg); } }
+        @keyframes textPulseLink { 0%, 100% { text-shadow: 0 0 0px rgba(65, 105, 225, 0); transform: scale(1); } 50% { text-shadow: 0 0 15px rgba(65, 105, 225, 0.8); transform: scale(1.2); } }
+        
+        .anim-pulse-link { animation: blockPulseLink 1.2s ease-in-out 2; }
+        .text-pulse-link { animation: textPulseLink 1.2s ease-in-out 2; }
+        
+        @keyframes borrowCuePulse { 
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0px rgba(65, 105, 225, 0)); transform: rotateX(10deg); } 
+            50% { filter: brightness(1.15) drop-shadow(0 0 12px rgba(65, 105, 225, 0.7)); transform: scale(1.02) rotateX(10deg); } 
+        }
+        .anim-borrow-cue { animation: borrowCuePulse 1.5s infinite ease-in-out; cursor: pointer; }
+
+        @keyframes emptyTargetPulseOnes {
+            0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 0px rgba(220,20,60,0)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 6px rgba(220,20,60,0.6)); }
+        }
+        @keyframes emptyTargetPulseTens {
+            0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 0px rgba(65,105,225,0)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 6px rgba(65,105,225,0.6)); }
+        }
+
+        .anim-drop { animation: dropIn 0.3s var(--spring); }
+        .anim-snap { animation: magicSnap 0.4s ease-out; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+        <nav>
+            <button class="tab active" id="btnModeFreePlay">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                   <rect x="4" y="4" width="6" height="6" rx="1"></rect>
+                   <rect x="14" y="4" width="6" height="6" rx="1"></rect>
+                   <rect x="9" y="14" width="6" height="6" rx="1"></rect>
+                </svg>
+            </button>
+            <button class="tab" id="btnModeOp">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="11" y2="12"></line>
+                    <line x1="8" y1="9" x2="8" y2="15"></line>
+                    <line x1="15" y1="12" x2="21" y2="12"></line>
+                </svg>
+            </button>
+        </nav>
+        <div class="zoom-controls">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="range" id="zoomSlider" class="zoom-slider" min="0.3" max="1.2" step="0.1" value="1">
+        </div>
+    </header>
+
+    <div class="workspace">
+        
+        <div id="boardTotal" class="board-total-display">0</div>
+
+        <div class="persistent-eq-bar" id="opEqBar" style="display: none;">
+            <input type="number" id="opInputA" class="eq-input" value="42" min="1" max="150">
+            <div class="op-toggle" id="opToggleGroup">
+                <button class="op-btn active" data-op="+">+</button>
+                <button class="op-btn" data-op="-">−</button>
+            </div>
+            <input type="number" id="opInputB" class="eq-input" value="15" min="1" max="150">
+            
+            <button class="btn-refresh" id="btnRefreshOp">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <polyline points="3 3 3 8 8 8"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <div class="dashboard">
+            
+            <div class="action-tray" id="freePlayBank">
+                <div class="bank-item">
+                    <div class="dispenser" id="fpCubeDispenser">
+                        <div class="preview-cube" id="fpCubeSrc" draggable="true"></div>
+                    </div>
+                    <span class="pv-label" style="color: var(--ones)">1s</span>
+                </div>
+                <div class="bank-item">
+                    <div class="dispenser" id="fpTenDispenser">
+                        <div class="preview-ten" id="fpTenSrc" draggable="true">
+                            <div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div><div class="ten-segment"></div>
+                        </div>
+                    </div>
+                    <span class="pv-label" style="color: var(--tens)">10s</span>
+                </div>
+            </div>
+
+            <div class="action-tray" id="opGuidedBank" style="display: none; padding: 0 20px;">
+                <div class="bank-item">
+                    <div class="dispenser guided-dispense-area ones-grid" id="opOnesDispenser"></div>
+                    <span class="pv-label" style="color: var(--ones)">1s</span>
+                </div>
+                <div class="bank-item">
+                    <div class="dispenser guided-dispense-area tens-flex locked" id="opTensDispenser"></div>
+                    <span class="pv-label" style="color: var(--tens)">10s</span>
+                </div>
+            </div>
+
+            <div class="sidebar" id="algSidebar">
+                <div class="algorithm-problem">
+                    <div class="carry-row">
+                        <div class="carry-box" id="algCarry"></div>
+                        <div class="digit-box"></div> 
+                    </div>
+                    <div class="alg-row">
+                        <div class="digit-box t-dig" id="algA_Tens">2</div>
+                        <div class="digit-box o-dig" id="algA_Ones">8</div>
+                    </div>
+                    <div class="alg-row">
+                        <div class="alg-operator" id="algOp">+</div>
+                        <div class="digit-box t-dig" id="algB_Tens">1</div>
+                        <div class="digit-box o-dig" id="algB_Ones">4</div>
+                    </div>
+                    <div class="alg-line"></div>
+                    <div class="alg-result">
+                        <div class="digit-box t-dig" id="algRes_Tens"></div>
+                        <div class="digit-box o-dig" id="algRes_Ones"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="tray-scroller" id="scrollContainer">
+            <div class="tray-wrapper">
+                <div class="number-line-top" id="nlTop"></div>
+                <div class="tray" id="nlTray"></div>
+                <div class="number-line-bottom" id="nlBot"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+
+    <script>
+        // --- STATE ---
+        let mode = 'free'; 
+        let currentOp = '+'; 
+        let totalTens = 0;
+        let totalOnes = 0;
+        const MAX_CAPACITY = 150; 
+        let hasAutoZoomed = false;
+
+        let queueOnes = 0; 
+        let queueTens = 0;
+        let stagedOnes = 0;
+        let stagedTens = 0;
+        let algStateA_Tens = 0;
+        let algStateA_Ones = 0;
+
+        const nlTop = document.getElementById('nlTop');
+        const nlTray = document.getElementById('nlTray');
+        const nlBot = document.getElementById('nlBot');
+        
+        const fpBank = document.getElementById('freePlayBank');
+        const opEqBar = document.getElementById('opEqBar');
+        const opBank = document.getElementById('opGuidedBank');
+        const sidebar = document.getElementById('algSidebar');
+        const scroller = document.getElementById('scrollContainer');
+        const zoomSlider = document.getElementById('zoomSlider');
+
+        zoomSlider.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--zoom', e.target.value);
+            renderBlocks(); 
+        });
+
+        function animateZoom(targetZoom) {
+            let currentZoom = parseFloat(document.documentElement.style.getPropertyValue('--zoom')) || 1;
+            targetZoom = Math.max(0.3, Math.min(targetZoom, 1.2));
+            const diff = targetZoom - currentZoom;
+            const steps = 15;
+            let step = 0;
+            const interval = setInterval(() => {
+                step++;
+                const newZoom = currentZoom + (diff * (step / steps));
+                document.documentElement.style.setProperty('--zoom', newZoom);
+                zoomSlider.value = newZoom;
+                renderBlocks();
+                if (step >= steps) {
+                    clearInterval(interval);
+                    scroller.scrollTo({ left: 0, behavior: 'smooth' });
+                }
+            }, 20);
+        }
+
+        function triggerAutoZoom() {
+            if (hasAutoZoomed) return;
+            hasAutoZoomed = true;
+            
+            const currentVolume = totalTens * 10 + totalOnes;
+            if (currentVolume === 0) return;
+            
+            let visibleMax = Math.ceil(currentVolume / 10) * 10 + 10;
+            if (visibleMax < 20) visibleMax = 20;
+
+            const padding = 120;
+            const availableWidth = scroller.clientWidth - padding;
+            const requiredBaseWidth = visibleMax * 64; 
+            
+            let targetZoom = availableWidth / requiredBaseWidth;
+            animateZoom(targetZoom);
+        }
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        scroller.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.cube') || e.target.closest('.ten-bar')) return;
+            isDown = true;
+            startX = e.pageX - scroller.offsetLeft;
+            scrollLeft = scroller.scrollLeft;
+        });
+        scroller.addEventListener('mouseleave', () => { isDown = false; });
+        scroller.addEventListener('mouseup', () => { isDown = false; });
+        scroller.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - scroller.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            scroller.scrollLeft = scrollLeft - walk;
+        });
+
+        // --- FLIGHT ENGINE ---
+        function flyBlocks(sourceElements, targetElements, onComplete) {
+            const clones = [];
+            sourceElements.forEach((source, index) => {
+                const target = targetElements[index];
+                if (!target) return;
+                const sourceRect = source.getBoundingClientRect();
+                const targetRect = target.getBoundingClientRect();
+                const clone = source.cloneNode(true);
+                clone.classList.remove('staged');
+                clone.style.position = 'fixed';
+                clone.style.left = `${sourceRect.left}px`;
+                clone.style.top = `${sourceRect.top}px`;
+                clone.style.margin = '0';
+                clone.style.zIndex = '9999';
+                clone.style.pointerEvents = 'none';
+                clone.style.transform = 'none'; 
+                clone.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                document.body.appendChild(clone);
+                clones.push({ clone, targetRect });
+                source.style.opacity = '0'; 
+            });
+            void document.body.offsetHeight;
+            clones.forEach(item => {
+                item.clone.style.left = `${item.targetRect.left}px`;
+                item.clone.style.top = `${item.targetRect.top}px`;
+                item.clone.style.width = `${item.targetRect.width}px`;
+                item.clone.style.height = `${item.targetRect.height}px`;
+            });
+            setTimeout(() => {
+                clones.forEach(item => item.clone.remove());
+                if (onComplete) onComplete();
+            }, 800);
+        }
+
+        function updateRunningTotal() {
+            const totalDisplay = document.getElementById('boardTotal');
+            const newTotal = (totalTens * 10) + totalOnes;
+            if (parseInt(totalDisplay.innerText) !== newTotal) {
+                totalDisplay.innerText = newTotal;
+                totalDisplay.classList.remove('anim-total-pop');
+                void totalDisplay.offsetWidth;
+                totalDisplay.classList.add('anim-total-pop');
+            }
+        }
+
+        function initBoard() {
+            nlTop.innerHTML = '';
+            nlTray.innerHTML = '';
+            nlBot.innerHTML = '';
+            for (let i = 1; i <= MAX_CAPACITY; i++) {
+                const decadeIndex = Math.floor((i - 1) / 10);
+                const isAnchor = i % 10 === 0;
+                const themeClass = decadeIndex % 2 === 0 ? 'bg-light' : 'bg-dark';
+                const tLbl = document.createElement('div');
+                tLbl.className = `number-label ${isAnchor ? 'anchor' : ''} ${themeClass}`;
+                tLbl.textContent = i; 
+                nlTop.appendChild(tLbl);
+                const slot = document.createElement('div');
+                slot.className = `slot ${themeClass}`;
+                slot.id = `slot-${i}`;
+                nlTray.appendChild(slot);
+                const bLbl = document.createElement('div');
+                bLbl.className = `number-label bottom ${themeClass}`;
+                let botNum = i % 10;
+                if (botNum === 0) botNum = 10;
+                bLbl.textContent = botNum;
+                nlBot.appendChild(bLbl);
+            }
+        }
+
+        function updateTrackVisibility() {
+            const currentVolume = totalTens * 10 + totalOnes;
+            let visibleMax = Math.ceil(currentVolume / 10) * 10 + 10;
+            if (visibleMax < 20) visibleMax = 20; 
+            for (let i = 1; i <= MAX_CAPACITY; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                const top = nlTop.children[i-1];
+                const bot = nlBot.children[i-1];
+                slot.classList.remove('last-visible');
+                if (i <= visibleMax) {
+                    slot.style.display = 'flex';
+                    top.style.display = 'block';
+                    bot.style.display = 'block';
+                    if (i === visibleMax) slot.classList.add('last-visible');
+                } else {
+                    slot.style.display = 'none';
+                    top.style.display = 'none';
+                    bot.style.display = 'none';
+                }
+            }
+        }
+
+        function renderBlocks(animateLast = false) {
+            nlTray.querySelectorAll('.cube, .ten-bar').forEach(el => el.remove());
+            let currentSlot = 1;
+            const needsBorrowCue = (mode === 'op' && currentOp === '-' && queueOnes > 0 && totalOnes < queueOnes);
+
+            for (let t = 0; t < totalTens; t++) {
+                const tenBar = document.createElement('div');
+                tenBar.className = 'ten-bar';
+                tenBar.draggable = mode === 'free' || (mode === 'op' && currentOp === '-' && queueOnes === 0);
+                if (mode === 'op' && currentOp === '-' && t >= totalTens - stagedTens) tenBar.classList.add('staged');
+                if (needsBorrowCue && t === totalTens - 1) tenBar.classList.add('anim-borrow-cue');
+                tenBar.style.left = `calc(${currentSlot - 1} * var(--slot-w) + var(--tray-pad))`;
+                for (let j = 0; j < 10; j++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'ten-segment';
+                    tenBar.appendChild(seg);
+                }
+                tenBar.addEventListener('click', () => {
+                    if (mode === 'free' || (mode === 'op' && currentOp === '-' && totalOnes < queueOnes)) {
+                        if (mode === 'op' && currentOp === '-' && t >= totalTens - stagedTens) return;
+                        totalTens--;
+                        totalOnes += 10; 
+                        renderBlocks();
+                        if (mode === 'op' && currentOp === '-') {
+                            algStateA_Tens--;
+                            algStateA_Ones += 10;
+                            const aTensEl = document.getElementById('algA_Tens');
+                            const aOnesEl = document.getElementById('algA_Ones');
+                            aTensEl.innerHTML = `<span class="borrow-cross">${algStateA_Tens + 1}</span><span class="borrow-mini t-dig">${algStateA_Tens}</span>`;
+                            aOnesEl.innerHTML = `<span class="borrow-cross">${algStateA_Ones - 10}</span><span class="borrow-mini o-dig">${algStateA_Ones}</span>`;
+                        }
+                    } else if (mode === 'op' && currentOp === '-') {
+                        tenBar.style.animation = 'shatterShake 0.4s';
+                        setTimeout(() => tenBar.style.animation = '', 400);
+                    }
+                });
+                tenBar.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('source', 'line');
+                    e.dataTransfer.setData('type', 'ten-bar');
+                });
+                nlTray.appendChild(tenBar);
+                currentSlot += 10;
+            }
+
+            for (let o = 0; o < totalOnes; o++) {
+                const cube = document.createElement('div');
+                cube.className = 'cube';
+                const canTouchOnes = mode === 'free' || (mode === 'op' && currentOp === '-' && !needsBorrowCue);
+                cube.draggable = canTouchOnes;
+                if (!canTouchOnes && mode === 'op') cube.classList.add('locked-strict');
+                if (mode === 'op' && currentOp === '-' && o >= totalOnes - stagedOnes) cube.classList.add('staged');
+                const targetSlot = document.getElementById(`slot-${currentSlot}`);
+                if (targetSlot) {
+                    targetSlot.appendChild(cube);
+                    if (animateLast && o === totalOnes - 1) cube.classList.add('anim-drop');
+                }
+                if (mode === 'free') {
+                    cube.addEventListener('click', () => {
+                        if (totalOnes >= 10) {
+                            totalOnes -= 10;
+                            totalTens++;
+                            renderBlocks();
+                            const bars = nlTray.querySelectorAll('.ten-bar');
+                            if (bars.length > 0) bars[bars.length - 1].classList.add('anim-snap');
+                        } else {
+                            cube.style.animation = 'shatterShake 0.4s';
+                            setTimeout(() => cube.style.animation = '', 400);
+                        }
+                    });
+                } else if (mode === 'op' && currentOp === '-' && needsBorrowCue) {
+                    cube.addEventListener('click', () => {
+                         cube.style.animation = 'shatterShake 0.4s';
+                         setTimeout(() => cube.style.animation = '', 400);
+                    });
+                }
+                cube.addEventListener('dragstart', (e) => {
+                    if(!canTouchOnes) { e.preventDefault(); return; }
+                    e.dataTransfer.setData('source', 'line');
+                    e.dataTransfer.setData('type', 'cube');
+                });
+                currentSlot++;
+            }
+            updateTrackVisibility();
+            updateRunningTotal();
+        }
+
+        function updateGuidedBank() {
+            const onesDispenser = document.getElementById('opOnesDispenser');
+            const tensDispenser = document.getElementById('opTensDispenser');
+            onesDispenser.innerHTML = '';
+            tensDispenser.innerHTML = '';
+            const b = parseInt(document.getElementById('opInputB').value) || 0;
+            const bTens = Math.floor(b/10);
+            const bOnes = b%10;
+
+            if (currentOp === '+') {
+                for(let i=0; i<queueOnes; i++) {
+                    const c = document.createElement('div'); c.className = 'preview-cube'; c.draggable = true;
+                    c.addEventListener('dragstart', e => { e.dataTransfer.setData('source', 'opBank'); e.dataTransfer.setData('type', 'cube'); });
+                    onesDispenser.appendChild(c);
+                }
+                for(let i=0; i<queueTens; i++) {
+                    const t = document.createElement('div'); t.className = 'preview-ten';
+                    if (queueOnes === 0) {
+                        t.draggable = true;
+                        t.addEventListener('dragstart', e => { e.dataTransfer.setData('source', 'opBank'); e.dataTransfer.setData('type', 'ten-bar'); });
+                    }
+                    for(let j=0; j<10; j++) {
+                        const seg = document.createElement('div');
+                        seg.className = 'ten-segment';
+                        t.appendChild(seg);
+                    }
+                    tensDispenser.appendChild(t);
+                }
+            } else {
+                const removedOnes = bOnes - queueOnes;
+                const emptyOnes = queueOnes - stagedOnes;
+                for(let i=0; i<removedOnes; i++) {
+                    const c = document.createElement('div'); c.className = 'preview-cube'; c.draggable = false;
+                    onesDispenser.appendChild(c);
+                }
+                for(let i=0; i<stagedOnes; i++) {
+                    const c = document.createElement('div'); c.className = 'preview-cube-staged';
+                    c.addEventListener('click', () => { stagedOnes--; renderBlocks(); updateGuidedBank(); });
+                    onesDispenser.appendChild(c);
+                }
+                for(let i=0; i<emptyOnes; i++) {
+                    const c = document.createElement('div'); c.className = 'preview-cube-empty';
+                    c.addEventListener('click', () => {
+                        if (stagedOnes < totalOnes) {
+                            stagedOnes++;
+                            renderBlocks();
+                            updateGuidedBank();
+                            if (stagedOnes === queueOnes) {
+                                onesDispenser.style.pointerEvents = 'none';
+                                const lineBlocks = Array.from(nlTray.querySelectorAll('.cube.staged'));
+                                const targetBlocks = Array.from(onesDispenser.querySelectorAll('.preview-cube-staged'));
+                                flyBlocks(lineBlocks, targetBlocks, () => {
+                                    totalOnes -= queueOnes;
+                                    queueOnes = 0;
+                                    stagedOnes = 0;
+                                    onesDispenser.style.pointerEvents = 'auto';
+                                    renderBlocks();
+                                    updateGuidedBank();
+                                });
+                            }
+                        } else {
+                            c.style.animation = 'shatterShake 0.4s';
+                            setTimeout(() => c.style.animation = '', 400);
+                        }
+                    });
+                    onesDispenser.appendChild(c);
+                }
+                const removedTens = bTens - queueTens;
+                const emptyTens = queueTens - stagedTens;
+                for(let i=0; i<removedTens; i++) {
+                    const t = document.createElement('div'); t.className = 'preview-ten'; t.draggable = false;
+                    for(let j=0; j<10; j++) {
+                        const seg = document.createElement('div');
+                        seg.className = 'ten-segment';
+                        t.appendChild(seg);
+                    }
+                    tensDispenser.appendChild(t);
+                }
+                for(let i=0; i<stagedTens; i++) {
+                    const t = document.createElement('div'); t.className = 'preview-ten-staged';
+                    for(let j=0; j<10; j++) {
+                        const seg = document.createElement('div');
+                        seg.className = 'ten-segment';
+                        t.appendChild(seg);
+                    }
+                    t.addEventListener('click', () => { stagedTens--; renderBlocks(); updateGuidedBank(); });
+                    tensDispenser.appendChild(t);
+                }
+                for(let i=0; i<emptyTens; i++) {
+                    const t = document.createElement('div'); t.className = 'preview-ten-empty';
+                    t.addEventListener('click', () => {
+                        if (stagedTens < totalTens && queueOnes === 0) {
+                            stagedTens++;
+                            renderBlocks();
+                            updateGuidedBank();
+                            if (stagedTens === queueTens) {
+                                tensDispenser.style.pointerEvents = 'none';
+                                const lineBlocks = Array.from(nlTray.querySelectorAll('.ten-bar.staged'));
+                                const targetBlocks = Array.from(tensDispenser.querySelectorAll('.preview-ten-staged'));
+                                flyBlocks(lineBlocks, targetBlocks, () => {
+                                    totalTens -= queueTens;
+                                    queueTens = 0;
+                                    stagedTens = 0;
+                                    tensDispenser.style.pointerEvents = 'auto';
+                                    renderBlocks();
+                                    updateGuidedBank();
+                                });
+                            }
+                        }
+                    });
+                    tensDispenser.appendChild(t);
+                }
+            }
+
+            if (queueOnes === 0 && queueTens > 0) {
+                tensDispenser.classList.remove('locked');
+                tensDispenser.style.pointerEvents = 'auto';
+                onesDispenser.style.pointerEvents = 'auto';
+                if(currentOp === '+') document.getElementById('algRes_Ones').innerText = totalOnes % 10;
+                if(currentOp === '-') document.getElementById('algRes_Ones').innerText = totalOnes;
+            } else if (queueOnes > 0) {
+                tensDispenser.classList.add('locked');
+                tensDispenser.style.pointerEvents = 'none';
+                onesDispenser.style.pointerEvents = 'auto';
+            } else if (queueOnes === 0 && queueTens === 0) {
+                tensDispenser.classList.remove('locked'); 
+                tensDispenser.style.pointerEvents = 'none';
+                onesDispenser.style.pointerEvents = 'none';
+                document.getElementById('algRes_Tens').innerText = totalTens;
+                document.getElementById('algRes_Tens').classList.add('anim-drop');
+                setTimeout(() => triggerAutoZoom(), 500);
+            }
+        }
+
+        function checkOpAddBundling() {
+            let carried = false;
+            while (totalOnes >= 10) { totalOnes -= 10; totalTens++; carried = true; }
+            if (carried) {
+                renderBlocks();
+                const bars = nlTray.querySelectorAll('.ten-bar');
+                if (bars.length > 0) {
+                    const newBar = bars[bars.length - 1];
+                    newBar.classList.remove('anim-pulse-link');
+                    void newBar.offsetWidth; 
+                    newBar.classList.add('anim-pulse-link');
+                }
+                const carry = document.getElementById('algCarry');
+                let currentCarry = parseInt(carry.innerText) || 0;
+                carry.innerText = currentCarry + 1;
+                carry.classList.remove('text-pulse-link');
+                void carry.offsetWidth; 
+                carry.classList.add('text-pulse-link');
+            }
+            if (queueOnes === 0) document.getElementById('algRes_Ones').innerText = totalOnes % 10;
+        }
+
+        function buildOperation() {
+            if (mode !== 'op') return;
+            const a = parseInt(document.getElementById('opInputA').value) || 0;
+            const b = parseInt(document.getElementById('opInputB').value) || 0;
+            algStateA_Tens = Math.floor(a/10);
+            algStateA_Ones = a%10;
+            document.getElementById('algA_Tens').innerText = algStateA_Tens || '';
+            document.getElementById('algA_Ones').innerText = algStateA_Ones;
+            document.getElementById('algB_Tens').innerText = Math.floor(b/10) || '';
+            document.getElementById('algB_Ones').innerText = b%10;
+            document.getElementById('algOp').innerText = currentOp === '+' ? '+' : '−';
+            document.getElementById('algRes_Ones').innerText = '';
+            document.getElementById('algRes_Tens').innerText = '';
+            document.getElementById('algCarry').innerText = '';
+            document.getElementById('algCarry').classList.remove('text-pulse-link');
+            totalTens = Math.floor(a/10);
+            totalOnes = a%10;
+            stagedOnes = 0;
+            stagedTens = 0;
+            hasAutoZoomed = false;
+            document.documentElement.style.setProperty('--zoom', 1);
+            zoomSlider.value = 1;
+            renderBlocks();
+            queueTens = Math.floor(b/10);
+            queueOnes = b%10;
+            updateGuidedBank();
+            setTimeout(() => {
+                const targetSlot = Math.max(1, (totalTens * 10) - 5);
+                const el = document.getElementById(`slot-${targetSlot}`);
+                if(el) el.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            }, 300);
+        }
+
+        document.querySelectorAll('.op-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentOp = e.target.dataset.op;
+                buildOperation();
+            });
+        });
+
+        document.getElementById('opInputA').addEventListener('change', buildOperation);
+        document.getElementById('opInputB').addEventListener('change', buildOperation);
+        document.getElementById('btnRefreshOp').addEventListener('click', buildOperation);
+
+        document.getElementById('fpCubeSrc').addEventListener('dragstart', e => { e.dataTransfer.setData('source', 'bank'); e.dataTransfer.setData('type', 'cube'); });
+        document.getElementById('fpTenSrc').addEventListener('dragstart', e => { e.dataTransfer.setData('source', 'bank'); e.dataTransfer.setData('type', 'ten-bar'); });
+
+        nlTray.addEventListener('dragover', e => {
+            e.preventDefault();
+            if (mode === 'free' || (mode === 'op' && currentOp === '+')) nlTray.classList.add('drag-over');
+        });
+        nlTray.addEventListener('dragleave', () => nlTray.classList.remove('drag-over'));
+        
+        nlTray.addEventListener('drop', e => {
+            e.preventDefault();
+            nlTray.classList.remove('drag-over');
+            const source = e.dataTransfer.getData('source');
+            const type = e.dataTransfer.getData('type');
+            if (mode === 'free' && source === 'bank') {
+                const currentVolume = (totalTens * 10) + totalOnes;
+                if (type === 'cube' && currentVolume < MAX_CAPACITY) {
+                    totalOnes++; renderBlocks(true); 
+                    if(totalOnes === 10) setTimeout(() => {
+                        totalOnes -= 10; totalTens++; renderBlocks();
+                        const bars = nlTray.querySelectorAll('.ten-bar');
+                        if (bars.length > 0) bars[bars.length - 1].classList.add('anim-snap');
+                    }, 400); 
+                } else if (type === 'ten-bar' && currentVolume <= MAX_CAPACITY - 10) {
+                    totalTens++; renderBlocks(true);
+                }
+            }
+            else if (mode === 'op' && currentOp === '+' && source === 'opBank') {
+                if (type === 'cube' && queueOnes > 0) {
+                    queueOnes--; totalOnes++; renderBlocks(true); updateGuidedBank();
+                    if (totalOnes >= 10) setTimeout(checkOpAddBundling, 400); 
+                    else if (queueOnes === 0) document.getElementById('algRes_Ones').innerText = totalOnes % 10;
+                } 
+                else if (type === 'ten-bar' && queueOnes === 0 && queueTens > 0) {
+                    queueTens--; totalTens++; renderBlocks(true); updateGuidedBank();
+                }
+            }
+        });
+
+        document.getElementById('opOnesDispenser').addEventListener('click', () => {
+            if (mode === 'op' && currentOp === '+' && queueOnes > 0) {
+                queueOnes--; totalOnes++; renderBlocks(true); updateGuidedBank();
+                if (totalOnes >= 10) setTimeout(checkOpAddBundling, 400); 
+                else if (queueOnes === 0) document.getElementById('algRes_Ones').innerText = totalOnes % 10;
+            }
+        });
+        document.getElementById('opTensDispenser').addEventListener('click', () => {
+            if (mode === 'op' && currentOp === '+' && queueOnes === 0 && queueTens > 0) {
+                queueTens--; totalTens++; renderBlocks(true); updateGuidedBank();
+            }
+        });
+        document.getElementById('fpCubeDispenser').addEventListener('click', () => {
+             if(mode !== 'free') return;
+             const currentVolume = (totalTens * 10) + totalOnes;
+             if (currentVolume < MAX_CAPACITY) {
+                 totalOnes++; renderBlocks(true);
+                 if(totalOnes === 10) setTimeout(() => {
+                     totalOnes -= 10; totalTens++; renderBlocks();
+                     const bars = nlTray.querySelectorAll('.ten-bar');
+                     if (bars.length > 0) bars[bars.length - 1].classList.add('anim-snap');
+                 }, 400);
+             }
+        });
+        document.getElementById('fpTenDispenser').addEventListener('click', () => {
+             if(mode !== 'free') return;
+             const currentVolume = (totalTens * 10) + totalOnes;
+             if (currentVolume <= MAX_CAPACITY - 10) { totalTens++; renderBlocks(true); }
+        });
+
+        document.getElementById('btnModeFreePlay').addEventListener('click', (e) => {
+            mode = 'free'; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active');
+            opEqBar.style.display = 'none'; opBank.style.display = 'none'; sidebar.style.display = 'none'; fpBank.style.display = 'flex';
+            totalTens = 0; totalOnes = 0; stagedOnes = 0; stagedTens = 0; hasAutoZoomed = false;
+            document.documentElement.style.setProperty('--zoom', 1); zoomSlider.value = 1;
+            renderBlocks();
+        });
+        document.getElementById('btnModeOp').addEventListener('click', (e) => {
+            mode = 'op'; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active');
+            fpBank.style.display = 'none'; opEqBar.style.display = 'flex'; opBank.style.display = 'flex'; sidebar.style.display = 'flex';
+            buildOperation();
+        });
+
+        initBoard();
+    </script>
+</body>
+</html>
