@@ -8,16 +8,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root {
+            /* Palette & Brand */
             --bg-center: #F5F5F7; --bg-edge: #D1D1D6; --alum-base: #E8E9ED; --surface: #FFFFFF;
             --text-main: #1D1D1F; --text-gray: #7A7D8A; --text-light: #AEAEB2;
-            --strand-system: #7B00FF; --strand-sense: #DC143C; --strand-basic: #4CBB17; --strand-advanced: #FF9F0A;
-            --dom-cc: #FF9F0A; --dom-nbt: #0A84FF; --dom-oa: #FF375F; --dom-nf: #30D158; --dom-md: #BF5AF2; --dom-g: #5E5CE6;
-            --brand-k: #64D2FF; --brand-g1: #DC143C; --brand-g2: #4169E1; --brand-g3: #FFD700; --brand-g4: #4CBB17; --brand-g5: #CF3476;
+            
+            --strand-system: #7B00FF; --strand-sense: #DC143C; --strand-basic: #4CBB17; --strand-advanced: #FF9F0A; 
+            --dom-cc: #FF9F0A; --dom-nbt: #0A84FF; --dom-oa: #FF375F; --dom-nf: #30D158; --dom-md: #BF5AF2; --dom-g: #5E5CE6; 
+
+            --brand-k: #64D2FF; --brand-g1: #DC143C; --brand-g2: #4169E1; --brand-g3: #FFD700; --brand-g4: #4CBB17; --brand-g5: #CF3476; 
+
+            /* Premium Shadows */
             --raised: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.9);
             --milled: inset 3px 3px 6px rgba(166, 171, 189, 0.9), inset -3px -3px 6px rgba(255, 255, 255, 1);
-            --glass: rgba(245, 245, 247, 0.85);
             --hub-raised: 16px 16px 32px rgba(166, 171, 189, 0.4), -16px -16px 32px rgba(255, 255, 255, 0.9);
             --hub-depressed: inset 6px 6px 16px rgba(0, 0, 0, 0.25), inset -6px -6px 16px rgba(255, 255, 255, 0.6);
+            --glass: rgba(245, 245, 247, 0.85);
             --scale: 1;
         }
 
@@ -28,34 +33,45 @@
         body { font-family: 'Lexend', sans-serif; background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-edge) 150%); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
 
         main { flex: 1; position: relative; }
-        .view { position: absolute; inset: 0; padding: 40px 24px; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0; pointer-events: none; transform: scale(0.95); overflow-y: auto; scrollbar-width: none; }
+        .view { position: absolute; inset: 0; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0; pointer-events: none; transform: scale(0.95); overflow-y: auto; scrollbar-width: none; }
         .view.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
         #view-braid { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 
         /* HUB COMPONENTS */
         .gallery-wrapper { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; min-height: 800px; min-width: 1200px; }
         .hub-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; width: calc(280px * var(--scale)); height: calc(280px * var(--scale)); border-radius: 50%; background: linear-gradient(135deg, #fdfdfd 0%, #d0d0d5 100%); box-shadow: 0 24px 48px rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center; }
-        .hub-center-title { font-weight: 900; font-size: calc(2.6rem * var(--scale)); letter-spacing: -0.05em; color: #2D2D35; }
-
         .node-assembly { position: absolute; top: 50%; left: 50%; }
         .domain-plate { position: absolute; background: linear-gradient(135deg, #f4f4f6 0%, #cbccd2 100%); box-shadow: var(--hub-raised); border-radius: calc(32px * var(--scale)); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%); }
 
-        /* BRAID HEADER */
+        /* BRAID COMPONENTS */
         header { flex-shrink: 0; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: var(--glass); backdrop-filter: blur(20px); z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .domain-nav { display: flex; background: var(--alum-base); padding: 4px; border-radius: 12px; box-shadow: var(--milled); gap: 4px; }
         .domain-btn { border: none; background: transparent; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.65rem; cursor: pointer; }
-        .domain-btn.active { background: #E0E0E5; box-shadow: var(--milled); color: var(--text-main); }
+        .domain-btn.active { background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.1); color: var(--text-main); }
 
-        /* MATRIX GRID */
         .dashboard-body { flex: 1; display: flex; overflow: hidden; position: relative; }
-        .map-zone { flex: 1; height: 100%; overflow: auto; padding: 20px 40px 240px 20px; }
-        .matrix-grid { display: grid; grid-template-columns: 80px repeat(4, minmax(260px, 1fr)); gap: 40px 24px; position: relative; width: 100%; max-width: 1500px; margin: 0 auto; }
-        .grade-marker { grid-column: 1; padding: 16px 20px; border-radius: 20px; font-weight: 900; font-size: 1.8rem; color: var(--text-gray); cursor: pointer; background: transparent; border: none; box-shadow: var(--raised); }
+        .map-zone { flex: 1; height: 100%; overflow: auto; padding: 40px 40px 240px; }
+        .matrix-grid { display: grid; grid-template-columns: 80px repeat(4, minmax(240px, 1fr)); gap: 40px 24px; position: relative; width: 100%; max-width: 1500px; margin: 0 auto; }
+        
+        /* Strand Tracks */
+        .track-bg { grid-row: 1 / span 8; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+        .strand-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--strand-color); background: var(--bg-center); padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; }
+        .milled-groove { width: 14px; flex: 1; background: var(--alum-base); box-shadow: var(--milled); border-radius: 7px; position: relative; }
+        .color-line { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; background: var(--strand-color); opacity: 0.2; }
+
+        .grade-marker { grid-column: 1; padding: 16px 20px; border-radius: 20px; font-weight: 900; font-size: 1.8rem; cursor: pointer; background: transparent; border: none; box-shadow: var(--raised); }
+        .grade-marker.active { background: #E0E0E5; box-shadow: var(--milled); }
         .hidden-row { display: none !important; }
 
-        /* APP DECK (DRAGGABLE/TUCKABLE) */
+        /* NODES & DRAWER */
+        .grid-cell { display: flex; flex-direction: column; gap: 12px; z-index: 10; }
+        .node { background: var(--alum-base); box-shadow: var(--raised); border-radius: 12px; padding: 12px 16px; border-left: 4px solid var(--strand-color); cursor: pointer; transition: 0.4s; }
+        .node.spotlight-active { box-shadow: var(--raised), 0 0 0 2px var(--strand-color); }
+        .node.primary-selected { box-shadow: var(--milled); transform: scale(0.96) translateY(2px); background: #E0E0E5; border-left-width: 8px; }
+        .node.is-animating { opacity: 0 !important; }
+
         .tool-deck { 
-            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%) translateY(0); 
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); 
             width: calc(100% - 80px); max-width: 1400px; height: 180px; 
             background: rgba(245, 245, 247, 0.7); backdrop-filter: blur(40px); 
             border-radius: 24px 24px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); 
@@ -63,29 +79,19 @@
             display: flex; align-items: center; padding: 0 24px; gap: 16px; z-index: 500; 
             overflow-x: auto; scrollbar-width: none;
         }
-        
-        /* Tactical Handle */
-        .deck-handle {
-            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-            width: 60px; height: 6px; border-radius: 3px;
-            background: linear-gradient(to bottom, #d1d1d6, #8e8e93);
-            box-shadow: inset 1px 1px 1px rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.2);
-            cursor: pointer; transition: background 0.2s;
-        }
-        .deck-handle:hover { background: linear-gradient(to bottom, #e5e5ea, #aeaeb2); }
+        .deck-handle { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 6px; border-radius: 3px; background: linear-gradient(to bottom, #d1d1d6, #8e8e93); cursor: pointer; }
 
         .app-card { flex: 0 0 auto; width: 140px; height: 140px; background: var(--alum-base); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--raised); cursor: pointer; transition: 0.3s; }
-        .app-card:hover { transform: translateY(-5px); }
-        .tool-bead { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.22); }
-        .app-title { font-size: 0.85rem; font-weight: 800; color: var(--text-main); }
+        .app-card.active { box-shadow: var(--milled); transform: scale(0.98); }
 
-        /* EXPANDED MODAL */
+        /* MODAL */
         .plate-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(245, 245, 247, 0.4); backdrop-filter: blur(12px); opacity: 0; pointer-events: none; transition: 0.5s; }
         .plate-backdrop.active { opacity: 1; pointer-events: auto; }
-        .expanded-plate { position: fixed; z-index: 1001; background: linear-gradient(135deg, #fdfdfd 0%, #e8e9ed 100%); border-radius: 24px; box-shadow: 0 40px 80px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; display: flex; flex-direction: column; overflow: hidden; }
+        .expanded-plate { position: fixed; z-index: 1001; background: linear-gradient(135deg, #fdfdfd 0%, #e8e9ed 100%); border-radius: 24px; box-shadow: 0 40px 80px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; flex-direction: column; overflow: hidden; }
         .expanded-plate.active { top: 5vh !important; left: 10vw !important; width: 80vw !important; height: 90vh !important; opacity: 1; pointer-events: auto; }
+        
         .hardware-btn { padding: 12px 24px; border-radius: 20px; font-weight: 800; cursor: pointer; border: none; background: var(--alum-base); box-shadow: var(--hub-raised); text-transform: uppercase; }
-        .hardware-btn.primary { background: var(--text-main); color: #fff; width: 100%; }
+        .hardware-btn.primary { background: var(--text-main); color: #fff; width: 100%; margin-top: 20px; }
     </style>
     <script src="coi-serviceworker.js"></script>
 </head>
@@ -111,7 +117,7 @@
                 <h1 style="font-size: 3.5rem; font-weight: 900; margin: 20px 0;">Math, in your hands.</h1>
                 <div style="background: var(--alum-base); padding: 48px; border-radius: 32px; box-shadow: var(--hub-depressed); text-align: center;">
                     <h2>Zero Instructions. Total Intuition.</h2>
-                    <p style="font-size: 1.25rem; line-height: 1.6; margin-top: 24px;">Mathematics is a physical reality. Our tools enforce a "No Words, No Directions" policy. The interface dictates the math.</p>
+                    <p style="font-size: 1.25rem; line-height: 1.6; margin-top: 24px;">Mathematics is a physical reality to be experienced. Our tools enforce a "No Words, No Directions" policy. The interface dictates the math.</p>
                 </div>
             </div>
         </div>
@@ -120,12 +126,12 @@
             <header>
                 <div class="brand-logo-nav" onclick="openView('view-hub', true)">MATH THINGS.</div>
                 <nav class="domain-nav">
-                    <button class="domain-btn" data-dom-target="cc" onclick="toggleFilter('domain', 'cc', this)">CC</button>
-                    <button class="domain-btn" data-dom-target="nbt" onclick="toggleFilter('domain', 'nbt', this)">NBT</button>
-                    <button class="domain-btn" data-dom-target="oa" onclick="toggleFilter('domain', 'oa', this)">OA</button>
-                    <button class="domain-btn" data-dom-target="nf" onclick="toggleFilter('domain', 'nf', this)">NF</button>
-                    <button class="domain-btn" data-dom-target="md" onclick="toggleFilter('domain', 'md', this)">MD</button>
-                    <button class="domain-btn" data-dom-target="g" onclick="toggleFilter('domain', 'g', this)">G</button>
+                    <button class="domain-btn" data-dom-target="cc" onclick="switchDomain('cc')">CC</button>
+                    <button class="domain-btn" data-dom-target="nbt" onclick="switchDomain('nbt')">NBT</button>
+                    <button class="domain-btn" data-dom-target="oa" onclick="switchDomain('oa')">OA</button>
+                    <button class="domain-btn" data-dom-target="nf" onclick="switchDomain('nf')">NF</button>
+                    <button class="domain-btn" data-dom-target="md" onclick="switchDomain('md')">MD</button>
+                    <button class="domain-btn" data-dom-target="g" onclick="switchDomain('g')">G</button>
                 </nav>
             </header>
 
@@ -147,12 +153,10 @@
             <div id="ep-title" style="font-size: 2.5rem; font-weight: 900;"></div>
             <div id="ep-desc" style="color: var(--text-gray);"></div>
         </div>
-        <div class="plate-body">
-            <div class="plate-guide" style="padding: 40px; overflow-y: auto;">
-                <p id="ep-pedagogy-content" style="line-height: 1.6; font-size: 1.1rem;"></p>
-            </div>
-            <div class="plate-sandbox" style="width: 400px; background: var(--bg-center); padding: 40px; display: flex; flex-direction: column; align-items: center;">
-                <div class="simulated-tablet">
+        <div class="plate-body" style="display: flex; flex: 1;">
+            <div id="ep-pedagogy-content" style="flex: 1; padding: 40px; overflow-y: auto;"></div>
+            <div style="width: 400px; background: var(--bg-center); padding: 40px; display: flex; flex-direction: column; align-items: center;">
+                <div class="simulated-tablet" style="width: 280px; height: 280px; border-radius: 24px; background: #111; border: 4px solid var(--alum-base); transform: rotateX(15deg) rotateY(-5deg); box-shadow: 20px 40px 40px -10px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
                     <div id="ep-tool-bead" style="width: 40px; height: 40px; border-radius: 50%; margin-bottom: 20px;"></div>
                     <div id="ep-tool-name" style="color: white; font-weight: 800;"></div>
                 </div>
@@ -163,84 +167,112 @@
 
     <script>
         let currentView = 'view-hub';
-        let currentDomain = 'all';
+        let currentDomain = 'nbt';
         let currentGrade = 'all';
         let isDeckTucked = false;
 
         const appsData = [
-            { id: "geo-lab", title: "Geo Lab", strand: "system", grades: ["G3", "G4", "G5"], url: "geo-lab.html" },
-            { id: "area-excavator", title: "Area Excavator", strand: "basic", grades: ["G3", "G4", "G5"], url: "area-excavator.html" },
-            { id: "array-architect", title: "Array Architect", strand: "advanced", grades: ["G2", "G3", "G4"], url: "array-architect.html" },
-            { id: "array-builder", title: "Array Builder", strand: "advanced", grades: ["G2", "G3", "G4"], url: "array-builder.html" },
-            { id: "decimal-order", title: "Decimal Order", strand: "basic", grades: ["G4", "G5"], url: "decimal-order.html" },
-            { id: "fraction-lab", title: "Fraction Lab", strand: "system", grades: ["G3", "G4", "G5"], url: "fraction-lab.html" },
-            { id: "lego-fractions", title: "Lego Fractions", strand: "advanced", grades: ["G3", "G4", "G5"], url: "lego-fractions.html" },
-            { id: "long-division-buddy", title: "Long Division Buddy", strand: "advanced", grades: ["G4", "G5"], url: "long-division-buddy.html" },
-            { id: "number-bond", title: "Number Bond", strand: "basic", grades: ["K", "G1", "G2"], url: "number-bond.html" },
-            { id: "number-line", title: "Number Line", strand: "sense", grades: ["K", "G1", "G2", "G3", "G4", "G5"], url: "number-line.html" },
-            { id: "place-value-blocks", title: "Place Value Blocks", strand: "system", grades: ["K", "G1", "G2"], url: "place-value-blocks.html" },
-            { id: "place-value-cards", title: "Place Value Cards", strand: "sense", grades: ["K", "G1", "G2", "G3"], url: "place-value-cards.html" },
-            { id: "prime-altar", title: "Prime Altar", strand: "system", grades: ["G4", "G5"], url: "prime-altar.html" },
-            { id: "rekenrek", title: "Rekenrek", strand: "sense", grades: ["K", "G1", "G2"], url: "rekenrek.html" },
-            { id: "rounding-waves", title: "Rounding Waves", strand: "sense", grades: ["G3", "G4"], url: "rounding-waves.html" },
-            { id: "sentences", title: "Sentences", strand: "basic", grades: ["K", "G1", "G2"], url: "sentences.html" },
-            { id: "ten-frame", title: "Ten Frame", strand: "sense", grades: ["K", "G1"], url: "ten-frame.html" },
-            { id: "walker-ellie", title: "Walker Ellie", strand: "basic", grades: ["K", "G1", "G2"], url: "walker-ellie.html" },
-            { id: "zooming-number-line", title: "Zooming Number Line", strand: "sense", grades: ["G3", "G4", "G5"], url: "zooming-number-line.html" }
+            { id: "app-cc-stage", title: "Counting Stage", url: "counting-stage.html", strand: "system", grades: ["K"] },
+            { id: "app-cc-writing", title: "Numeral Scribe", url: "numeral-scribe.html", strand: "sense", grades: ["K"] },
+            { id: "app-cc-cardinality", title: "The Matcher", url: "the-matcher.html", strand: "basic", grades: ["K"] },
+            { id: "app-nbt-blocks", title: "Base Ten Blocks", url: "place-value-blocks.html", strand: "system", grades: ["K", "G1", "G2"] },
+            { id: "app-nbt-line", title: "Zoom Line", url: "zooming-number-line.html", strand: "sense", grades: ["G1", "G2"] },
+            { id: "app-nbt-ops", title: "Standard Flow", url: "standard-flow.html", strand: "basic", grades: ["G1", "G2", "G3", "G4"] },
+            { id: "app-nbt-advanced", title: "Area Multiplier", url: "area-multiplier.html", strand: "advanced", grades: ["G3", "G4", "G5"] },
+            { id: "app-nbt-rounding", title: "Boundary Tool", url: "rounding-waves.html", strand: "sense", grades: ["G3", "G4", "G5"] },
+            { id: "app-oa-balancer", title: "Equation Balancer", url: "equation-balancer.html", strand: "sense", grades: ["K", "G1", "G3"] },
+            { id: "app-oa-arrays", title: "Array Builder", url: "array-builder.html", strand: "advanced", grades: ["G2", "G3", "G4"] },
+            { id: "app-oa-patterns", title: "Pattern Engine", url: "pattern-engine.html", strand: "system", grades: ["G3", "G4", "G5"] },
+            { id: "app-nf-bars", title: "Fraction Bars", url: "fraction-lab.html", strand: "system", grades: ["G3", "G4", "G5"] },
+            { id: "app-nf-add", title: "The Slicer", url: "the-slicer.html", strand: "basic", grades: ["G4", "G5"] },
+            { id: "app-nf-mult", title: "Transparent Grids", url: "lego-fractions.html", strand: "advanced", grades: ["G4", "G5"] },
+            { id: "app-md-ruler", title: "Digital Ruler", url: "digital-ruler.html", strand: "basic", grades: ["K", "G1", "G2", "G3"] },
+            { id: "app-md-clock", title: "Relational Clock", url: "relational-clock.html", strand: "sense", grades: ["G1", "G2", "G3"] },
+            { id: "app-md-vol", url: "liquid-balance.html", title: "Liquid Balance", strand: "advanced", grades: ["G3", "G4", "G5"] },
+            { id: "app-g-shapes", url: "pattern-blocks.html", title: "Pattern Blocks", strand: "advanced", grades: ["K", "G1", "G2"] },
+            { id: "app-g-coord", url: "geo-lab.html", title: "Precision Vault", strand: "system", grades: ["G5"] }
         ];
 
-        // Drawer Tucking with GSAP
-        document.getElementById('deckHandle').addEventListener('click', () => {
-            isDeckTucked = !isDeckTucked;
-            gsap.to('#toolDeck', {
-                y: isDeckTucked ? 150 : 0,
-                duration: 0.6,
-                ease: "elastic.out(1, 0.75)"
-            });
-        });
+        const allStandards = {
+            cc: [
+                { id: "K.CC.A.1", grade: "k", strand: "system", desc: "Count to 100 by 1s/10s.", apps: ["app-cc-stage"] },
+                { id: "K.CC.B.5", grade: "k", strand: "basic", desc: "Count up to 20 objects.", apps: ["app-cc-cardinality"] }
+            ],
+            nbt: [
+                { id: "1.NBT.B.2.a", grade: "g1", strand: "system", desc: "10 ones = 1 ten.", apps: ["app-nbt-blocks"] },
+                { id: "3.NBT.A.1", grade: "g3", strand: "sense", desc: "Round to nearest 10/100.", apps: ["app-nbt-rounding"] }
+            ],
+            oa: [{ id: "3.OA.A.1", grade: "g3", strand: "advanced", desc: "Interpret mult.", apps: ["app-oa-arrays"] }],
+            nf: [{ id: "4.NF.A.1", grade: "g4", strand: "system", desc: "Explain fraction equivalence.", apps: ["app-nf-bars"] }],
+            md: [{ id: "2.MD.C.7", grade: "g2", strand: "sense", desc: "Tell time: nearest 5 mins.", apps: ["app-md-clock"] }],
+            g: [{ id: "1.G.A.2", grade: "g1", strand: "advanced", desc: "Compose 2D/3D composite shapes.", apps: ["app-g-shapes"] }]
+        };
 
-        function openView(targetId, isBack = false) {
+        // UI Routing & Filtering
+        function openView(targetId) {
             document.getElementById(currentView).classList.remove('active');
             document.getElementById(targetId).classList.add('active');
             currentView = targetId;
         }
 
-        function openBraid(domain) {
-            currentDomain = domain;
+        function switchDomain(domainKey) {
+            currentDomain = domainKey;
             document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.querySelector(`.domain-btn[data-dom-target="${domain}"]`);
-            if (btn) btn.classList.add('active');
-            applyFilters(); openView('view-braid');
+            document.querySelector(`[data-dom-target="${domainKey}"]`).classList.add('active');
+            renderBraid();
         }
 
         function toggleFilter(type, value, btn) {
-            if (type === 'domain') {
-                currentDomain = btn.classList.contains('active') ? 'all' : value;
-                document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
-            } else {
-                currentGrade = btn.classList.contains('active') ? 'all' : value;
-                document.querySelectorAll('.grade-marker').forEach(b => b.classList.remove('active'));
-            }
-            if (btn && (currentDomain !== 'all' || currentGrade !== 'all')) btn.classList.add('active');
-            applyFilters();
+            currentGrade = currentGrade === value ? 'all' : value;
+            document.querySelectorAll('.grade-marker').forEach(b => b.classList.remove('active'));
+            if (currentGrade !== 'all') btn.classList.add('active');
+            renderBraid();
         }
 
-        function applyFilters() {
-            document.querySelectorAll('.grid-cell, .grade-marker').forEach(el => {
-                const row = el.getAttribute('data-row');
-                if (currentGrade === 'all' || row === currentGrade) el.classList.remove('hidden-row');
-                else el.classList.add('hidden-row');
-            });
-            renderApps();
-        }
+        // Tucking Drawer
+        document.getElementById('deckHandle').addEventListener('click', () => {
+            isDeckTucked = !isDeckTucked;
+            gsap.to('#toolDeck', { y: isDeckTucked ? 150 : 0, duration: 0.6, ease: "elastic.out(1, 0.75)" });
+        });
 
-        function renderApps() {
+        function renderBraid() {
+            const grid = document.getElementById('matrixGrid');
             const toolDeck = document.getElementById('toolDeck');
-            // Preserve the handle
             const handle = document.getElementById('deckHandle');
+            grid.innerHTML = '';
             toolDeck.innerHTML = '';
             toolDeck.appendChild(handle);
-            
+
+            const strands = { system: 2, sense: 3, basic: 4, advanced: 5 };
+            Object.keys(strands).forEach(key => {
+                grid.insertAdjacentHTML('beforeend', `
+                    <div class="track-bg" style="grid-column: ${strands[key]};">
+                        <div class="strand-label" data-strand="${key}">${key.toUpperCase()}</div>
+                        <div class="milled-groove"><div class="color-line" data-strand="${key}"></div></div>
+                    </div>`);
+            });
+
+            ['k','g1','g2','g3','g4','g5'].forEach((g, i) => {
+                const row = i + 2;
+                grid.insertAdjacentHTML('beforeend', `
+                    <button class="grade-marker ${currentGrade === g ? 'active' : ''}" data-row="${g}" style="grid-row: ${row};" onclick="toggleFilter('grade', '${g}', this)">${g.toUpperCase()}</button>`);
+                
+                Object.keys(strands).forEach(s => {
+                    const cellStds = (allStandards[currentDomain] || []).filter(std => std.grade === g && std.strand === s);
+                    if (cellStds.length > 0 && (currentGrade === 'all' || currentGrade === g)) {
+                        let html = `<div class="grid-cell" style="grid-column: ${strands[s]}; grid-row: ${row};">`;
+                        cellStds.forEach(std => {
+                            html += `<div class="node" data-apps="${std.apps.join(',')}" data-title="${std.id}" data-desc="${std.desc}" onclick="triggerPlate(this)">
+                                <div style="font-size: 0.6rem; font-weight: 800;">${std.id}</div>
+                                <div style="font-size: 0.85rem; font-weight: 700;">${std.desc}</div>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                        grid.insertAdjacentHTML('beforeend', html);
+                    }
+                });
+            });
+
             appsData.forEach(app => {
                 const gradeMatch = currentGrade === 'all' || app.grades.includes(currentGrade.toUpperCase());
                 toolDeck.insertAdjacentHTML('beforeend', `
@@ -249,8 +281,30 @@
                             <div class="tool-bead" style="background: var(--strand-${app.strand});"></div>
                             <div class="app-title">${app.title}</div>
                         </div>
-                    </a>
-                `);
+                    </a>`);
+            });
+        }
+
+        function triggerPlate(node) {
+            const rect = node.getBoundingClientRect();
+            const plate = document.getElementById('expandedPlate');
+            const app = appsData.find(a => a.id === node.getAttribute('data-apps').split(',')[0]);
+            
+            document.getElementById('ep-title').textContent = node.getAttribute('data-title');
+            document.getElementById('ep-desc').textContent = node.getAttribute('data-desc');
+            document.getElementById('ep-tool-name').textContent = app.title;
+            document.getElementById('ep-tool-bead').style.background = `var(--strand-${app.strand})`;
+            document.getElementById('launch-app-btn').onclick = () => window.location.href = app.url;
+
+            plate.style.transition = 'none';
+            plate.style.top = rect.top + 'px'; plate.style.left = rect.left + 'px';
+            plate.style.width = rect.width + 'px'; plate.style.height = rect.height + 'px';
+            plate.style.opacity = '1';
+            
+            requestAnimationFrame(() => {
+                plate.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                document.getElementById('plateBackdrop').classList.add('active');
+                plate.classList.add('active');
             });
         }
 
@@ -260,14 +314,9 @@
             document.getElementById('expandedPlate').style.opacity = '0';
         }
 
-        // Initialize Grid Markers
-        const matrixGrid = document.getElementById('matrixGrid');
-        ['k', 'g1', 'g2', 'g3', 'g4', 'g5'].forEach((g, i) => {
-            matrixGrid.insertAdjacentHTML('beforeend', `
-                <button class="grade-marker" data-row="${g}" style="grid-row: ${i+2};" onclick="toggleFilter('grade', '${g}', this)">${g.toUpperCase()}</button>`);
-        });
+        function openBraid(domain) { switchDomain(domain); openView('view-braid'); }
 
-        renderApps();
+        renderBraid();
     </script>
 </body>
 </html>
