@@ -5,272 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Math Things. | Curriculum Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root {
-            /* Core Palette */
-            --bg-center: #F5F5F7;
-            --bg-edge: #D1D1D6;
-            --alum-base: #E8E9ED;
-            --surface: #FFFFFF;
-            --text-main: #1D1D1F;
-            --text-gray: #7A7D8A;
-            --text-light: #AEAEB2;
-            
-            /* Strand Colors */
-            --strand-system:    #7B00FF; 
-            --strand-sense:     #DC143C; 
-            --strand-basic:     #4CBB17; 
-            --strand-advanced:  #FF9F0A; 
-
-            /* Domain Colors (Mapped to Brand Palette) */
-            --dom-cc:  #FF9F0A; 
-            --dom-nbt: #0A84FF; 
-            --dom-oa:  #FF375F; 
-            --dom-nf:  #30D158; 
-            --dom-md:  #BF5AF2; 
-            --dom-g:   #5E5CE6; 
-
-            /* Grade Colors */
-            --brand-k:  #64D2FF; 
-            --brand-g1: #DC143C; 
-            --brand-g2: #4169E1; 
-            --brand-g3: #FFD700; 
-            --brand-g4: #4CBB17; 
-            --brand-g5: #CF3476; 
-
-            /* Braid Shadows */
+            --bg-center: #F5F5F7; --bg-edge: #D1D1D6; --alum-base: #E8E9ED; --surface: #FFFFFF;
+            --text-main: #1D1D1F; --text-gray: #7A7D8A; --text-light: #AEAEB2;
+            --strand-system: #7B00FF; --strand-sense: #DC143C; --strand-basic: #4CBB17; --strand-advanced: #FF9F0A;
+            --dom-cc: #FF9F0A; --dom-nbt: #0A84FF; --dom-oa: #FF375F; --dom-nf: #30D158; --dom-md: #BF5AF2; --dom-g: #5E5CE6;
+            --brand-k: #64D2FF; --brand-g1: #DC143C; --brand-g2: #4169E1; --brand-g3: #FFD700; --brand-g4: #4CBB17; --brand-g5: #CF3476;
             --raised: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.9);
             --milled: inset 3px 3px 6px rgba(166, 171, 189, 0.9), inset -3px -3px 6px rgba(255, 255, 255, 1);
             --glass: rgba(245, 245, 247, 0.85);
-
-            /* Homepage Heavy "Pizza Steel" Shadows */
-            --hub-raised: 16px 16px 32px rgba(166, 171, 189, 0.4), -16px -16px 32px rgba(255, 255, 255, 0.9), inset 2px 2px 4px rgba(255,255,255,0.8), inset -4px -4px 8px rgba(0,0,0,0.15);
-            --hub-raised-hover: 24px 24px 48px rgba(166, 171, 189, 0.45), -20px -20px 40px rgba(255, 255, 255, 1), inset 2px 2px 4px rgba(255,255,255,0.9), inset -4px -4px 8px rgba(0,0,0,0.15);
+            --hub-raised: 16px 16px 32px rgba(166, 171, 189, 0.4), -16px -16px 32px rgba(255, 255, 255, 0.9);
             --hub-depressed: inset 6px 6px 16px rgba(0, 0, 0, 0.25), inset -6px -6px 16px rgba(255, 255, 255, 0.6);
-            --hub-milled-track: inset 3px 3px 6px rgba(166, 171, 189, 0.8), inset -3px -3px 6px rgba(255, 255, 255, 1);
             --scale: 1;
         }
 
         @media (max-width: 1400px) { :root { --scale: 0.85; } }
         @media (max-width: 1000px) { :root { --scale: 0.65; } }
-        @media (max-height: 850px) { :root { --scale: 0.75; } }
-
-        [data-domain="cc"]  { --node-color: var(--dom-cc); }
-        [data-domain="nbt"] { --node-color: var(--dom-nbt); }
-        [data-domain="oa"]  { --node-color: var(--dom-oa); }
-        [data-domain="nf"]  { --node-color: var(--dom-nf); }
-        [data-domain="md"]  { --node-color: var(--dom-md); }
-        [data-domain="g"]   { --node-color: var(--dom-g); }
-        [data-strand="system"]   { --strand-color: var(--strand-system); }
-        [data-strand="sense"]    { --strand-color: var(--strand-sense); }
-        [data-strand="basic"]    { --strand-color: var(--strand-basic); }
-        [data-strand="advanced"] { --strand-color: var(--strand-advanced); }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Lexend', sans-serif; background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-edge) 150%); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
 
-        body {
-            font-family: 'Lexend', sans-serif;
-            background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-edge) 150%);
-            color: var(--text-main);
-            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
-            -webkit-font-smoothing: antialiased; position: relative;
-        }
-
-        /* ── SPA VIEW ROUTING ── */
         main { flex: 1; position: relative; }
-        
-        .view {
-            position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
-            padding: 40px 24px; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            opacity: 0; pointer-events: none; transform: scale(0.95); scrollbar-width: none;
-        }
-        .view::-webkit-scrollbar { display: none; }
+        .view { position: absolute; inset: 0; padding: 40px 24px; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0; pointer-events: none; transform: scale(0.95); overflow-y: auto; scrollbar-width: none; }
         .view.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
-        .view.zoom-out { transform: scale(1.05); opacity: 0; }
-        .view.zoom-in { transform: scale(0.95); opacity: 0; }
-
         #view-braid { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* =========================================
-           VIEW 0: HUB (HOMEPAGE CONSTELLATION)
-           ========================================= */
+        /* HUB COMPONENTS */
         .gallery-wrapper { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; min-height: 800px; min-width: 1200px; }
-        .ambient-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(232,233,237,0) 70%); pointer-events: none; z-index: 0; }
-        .spoke { position: absolute; bottom: 50%; left: 50%; width: calc(12px * var(--scale)); height: calc(var(--radius) * var(--scale)); transform-origin: bottom center; transform: translateX(-50%) rotate(var(--angle)); background: var(--alum-base); box-shadow: var(--hub-milled-track); border-radius: calc(6px * var(--scale)); z-index: 1; }
-        .hub-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; width: calc(280px * var(--scale)); height: calc(280px * var(--scale)); border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.2) 30%, transparent 70%), linear-gradient(135deg, #fdfdfd 0%, #d0d0d5 40%, #b5b6be 60%, #e8e9ed 100%); box-shadow: inset 3px 3px 8px rgba(255,255,255,0.9), inset -6px -6px 16px rgba(0,0,0,0.15), 0 24px 48px rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease; text-align: center; }
-        .hub-center:hover { transform: translate(-50%, -50%) scale(1.02); box-shadow: inset 3px 3px 8px rgba(255,255,255,0.9), inset -6px -6px 16px rgba(0,0,0,0.15), 0 32px 64px rgba(0,0,0,0.3); }
-        .hub-center:active { transform: translate(-50%, -50%) scale(0.98); }
-        .hub-center-title { font-weight: 900; font-size: calc(2.6rem * var(--scale)); letter-spacing: -0.05em; color: #2D2D35; text-shadow: 0px 2px 2px rgba(255,255,255,0.9); line-height: 1; z-index: 21; white-space: nowrap; }
+        .hub-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; width: calc(280px * var(--scale)); height: calc(280px * var(--scale)); border-radius: 50%; background: linear-gradient(135deg, #fdfdfd 0%, #d0d0d5 100%); box-shadow: 0 24px 48px rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center; }
+        .hub-center-title { font-weight: 900; font-size: calc(2.6rem * var(--scale)); letter-spacing: -0.05em; color: #2D2D35; }
 
         .node-assembly { position: absolute; top: 50%; left: 50%; }
-        .domain-plate { position: absolute; z-index: 10; opacity: 1; background: linear-gradient(135deg, #f4f4f6 0%, #e2e3e7 50%, #cbccd2 100%); box-shadow: var(--hub-raised); border-radius: calc(32px * var(--scale)); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%); }
-        .domain-plate:hover { transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, calc(-50% - 12px)) scale(1.02); box-shadow: var(--hub-raised-hover); }
-        .domain-plate:active { transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%) scale(0.98); box-shadow: var(--hub-depressed); }
-        
-        .plate-acronym { font-weight: 900; letter-spacing: -0.05em; line-height: 1; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.15); }
-        .plate-title { font-weight: 800; font-size: calc(0.95rem * var(--scale)); color: var(--text-gray); text-transform: uppercase; letter-spacing: 2px; }
+        .domain-plate { position: absolute; background: linear-gradient(135deg, #f4f4f6 0%, #cbccd2 100%); box-shadow: var(--hub-raised); border-radius: calc(32px * var(--scale)); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transform: rotate(var(--angle)) translateY(calc((var(--radius) * var(--scale)) * -1)) rotate(calc(var(--angle) * -1)) translate(-50%, -50%); }
 
-        .plate-oa { padding: calc(36px * var(--scale)) calc(52px * var(--scale)); } .plate-oa .plate-acronym { font-size: calc(4rem * var(--scale)); color: var(--dom-oa); }
-        .plate-cc { padding: calc(24px * var(--scale)) calc(32px * var(--scale)); border-radius: calc(24px * var(--scale)); } .plate-cc .plate-acronym { font-size: calc(2.8rem * var(--scale)); color: var(--dom-cc); }
-        .plate-g { padding: calc(36px * var(--scale)) calc(48px * var(--scale)); } .plate-g .plate-acronym { font-size: calc(3.6rem * var(--scale)); color: var(--dom-g); }
-        .plate-nbt { padding: calc(48px * var(--scale)) calc(68px * var(--scale)); } .plate-nbt .plate-acronym { font-size: calc(4.8rem * var(--scale)); color: var(--dom-nbt); }
-        .plate-nf { padding: calc(40px * var(--scale)) calc(56px * var(--scale)); } .plate-nf .plate-acronym { font-size: calc(4.2rem * var(--scale)); color: var(--dom-nf); }
-        .plate-md { padding: calc(32px * var(--scale)) calc(44px * var(--scale)); } .plate-md .plate-acronym { font-size: calc(3.4rem * var(--scale)); color: var(--dom-md); }
-
-        /* =========================================
-           VIEW 1: MISSION
-           ========================================= */
-        .detail-container { max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
-        .hardware-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--text-gray); background: var(--alum-base); box-shadow: var(--hub-raised); border: none; border-radius: 20px; padding: 12px 24px; cursor: pointer; transition: all 0.2s; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
-        .hardware-btn:active { box-shadow: var(--hub-depressed); transform: scale(0.96); }
-        .hardware-btn.primary { background: var(--text-main); color: var(--surface); box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 0; padding: 16px 32px; font-size: 1rem; width: 100%; }
-        .hardware-btn.primary:active { box-shadow: inset 0 4px 8px rgba(0,0,0,0.4); }
-
-        .detail-title { font-size: 3.5rem; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 8px; color: var(--text-main); text-shadow: 1px 1px 0 #fff; }
-        .detail-subtitle { font-size: 1.2rem; color: var(--text-gray); margin-bottom: 48px; font-weight: 600; }
-        .mission-statement { background: var(--alum-base); box-shadow: var(--hub-depressed); border-radius: 32px; padding: 48px; text-align: center; }
-        .mission-statement h2 { font-size: 2.2rem; font-weight: 900; margin-bottom: 24px; letter-spacing: -0.04em; }
-        .mission-statement p { font-size: 1.25rem; line-height: 1.6; color: var(--text-gray); font-weight: 400; margin-bottom: 20px; }
-
-        /* =========================================
-           VIEW 2: MASTER BRAID DASHBOARD
-           ========================================= */
+        /* BRAID HEADER */
         header { flex-shrink: 0; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; background: var(--glass); backdrop-filter: blur(20px); z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .brand-logo-nav { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.02em; cursor: pointer; transition: 0.2s; }
-        .brand-logo-nav:hover { opacity: 0.6; }
-        
-        .domain-nav { display: flex; background: var(--alum-base); padding: 4px; border-radius: 12px; box-shadow: var(--milled); gap: 4px; overflow-x: auto; }
-        .domain-btn { border: none; background: transparent; padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 0.65rem; font-weight: 800; color: var(--text-gray); cursor: pointer; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); white-space: nowrap; }
-        .domain-btn.active { background: #E0E0E5; box-shadow: var(--milled); transform: scale(0.96) translateY(1px); color: var(--text-main); }
-        .domain-btn[data-dom-target="cc"].active { color: var(--dom-cc); }
-        .domain-btn[data-dom-target="nbt"].active { color: var(--dom-nbt); }
-        .domain-btn[data-dom-target="oa"].active { color: var(--dom-oa); }
-        .domain-btn[data-dom-target="nf"].active { color: var(--dom-nf); }
-        .domain-btn[data-dom-target="md"].active { color: var(--dom-md); }
-        .domain-btn[data-dom-target="g"].active { color: var(--dom-g); }
+        .domain-nav { display: flex; background: var(--alum-base); padding: 4px; border-radius: 12px; box-shadow: var(--milled); gap: 4px; }
+        .domain-btn { border: none; background: transparent; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.65rem; cursor: pointer; }
+        .domain-btn.active { background: #E0E0E5; box-shadow: var(--milled); color: var(--text-main); }
 
+        /* MATRIX GRID */
         .dashboard-body { flex: 1; display: flex; overflow: hidden; position: relative; }
-        .map-zone { flex: 1; height: 100%; overflow: auto; padding: 20px 40px 240px 20px; position: relative; }
+        .map-zone { flex: 1; height: 100%; overflow: auto; padding: 20px 40px 240px 20px; }
+        .matrix-grid { display: grid; grid-template-columns: 80px repeat(4, minmax(260px, 1fr)); gap: 40px 24px; position: relative; width: 100%; max-width: 1500px; margin: 0 auto; }
+        .grade-marker { grid-column: 1; padding: 16px 20px; border-radius: 20px; font-weight: 900; font-size: 1.8rem; color: var(--text-gray); cursor: pointer; background: transparent; border: none; box-shadow: var(--raised); }
+        .hidden-row { display: none !important; }
 
-        /* The Grid */
-        .matrix-grid { display: grid; grid-template-columns: 80px repeat(4, minmax(260px, 1fr)); gap: 40px 24px; position: relative; width: 100%; padding-right: 40px; margin: 0 auto; max-width: 1500px; }
-        .track-bg { grid-row: 1 / span 8; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 0; }
-        .strand-label { position: sticky; top: 10px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--strand-color); background: var(--bg-center); padding: 8px 12px; border-radius: 20px; margin-bottom: 20px; z-index: 50; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .milled-groove { width: 14px; flex: 1; background: var(--alum-base); box-shadow: var(--milled); border-radius: 7px; position: relative; }
-        .color-line { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; background: var(--strand-color); opacity: 0.2; }
-
-        .grade-marker { grid-column: 1; align-self: start; justify-self: end; margin-top: 10px; border: none; background: transparent; padding: 16px 20px; border-radius: 20px; font-family: inherit; font-size: 1.8rem; font-weight: 900; color: var(--text-gray); cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: right; box-shadow: var(--raised); }
-        .grade-marker:hover { transform: translateY(-2px); box-shadow: 10px 10px 20px rgba(166,171,189,0.4), -10px -10px 20px rgba(255,255,255,0.9); }
-        .grade-marker.active { background: #E0E0E5; box-shadow: var(--milled); transform: scale(0.95); color: var(--text-main); }
-        .grade-marker[data-grade-target="k"].active { color: var(--brand-k); }
-        .grade-marker[data-grade-target="g1"].active { color: var(--brand-g1); }
-        .grade-marker[data-grade-target="g2"].active { color: var(--brand-g2); }
-        .grade-marker[data-grade-target="g3"].active { color: var(--brand-g3); }
-        .grade-marker[data-grade-target="g4"].active { color: var(--brand-g4); }
-        .grade-marker[data-grade-target="g5"].active { color: var(--brand-g5); }
-
-        .grade-marker.hidden-row, .grid-cell.hidden-row { display: none !important; }
-        .node.domain-dimmed, .app-card.domain-dimmed { opacity: 0.15 !important; filter: grayscale(0.8) !important; pointer-events: none; box-shadow: none !important; transform: scale(0.98); }
-        .grid-cell { display: flex; flex-direction: column; gap: 12px; z-index: 10; }
-
-        /* Node Styling */
-        .map-zone.is-spotlighting .node:not(.spotlight-active):not(.primary-selected):not(.is-animating) { opacity: 0.15; filter: grayscale(0.6); transform: scale(0.98); box-shadow: none; border-color: transparent; }
-        .map-zone.is-hover-spotlighting .node:not(.hover-spotlight) { opacity: 0.15; filter: grayscale(0.6); transform: scale(0.98); box-shadow: none; border-color: transparent; }
-        
-        .node { background: var(--alum-base); box-shadow: var(--raised); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-left: 4px solid var(--node-color); position: relative; cursor: pointer; }
-        .node.spotlight-active:not(.primary-selected), .node.hover-spotlight { box-shadow: var(--raised), 0 0 0 2px var(--node-color); transform: scale(1.02); z-index: 10; }
-        .node.primary-selected { box-shadow: var(--milled); transform: scale(0.96) translateY(2px); background: #E0E0E5; border-left-width: 8px; z-index: 50; }
-        
-        /* Visually hide the original node when the FLIP clone is active */
-        .node.is-animating { opacity: 0 !important; pointer-events: none; }
-
-        .node-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-        .friendly-title { font-size: 0.9rem; font-weight: 800; color: var(--text-main); line-height: 1.1; transition: 0.3s; flex: 1; }
-        .badges-container { display: flex; gap: 4px; align-items: center; }
-        .dom-badge { font-size: 0.5rem; font-weight: 900; letter-spacing: 0.5px; color: var(--node-color); background: rgba(0,0,0,0.04); padding: 3px 6px; border-radius: 4px; }
-        .cc-badge { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.5px; background: rgba(0,0,0,0.05); padding: 3px 6px; border-radius: 4px; color: var(--text-gray); transition: 0.3s; white-space: nowrap; }
-        .std-desc { font-size: 0.8rem; font-weight: 500; color: var(--text-gray); line-height: 1.3; transition: 0.3s; }
-        .sub { margin-left: 15px; border-left-width: 2px; border-radius: 8px; padding: 10px 12px; opacity: 0.85; }
-
-        /* The Floating Tool Deck */
-        .tool-deck { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 80px); max-width: 1400px; height: 180px; background: rgba(245, 245, 247, 0.7); backdrop-filter: blur(40px); border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.4); display: flex; align-items: center; padding: 0 24px; gap: 16px; z-index: 500; overflow-x: auto; scroll-behavior: smooth; }
-        .tool-deck.is-spotlighting .app-card:not(.levitated) { opacity: 0.4; transform: scale(0.95) translateY(5px); box-shadow: var(--milled); filter: grayscale(0.5); background: #E0E0E5; }
-        .app-card { flex: 0 0 auto; width: 140px; height: 140px; background: var(--alum-base); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--raised); cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style: preserve-3d; position: relative; perspective: 800px; }
-        .app-card:hover { transform: translateY(-5px); box-shadow: 0 16px 24px rgba(166,171,189,0.4), inset 0 1px 2px #fff; }
-        .app-card.levitated { transform: translateY(-25px) rotateX(15deg) scale(1.05); box-shadow: 0 30px 40px -15px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.9); background: #FAFAFC; z-index: 100; }
-        .tool-bead { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #efefef 0%, #a8a8a8 50%, #e0e0e0 100%); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), 0 2px 5px rgba(0,0,0,0.22); }
-        .app-title { font-size: 0.85rem; font-weight: 800; line-height: 1.2; color: var(--text-main); }
-        .alignment-badge { display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; background: var(--surface); color: var(--text-main); padding: 4px 0; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); width: 100%; }
-
-        /* =========================================
-           EXPANDED METAL PLATE (FLIP MODAL)
-           ========================================= */
-        .plate-backdrop {
-            position: fixed; inset: 0; z-index: 1000;
-            background: rgba(245, 245, 247, 0.4); backdrop-filter: blur(12px);
-            opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        /* APP DECK (DRAGGABLE/TUCKABLE) */
+        .tool-deck { 
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%) translateY(0); 
+            width: calc(100% - 80px); max-width: 1400px; height: 180px; 
+            background: rgba(245, 245, 247, 0.7); backdrop-filter: blur(40px); 
+            border-radius: 24px 24px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); 
+            border: 1px solid rgba(255,255,255,0.4); border-bottom: none;
+            display: flex; align-items: center; padding: 0 24px; gap: 16px; z-index: 500; 
+            overflow-x: auto; scrollbar-width: none;
         }
+        
+        /* Tactical Handle */
+        .deck-handle {
+            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 6px; border-radius: 3px;
+            background: linear-gradient(to bottom, #d1d1d6, #8e8e93);
+            box-shadow: inset 1px 1px 1px rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.2);
+            cursor: pointer; transition: background 0.2s;
+        }
+        .deck-handle:hover { background: linear-gradient(to bottom, #e5e5ea, #aeaeb2); }
+
+        .app-card { flex: 0 0 auto; width: 140px; height: 140px; background: var(--alum-base); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--raised); cursor: pointer; transition: 0.3s; }
+        .app-card:hover { transform: translateY(-5px); }
+        .tool-bead { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.22); }
+        .app-title { font-size: 0.85rem; font-weight: 800; color: var(--text-main); }
+
+        /* EXPANDED MODAL */
+        .plate-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(245, 245, 247, 0.4); backdrop-filter: blur(12px); opacity: 0; pointer-events: none; transition: 0.5s; }
         .plate-backdrop.active { opacity: 1; pointer-events: auto; }
-
-        .expanded-plate {
-            position: fixed; z-index: 1001; 
-            background: linear-gradient(135deg, #fdfdfd 0%, #e8e9ed 100%);
-            border-left: 8px solid var(--node-color, #1D1D1F);
-            border-radius: 24px; box-shadow: var(--hub-raised);
-            opacity: 0; pointer-events: none; 
-            /* Transition handles the smooth flight from grid rect to center screen */
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        
-        .expanded-plate.active {
-            /* Center Screen Target */
-            top: 5vh !important; left: 10vw !important; width: 80vw !important; height: 90vh !important;
-            opacity: 1; pointer-events: auto;
-        }
-
-        .plate-close-btn {
-            position: absolute; top: 24px; right: 24px; width: 40px; height: 40px; border-radius: 50%;
-            background: var(--alum-base); box-shadow: var(--raised); border: none; font-size: 1.2rem; font-weight: 900;
-            color: var(--text-gray); cursor: pointer; z-index: 100; transition: 0.2s;
-        }
-        .plate-close-btn:active { box-shadow: var(--depressed); transform: scale(0.95); }
-
-        .plate-header-area { padding: 40px 40px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; }
-        .plate-header-area .friendly-title { font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 12px; }
-        .plate-header-area .std-desc { font-size: 1.1rem; color: var(--text-gray); }
-
-        .plate-body { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Left Pane: Pedagogical Guide */
-        .plate-guide { flex: 1; overflow-y: auto; padding: 40px; border-right: 1px solid rgba(0,0,0,0.05); }
-        .guide-section { margin-bottom: 40px; }
-        .guide-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light); margin-bottom: 12px; }
-        .guide-content { font-size: 1.05rem; line-height: 1.6; color: var(--text-main); font-weight: 400; }
-        
-        .spiral-box { background: var(--alum-base); padding: 20px; border-radius: 16px; box-shadow: var(--milled); display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-        .spiral-row { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 600; color: var(--text-gray); }
-        .spiral-row span.badge { font-size: 0.6rem; padding: 4px 8px; border-radius: 4px; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text-main); font-weight: 800; }
-        
-        /* Right Pane: Tilted Sandbox Viewer */
-        .plate-sandbox { width: 400px; flex-shrink: 0; background: var(--bg-center); display: flex; flex-direction: column; padding: 40px; align-items: center; }
-        .hardware-stage { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1200px; width: 100%; }
-        
-        /* The Simulated Hardware Tool */
-        .simulated-tablet {
-            width: 280px; height: 280px; border-radius: 24px; background: #111;
-            /* Aggressive surface tilt */
-            transform: rotateX(15deg) rotateY(-5deg) translateZ(40px);
-            box-shadow: 20px 40px 40px -10px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
-            border: 4px solid var(--alum-base);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;
-        }
-        .simulated-screen-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 80%); }
-        .simulated-tool-bead { width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 20px var(--strand-color); margin-bottom: 20px; animation: pulse 2s infinite alternate; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 1; } }
-        
-        .simulated-text { color: white; font-weight: 800; font-size: 1.2rem; text-align: center; }
-
+        .expanded-plate { position: fixed; z-index: 1001; background: linear-gradient(135deg, #fdfdfd 0%, #e8e9ed 100%); border-radius: 24px; box-shadow: 0 40px 80px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; display: flex; flex-direction: column; overflow: hidden; }
+        .expanded-plate.active { top: 5vh !important; left: 10vw !important; width: 80vw !important; height: 90vh !important; opacity: 1; pointer-events: auto; }
+        .hardware-btn { padding: 12px 24px; border-radius: 20px; font-weight: 800; cursor: pointer; border: none; background: var(--alum-base); box-shadow: var(--hub-raised); text-transform: uppercase; }
+        .hardware-btn.primary { background: var(--text-main); color: #fff; width: 100%; }
     </style>
     <script src="coi-serviceworker.js"></script>
 </head>
@@ -280,24 +95,23 @@
         <div class="view active" id="view-hub">
             <div class="gallery-wrapper">
                 <div class="ambient-glow"></div>
-                <div class="node-assembly" style="--angle: 305deg; --radius: 500px;"><div class="spoke"></div><div class="domain-plate plate-oa" onclick="openBraid('oa')"><div class="plate-acronym">OA</div><div class="plate-title">Algebra</div></div></div>
-                <div class="node-assembly" style="--angle: 265deg; --radius: 360px;"><div class="spoke"></div><div class="domain-plate plate-cc" onclick="openBraid('cc')"><div class="plate-acronym">CC</div><div class="plate-title">Counting</div></div></div>
-                <div class="node-assembly" style="--angle: 220deg; --radius: 440px;"><div class="spoke"></div><div class="domain-plate plate-g" onclick="openBraid('g')"><div class="plate-acronym">G</div><div class="plate-title">Geometry</div></div></div>
-                <div class="node-assembly" style="--angle: 60deg; --radius: 480px;"><div class="spoke"></div><div class="domain-plate plate-nbt" onclick="openBraid('nbt')"><div class="plate-acronym">NBT</div><div class="plate-title">Base Ten</div></div></div>
-                <div class="node-assembly" style="--angle: 105deg; --radius: 420px;"><div class="spoke"></div><div class="domain-plate plate-nf" onclick="openBraid('nf')"><div class="plate-acronym">NF</div><div class="plate-title">Fractions</div></div></div>
-                <div class="node-assembly" style="--angle: 145deg; --radius: 400px;"><div class="spoke"></div><div class="domain-plate plate-md" onclick="openBraid('md')"><div class="plate-acronym">MD</div><div class="plate-title">Measurement</div></div></div>
+                <div class="node-assembly" style="--angle: 305deg; --radius: 500px;"><div class="domain-plate plate-oa" onclick="openBraid('oa')"><div class="plate-acronym">OA</div><div class="plate-title">Algebra</div></div></div>
+                <div class="node-assembly" style="--angle: 265deg; --radius: 360px;"><div class="domain-plate plate-cc" onclick="openBraid('cc')"><div class="plate-acronym">CC</div><div class="plate-title">Counting</div></div></div>
+                <div class="node-assembly" style="--angle: 220deg; --radius: 440px;"><div class="domain-plate plate-g" onclick="openBraid('g')"><div class="plate-acronym">G</div><div class="plate-title">Geometry</div></div></div>
+                <div class="node-assembly" style="--angle: 60deg; --radius: 480px;"><div class="domain-plate plate-nbt" onclick="openBraid('nbt')"><div class="plate-acronym">NBT</div><div class="plate-title">Base Ten</div></div></div>
+                <div class="node-assembly" style="--angle: 105deg; --radius: 420px;"><div class="domain-plate plate-nf" onclick="openBraid('nf')"><div class="plate-acronym">NF</div><div class="plate-title">Fractions</div></div></div>
+                <div class="node-assembly" style="--angle: 145deg; --radius: 400px;"><div class="domain-plate plate-md" onclick="openBraid('md')"><div class="plate-acronym">MD</div><div class="plate-title">Measurement</div></div></div>
                 <div class="hub-center" onclick="openView('view-mission')"><div class="hub-center-title">Math Things.</div></div>
             </div>
         </div>
 
         <div class="view" id="view-mission">
-            <div class="detail-container">
+            <div style="max-width: 800px; margin: 0 auto; padding-top: 100px;">
                 <button class="hardware-btn" onclick="openView('view-hub', true)">← Back to Hub</button>
-                <div class="detail-title">Math, in your hands.</div>
-                <div class="detail-subtitle">The Pedagogy of Physicality</div>
-                <div class="mission-statement">
+                <h1 style="font-size: 3.5rem; font-weight: 900; margin: 20px 0;">Math, in your hands.</h1>
+                <div style="background: var(--alum-base); padding: 48px; border-radius: 32px; box-shadow: var(--hub-depressed); text-align: center;">
                     <h2>Zero Instructions. Total Intuition.</h2>
-                    <p>We believe that mathematics is not a set of abstract rules to be memorized, but a physical reality to be experienced. Our tools enforce a "No Words, No Directions" policy. The boundaries of the interface dictate the boundaries of the math.</p>
+                    <p style="font-size: 1.25rem; line-height: 1.6; margin-top: 24px;">Mathematics is a physical reality. Our tools enforce a "No Words, No Directions" policy. The interface dictates the math.</p>
                 </div>
             </div>
         </div>
@@ -305,304 +119,155 @@
         <div class="view" id="view-braid">
             <header>
                 <div class="brand-logo-nav" onclick="openView('view-hub', true)">MATH THINGS.</div>
-                <div class="nav-cluster">
-                    <nav class="domain-nav">
-                        <button class="domain-btn" data-dom-target="cc" onclick="toggleFilter('domain', 'cc', this)">CC</button>
-                        <button class="domain-btn" data-dom-target="nbt" onclick="toggleFilter('domain', 'nbt', this)">NBT</button>
-                        <button class="domain-btn" data-dom-target="oa" onclick="toggleFilter('domain', 'oa', this)">OA</button>
-                        <button class="domain-btn" data-dom-target="nf" onclick="toggleFilter('domain', 'nf', this)">NF</button>
-                        <button class="domain-btn" data-dom-target="md" onclick="toggleFilter('domain', 'md', this)">MD</button>
-                        <button class="domain-btn" data-dom-target="g" onclick="toggleFilter('domain', 'g', this)">G</button>
-                    </nav>
-                </div>
+                <nav class="domain-nav">
+                    <button class="domain-btn" data-dom-target="cc" onclick="toggleFilter('domain', 'cc', this)">CC</button>
+                    <button class="domain-btn" data-dom-target="nbt" onclick="toggleFilter('domain', 'nbt', this)">NBT</button>
+                    <button class="domain-btn" data-dom-target="oa" onclick="toggleFilter('domain', 'oa', this)">OA</button>
+                    <button class="domain-btn" data-dom-target="nf" onclick="toggleFilter('domain', 'nf', this)">NF</button>
+                    <button class="domain-btn" data-dom-target="md" onclick="toggleFilter('domain', 'md', this)">MD</button>
+                    <button class="domain-btn" data-dom-target="g" onclick="toggleFilter('domain', 'g', this)">G</button>
+                </nav>
             </header>
 
             <div class="dashboard-body">
                 <div class="map-zone" id="mapZone">
                     <div class="matrix-grid" id="matrixGrid"></div>
                 </div>
-                <div class="tool-deck" id="toolDeck"></div>
+                <div class="tool-deck" id="toolDeck">
+                    <div class="deck-handle" id="deckHandle"></div>
+                </div>
             </div>
         </div>
     </main>
 
     <div class="plate-backdrop" id="plateBackdrop" onclick="closePlate()"></div>
-    
     <div class="expanded-plate" id="expandedPlate">
-        <button class="plate-close-btn" onclick="closePlate()">×</button>
-        
-        <div class="plate-header-area">
-            <div class="badges-container" style="margin-bottom: 12px;">
-                <span class="dom-badge" id="ep-dom-badge"></span>
-                <span class="cc-badge" id="ep-cc-badge"></span>
-            </div>
-            <div class="friendly-title" id="ep-title"></div>
-            <div class="std-desc" id="ep-desc"></div>
+        <button onclick="closePlate()" style="position: absolute; top: 24px; right: 24px; font-size: 2rem; background: none; border: none; cursor: pointer;">×</button>
+        <div style="padding: 40px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div id="ep-title" style="font-size: 2.5rem; font-weight: 900;"></div>
+            <div id="ep-desc" style="color: var(--text-gray);"></div>
         </div>
-        
         <div class="plate-body">
-            <div class="plate-guide">
-                <div id="ep-pedagogy-content"></div>
+            <div class="plate-guide" style="padding: 40px; overflow-y: auto;">
+                <p id="ep-pedagogy-content" style="line-height: 1.6; font-size: 1.1rem;"></p>
             </div>
-            <div class="plate-sandbox">
-                <div class="guide-label" style="align-self: flex-start;">Target Tool</div>
-                <div class="hardware-stage">
-                    <div class="simulated-tablet">
-                        <div class="simulated-screen-glow"></div>
-                        <div class="simulated-tool-bead" id="ep-tool-bead"></div>
-                        <div class="simulated-text" id="ep-tool-name">Tool Name</div>
-                        <div style="font-size: 0.6rem; color: #888; margin-top: 10px; font-weight: 500;">LIVE SANDBOX DEMO</div>
-                    </div>
+            <div class="plate-sandbox" style="width: 400px; background: var(--bg-center); padding: 40px; display: flex; flex-direction: column; align-items: center;">
+                <div class="simulated-tablet">
+                    <div id="ep-tool-bead" style="width: 40px; height: 40px; border-radius: 50%; margin-bottom: 20px;"></div>
+                    <div id="ep-tool-name" style="color: white; font-weight: 800;"></div>
                 </div>
-                <button class="hardware-btn primary" onclick="alert('Launching Sandbox...')">Enter Sandbox</button>
+                <button class="hardware-btn primary" id="launch-app-btn">Enter Sandbox</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- SPA Routing ---
         let currentView = 'view-hub';
+        let currentDomain = 'all';
+        let currentGrade = 'all';
+        let isDeckTucked = false;
+
+        const appsData = [
+            { id: "geo-lab", title: "Geo Lab", strand: "system", grades: ["G3", "G4", "G5"], url: "geo-lab.html" },
+            { id: "area-excavator", title: "Area Excavator", strand: "basic", grades: ["G3", "G4", "G5"], url: "area-excavator.html" },
+            { id: "array-architect", title: "Array Architect", strand: "advanced", grades: ["G2", "G3", "G4"], url: "array-architect.html" },
+            { id: "array-builder", title: "Array Builder", strand: "advanced", grades: ["G2", "G3", "G4"], url: "array-builder.html" },
+            { id: "decimal-order", title: "Decimal Order", strand: "basic", grades: ["G4", "G5"], url: "decimal-order.html" },
+            { id: "fraction-lab", title: "Fraction Lab", strand: "system", grades: ["G3", "G4", "G5"], url: "fraction-lab.html" },
+            { id: "lego-fractions", title: "Lego Fractions", strand: "advanced", grades: ["G3", "G4", "G5"], url: "lego-fractions.html" },
+            { id: "long-division-buddy", title: "Long Division Buddy", strand: "advanced", grades: ["G4", "G5"], url: "long-division-buddy.html" },
+            { id: "number-bond", title: "Number Bond", strand: "basic", grades: ["K", "G1", "G2"], url: "number-bond.html" },
+            { id: "number-line", title: "Number Line", strand: "sense", grades: ["K", "G1", "G2", "G3", "G4", "G5"], url: "number-line.html" },
+            { id: "place-value-blocks", title: "Place Value Blocks", strand: "system", grades: ["K", "G1", "G2"], url: "place-value-blocks.html" },
+            { id: "place-value-cards", title: "Place Value Cards", strand: "sense", grades: ["K", "G1", "G2", "G3"], url: "place-value-cards.html" },
+            { id: "prime-altar", title: "Prime Altar", strand: "system", grades: ["G4", "G5"], url: "prime-altar.html" },
+            { id: "rekenrek", title: "Rekenrek", strand: "sense", grades: ["K", "G1", "G2"], url: "rekenrek.html" },
+            { id: "rounding-waves", title: "Rounding Waves", strand: "sense", grades: ["G3", "G4"], url: "rounding-waves.html" },
+            { id: "sentences", title: "Sentences", strand: "basic", grades: ["K", "G1", "G2"], url: "sentences.html" },
+            { id: "ten-frame", title: "Ten Frame", strand: "sense", grades: ["K", "G1"], url: "ten-frame.html" },
+            { id: "walker-ellie", title: "Walker Ellie", strand: "basic", grades: ["K", "G1", "G2"], url: "walker-ellie.html" },
+            { id: "zooming-number-line", title: "Zooming Number Line", strand: "sense", grades: ["G3", "G4", "G5"], url: "zooming-number-line.html" }
+        ];
+
+        // Drawer Tucking with GSAP
+        document.getElementById('deckHandle').addEventListener('click', () => {
+            isDeckTucked = !isDeckTucked;
+            gsap.to('#toolDeck', {
+                y: isDeckTucked ? 150 : 0,
+                duration: 0.6,
+                ease: "elastic.out(1, 0.75)"
+            });
+        });
+
         function openView(targetId, isBack = false) {
             document.getElementById(currentView).classList.remove('active');
-            const incoming = document.getElementById(targetId);
-            if (isBack) { document.getElementById(currentView).classList.add('zoom-out'); incoming.classList.remove('zoom-in', 'zoom-out'); } 
-            else { document.getElementById(currentView).classList.add('zoom-in'); incoming.classList.remove('zoom-in', 'zoom-out'); }
-            incoming.classList.add('active');
-            if (targetId === 'view-hub') { currentDomain = 'all'; currentGrade = 'all'; document.querySelectorAll('.domain-btn, .grade-marker').forEach(b => b.classList.remove('active')); applyFilters(); }
+            document.getElementById(targetId).classList.add('active');
             currentView = targetId;
         }
+
         function openBraid(domain) {
-            currentDomain = domain; document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+            currentDomain = domain;
+            document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
             const btn = document.querySelector(`.domain-btn[data-dom-target="${domain}"]`);
             if (btn) btn.classList.add('active');
             applyFilters(); openView('view-braid');
         }
 
-        // --- Core Data ---
-        const appsData = [
-            { id: "app-cc-stage", title: "The Counting Stage", strand: "system", grades: ["K"] },
-            { id: "app-cc-writing", title: "Numeral Scribe", strand: "sense", grades: ["K"] },
-            { id: "app-cc-cardinality", title: "The Matcher", strand: "basic", grades: ["K"] },
-            { id: "app-nbt-blocks", title: "Base Ten Builder", strand: "system", grades: ["K", "G1", "G2"] },
-            { id: "app-nbt-line", title: "Zoom Line", strand: "sense", grades: ["G1", "G2"] },
-            { id: "app-nbt-ops", title: "The Standard Flow", strand: "basic", grades: ["G1", "G2", "G3", "G4"] },
-            { id: "app-nbt-advanced", title: "Area Multiplier", strand: "advanced", grades: ["G3", "G4", "G5"] },
-            { id: "app-nbt-rounding", title: "The Boundary Tool", strand: "sense", grades: ["G3", "G4", "G5"] },
-            { id: "app-oa-balancer", title: "Equation Balancer", strand: "sense", grades: ["K", "G1", "G3"] },
-            { id: "app-oa-arrays", title: "Array Builder", strand: "advanced", grades: ["G2", "G3", "G4"] },
-            { id: "app-oa-patterns", title: "Pattern Engine", strand: "system", grades: ["G3", "G4", "G5"] },
-            { id: "app-nf-bars", title: "Fraction Bars", strand: "system", grades: ["G3", "G4", "G5"] },
-            { id: "app-nf-add", title: "The Slicer", strand: "basic", grades: ["G4", "G5"] },
-            { id: "app-nf-mult", title: "Transparent Grids", strand: "advanced", grades: ["G4", "G5"] },
-            { id: "app-md-ruler", title: "Digital Ruler", strand: "basic", grades: ["K", "G1", "G2", "G3"] },
-            { id: "app-md-clock", title: "Relational Clock", strand: "sense", grades: ["G1", "G2", "G3"] },
-            { id: "app-md-vol", title: "Liquid Balance", strand: "advanced", grades: ["G3", "G4", "G5"] },
-            { id: "app-g-shapes", title: "Pattern Blocks", strand: "advanced", grades: ["K", "G1", "G2"] },
-            { id: "app-g-coord", title: "The Precision Vault", strand: "system", grades: ["G5"] }
-        ];
-
-        const allStandards = {
-            cc: [{ id: "K.CC.A.1", grade: "k", strand: "system", title: "The Big Count", desc: "Count to 100 by 1s/10s.", apps: ["app-cc-stage"] }],
-            nbt: [
-                { id: "1.NBT.B.2.a", grade: "g1", strand: "system", title: "Making a Ten", desc: "10 ones = 1 ten.", apps: ["app-nbt-blocks"] },
-                { id: "4.NBT.A.1", grade: "g4", strand: "system", title: "The 10x Shift", desc: "Multi-digit 10x shift.", apps: ["app-nbt-blocks"] }
-            ],
-            oa: [{ id: "3.OA.A.1", grade: "g3", strand: "advanced", title: "Visual Multiplication", desc: "Interpret mult.", apps: ["app-oa-arrays"] }],
-            nf: [{ id: "4.NF.A.1", grade: "g4", strand: "system", title: "Explaining Equivalence", desc: "Explain fraction equivalence.", apps: ["app-nf-bars"] }],
-            md: [{ id: "2.MD.C.7", grade: "g2", strand: "sense", title: "Telling Time (5 Mins)", desc: "Tell time: nearest 5 mins.", apps: ["app-md-clock"] }],
-            g: [{ id: "1.G.A.2", grade: "g1", strand: "advanced", title: "Composite Shapes", desc: "Compose 2D/3D composite shapes.", apps: ["app-g-shapes"] }]
-        };
-
-        const gradeMap = [{ id: 'k', label: 'K' }, { id: 'g1', label: 'G1' }, { id: 'g2', label: 'G2' }, { id: 'g3', label: 'G3' }, { id: 'g4', label: 'G4' }, { id: 'g5', label: 'G5' }];
-        const strandCols = { 'system': 2, 'sense': 3, 'basic': 4, 'advanced': 5 };
-        
-        let flatStandards = [];
-        Object.keys(allStandards).forEach(domKey => { allStandards[domKey].forEach(std => { flatStandards.push({ ...std, domain: domKey }); }); });
-
-        let currentDomain = 'all'; let currentGrade = 'all';
-
-        // --- Filtering Engine ---
-        function toggleFilter(type, value, btnElement) {
+        function toggleFilter(type, value, btn) {
             if (type === 'domain') {
-                const isActive = btnElement.classList.contains('active'); document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
-                currentDomain = isActive ? 'all' : value; if (!isActive) btnElement.classList.add('active');
-            } else if (type === 'grade') {
-                const isActive = btnElement.classList.contains('active'); document.querySelectorAll('.grade-marker').forEach(b => b.classList.remove('active'));
-                currentGrade = isActive ? 'all' : value; if (!isActive) btnElement.classList.add('active');
+                currentDomain = btn.classList.contains('active') ? 'all' : value;
+                document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+            } else {
+                currentGrade = btn.classList.contains('active') ? 'all' : value;
+                document.querySelectorAll('.grade-marker').forEach(b => b.classList.remove('active'));
             }
+            if (btn && (currentDomain !== 'all' || currentGrade !== 'all')) btn.classList.add('active');
             applyFilters();
         }
 
         function applyFilters() {
-            resetBoard(); 
             document.querySelectorAll('.grid-cell, .grade-marker').forEach(el => {
-                if (currentGrade === 'all' || el.getAttribute('data-row') === currentGrade) el.classList.remove('hidden-row'); else el.classList.add('hidden-row');
-            });
-            document.querySelectorAll('.node').forEach(node => {
-                if (currentDomain === 'all' || node.getAttribute('data-domain') === currentDomain) node.classList.remove('domain-dimmed'); else node.classList.add('domain-dimmed');
+                const row = el.getAttribute('data-row');
+                if (currentGrade === 'all' || row === currentGrade) el.classList.remove('hidden-row');
+                else el.classList.add('hidden-row');
             });
             renderApps();
         }
 
-        // --- Grid Rendering ---
-        function renderMegaMatrix() {
-            const matrixGrid = document.getElementById('matrixGrid'); matrixGrid.innerHTML = '';
-            Object.keys(strandCols).forEach(key => {
-                const trackLabel = key === 'system' ? 'The System' : key === 'sense' ? 'Number Sense' : key === 'basic' ? 'Basic Ops' : 'Adv. Ops';
-                matrixGrid.insertAdjacentHTML('beforeend', `<div class="track-bg" style="grid-column: ${strandCols[key]};"><div class="strand-label" data-strand="${key}">${trackLabel}</div><div class="milled-groove"><div class="color-line" data-strand="${key}"></div></div></div>`);
-            });
-            gradeMap.forEach((grade, index) => {
-                const row = index + 2; 
-                matrixGrid.insertAdjacentHTML('beforeend', `<button class="grade-marker" data-grade-target="${grade.id}" data-row="${grade.id}" style="grid-row: ${row};" onclick="toggleFilter('grade', '${grade.id}', this)">${grade.label}</button>`);
-                Object.keys(strandCols).forEach(strandKey => {
-                    const cellStds = flatStandards.filter(std => std.grade === grade.id && std.strand === strandKey);
-                    if (cellStds.length > 0) {
-                        let cellHtml = `<div class="grid-cell" data-row="${grade.id}" style="grid-column: ${strandCols[strandKey]}; grid-row: ${row};">`;
-                        cellStds.forEach(std => {
-                            cellHtml += `<div class="node" data-id="${std.id}" data-title="${std.title}" data-desc="${std.desc}" data-apps="${std.apps.join(',')}" data-domain="${std.domain}" onclick="triggerPlate(this)"><div class="node-header"><span class="friendly-title">${std.title}</span><div class="badges-container"><span class="dom-badge">${std.domain.toUpperCase()}</span><span class="cc-badge">${std.id}</span></div></div><div class="std-desc">${std.desc}</div></div>`;
-                        });
-                        cellHtml += `</div>`; matrixGrid.insertAdjacentHTML('beforeend', cellHtml);
-                    }
-                });
-            });
-        }
-
         function renderApps() {
-            const toolDeck = document.getElementById('toolDeck'); toolDeck.innerHTML = '';
+            const toolDeck = document.getElementById('toolDeck');
+            // Preserve the handle
+            const handle = document.getElementById('deckHandle');
+            toolDeck.innerHTML = '';
+            toolDeck.appendChild(handle);
+            
             appsData.forEach(app => {
-                let domainMatch = currentDomain === 'all' ? true : [...new Set(flatStandards.filter(s => s.domain === currentDomain).flatMap(s => s.apps))].includes(app.id);
-                let gradeMatch = currentGrade === 'all' ? true : app.grades.map(g => g.toLowerCase()).includes(currentGrade.toLowerCase());
-                const isRelevant = domainMatch && gradeMatch;
-                toolDeck.insertAdjacentHTML('beforeend', `<div class="app-card ${!isRelevant ? 'domain-dimmed' : ''}" data-trigger-app="${app.id}"><div><div class="tool-bead" style="background: var(--strand-${app.strand});"></div></div><div class="app-title">${app.title}</div></div>`);
-            });
-        }
-
-        function resetBoard() { document.querySelectorAll('.is-animating').forEach(n => n.classList.remove('is-animating')); }
-
-        // --- FLIP ANIMATION ENGINE ---
-        let activeNodeEl = null;
-
-        function triggerPlate(nodeEl) {
-            if (nodeEl.classList.contains('domain-dimmed')) return;
-            
-            activeNodeEl = nodeEl;
-            const rect = nodeEl.getBoundingClientRect();
-            const plate = document.getElementById('expandedPlate');
-            
-            // 1. Map Data
-            const id = nodeEl.getAttribute('data-id');
-            const title = nodeEl.getAttribute('data-title');
-            const desc = nodeEl.getAttribute('data-desc');
-            const domain = nodeEl.getAttribute('data-domain');
-            const appId = nodeEl.getAttribute('data-apps').split(',')[0];
-            const appObj = appsData.find(a => a.id === appId);
-
-            document.getElementById('ep-dom-badge').textContent = domain.toUpperCase();
-            document.getElementById('ep-cc-badge').textContent = id;
-            document.getElementById('ep-title').textContent = title;
-            document.getElementById('ep-desc').textContent = desc;
-            
-            // App UI
-            if(appObj) {
-                document.getElementById('ep-tool-name').textContent = appObj.title;
-                document.getElementById('ep-tool-bead').style.background = `var(--strand-${appObj.strand})`;
-            }
-            
-            // Inject Placeholder Pedagogy
-            document.getElementById('ep-pedagogy-content').innerHTML = generatePedagogy(title, domain, id);
-
-            // 2. Set Domain Color Variable for the border
-            plate.style.setProperty('--node-color', `var(--dom-${domain})`);
-
-            // 3. Set Initial Geometry (First state)
-            plate.style.transition = 'none'; // Turn off transition for instant snap
-            plate.style.top = rect.top + 'px';
-            plate.style.left = rect.left + 'px';
-            plate.style.width = rect.width + 'px';
-            plate.style.height = rect.height + 'px';
-            plate.style.opacity = '1';
-            
-            nodeEl.classList.add('is-animating'); // Hide the grid node
-
-            // 4. Force Reflow & Apply Active State (Last state)
-            requestAnimationFrame(() => {
-                plate.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                document.getElementById('plateBackdrop').classList.add('active');
-                plate.classList.add('active');
+                const gradeMatch = currentGrade === 'all' || app.grades.includes(currentGrade.toUpperCase());
+                toolDeck.insertAdjacentHTML('beforeend', `
+                    <a href="${app.url}" style="text-decoration: none;">
+                        <div class="app-card ${!gradeMatch ? 'domain-dimmed' : ''}">
+                            <div class="tool-bead" style="background: var(--strand-${app.strand});"></div>
+                            <div class="app-title">${app.title}</div>
+                        </div>
+                    </a>
+                `);
             });
         }
 
         function closePlate() {
-            const plate = document.getElementById('expandedPlate');
-            if(!activeNodeEl || !plate.classList.contains('active')) return;
-
-            // 1. Get current rect of the hidden grid node
-            const rect = activeNodeEl.getBoundingClientRect();
-
-            // 2. Remove active class to shrink it, but override geometry to target the node
             document.getElementById('plateBackdrop').classList.remove('active');
-            plate.classList.remove('active');
-            
-            plate.style.top = rect.top + 'px';
-            plate.style.left = rect.left + 'px';
-            plate.style.width = rect.width + 'px';
-            plate.style.height = rect.height + 'px';
-            plate.style.opacity = '0';
-
-            // 3. Clean up after transition
-            setTimeout(() => {
-                if(activeNodeEl) activeNodeEl.classList.remove('is-animating');
-                activeNodeEl = null;
-            }, 500); // Matches transition duration
+            document.getElementById('expandedPlate').classList.remove('active');
+            document.getElementById('expandedPlate').style.opacity = '0';
         }
 
-        // --- PEDAGOGY GENERATOR ---
-        function generatePedagogy(title, domain, code) {
-            const domainNames = { 'cc': 'Counting', 'nbt': 'Base Ten', 'oa': 'Algebraic Operations', 'nf': 'Fractions', 'md': 'Measurement', 'g': 'Geometry' };
-            const dName = domainNames[domain] || 'Math';
-            
-            return `
-                <div class="guide-section">
-                    <div class="guide-label">The Translation</div>
-                    <div class="guide-content">
-                        <strong>${code}</strong> isn't just about getting the right answer; it's about building intuition in ${dName}. 
-                        Instead of teaching ${title.toLowerCase()} through rote memorization, we approach it as a physical reality. 
-                        By interacting with the digital manipulative on the right, the student internalizes the "why" before they ever have to write down the "how."
-                    </div>
-                </div>
+        // Initialize Grid Markers
+        const matrixGrid = document.getElementById('matrixGrid');
+        ['k', 'g1', 'g2', 'g3', 'g4', 'g5'].forEach((g, i) => {
+            matrixGrid.insertAdjacentHTML('beforeend', `
+                <button class="grade-marker" data-row="${g}" style="grid-row: ${i+2};" onclick="toggleFilter('grade', '${g}', this)">${g.toUpperCase()}</button>`);
+        });
 
-                <div class="guide-section">
-                    <div class="guide-label">The Vertical Spiral</div>
-                    <div class="guide-content">Every mathematical concept is built on a physical prerequisite.</div>
-                    <div class="spiral-box">
-                        <div class="spiral-row">
-                            <span class="badge">BUILDS ON</span> Physical 1-to-1 correspondence.
-                        </div>
-                        <div class="spiral-row" style="color: var(--text-main);">
-                            <span class="badge" style="background: var(--node-color); color: white;">CURRENT</span> <strong>${title}</strong>
-                        </div>
-                        <div class="spiral-row">
-                            <span class="badge">UNLOCKS</span> Abstract algorithmic processing in the next grade.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="guide-section">
-                    <div class="guide-label">Assessing Mastery</div>
-                    <div class="guide-content">
-                        <ul style="margin-left: 20px; margin-top: 8px;">
-                            <li>Can the student successfully model the problem using the tool without explicit instruction?</li>
-                            <li>Can they predict what will happen before they release the digital block?</li>
-                            <li>Can they map their physical action back to a written equation?</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Initialize App
-        renderMegaMatrix();
-        applyFilters();
+        renderApps();
     </script>
 </body>
 </html>
