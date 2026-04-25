@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Math Things. | Euclid's Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F5F7; --surface: #FFFFFF; --text-main: #1D1D1F; 
+      --accent: #007AFF; /* Tens (Blue) */
+      --ones: #DC143C;   /* Ones (Red) */
+      --hundreds: #FFD700; /* Hundreds (Yellow) */
+      --border: rgba(0,0,0,0.08); --shadow-soft: 0 8px 32px rgba(0,0,0,0.08);
+      --glass: rgba(255, 255, 255, 0.75); --glass-border: rgba(255, 255, 255, 0.4);
+      --incidence: #86868B;
+    }
+    body { font-family: 'Lexend', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; overflow: hidden; touch-action: none; }
+    
+    #logo-watermark { position: absolute; top: 24px; left: 24px; pointer-events: none; opacity: 0.8; font-weight: 900; font-size: 1.15rem; letter-spacing: -0.05em; display: flex; align-items: baseline; }
+    .logo-bead { width: 5px; height: 5px; background: #a8a8a8; border-radius: 50%; margin-left: 2px; }
+    
+    /* The Architect's Pillar */
+    #pillar { 
+        position: absolute; left: 24px; top: 50%; transform: translateY(-50%);
+        display: flex; flex-direction: column; align-items: center; gap: 12px; 
+        background: var(--glass); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+        padding: 16px 12px; border-radius: 24px; box-shadow: var(--shadow-soft); 
+        border: 1px solid var(--glass-border); z-index: 100;
+    }
+
+    /* Primary Tools */
+    .tool-btn { 
+        background: white; border: 1px solid var(--border); border-radius: 16px; 
+        width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; 
+        cursor: pointer; transition: 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .tool-btn svg { width: 28px; height: 28px; stroke-width: 2.2; pointer-events: none; stroke: var(--text-main); }
+    .tool-btn.active { background: var(--accent); border-color: var(--accent); transform: scale(1.05); }
+    .tool-btn.active svg { fill: white; stroke: white; }
+    
+    /* Eraser Tool */
+    .tool-btn.eraser svg { stroke: var(--text-main); fill: none; }
+    .tool-btn.eraser.active { background: var(--ones); border-color: var(--ones); }
+    .tool-btn.eraser.active svg { stroke: white; }
+
+    .divider { width: 32px; height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* Floating Symbol Toggles */
+    .toggle-btn {
+        background: transparent; border: none; width: 44px; height: 44px; 
+        display: flex; align-items: center; justify-content: center; 
+        cursor: pointer; transition: 0.2s; outline: none; opacity: 0.3;
+    }
+    .toggle-btn svg { width: 26px; height: 26px; stroke-width: 2.5; stroke: var(--text-main); fill: none; pointer-events: none; }
+    .toggle-btn.active { opacity: 1; transform: scale(1.1); }
+    
+    /* Constraint Colors */
+    .toggle-btn.len.active svg { stroke: var(--ones); }
+    .toggle-btn.ang.active svg { stroke: var(--accent); }
+    .toggle-btn.par.active svg { stroke: var(--hundreds); }
+    .toggle-btn.inc.active svg { stroke: var(--incidence); }
+
+    /* Reset Button */
+    .reset-btn {
+        background: transparent; border: none; width: 44px; height: 44px; 
+        display: flex; align-items: center; justify-content: center; 
+        cursor: pointer; transition: 0.2s; outline: none; opacity: 0.5; margin-top: 4px;
+    }
+    .reset-btn svg { width: 24px; height: 24px; stroke-width: 2.5; stroke: var(--ones); fill: none; pointer-events: none; }
+    .reset-btn:active { transform: rotate(-45deg); }
+
+    canvas { display: block; background: #fff; cursor: crosshair; }
+    footer { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #AEAEB2; pointer-events: none; opacity: 0.5; }
+  </style>
+</head>
+<body>
+<div id="logo-watermark">Math Things<span class="logo-bead"></span></div>
+
+<div id="pillar">
+  <button id="btn-point" class="tool-btn active" onclick="setTool('point')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button id="btn-segment" class="tool-btn" onclick="setTool('segment')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="19" y1="5" x2="5" y2="19"/></svg>
+  </button>
+  <button id="btn-circle" class="tool-btn" onclick="setTool('circle')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v2M12 4L7.5 21.5M12 4l4.5 17.5M10 15h4M12 11a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4z"/>
+          <path d="M7.5 21.5L7 24h1l-0.5-2.5z" fill="currentColor" stroke="none"/>
+          <path d="M16.5 21.5L16 24h1l-0.5-2.5z" fill="currentColor" stroke="none"/>
+      </svg>
+  </button>
+  <button id="btn-erase" class="tool-btn eraser" onclick="setTool('erase')">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round"><line x1="17" y1="7" x2="7" y2="17"/><line x1="7" y1="7" x2="17" y2="17"/></svg>
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="toggle-btn active len" onclick="toggleFilter('len')">
+      <svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="18"/></svg>
+  </button>
+  <button class="toggle-btn active ang" onclick="toggleFilter('ang')">
+      <svg viewBox="0 0 24 24"><path d="M4 18l14-10"/><line x1="4" y1="18" x2="20" y2="18"/><path d="M10 13.5a6 6 0 0 0 4.5 4.5"/></svg>
+  </button>
+  <button class="toggle-btn active par" onclick="toggleFilter('par')">
+      <svg viewBox="0 0 24 24"><polyline points="11 8 15 12 11 16"/><polyline points="5 8 9 12 5 16"/></svg>
+  </button>
+  <button class="toggle-btn active inc" onclick="toggleFilter('inc')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/></svg>
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="reset-btn" onclick="clearAll()">
+      <svg viewBox="0 0 24 24"><path d="M20.5 11.5a9 9 0 1 1-2-5.5"/><path d="M21 3v6h-6"/></svg>
+  </button>
+</div>
+
+<canvas id="canvas"></canvas>
+<footer>Math Things. | Math, in your hands.</footer>
+
+<script>
+    const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+    let width, height, midY, points = [], segments = [], guides = []; 
+    let currentTool = 'point', activePoint = null, dragPos = null, snapTarget = null, cameraScale = 1, cameraX = 0, cameraY = 0;
+    let filters = { len: true, ang: true, par: true, inc: true };
+
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; midY = height / 2; cameraX = 0; cameraY = midY; draw(); }
+    function setTool(tool) { currentTool = tool; document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-' + tool).classList.add('active'); }
+    function toggleFilter(f) { filters[f] = !filters[f]; document.querySelector('.toggle-btn.'+f).classList.toggle('active'); }
+    function getDist(p1, p2) { return Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2); }
+    function worldToScreen(x, y) { return { x: (x - cameraX) * cameraScale + width/2, y: (y - cameraY) * cameraScale + height/2 }; }
+    function screenToWorld(x, y) { return { x: (x - width/2) / cameraScale + cameraX, y: (y - height/2) / cameraScale + cameraY }; }
+    function getAngDiff(a, b) { let d = Math.abs(a - b) % 180; return Math.min(d, 180 - d); }
+    
+    function updateCamera() {
+        if (points.length < 2) { cameraScale = 1; cameraX = 0; cameraY = midY; return; }
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        points.forEach(p => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
+        guides.forEach(g => { const r = getDist(g.p1, g.p2); minX = Math.min(minX, g.p1.x - r); maxX = Math.max(maxX, g.p1.x + r); minY = Math.min(minY, g.p1.y - r); maxY = Math.max(maxY, g.p1.y + r); });
+        const pad = 180, scale = Math.min(width / ((maxX - minX) + pad*2), height / ((maxY - minY) + pad*2), 1.1);
+        cameraScale += (scale - cameraScale) * 0.1; cameraX += ((minX + maxX) / 2 - cameraX) * 0.1; cameraY += ((minY + maxY) / 2 - cameraY) * 0.1;
+    }
+
+    function getIntersections() {
+        const inters = [];
+        guides.forEach((c1, i) => { guides.slice(i + 1).forEach(c2 => {
+            const d = getDist(c1.p1, c2.p1), r1 = getDist(c1.p1, c1.p2), r2 = getDist(c2.p1, c2.p2);
+            if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) return;
+            const a = (r1**2 - r2**2 + d**2) / (2 * d), h = Math.sqrt(r1**2 - a**2), x2 = c1.p1.x + a * (c2.p1.x - c1.p1.x) / d, y2 = c1.p1.y + a * (c2.p1.y - c1.p1.y) / d;
+            inters.push({x: x2 + h * (c2.p1.y - c1.p1.y) / d, y: y2 - h * (c2.p1.x - c1.p1.x) / d}, {x: x2 - h * (c2.p1.y - c1.p1.y) / d, y: y2 + h * (c2.p1.x - c1.p1.x) / d});
+        }); });
+        segments.forEach((s1, i) => {
+            segments.slice(i + 1).forEach(s2 => {
+                const den = (s1.p1.x - s1.p2.x) * (s2.p1.y - s2.p2.y) - (s1.p1.y - s1.p2.y) * (s2.p1.x - s2.p2.x);
+                if (den === 0) return;
+                const t = ((s1.p1.x - s2.p1.x) * (s2.p1.y - s2.p2.y) - (s1.p1.y - s2.p1.y) * (s2.p1.x - s2.p2.x)) / den, u = -((s1.p1.x - s1.p2.x) * (s1.p1.y - s2.p1.y) - (s1.p1.y - s1.p2.y) * (s1.p1.x - s2.p1.x)) / den;
+                if (t >= 0 && t <= 1 && u >= 0 && u <= 1) inters.push({x: s1.p1.x + t * (s1.p2.x - s1.p1.x), y: s1.p1.y + t * (s1.p2.y - s1.p1.y)});
+            });
+            guides.forEach(g => { const r = getDist(g.p1, g.p2), dx = s1.p2.x - s1.p1.x, dy = s1.p2.y - s1.p1.y, fx = s1.p1.x - g.p1.x, fy = s1.p1.y - g.p1.y; const a = dx*dx + dy*dy, b = 2*(fx*dx + fy*dy), c = (fx*fx + fy*fy) - r*r; let d = b*b - 4*a*c; if (d >= 0) { d = Math.sqrt(d); const t1 = (-b-d)/(2*a), t2 = (-b+d)/(2*a); if (t1>=0 && t1<=1) inters.push({x: s1.p1.x+t1*dx, y: s1.p1.y+t1*dy}); if (t2>=0 && t2<=1) inters.push({x: s1.p1.x+t2*dx, y: s1.p1.y+t2*dy}); } });
+        });
+        return inters;
+    }
+
+    function ensurePoint(snap) {
+        let p = points.find(pt => Math.abs(pt.x - snap.x) < 0.1 && Math.abs(pt.y - snap.y) < 0.1);
+        if (!p) { p = {x: snap.x, y: snap.y}; points.push(p); segments.forEach((s, idx) => { const d1 = getDist(s.p1, p), d2 = getDist(s.p2, p), dt = getDist(s.p1, s.p2); if (Math.abs(d1+d2-dt) < 0.5 && d1>2 && d2>2) { segments.splice(idx, 1); segments.push({p1: s.p1, p2: p}, {p1: p, p2: s.p2}); } }); }
+        return p;
+    }
+
+    function findSnap(wx, wy) {
+        if (Math.abs(wy - midY) < 30/cameraScale) wy = midY;
+        const all = [...points, ...getIntersections()];
+        let p = all.find(pt => getDist(pt, {x: wx, y: wy}) < 25/cameraScale);
+        return p ? {x: p.x, y: p.y} : {x: wx, y: wy, isNew: true};
+    }
+
+    canvas.addEventListener('pointerdown', e => { 
+        const world = screenToWorld(e.clientX, e.clientY);
+        if (currentTool === 'erase') { 
+            const ptIdx = points.findIndex(p => getDist(p, world) < 20/cameraScale);
+            if (ptIdx !== -1) { const p = points[ptIdx]; segments = segments.filter(s => s.p1 !== p && s.p2 !== p); guides = guides.filter(g => g.p1 !== p && g.p2 !== p); points.splice(ptIdx, 1); }
+            else { const sIdx = segments.findIndex(s => Math.abs(getDist(s.p1, world) + getDist(s.p2, world) - getDist(s.p1, s.p2)) < 1.5/cameraScale); if (sIdx !== -1) segments.splice(sIdx, 1); else { const gIdx = guides.findIndex(g => Math.abs(getDist(g.p1, world) - getDist(g.p1, g.p2)) < 5.0/cameraScale); if (gIdx !== -1) guides.splice(gIdx, 1); } }
+            return; 
+        }
+        const snap = findSnap(world.x, world.y);
+        if (currentTool === 'point') ensurePoint(snap); else { activePoint = ensurePoint(snap); dragPos = world; }
+    });
+
+    canvas.addEventListener('pointermove', e => { if (!activePoint) return; dragPos = screenToWorld(e.clientX, e.clientY); snapTarget = findSnap(dragPos.x, dragPos.y); });
+    
+    canvas.addEventListener('pointerup', e => { 
+        if (activePoint && dragPos) { 
+            const end = findSnap(dragPos.x, dragPos.y); const final = ensurePoint(end); 
+            if (final !== activePoint) { 
+                if (currentTool === 'segment') { 
+                    const ptsOn = points.filter(p => p !== activePoint && p !== final && Math.abs(getDist(activePoint, p) + getDist(final, p) - getDist(activePoint, final)) < 0.5).sort((a,b) => getDist(activePoint, a) - getDist(activePoint, b)); 
+                    let curr = activePoint; ptsOn.forEach(p => { segments.push({p1: curr, p2: p}); curr = p; }); segments.push({p1: curr, p2: final}); 
+                } else guides.push({p1: activePoint, p2: final}); 
+            } 
+        } 
+        activePoint = null; dragPos = null; snapTarget = null; 
+    });
+
+    function clearAll() { points = []; segments = []; guides = []; cameraScale = 1; cameraX = 0; cameraY = midY; }
+
+    function draw() {
+        updateCamera(); ctx.clearRect(0, 0, width, height);
+        
+        // Horizon Line
+        const hY = worldToScreen(0, midY).y; ctx.beginPath(); ctx.strokeStyle = '#e5e5ea'; ctx.lineWidth = 1.2; ctx.moveTo(0, hY); ctx.lineTo(width, hY); ctx.stroke();
+        
+        if (filters.inc) {
+            guides.forEach(g => { const p1 = worldToScreen(g.p1.x, g.p1.y), r = getDist(g.p1, g.p2) * cameraScale; ctx.beginPath(); ctx.strokeStyle = '#d1d1d6'; ctx.setLineDash([4, 4]); ctx.arc(p1.x, p1.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); });
+            getIntersections().forEach(pt => { const p = worldToScreen(pt.x, pt.y); ctx.beginPath(); ctx.strokeStyle = 'rgba(0,122,255,0.2)'; ctx.arc(p.x, p.y, 8, 0, Math.PI * 2); ctx.stroke(); });
+        }
+        
+        segments.forEach(s => { const p1 = worldToScreen(s.p1.x, s.p1.y), p2 = worldToScreen(s.p2.x, s.p2.y); ctx.beginPath(); ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 2.5; ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); });
+        
+        const lenBuckets = [], angleBuckets = [], slopeBuckets = [];
+        segments.forEach(s => { 
+            const l = getDist(s.p1, s.p2); if(l < 5) return;
+            let b = lenBuckets.find(x => Math.abs(x.key - l) < 2.0); if(!b) { b = {key: l, items: []}; lenBuckets.push(b); } b.items.push(s);
+            let ang = Math.atan2(s.p2.y-s.p1.y, s.p2.x-s.p1.x) * 180 / Math.PI; if(ang < 0) ang += 180; if(ang >= 180) ang -= 180;
+            let sb = slopeBuckets.find(x => getAngDiff(x.key, ang) < 1.5); if(!sb) { sb = {key: ang, items: []}; slopeBuckets.push(sb); } sb.items.push(s);
+        });
+        
+        if (filters.len) { lenBuckets.forEach((b, idx) => { if(b.items.length > 1) { b.items.forEach(s => { const p1 = worldToScreen(s.p1.x, s.p1.y), p2 = worldToScreen(s.p2.x, s.p2.y), mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2, a = Math.atan2(p2.y-p1.y, p2.x-p1.x)+Math.PI/2; ctx.beginPath(); ctx.strokeStyle='#DC143C'; ctx.lineWidth=2; for(let i=0; i<=idx; i++) { const off = (i - idx/2)*6, ox = Math.cos(a-Math.PI/2)*off, oy = Math.sin(a-Math.PI/2)*off; ctx.moveTo(mx+ox-Math.cos(a)*6, my+oy-Math.sin(a)*6); ctx.lineTo(mx+ox+Math.cos(a)*6, my+oy+Math.sin(a)*6); } ctx.stroke(); }); } }); }
+        if (filters.par) { slopeBuckets.forEach((b, idx) => { if(b.items.length > 1) { b.items.forEach(s => { const p1 = worldToScreen(s.p1.x, s.p1.y), p2 = worldToScreen(s.p2.x, s.p2.y), mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2, a = Math.atan2(p2.y-p1.y, p2.x-p1.x); ctx.beginPath(); ctx.strokeStyle='#FFD700'; ctx.lineWidth=1.8; for(let i=0; i<=idx; i++) { const off = (i - idx/2)*8, ox = mx+Math.cos(a)*off, oy = my+Math.sin(a)*off; ctx.moveTo(ox-Math.cos(a+0.5)*8, oy-Math.sin(a+0.5)*8); ctx.lineTo(ox, oy); ctx.lineTo(ox-Math.cos(a-0.5)*8, oy-Math.sin(a-0.5)*8); } ctx.stroke(); }); } }); }
+        
+        points.forEach(v => {
+            const vs = worldToScreen(v.x, v.y), conn = segments.filter(s => s.p1 === v || s.p2 === v).map(s => { const p2 = s.p1 === v ? s.p2 : s.p1; return { s, p: p2, len: getDist(v, p2), a: Math.atan2(worldToScreen(p2.x, p2.y).y - vs.y, worldToScreen(p2.x, p2.y).x - vs.x) }; }).sort((a,b) => a.a-b.a);
+            for(let i=0; i<conn.length; i++) { 
+                const s1 = conn[i], s2 = conn[(i+1)%conn.length]; let d = s2.a-s1.a; if(d<0) d+=Math.PI*2; if(d>Math.PI) continue; const deg = d*180/Math.PI; if (deg < 5 || deg > 175) continue;
+                if(Math.abs(deg-90) < 1.8 && filters.ang && filters.len) { 
+                    const v1 = {x: Math.cos(s1.a), y: Math.sin(s1.a)}, v2 = {x: Math.cos(s2.a), y: Math.sin(s2.a)};
+                    ctx.beginPath(); ctx.strokeStyle='#007AFF'; ctx.lineWidth = 1.5; ctx.moveTo(vs.x+v1.x*15, vs.y+v1.y*15); ctx.lineTo(vs.x+v1.x*15+v2.x*15, vs.y+v1.y*15+v2.y*15); ctx.lineTo(vs.x+v2.x*15, vs.y+v2.y*15); ctx.stroke(); 
+                } else if(filters.ang) {
+                    const minL = Math.min(s1.len, s2.len); if (minL < 20/cameraScale) continue;
+                    let ab = angleBuckets.find(x => Math.abs(x.key - deg) < 2.0); if(!ab) { ab = {key: deg, items: []}; angleBuckets.push(ab); } ab.items.push({vs, s1, s2});
+                }
+            }
+        });
+        
+        if (filters.ang) { angleBuckets.forEach((b, idx) => { if(b.items.length > 1) { b.items.forEach(a => { 
+            const midA = (a.s1.a + a.s2.a)/2, rad = 24 * cameraScale;
+            ctx.beginPath(); ctx.strokeStyle = '#007AFF'; ctx.lineWidth=1.5; ctx.arc(a.vs.x, a.vs.y, rad, a.s1.a, a.s2.a); ctx.stroke();
+            for(let i=0; i<idx; i++) { 
+                const off = (i - (idx-1)/2)*6, ang = midA + off/rad;
+                ctx.beginPath(); ctx.moveTo(a.vs.x + Math.cos(ang)*(rad-5), a.vs.y + Math.sin(ang)*(rad-5)); ctx.lineTo(a.vs.x + Math.cos(ang)*(rad+5), a.vs.y + Math.sin(ang)*(rad+5)); ctx.stroke();
+            }
+        }); } }); }
+        
+        if (activePoint && dragPos) { const p1 = worldToScreen(activePoint.x, activePoint.y), p2 = worldToScreen(snapTarget?.x || dragPos.x, snapTarget?.y || dragPos.y); ctx.beginPath(); ctx.strokeStyle = 'rgba(0,122,255,0.4)'; if (currentTool === 'segment') { ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); } else { ctx.arc(p1.x, p1.y, getDist(p1, p2), 0, Math.PI * 2); } ctx.stroke(); }
+        
+        points.forEach(p => { 
+            const s = worldToScreen(p.x, p.y), g = ctx.createRadialGradient(s.x-1, s.y-1, 0, s.x, s.y, 5); g.addColorStop(0, '#efefef'); g.addColorStop(1, '#888'); 
+            ctx.beginPath(); ctx.fillStyle = (p === activePoint || (snapTarget && Math.abs(snapTarget.x - p.x) < 0.1)) ? '#007AFF' : g; ctx.arc(s.x, s.y, 5, 0, Math.PI * 2); ctx.fill();
+        });
+        
+        requestAnimationFrame(draw);
+    }
+    window.addEventListener('resize', resize); resize();
+</script>
+</body>
+</html>
