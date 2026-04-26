@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Things. | Time Thing.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Math Things Brand System */
+      --bg: #F5F5F7;
+      --glass: rgba(245,245,247,0.85);
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --border: rgba(0,0,0,0.05);
+      
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      
+      /* Materials */
+      --steel-dark: #4A5054;
+      --alum-base: #E8E9ED;
+      
+      /* Full Branding Palette - Alternating Warm/Cool */
+      --ones: #DC143C;              /* Warm / Red */
+      --tens: #4169E1;              /* Cool / Blue */
+      --hundreds: #FFD700;          /* Warm / Yellow */
+      --thousands: #4CBB17;         /* Cool / Green */
+      --ten-thousands: #FF7F00;     /* Warm / Orange */
+      --hundred-thousands: #6B3FA0; /* Cool / Purple */
+      --millions: #FF00FF;          /* Warm / Magenta */
+      --tenths: #7B00FF;            /* Cool / Indigo */
+      --hundredths: #FF9F0A;        /* Warm / Orange */
+      --thousandths: #64D2FF;       /* Cool / Ice */
+      --ten-thousandths: #E57373;   /* Warm / Rose */
+      --twelfths: #483D8B;          /* Cool / Slate Blue (Completes the 12 sequence) */
+
+      --shadow-raised: 12px 12px 24px rgba(166, 171, 189, 0.4), -12px -12px 24px rgba(255, 255, 255, 0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166, 171, 189, 0.9), inset -3px -3px 6px rgba(255, 255, 255, 1);
+      --shadow-void: inset 8px 8px 16px rgba(0,0,0,0.4), inset -4px -4px 8px rgba(255,255,255,0.2);
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh; overflow-x: hidden; overflow-y: auto;
+      display: flex; flex-direction: column;
+      user-select: none;
+    }
+
+    /* ── HEADER ── */
+    header {
+      height: 60px; padding: 0 32px; display: flex; align-items: center; justify-content: flex-start;
+      background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+      border-bottom: 1px solid var(--border); z-index: 100; flex-shrink: 0;
+    }
+    .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; display: flex; align-items: baseline; }
+    .logo-bead {
+      width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%;
+      background: 
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), 
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), 
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow: 
+        inset 1px 1px 2px rgba(255,255,255,0.8), 
+        inset -1px -1px 2px rgba(0,0,0,0.2), 
+        0 2px 5px rgba(0,0,0,0.22);
+      display: inline-block;
+    }
+
+    /* ── WORKSHOP ── */
+    .workshop {
+      flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: center;
+      gap: 60px; padding: 40px; position: relative;
+    }
+
+    /* ── INVENTORY (Wedges) ── */
+    .inventory {
+      width: 140px; background: var(--surface); border-radius: 24px; padding: 24px 24px 32px 24px;
+      box-shadow: var(--shadow-raised); display: flex; flex-direction: column; gap: 24px;
+      align-items: center; border: 1px solid var(--border);
+    }
+    
+    .wedge-btn {
+      width: 70px; height: 70px; border-radius: 50%; background: var(--alum-base);
+      box-shadow: var(--shadow-raised); border: 2px solid transparent; cursor: pointer;
+      position: relative; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; overflow: hidden;
+      flex-shrink: 0;
+    }
+    .wedge-btn:active { box-shadow: var(--shadow-milled); transform: scale(0.95); }
+    .wedge-btn.active { box-shadow: var(--shadow-milled); border-color: var(--text-gray); }
+    
+    .w-three-quarters { background: conic-gradient(var(--ones) 0deg 270deg, transparent 270deg); }
+    .w-half { background: conic-gradient(var(--tens) 0deg 180deg, transparent 180deg); }
+    .w-third { background: conic-gradient(var(--hundreds) 0deg 120deg, transparent 120deg); }
+    .w-quarter { background: conic-gradient(var(--thousands) 0deg 90deg, transparent 90deg); }
+    .w-sixth { background: conic-gradient(var(--ten-thousands) 0deg 60deg, transparent 60deg); }
+    .w-twelfth { background: conic-gradient(var(--hundred-thousands) 0deg 30deg, transparent 30deg); }
+    
+    .wedge-graphic {
+      width: 80%; height: 80%; border-radius: 50%; position: absolute; top: 10%; left: 10%; opacity: 0.9;
+      box-shadow: inset 1px 1px 4px rgba(255,255,255,0.6), inset -2px -2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ── CLOCK ASSEMBLY ── */
+    .clock-assembly {
+      display: flex; flex-direction: column; align-items: center; gap: 40px;
+    }
+
+    .clock-chassis {
+      width: 480px; height: 480px; border-radius: 50%; background: var(--surface);
+      box-shadow: var(--shadow-raised), inset 8px 8px 16px rgba(0,0,0,0.05);
+      position: relative; display: flex; align-items: center; justify-content: center;
+      border: 8px solid var(--alum-base);
+      flex-shrink: 0;
+    }
+
+    .clock-face {
+      position: absolute; inset: 24px; border-radius: 50%; background: var(--surface);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.1), inset 1px 1px 2px #fff;
+      z-index: 10; cursor: grab; overflow: hidden;
+    }
+    .clock-face:active { cursor: grabbing; }
+
+    .active-wedge-overlay {
+      position: absolute; inset: 0; border-radius: 50%; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s; z-index: 12; mix-blend-mode: multiply;
+    }
+
+    /* ── TICKS & NUMBERS ── */
+    .ticks-container { position: absolute; inset: 0; z-index: 15; width: 100%; height: 100%; pointer-events: none; }
+    
+    .tick {
+      position: absolute; top: 0; left: 50%; 
+      background: var(--text-light); width: 2px; height: 10px; 
+      transform-origin: center 208px; 
+      transition: background 0.3s;
+    }
+    .tick.major { width: 4px; height: 18px; background: var(--text-gray); }
+    
+    .tick-number {
+      position: absolute; transform: translate(-50%, -50%);
+      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 2.4rem; color: var(--text-main);
+      transition: color 0.3s; letter-spacing: -0.04em; line-height: 1;
+    }
+
+    /* ── COLOR CODING TOGGLE LOGIC ── */
+    body.color-coded .tick { background: var(--tick-color) !important; }
+    body.color-coded .tick-number { color: var(--tick-color) !important; }
+
+    /* ── HANDS & BEAD ── */
+    .hand-container { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+    
+    .hour-hand {
+      position: absolute; bottom: 50%; left: 50%; width: 14px; height: 100px;
+      background: var(--steel-dark); transform-origin: bottom center;
+      transform: translateX(-50%) rotate(0deg); border-radius: 7px 7px 0 0;
+      box-shadow: 2px 4px 8px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.4);
+    }
+    
+    .minute-hand {
+      position: absolute; bottom: 50%; left: 50%; width: 8px; height: 185px;
+      background: var(--ones); transform-origin: bottom center;
+      transform: translateX(-50%) rotate(0deg); border-radius: 4px 4px 0 0;
+      box-shadow: 2px 4px 8px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4);
+      transition: transform 0.05s linear, filter 0.3s, box-shadow 0.3s;
+    }
+    
+    @keyframes learn-pulse {
+      0%, 100% { filter: brightness(1); box-shadow: 2px 4px 8px rgba(0,0,0,0.2); }
+      50% { filter: brightness(1.2); box-shadow: 0 0 18px rgba(220, 20, 60, 0.7); }
+    }
+    .needs-discovery {
+      animation: learn-pulse 2.5s ease-in-out infinite;
+    }
+
+    .center-bead {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 36px; height: 36px; border-radius: 50%; z-index: 25;
+      background: 
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), 
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), 
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow: 
+        inset 1px 1px 2px rgba(255,255,255,0.8), 
+        inset -1px -1px 2px rgba(0,0,0,0.2), 
+        0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    /* ── CONTROLS & READOUT ── */
+    .control-cluster { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+    .color-toggle-container {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .color-wheel-icon {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: conic-gradient(var(--ones), var(--ten-thousands), var(--hundreds), var(--thousands), var(--twelfths), var(--tens), var(--tenths), var(--millions), var(--ones));
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      filter: grayscale(100%) opacity(0.5);
+      transition: 0.3s ease;
+    }
+    body.color-coded .color-wheel-icon { filter: grayscale(0%) opacity(1); }
+    
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px; background: var(--alum-base); 
+      border-radius: 12px; box-shadow: var(--shadow-milled); transition: 0.3s;
+      pointer-events: none;
+    }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; 
+      background: var(--surface); border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+      transition: transform 0.3s var(--spring), background 0.3s;
+    }
+    body.color-coded .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
+
+    .readout-wrapper { display: flex; align-items: center; gap: 16px; }
+
+    .digital-readout {
+      background: #2C2F33; border-radius: 16px; padding: 16px 32px;
+      box-shadow: var(--shadow-void); border: 2px solid var(--steel-dark);
+      display: flex; align-items: center; justify-content: center;
+    }
+    
+    .time-input {
+      background: transparent; border: none; color: #FFF;
+      font-family: 'Lexend', monospace; font-size: 4rem; font-weight: 900;
+      letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,255,255,0.3);
+      width: 2.2ch; text-align: center; outline: none;
+      padding: 0; margin: 0; cursor: text;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+    .time-input:focus { color: var(--ones); text-shadow: 0 0 15px rgba(220, 20, 60, 0.6); }
+    .time-input::selection { background: rgba(255,255,255,0.2); }
+    
+    .colon {
+      font-family: 'Lexend', monospace; font-size: 4rem; font-weight: 900;
+      color: #FFF; text-shadow: 0 0 10px rgba(255,255,255,0.3);
+      margin: 0 4px; transform: translateY(-4px); 
+    }
+    .blink { animation: blink 1s infinite; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+    .now-btn {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: 16px; width: 64px; height: 64px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-gray); cursor: pointer; transition: 0.2s;
+      box-shadow: var(--shadow-raised); outline: none;
+    }
+    .now-btn:active { box-shadow: var(--shadow-milled); transform: scale(0.95); }
+    .now-btn svg { transition: transform 0.3s; }
+    .now-btn:active svg { transform: rotate(45deg); }
+
+    /* Footer */
+    footer {
+      text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); flex-shrink: 0;
+    }
+    footer .footer-bead {
+      display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em;
+      background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+  </header>
+
+  <main class="workshop">
+    
+    <div class="inventory">
+      <button class="wedge-btn" data-frac="4-3" data-deg="270" data-color="var(--ones)">
+        <div class="wedge-graphic w-three-quarters"></div>
+      </button>
+      <button class="wedge-btn" data-frac="2" data-deg="180" data-color="var(--tens)">
+        <div class="wedge-graphic w-half"></div>
+      </button>
+      <button class="wedge-btn" data-frac="3" data-deg="120" data-color="var(--hundreds)">
+        <div class="wedge-graphic w-third"></div>
+      </button>
+      <button class="wedge-btn" data-frac="4" data-deg="90" data-color="var(--thousands)">
+        <div class="wedge-graphic w-quarter"></div>
+      </button>
+      <button class="wedge-btn" data-frac="6" data-deg="60" data-color="var(--ten-thousands)">
+        <div class="wedge-graphic w-sixth"></div>
+      </button>
+      <button class="wedge-btn" data-frac="12" data-deg="30" data-color="var(--hundred-thousands)">
+        <div class="wedge-graphic w-twelfth"></div>
+      </button>
+    </div>
+
+    <div class="clock-assembly">
+      <div class="clock-chassis" id="clockChassis">
+        <div class="clock-face" id="clockFace">
+          <div class="active-wedge-overlay" id="wedgeOverlay"></div>
+          <div class="ticks-container" id="ticksContainer"></div>
+          
+          <div class="hand-container">
+            <div class="hour-hand" id="hourHand"></div>
+            <div class="minute-hand needs-discovery" id="minuteHand"></div>
+            <div class="center-bead"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-cluster">
+        
+        <div class="color-toggle-container" onclick="toggleColorCoding()">
+          <div class="color-wheel-icon"></div>
+          <div class="toggle-switch"></div>
+        </div>
+
+        <div class="readout-wrapper">
+          <div class="digital-readout">
+            <input type="text" id="digHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
+            <span class="colon blink">:</span>
+            <input type="text" id="digMin" class="time-input" inputmode="numeric" maxlength="2" value="00">
+          </div>
+          
+          <button id="nowBtn" class="now-btn">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </button>
+        </div>
+        
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+
+  <script>
+    // --- STATE MACHINE ---
+    const STATE = {
+      totalMinuteRotation: 0,
+      activeWedgeDeg: null,
+      isDragging: false,
+      lastAngle: 0
+    };
+
+    const palette = [
+      'var(--ones)', 'var(--tens)', 'var(--hundreds)', 'var(--thousands)', 
+      'var(--ten-thousands)', 'var(--hundred-thousands)', 'var(--millions)', 
+      'var(--tenths)', 'var(--hundredths)', 'var(--thousandths)', 
+      'var(--ten-thousandths)', 'var(--twelfths)'
+    ];
+
+    // --- DOM CACHE ---
+    const hourHand = document.getElementById('hourHand');
+    const minuteHand = document.getElementById('minuteHand');
+    const clockFace = document.getElementById('clockFace');
+    const digHour = document.getElementById('digHour');
+    const digMin = document.getElementById('digMin');
+    const wedgeOverlay = document.getElementById('wedgeOverlay');
+    const ticksContainer = document.getElementById('ticksContainer');
+
+    // --- INITIALIZATION ---
+    function buildClockFace() {
+      const radiusPercent = (168 / 208) * 50; 
+
+      for (let i = 0; i < 60; i++) {
+        const isMajor = (i % 5 === 0);
+        const hourIndex = Math.floor(i / 5);
+        const blockColor = palette[hourIndex];
+
+        // Ticks
+        const tick = document.createElement('div');
+        tick.className = `tick ${isMajor ? 'major' : ''}`;
+        tick.style.transform = `translateX(-50%) rotate(${i * 6}deg)`;
+        tick.style.setProperty('--tick-color', blockColor);
+        ticksContainer.appendChild(tick);
+
+        // Numerals
+        if (isMajor) {
+          const hourNum = i === 0 ? 12 : i / 5;
+          const num = document.createElement('div');
+          num.className = 'tick-number';
+          num.textContent = hourNum;
+          num.style.setProperty('--tick-color', blockColor);
+          
+          const angleDeg = i * 6 - 90; 
+          const angleRad = angleDeg * Math.PI / 180;
+          
+          const x = 50 + radiusPercent * Math.cos(angleRad);
+          const y = 50 + radiusPercent * Math.sin(angleRad);
+          
+          num.style.left = `${x}%`;
+          num.style.top = `${y}%`;
+          ticksContainer.appendChild(num);
+        }
+      }
+    }
+
+    function toggleColorCoding() {
+      document.body.classList.toggle('color-coded');
+    }
+
+    function updateTimeDisplay() {
+      minuteHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation}deg)`;
+      hourHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation / 12}deg)`;
+
+      let positiveRotation = STATE.totalMinuteRotation % (360 * 12);
+      if (positiveRotation < 0) positiveRotation += (360 * 12);
+
+      const minuteAngle = positiveRotation % 360;
+      const minutes = Math.floor(minuteAngle / 6);
+      
+      const hourVal = Math.floor(positiveRotation / 360) % 12;
+      const displayHour = hourVal === 0 ? 12 : hourVal;
+
+      if (document.activeElement !== digHour) digHour.value = displayHour.toString().padStart(2, '0');
+      if (document.activeElement !== digMin) digMin.value = minutes.toString().padStart(2, '0');
+    }
+
+    // --- INTERACTION LOGIC ---
+    function getAngleFromCenter(e) {
+      const rect = clockFace.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+      
+      let angle = Math.atan2(clientY - centerY, clientX - centerX) * 180 / Math.PI;
+      angle += 90; 
+      if (angle < 0) angle += 360;
+      return angle;
+    }
+
+    function startDrag(e) {
+      STATE.isDragging = true;
+      STATE.lastAngle = getAngleFromCenter(e);
+      document.body.style.cursor = 'grabbing';
+      
+      minuteHand.classList.remove('needs-discovery');
+
+      if (document.activeElement === digHour || document.activeElement === digMin) {
+        document.activeElement.blur();
+      }
+    }
+
+    function moveDrag(e) {
+      if (!STATE.isDragging) return;
+      
+      const currentAngle = getAngleFromCenter(e);
+      let delta = currentAngle - STATE.lastAngle;
+      
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+
+      if (STATE.activeWedgeDeg) {
+        const predictedRotation = STATE.totalMinuteRotation + delta;
+        const predictedMinAngle = predictedRotation % 360;
+        const normMinAngle = predictedMinAngle < 0 ? predictedMinAngle + 360 : predictedMinAngle;
+        
+        const boundary = STATE.activeWedgeDeg;
+        const lastMinAngle = STATE.totalMinuteRotation % 360;
+        const normLastMin = lastMinAngle < 0 ? lastMinAngle + 360 : lastMinAngle;
+
+        if ((normLastMin < boundary && normMinAngle >= boundary && delta > 0) || 
+            (normLastMin > boundary && normMinAngle <= boundary && delta < 0)) {
+            
+            const baseRotations = Math.floor(STATE.totalMinuteRotation / 360) * 360;
+            STATE.totalMinuteRotation = baseRotations + boundary;
+            navigator.vibrate?.(15); 
+            STATE.lastAngle = currentAngle;
+            updateTimeDisplay();
+            return;
+        }
+      }
+
+      STATE.totalMinuteRotation += delta;
+      STATE.lastAngle = currentAngle;
+      updateTimeDisplay();
+    }
+
+    function endDrag() {
+      STATE.isDragging = false;
+      document.body.style.cursor = 'default';
+    }
+
+    clockFace.addEventListener('mousedown', startDrag);
+    window.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', endDrag);
+
+    clockFace.addEventListener('touchstart', startDrag, {passive: false});
+    window.addEventListener('touchmove', (e) => {
+        if(STATE.isDragging) e.preventDefault();
+        moveDrag(e);
+    }, {passive: false});
+    window.addEventListener('touchmove', (e) => { e.preventDefault(); }, {passive: false});
+    window.addEventListener('touchend', endDrag);
+
+    // --- WEDGE INVENTORY LOGIC ---
+    document.querySelectorAll('.wedge-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const deg = parseInt(btn.dataset.deg);
+        const color = btn.dataset.color;
+
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          wedgeOverlay.style.opacity = '0';
+          STATE.activeWedgeDeg = null;
+          return;
+        }
+
+        document.querySelectorAll('.wedge-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        wedgeOverlay.style.background = `conic-gradient(${color} 0deg ${deg + 0.5}deg, transparent ${deg + 0.5}deg)`;
+        wedgeOverlay.style.opacity = '0.35'; 
+        STATE.activeWedgeDeg = deg;
+      });
+    });
+
+    // --- MANUAL TIME ENTRY LOGIC ---
+    function handleManualTimeInput() {
+      let h = parseInt(digHour.value) || 0;
+      let m = parseInt(digMin.value) || 0;
+      
+      if (h > 12) h = 12;
+      if (h <= 0) h = 12;
+      if (m > 59) m = 59;
+      if (m < 0) m = 0;
+
+      const targetH = h % 12;
+      const targetMod = (targetH * 360) + (m * 6);
+      
+      let currentMod = STATE.totalMinuteRotation % (360 * 12);
+      if (currentMod < 0) currentMod += (360 * 12);
+      
+      let diff = targetMod - currentMod;
+      if (diff > 360 * 6) diff -= 360 * 12;
+      if (diff < -360 * 6) diff += 360 * 12;
+
+      STATE.totalMinuteRotation += diff;
+      
+      digHour.blur();
+      digMin.blur();
+      updateTimeDisplay();
+      minuteHand.classList.remove('needs-discovery');
+    }
+
+    digHour.addEventListener('change', handleManualTimeInput);
+    digMin.addEventListener('change', handleManualTimeInput);
+    digHour.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleManualTimeInput(); });
+    digMin.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleManualTimeInput(); });
+    digHour.addEventListener('focus', () => digHour.select());
+    digMin.addEventListener('focus', () => digMin.select());
+
+    // --- RIGHT NOW TIME SNAP ---
+    document.getElementById('nowBtn').addEventListener('click', () => {
+      const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+      let h = now.getHours() % 12;
+      let m = now.getMinutes();
+      
+      const targetMod = (h * 360) + (m * 6);
+      
+      let currentMod = STATE.totalMinuteRotation % (360 * 12);
+      if (currentMod < 0) currentMod += (360 * 12);
+      
+      let diff = targetMod - currentMod;
+      if (diff > 360 * 6) diff -= 360 * 12;
+      if (diff < -360 * 6) diff += 360 * 12;
+      
+      STATE.totalMinuteRotation += diff;
+
+      updateTimeDisplay();
+      minuteHand.classList.remove('needs-discovery');
+      navigator.vibrate?.(20);
+    });
+
+    // Boot
+    buildClockFace();
+    updateTimeDisplay();
+  </script>
+</body>
+</html>
