@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Math Things. | Design Doctrine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F5F7;
+      --glass: rgba(245,245,247,0.86);
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --accent: #007AFF;
+      --border: rgba(0,0,0,0.055);
+      --soft-border: rgba(255,255,255,0.75);
+      --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+      --shadow-lift: 0 18px 50px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05);
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* Current Math Things. place-value palette */
+      --millions: #FF00FF;
+      --hundred-thousands: #6B3FA0;
+      --ten-thousands: #FF7F00;
+      --thousands: #4CBB17;
+      --hundreds: #FFD700;
+      --tens: #4169E1;
+      --ones: #DC143C;
+      --tenths: #7B00FF;
+      --hundredths: #FF9F0A;
+      --thousandths: #64D2FF;
+      --bead-low: #a8a8a8;
+      --bead-mid: #d0d0d0;
+      --bead-high: #efefef;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Lexend', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 40%),
+        radial-gradient(rgba(0,0,0,0.045) 1.2px, transparent 1.2px),
+        var(--bg);
+      background-size: auto, 30px 30px, auto;
+      color: var(--text-main);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: 64px;
+      padding: 0 clamp(16px, 4vw, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      background: var(--glass);
+      backdrop-filter: blur(42px);
+      -webkit-backdrop-filter: blur(42px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: baseline;
+      font-weight: 900;
+      font-size: clamp(1.2rem, 2.3vw, 1.55rem);
+      letter-spacing: -0.055em;
+      color: var(--text-main);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .bead,
+    .logo-bead,
+    .footer-bead {
+      border-radius: 50%;
+      display: inline-block;
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+        linear-gradient(135deg, var(--bead-high) 0%, var(--bead-mid) 25%, var(--bead-low) 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow:
+        inset 1px 1px 2px rgba(255,255,255,0.85),
+        inset -1px -1px 2px rgba(0,0,0,0.22),
+        0 2px 6px rgba(0,0,0,0.22);
+    }
+
+    .logo-bead {
+      width: 0.22em;
+      height: 0.22em;
+      margin-left: 0.04em;
+      margin-bottom: 0.08em;
+      transition: transform 0.35s var(--spring);
+    }
+
+    .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+    nav {
+      background: rgba(0,0,0,0.055);
+      padding: 5px;
+      border-radius: 16px;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    nav::-webkit-scrollbar { display: none; }
+
+    .tab {
+      padding: 9px 18px;
+      border-radius: 12px;
+      font-family: 'Lexend', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-gray);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.22s var(--ease);
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      background: var(--surface);
+      color: var(--text-main);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+    }
+
+    main {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: clamp(36px, 6vw, 64px) 24px 88px;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; animation: fadeUp 0.45s var(--ease); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 24px;
+      margin-bottom: 28px;
+      align-items: stretch;
+    }
+
+    .card,
+    .mini-card,
+    .statement-card {
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      border-radius: 28px;
+    }
+
+    .card { padding: clamp(28px, 4vw, 48px); margin-bottom: 24px; }
+    .statement-card { padding: clamp(32px, 5vw, 56px); position: relative; overflow: hidden; }
+    .mini-card { padding: 24px; }
+
+    .statement-card::after {
+      content: '';
+      position: absolute;
+      right: -90px;
+      bottom: -90px;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.2) 38%, transparent 60%),
+        linear-gradient(135deg, #f7f7f7, #d1d1d6, #a8a8a8, #e4e4e7);
+      box-shadow: inset 8px 8px 22px rgba(255,255,255,0.8), inset -10px -10px 28px rgba(0,0,0,0.12), 0 22px 60px rgba(0,0,0,0.12);
+      opacity: 0.42;
+      pointer-events: none;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 2.6px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin: 0 0 16px 2px;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 5.3rem);
+      line-height: 0.9;
+      letter-spacing: -0.07em;
+      font-weight: 900;
+      margin-bottom: 26px;
+      max-width: 780px;
+      position: relative;
+      z-index: 1;
+    }
+
+    h2 {
+      font-size: clamp(1.8rem, 3.4vw, 3rem);
+      line-height: 1;
+      letter-spacing: -0.055em;
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: var(--text-gray);
+      line-height: 1.75;
+      font-size: 0.96rem;
+      max-width: 760px;
+    }
+
+    .lead {
+      font-size: clamp(1rem, 1.4vw, 1.2rem);
+      line-height: 1.75;
+      color: #4d4d52;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tag-stack { display: grid; gap: 12px; }
+
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.35;
+    }
+
+    .tag .bead { width: 22px; height: 22px; flex: 0 0 auto; }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 14px;
+    }
+
+    .two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .three-col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .info-cell {
+      background: rgba(245,245,247,0.8);
+      border: 1px solid rgba(0,0,0,0.035);
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    .info-cell h4,
+    .principle-label {
+      font-size: 0.64rem;
+      font-weight: 900;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 10px;
+    }
+
+    .info-cell p { font-size: 0.86rem; line-height: 1.65; }
+
+    .quote {
+      font-size: clamp(1.65rem, 3vw, 2.6rem);
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      line-height: 1.02;
+      color: var(--text-main);
+      margin-bottom: 20px;
+    }
+
+    .object-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .object-pill {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(245,245,247,0.86);
+      color: #4d4d52;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border: 1px solid rgba(0,0,0,0.035);
+    }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+      gap: 18px;
+    }
+
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 9px;
+      padding: 16px 10px;
+      border-radius: 18px;
+      background: rgba(245,245,247,0.72);
+      border: 1px solid rgba(0,0,0,0.035);
+    }
+
+    .swatch-dot {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      box-shadow: inset 1px 1px 3px rgba(255,255,255,0.28), inset -1px -1px 3px rgba(0,0,0,0.12), 0 5px 12px rgba(0,0,0,0.14);
+    }
+
+    .swatch-name {
+      text-align: center;
+      font-size: 0.61rem;
+      line-height: 1.45;
+      font-weight: 900;
+      letter-spacing: 0.7px;
+      color: var(--text-gray);
+      text-transform: uppercase;
+    }
+
+    .bead-demo {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      margin: 8px auto 22px;
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.32) 40%, transparent 64%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.16) 0%, transparent 55%),
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow:
+        inset 5px 5px 13px rgba(255,255,255,0.9),
+        inset -6px -6px 15px rgba(0,0,0,0.18),
+        0 20px 45px rgba(0,0,0,0.16);
+    }
+
+    .rubric {
+      display: grid;
+      gap: 14px;
+      counter-reset: rubric;
+    }
+
+    .rubric-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 16px;
+      align-items: start;
+      background: rgba(245,245,247,0.82);
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid rgba(0,0,0,0.035);
+    }
+
+    .rubric-item::before {
+      counter-increment: rubric;
+      content: counter(rubric);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: var(--text-main);
+      font-weight: 900;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .rubric-item p { font-size: 0.88rem; }
+
+    .prompt-wrap {
+      background: #1D1D1F;
+      color: #F5F5F7;
+      border-radius: 28px;
+      padding: 46px 40px 40px;
+      position: relative;
+      font-size: 0.84rem;
+      line-height: 1.75;
+      font-weight: 300;
+      white-space: pre-wrap;
+      box-shadow: var(--shadow-lift);
+      overflow: hidden;
+    }
+
+    .prompt-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 86% 18%, rgba(100,210,255,0.12), transparent 28%);
+      pointer-events: none;
+    }
+
+    .prompt-text { position: relative; z-index: 1; }
+    .prompt-text strong { color: #64D2FF; font-weight: 800; }
+
+    .copy-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 2;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #F5F5F7;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-family: 'Lexend', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.18s var(--spring), background 0.18s ease;
+    }
+
+    .copy-btn:active { transform: scale(0.95); }
+
+    .note {
+      color: var(--text-light);
+      font-size: 0.78rem;
+      margin-top: 14px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 28px 24px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+
+    .footer-bead {
+      width: 0.22em;
+      height: 0.22em;
+      margin-left: 0.04em;
+      margin-bottom: 0.08em;
+      vertical-align: baseline;
+    }
+
+    @media (max-width: 840px) {
+      header { justify-content: flex-start; height: auto; min-height: 64px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+      nav { order: 3; width: 100%; justify-content: flex-start; }
+      .hero, .two-col, .three-col { grid-template-columns: 1fr; }
+      .card, .statement-card { padding: 28px 22px; }
+      main { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <nav aria-label="Sections">
+      <button class="tab active" data-view="doctrine">Doctrine</button>
+      <button class="tab" data-view="rubric">Rubric</button>
+      <button class="tab" data-view="visuals">Visual System</button>
+      <button class="tab" data-view="prompt">Architect Prompt</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="doctrine" class="view active">
+      <p class="section-label">Brand + Product Doctrine</p>
+      <div class="hero">
+        <div class="statement-card">
+          <h1>No words, no directions.</h1>
+          <p class="lead">Math Things are digital manipulatives that make mathematical structures physical. They are not standalone lessons, tutors, worksheets, or games with math pasted on top. They are objects a teacher can put in a student’s hands so the mathematics becomes something to move, split, join, compare, measure, sort, rotate, bundle, unbundle, or transform.</p>
+        </div>
+        <div class="tag-stack">
+          <div class="tag"><span class="bead"></span><span>The teacher teaches. The tool gives the teacher something worth teaching with.</span></div>
+          <div class="tag"><span class="bead"></span><span>The equation is the shadow of the object, not the object itself.</span></div>
+          <div class="tag"><span class="bead"></span><span>The boundaries of the interface are the boundaries of the math.</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Core Beliefs</p>
+        <div class="three-col">
+          <div class="info-cell">
+            <h4>Physical before symbolic</h4>
+            <p>Every Math Thing begins with a structure: a countable quantity, a groupable unit, a partitionable whole, a traveled line, a constructed shape, or a decomposable number.</p>
+          </div>
+          <div class="info-cell">
+            <h4>Constraint over explanation</h4>
+            <p>The app should not explain the idea first. It should make the idea inevitable. Correct structure should snap, fit, fuse, align, reveal, settle, or transform.</p>
+          </div>
+          <div class="info-cell">
+            <h4>Quiet tool, active teacher</h4>
+            <p>Lesson plans, teacher prompts, standards alignment, and discussion moves live around the app. The student interface stays clean, tactile, and direct.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Whimsy Rule</p>
+        <div class="quote">Whimsy is allowed when it carries the math.</div>
+        <p>A flying pegamole can make coordinates feel like navigation. A rounding wave can make “nearest” feel like gravity. A prime altar can make factorization feel like discovery. A clock dial can become time, fractions, and angle measure at once. Decoration is optional. Metaphor is powerful. The difference is whether the student understands the math better because of it.</p>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Product Families</p>
+        <div class="three-col">
+          <div class="info-cell">
+            <h4>Core Manipulatives</h4>
+            <p>Flexible teacher-directed objects used across many lessons: ten-frames, rekenreks, number bonds, place-value cards, base-ten blocks, fraction bars, clocks, number lines, and construction tools.</p>
+          </div>
+          <div class="info-cell">
+            <h4>Concept Machines</h4>
+            <p>Narrower tools that embody a specific structure: rounding waves, partial products, common grids, sorters, coordinate quests, prime altars, and fraction/angle dials.</p>
+          </div>
+          <div class="info-cell">
+            <h4>Bridges</h4>
+            <p>Tools that connect physical reasoning to symbolic recording: regrouping to algorithms, arrays to multiplication, fraction alignment to notation, and division pieces to long division.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Mathematical Objects</p>
+        <p>Examples of the objects a Math Thing can make physical:</p>
+        <div class="object-list">
+          <div class="object-pill">Ten ones become one ten</div>
+          <div class="object-pill">A whole partitions into equal parts</div>
+          <div class="object-pill">A product appears as area</div>
+          <div class="object-pill">A coordinate becomes a place</div>
+          <div class="object-pill">A rounded number finds a valley</div>
+          <div class="object-pill">A category becomes a count</div>
+          <div class="object-pill">A count becomes a comparison</div>
+          <div class="object-pill">A construction reveals a property</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="rubric" class="view">
+      <p class="section-label">Design Rubric</p>
+      <div class="card">
+        <h2>A Math Thing should pass these tests.</h2>
+        <div class="rubric">
+          <div class="rubric-item">
+            <div>
+              <h3>Is the core action obvious?</h3>
+              <p>The student should know what to try without a paragraph of setup: slide the bead, drop the number, drag the block, split the rectangle, turn the dial, sort the objects, move the character.</p>
+            </div>
+          </div>
+          <div class="rubric-item">
+            <div>
+              <h3>Does the action reveal the math?</h3>
+              <p>The interaction must make the target structure more visible, not merely more entertaining. If the tool is about place value, grouping and regrouping must be physical.</p>
+            </div>
+          </div>
+          <div class="rubric-item">
+            <div>
+              <h3>Can the student succeed by misunderstanding?</h3>
+              <p>If yes, the design needs work. The best tools make incorrect reasoning bump into the structure of the world.</p>
+            </div>
+          </div>
+          <div class="rubric-item">
+            <div>
+              <h3>Is the symbolic layer optional or emergent?</h3>
+              <p>Equations, labels, readouts, and algorithms are useful, but they should usually be hidden by default, teacher-toggleable, delayed, or visually subordinate.</p>
+            </div>
+          </div>
+          <div class="rubric-item">
+            <div>
+              <h3>Does the tool stay in its lane?</h3>
+              <p>A Math Thing should do one mathematical job clearly. If a prototype tries to be a dictionary, quiz, game, lesson, calculator, dashboard, and manipulative at once, split it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Audit Outcomes</p>
+        <div class="two-col">
+          <div class="info-cell"><h4>Keep</h4><p>The tool already enforces the standard cleanly and should remain in the core catalog.</p></div>
+          <div class="info-cell"><h4>Spin / Modify</h4><p>The core mechanic is promising, but it needs a variant, constraint change, or narrower use case.</p></div>
+          <div class="info-cell"><h4>Rework</h4><p>The concept points at the right standard, but the present design needs substantial restructuring before it fits the philosophy.</p></div>
+          <div class="info-cell"><h4>New Build</h4><p>The current tool does not meaningfully enforce the standard. Build from scratch.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="visuals" class="view">
+      <p class="section-label">Visual System</p>
+      <div class="hero">
+        <div class="card" style="margin-bottom:0;">
+          <h2>The Bead</h2>
+          <p>The bead is the neutral Math Things object. It may function as an origin marker, draggable point, decimal point, cursor, reset object, traveler, dropped number, center pivot, or mathematical object under investigation.</p>
+          <p class="note">It is never assigned a place-value color. It is the border crossing.</p>
+        </div>
+        <div class="mini-card">
+          <div class="bead-demo"></div>
+          <p style="text-align:center;margin:0 auto;font-size:.84rem;">Brushed aluminum, neutral gray, slight depth, highlight, shadow, and weight.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Current Place-Value Palette</p>
+        <div class="swatch-grid">
+          <div class="swatch"><div class="swatch-dot" style="background:var(--millions)"></div><div class="swatch-name">Millions<br>#FF00FF</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--hundred-thousands)"></div><div class="swatch-name">100K<br>#6B3FA0</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--ten-thousands)"></div><div class="swatch-name">10K<br>#FF7F00</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--thousands)"></div><div class="swatch-name">Thousands<br>#4CBB17</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--hundreds)"></div><div class="swatch-name">Hundreds<br>#FFD700</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--tens)"></div><div class="swatch-name">Tens<br>#4169E1</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--ones)"></div><div class="swatch-name">Ones<br>#DC143C</div></div>
+          <div class="swatch"><div class="swatch-dot bead"></div><div class="swatch-name">The Bead<br>Neutral</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--tenths)"></div><div class="swatch-name">Tenths<br>#7B00FF</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--hundredths)"></div><div class="swatch-name">Hundredths<br>#FF9F0A</div></div>
+          <div class="swatch"><div class="swatch-dot" style="background:var(--thousandths)"></div><div class="swatch-name">Thousandths<br>#64D2FF</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Motion</p>
+        <div class="two-col">
+          <div class="info-cell">
+            <h4>Motion should teach</h4>
+            <p>Use motion to communicate fit, resistance, transformation, equivalence, scale, grouping, and belonging. Animation is not decoration.</p>
+          </div>
+          <div class="info-cell">
+            <h4>Default spring</h4>
+            <p><code>cubic-bezier(0.34, 1.56, 0.64, 1)</code></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="prompt" class="view">
+      <p class="section-label">Updated Architect Instructions</p>
+      <div class="prompt-wrap">
+        <button class="copy-btn" id="copyBtn">Copy</button>
+        <div class="prompt-text" id="promptText"><strong>MATH THINGS. — ARCHITECT SYSTEM PROMPT</strong>
+
+You are designing for Math Things., a collection of digital math manipulatives for K–5 classrooms.
+
+A Math Thing is not a standalone lesson, tutor, worksheet, or game. It is a physical-feeling mathematical object that a teacher can use inside a lesson. The teacher provides the framing. The app provides the structure.
+
+<strong>CORE PHILOSOPHY: NO WORDS, NO DIRECTIONS</strong>
+
+The tool should be so intuitive that the first obvious interaction is mathematically meaningful.
+
+Do not explain the math through instructions.
+Do not rely on tutorial text.
+Do not make the student read before they can act.
+Do not use badges, points, or game mechanics unless they preserve the mathematical structure.
+
+The mathematics should live in the constraints of the interface.
+
+<strong>DESIGN PRINCIPLE</strong>
+
+Every app must make one mathematical abstraction physical.
+
+Examples:
+- Ten ones physically become one ten.
+- A fraction cannot combine with another fraction until the wholes are partitioned compatibly.
+- A multiplication product appears as area.
+- A coordinate is a place reached by horizontal and vertical movement.
+- A rounded number is the valley a bead rolls toward.
+- A clock is a fraction circle, angle dial, and time machine.
+- A sorted category becomes a count, and a count becomes a comparison.
+
+The equation, label, or algorithm may appear, but only as a shadow of the physical action.
+
+<strong>THE ROLE OF THE TEACHER</strong>
+
+Assume the app will be packaged with teacher-facing lesson plans, prompts, standards alignment, and discussion moves.
+
+The app itself should stay quiet.
+The teacher teaches.
+The tool gives the teacher something worth teaching with.
+
+<strong>INTERACTION RULES</strong>
+
+1. The obvious action should be the mathematically useful action.
+2. Correct structure should snap, fit, fuse, align, reveal, or settle.
+3. Incorrect structure should resist, fail visibly, or remain incomplete.
+4. Avoid text explanations inside the student interface.
+5. Use labels only when they are part of the mathematical object, not directions.
+6. Make symbols optional, delayed, or secondary when possible.
+7. Prefer direct manipulation over typed input.
+8. Prefer physical constraints over answer checking.
+9. Prefer one clear mathematical object over many representations at once.
+10. If the app tries to do too much, split it into smaller tools.
+
+<strong>VISUAL LANGUAGE</strong>
+
+Use a clean, minimal, tactile interface:
+- soft light background
+- white cards or surfaces
+- rounded corners
+- subtle glass or aluminum materials
+- physical shadows
+- large touch targets
+- generous spacing
+- Lexend typography
+- no clutter
+- no decorative noise unless it carries the math
+
+<strong>THE BEAD</strong>
+
+The bead is the neutral Math Things object.
+
+It may function as:
+- origin marker
+- draggable point
+- decimal point
+- cursor
+- reset object
+- traveler
+- dropped number
+- center pivot
+- mathematical object under investigation
+
+It should use brushed aluminum styling:
+- light highlight
+- darker lower edge
+- radial shine
+- subtle shadow
+- neutral gray
+- never assigned a place-value color
+
+<strong>PLACE-VALUE PALETTE</strong>
+
+Use the Math Things place-value palette consistently.
+
+Core current palette:
+- Millions: #FF00FF
+- Hundred Thousands: #6B3FA0
+- Ten Thousands: #FF7F00
+- Thousands: #4CBB17
+- Hundreds: #FFD700
+- Tens: #4169E1
+- Ones: #DC143C
+- Tenths: #7B00FF
+- Hundredths: #FF9F0A
+- Thousandths: #64D2FF
+- The Bead: brushed aluminum / neutral gray
+
+Whole-number places grow leftward from ones.
+Decimal places shrink rightward from ones.
+Color should reinforce structure, not decorate randomly.
+
+<strong>MOTION</strong>
+
+Motion should teach.
+
+Use spring motion for:
+- snap
+- settle
+- bundle
+- unbundle
+- fuse
+- split
+- drop
+- roll
+- slide
+- rotate
+- reveal
+
+Default spring:
+cubic-bezier(0.34, 1.56, 0.64, 1)
+
+Motion must clarify the mathematical relationship:
+- ten smaller units become one larger unit
+- equivalent pieces align
+- a point moves along an axis
+- a region becomes a product
+- a quantity is sorted into a category
+- a number shifts scale
+
+<strong>DEVELOPMENT CONSTRAINTS</strong>
+
+Build as a single-file HTML/CSS/JS prototype unless otherwise specified.
+Use Lexend.
+Avoid external libraries unless explicitly approved.
+Prioritize touch interaction.
+Design for classroom projection and student tablet use.
+Keep student-facing text minimal.
+Use teacher-facing notes outside the app, not inside the app.
+Every app footer may use:
+“Math Things. | Math, in your hands.”
+
+<strong>FINAL TEST</strong>
+
+Before calling an app finished, ask:
+
+What is the mathematical object?
+What action does the student take?
+What structure does the action reveal?
+Can the student succeed without engaging the intended math?
+Is there any instruction text doing work the interface should do?
+Could this be simpler?</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const views = document.querySelectorAll('.view');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.dataset.view;
+        tabs.forEach(t => t.classList.remove('active'));
+        views.forEach(v => v.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id).classList.add('active');
+      });
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('promptText').innerText;
+      const btn = document.getElementById('copyBtn');
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied';
+        setTimeout(() => btn.textContent = 'Copy', 1600);
+      } catch (err) {
+        btn.textContent = 'Select text';
+        setTimeout(() => btn.textContent = 'Copy', 1800);
+      }
+    });
+  </script>
+</body>
+</html>
