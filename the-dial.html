@@ -113,17 +113,17 @@
     }
 
     .clock-chassis {
-      width: 480px; height: 480px; border-radius: 50%; background: var(--surface);
-      box-shadow: var(--shadow-raised), inset 8px 8px 16px rgba(0,0,0,0.05);
+      width: 560px; height: 560px; border-radius: 50%; background: var(--surface);
+      box-shadow: var(--shadow-raised), inset 10px 10px 20px rgba(0,0,0,0.045);
       position: relative; display: flex; align-items: center; justify-content: center;
-      border: 8px solid var(--alum-base);
+      border: 18px solid var(--alum-base);
       flex-shrink: 0;
     }
 
     .clock-face {
-      position: absolute; inset: 24px; border-radius: 50%; background: var(--surface);
+      position: absolute; inset: 42px; border-radius: 50%; background: var(--surface);
       box-shadow: 0 12px 24px rgba(0,0,0,0.1), inset 1px 1px 2px #fff;
-      z-index: 10; cursor: grab; overflow: hidden;
+      z-index: 10; cursor: grab; overflow: visible;
     }
     .clock-face:active { cursor: grabbing; }
 
@@ -137,35 +137,102 @@
     
     .tick {
       position: absolute; top: 0; left: 50%; 
-      background: var(--text-light); width: 2px; height: 10px; 
-      transform-origin: center 208px; 
+      background: var(--text-light); width: 2px; height: 14px; 
+      transform-origin: center 238px; 
       transition: background 0.3s;
+      z-index: 32;
+      border-radius: 2px;
     }
-    .tick.major { width: 4px; height: 18px; background: var(--text-gray); }
+    .tick.major { width: 4px; height: 24px; background: var(--text-gray); z-index: 33; }
     
     .tick-number {
       position: absolute; transform: translate(-50%, -50%);
-      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 2.4rem; color: var(--text-main);
+      width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 2.55rem; color: var(--text-main);
       transition: color 0.3s; letter-spacing: -0.04em; line-height: 1;
+      z-index: 24;
     }
 
     /* ── COLOR CODING TOGGLE LOGIC ── */
     body.color-coded .tick { background: var(--tick-color) !important; }
     body.color-coded .tick-number { color: var(--tick-color) !important; }
 
+
+
+    /* ── PROGRESSIVE MINUTE REVEAL ── */
+    .minute-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.48rem; font-weight: 800;
+      color: var(--text-light);
+      opacity: 0;
+      transition: opacity 0.22s ease, transform 0.22s ease, color 0.3s ease;
+      pointer-events: none;
+      letter-spacing: -0.045em;
+      z-index: 18;
+    }
+
+    .minute-label.minute-five {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--tick-color);
+      font-size: 0.82rem;
+      font-weight: 900;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12), inset 1px 1px 3px rgba(255,255,255,0.42);
+      z-index: 31;
+    }
+
+    .minute-label.minute-zero { font-size: 1.02rem; }
+
+    body.minute-mode-1 .minute-label.minute-five,
+    body.minute-mode-2 .minute-label.minute-five {
+      opacity: 0.94;
+    }
+
+    body.minute-mode-2 .minute-label.minute-one {
+      opacity: 0.46;
+    }
+
+    body.color-coded .minute-label.minute-one { color: var(--tick-color); }
+
+    .minute-toggle-container {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+
+    .minute-icon {
+      width: 18px; height: 18px; border-radius: 50%; position: relative;
+      background: var(--surface); box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9);
+      opacity: 0.55; transition: 0.25s ease;
+    }
+    .minute-icon::before,
+    .minute-icon::after {
+      content: ''; position: absolute; left: 50%; top: 50%; border-radius: 99px;
+      transform-origin: left center; background: var(--text-gray); transition: 0.25s ease;
+    }
+    .minute-icon::before { width: 8px; height: 3px; transform: rotate(0deg) translateY(-50%); }
+    .minute-icon::after { width: 6px; height: 3px; transform: rotate(90deg) translateY(-50%); }
+    body.minute-mode-1 .minute-icon { opacity: 0.9; }
+    body.minute-mode-2 .minute-icon { opacity: 1; box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9), 0 0 0 3px rgba(0,0,0,0.04); }
+
+    .minute-toggle-container .toggle-switch::after { transform: translateX(0); }
+    body.minute-mode-1 .minute-toggle-container .toggle-switch::after { transform: translateX(10px); background: var(--text-gray); }
+    body.minute-mode-2 .minute-toggle-container .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
+
     /* ── HANDS & BEAD ── */
     .hand-container { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
     
     .hour-hand {
-      position: absolute; bottom: 50%; left: 50%; width: 14px; height: 100px;
+      position: absolute; bottom: 50%; left: 50%; width: 14px; height: 112px;
       background: var(--steel-dark); transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg); border-radius: 7px 7px 0 0;
       box-shadow: 2px 4px 8px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.4);
     }
     
     .minute-hand {
-      position: absolute; bottom: 50%; left: 50%; width: 8px; height: 185px;
+      position: absolute; bottom: 50%; left: 50%; width: 8px; height: 212px;
       background: var(--ones); transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg); border-radius: 4px 4px 0 0;
       box-shadow: 2px 4px 8px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4);
@@ -200,7 +267,7 @@
       display: flex; align-items: center; gap: 12px; cursor: pointer;
     }
     .color-wheel-icon {
-      width: 24px; height: 24px; border-radius: 50%;
+      width: 18px; height: 18px; border-radius: 50%;
       background: conic-gradient(var(--ones), var(--ten-thousands), var(--hundreds), var(--thousands), var(--twelfths), var(--tens), var(--tenths), var(--millions), var(--ones));
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       filter: grayscale(100%) opacity(0.5);
@@ -319,6 +386,11 @@
           <div class="toggle-switch"></div>
         </div>
 
+        <div class="minute-toggle-container" onclick="toggleMinutes()">
+          <div class="minute-icon"></div>
+          <div class="toggle-switch"></div>
+        </div>
+
         <div class="readout-wrapper">
           <div class="digital-readout">
             <input type="text" id="digHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
@@ -370,43 +442,68 @@
 
     // --- INITIALIZATION ---
     function buildClockFace() {
-      const radiusPercent = (168 / 208) * 50; 
+      // One geometry source for every radial element. This keeps the numerals and hash marks
+      // locked to the same center point, even if the clock face size changes.
+      const center = clockFace.offsetWidth / 2;
+      const hourRadius = center - 86;
+      const hashRadius = center - 18;
+      const minuteFiveRadius = hashRadius + 32; // bubbles share the hash angles and sit out in the white rim
+      const minuteOneRadius = hashRadius - 20; // fine minute numerals stay just inside the hash marks
+
+      function placeOnDial(el, index, radius) {
+        const angleRad = (index * 6 - 90) * Math.PI / 180;
+        el.style.left = `${center + radius * Math.cos(angleRad)}px`;
+        el.style.top = `${center + radius * Math.sin(angleRad)}px`;
+      }
 
       for (let i = 0; i < 60; i++) {
         const isMajor = (i % 5 === 0);
         const hourIndex = Math.floor(i / 5);
         const blockColor = palette[hourIndex];
 
-        // Ticks
+        // Hash marks share the same radial geometry as the minute numerals.
+        // They are pulled inward so the 5-minute bubbles can live cleanly in the outer white rim.
         const tick = document.createElement('div');
         tick.className = `tick ${isMajor ? 'major' : ''}`;
+        tick.style.top = `${center - hashRadius}px`;
+        tick.style.transformOrigin = `center ${hashRadius}px`;
         tick.style.transform = `translateX(-50%) rotate(${i * 6}deg)`;
         tick.style.setProperty('--tick-color', blockColor);
         ticksContainer.appendChild(tick);
 
-        // Numerals
+        // Hour numerals
         if (isMajor) {
           const hourNum = i === 0 ? 12 : i / 5;
           const num = document.createElement('div');
           num.className = 'tick-number';
           num.textContent = hourNum;
           num.style.setProperty('--tick-color', blockColor);
-          
-          const angleDeg = i * 6 - 90; 
-          const angleRad = angleDeg * Math.PI / 180;
-          
-          const x = 50 + radiusPercent * Math.cos(angleRad);
-          const y = 50 + radiusPercent * Math.sin(angleRad);
-          
-          num.style.left = `${x}%`;
-          num.style.top = `${y}%`;
+          placeOnDial(num, i, hourRadius);
           ticksContainer.appendChild(num);
         }
+
+        // Minute labels: soft landmark bubbles first, small outer ring only on full reveal.
+        const min = document.createElement('div');
+        const isFive = i % 5 === 0;
+        min.className = `minute-label ${isFive ? 'minute-five' : 'minute-one'} ${i === 0 ? 'minute-zero' : ''}`;
+        min.textContent = i === 0 ? '0' : String(i);
+        min.style.setProperty('--tick-color', blockColor);
+        placeOnDial(min, i, isFive ? minuteFiveRadius : minuteOneRadius);
+        ticksContainer.appendChild(min);
       }
     }
 
     function toggleColorCoding() {
       document.body.classList.toggle('color-coded');
+    }
+
+    let minuteRevealMode = 0;
+    function toggleMinutes() {
+      minuteRevealMode = (minuteRevealMode + 1) % 3;
+      document.body.classList.remove('minute-mode-1', 'minute-mode-2');
+      if (minuteRevealMode === 1) document.body.classList.add('minute-mode-1');
+      if (minuteRevealMode === 2) document.body.classList.add('minute-mode-2');
+      navigator.vibrate?.(10);
     }
 
     function updateTimeDisplay() {
