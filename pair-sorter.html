@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Math Things. | Pair Sorter</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F5F7;
+  --surface:#FFFFFF;
+  --glass:rgba(245,245,247,.86);
+  --text:#1D1D1F;
+  --muted:#86868B;
+  --line:rgba(0,0,0,.08);
+  --tray:#D8DADF;
+  --tray-dark:#B9BBC0;
+  --bead:#DC143C;
+  --blue:#007AFF;
+  --gold:#FFD60A;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --world-scale:1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:Lexend,system-ui,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at center, rgba(0,0,0,.045) 1.4px, transparent 1.6px) 0 0/34px 34px,
+    var(--bg);
+  touch-action:none;
+  user-select:none;
+  -webkit-font-smoothing:antialiased;
+}
+header{
+  height:58px;
+  padding:0 clamp(14px,2vw,28px);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:var(--glass);
+  backdrop-filter:blur(35px);
+  border-bottom:1px solid var(--line);
+  z-index:1000;
+  position:relative;
+}
+.logo{
+  display:inline-flex;
+  align-items:baseline;
+  font-weight:900;
+  font-size:clamp(1.05rem,2vw,1.45rem);
+  letter-spacing:-.055em;
+}
+.logo-bead{
+  width:.22em;height:.22em;border-radius:50%;margin-left:.04em;margin-bottom:.08em;
+  background:
+    radial-gradient(circle at 33% 28%,rgba(255,255,255,.9),rgba(255,255,255,.28) 45%,transparent 68%),
+    linear-gradient(135deg,#efefef,#a8a8a8 55%,#e0e0e0);
+  box-shadow:inset 1px 1px 2px rgba(255,255,255,.8),inset -1px -1px 2px rgba(0,0,0,.2),0 2px 5px rgba(0,0,0,.22)
+}
+.controls{display:flex;align-items:center;gap:12px}
+.pill{
+  height:42px;min-width:64px;border-radius:999px;border:1px solid rgba(0,0,0,.05);
+  background:rgba(255,255,255,.86);box-shadow:0 4px 16px rgba(0,0,0,.08);
+  display:flex;align-items:center;justify-content:center;gap:10px;padding:0 14px;
+}
+input[type=range]{width:110px;accent-color:var(--text)}
+.icon-btn{
+  width:42px;height:42px;border-radius:50%;border:0;background:linear-gradient(#fff,#d8d9dd);
+  box-shadow:0 6px 16px rgba(0,0,0,.16), inset 1px 1px 0 rgba(255,255,255,.75);
+  display:grid;place-items:center;cursor:pointer;color:var(--text);
+}
+.icon-btn:active{transform:scale(.94)}
+.workspace{position:absolute;inset:58px 0 0;overflow:hidden}
+.world{
+  position:absolute;left:50%;top:50%;width:900px;height:640px;
+  transform:translate(-50%,-50%) scale(var(--world-scale));
+  transform-origin:center center;
+  transition:transform .75s var(--ease);
+}
+.world.rows-view{transform:translate(-50%,-50%) scale(var(--world-scale)) translateY(-46px)}
+.world.rows-view.landscape-proof{transform:translate(-50%,-50%) scale(var(--world-scale))}
+.mat{
+
+  position:absolute;left:50%;top:50%;width:440px;height:440px;transform:translate(-50%,-50%);
+  border-radius:50%;background:radial-gradient(circle at center, rgba(255,255,255,.8) 0 38%, rgba(255,255,255,.96) 39% 100%);
+  box-shadow:inset 0 0 0 10px rgba(255,255,255,.74), inset 0 20px 55px rgba(0,0,0,.055), 0 8px 28px rgba(0,0,0,.035);
+}
+.mat::after{
+  content:"";position:absolute;left:50%;top:50%;width:172px;height:172px;transform:translate(-50%,-50%);
+  border-radius:50%;background:radial-gradient(circle at 38% 32%,#ededee,#c9cace 62%,#b6b7bc);
+  box-shadow:inset 12px 16px 32px rgba(255,255,255,.52), inset -16px -20px 32px rgba(0,0,0,.16), 0 6px 20px rgba(0,0,0,.1);
+  z-index:1;
+}
+.pair-ring{position:absolute;inset:0;z-index:7}
+.pair-slot{
+  position:absolute;left:50%;top:50%;width:118px;height:62px;margin-left:-59px;margin-top:-31px;
+  border-radius:36px;background:rgba(255,255,255,.72);
+  border:3px dashed rgba(29,29,31,.16);
+  box-shadow:0 8px 22px rgba(0,0,0,.04), inset 0 1px 0 rgba(255,255,255,.8);
+  transform:rotate(var(--a)) translateX(258px) rotate(calc(-1 * var(--a)));
+  transition:box-shadow .25s ease,border-color .25s ease,background .25s ease,opacity .25s ease,transform .45s var(--spring),filter .25s ease;
+}
+.pair-slot.hot{border-color:rgba(0,122,255,.55);box-shadow:0 0 0 8px rgba(0,122,255,.08),0 12px 28px rgba(0,0,0,.06);background:rgba(255,255,255,.94)}
+.pair-slot.waiting{border-style:solid;border-color:rgba(29,29,31,.12);background:rgba(255,255,255,.88)}
+.pair-slot.paired{border-style:solid;border-color:rgba(255,214,10,.72);box-shadow:0 0 24px rgba(255,214,10,.24),0 8px 22px rgba(0,0,0,.04)}
+.pair-slot.leftover-slot{border-style:solid;border-color:rgba(255,214,10,.8);background:rgba(255,248,204,.9);box-shadow:0 0 0 8px rgba(255,214,10,.14),0 10px 24px rgba(0,0,0,.055)}
+.pair-slot.paired .bead,.pair-slot.leftover-slot .bead{pointer-events:none}
+.socket-dot{position:absolute;top:50%;width:30px;height:30px;border-radius:50%;transform:translateY(-50%);background:rgba(0,0,0,.035);box-shadow:inset 0 1px 3px rgba(0,0,0,.08)}
+.socket-dot.left{left:21px}.socket-dot.right{right:21px}
+.bead{
+  width:30px;height:30px;border-radius:50%;position:absolute;left:0;top:0;z-index:50;
+  background:
+    radial-gradient(circle at 31% 25%,rgba(255,255,255,.95),rgba(255,255,255,.22) 35%,transparent 55%),
+    radial-gradient(circle at 70% 76%,rgba(0,0,0,.22),transparent 48%),
+    var(--bead);
+  box-shadow:inset -3px -4px 7px rgba(0,0,0,.18),0 5px 8px rgba(0,0,0,.16);
+  cursor:grab;touch-action:none;transition:left .45s var(--spring),top .45s var(--spring),transform .45s var(--spring),opacity .25s ease,filter .25s ease;
+}
+.bead:active{cursor:grabbing}.bead.dragging{z-index:5000!important;pointer-events:none;transition:none!important;filter:brightness(1.03)}.bead.locked{cursor:default}.bead.leftover{animation:leftover 1.15s ease-in-out infinite;filter:saturate(.72) brightness(.94);transform-origin:center center}
+@keyframes leftover{0%,100%{transform:scale(1)}50%{transform:scale(.96)}}
+.bead.flying{z-index:2000;pointer-events:none}.bead.rolling{z-index:250}
+.rows-stage{position:absolute;left:450px;top:536px;width:620px;height:220px;transform:translate(-50%,-50%) scale(.96);opacity:0;pointer-events:none;transition:opacity .5s ease, transform .7s var(--ease), left .7s var(--ease), top .7s var(--ease);z-index:12}
+.rows-stage.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.row-line{position:absolute;left:50%;width:560px;height:72px;transform:translateX(-50%);border-radius:42px;background:rgba(255,255,255,.74);box-shadow:0 9px 26px rgba(0,0,0,.045), inset 0 1px 0 rgba(255,255,255,.8)}
+.row-line.top{top:20px}.row-line.bottom{top:116px}.row-line::before{content:"";position:absolute;left:18px;right:18px;top:50%;height:2px;background:rgba(0,0,0,.055)}
+.odd-leftover-dock{position:absolute;right:10px;top:73px;width:62px;height:62px;border-radius:50%;border:3px dashed rgba(29,29,31,.14);background:rgba(255,255,255,.65);opacity:0;transition:.4s ease}.odd-leftover-dock.show{opacity:1}
+.reset-bead{position:absolute;left:50%;top:50%;width:62px;height:62px;border-radius:50%;transform:translate(-50%,-50%) scale(0);z-index:500;border:0;cursor:pointer;background:radial-gradient(circle at 33% 28%,#fff,rgba(255,255,255,.28) 42%,transparent 62%),linear-gradient(135deg,#efefef,#a8a8a8 55%,#e2e2e2);box-shadow:0 10px 22px rgba(0,0,0,.18),inset 2px 2px 3px rgba(255,255,255,.8),inset -2px -2px 5px rgba(0,0,0,.22);transition:transform .45s var(--spring),opacity .3s ease;opacity:0;display:grid;place-items:center;color:var(--text);line-height:1}.reset-bead.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.reset-bead:active{transform:translate(-50%,-50%) scale(.92)}
+.footer{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:.58rem;font-weight:800;letter-spacing:2px;color:rgba(29,29,31,.22);text-transform:uppercase;pointer-events:none}
+body.splitting .pair-slot{opacity:.12;filter:blur(.2px)}
+body.splitting .pair-slot.leftover-slot{opacity:.22;filter:none}
+body.splitting .mat{opacity:.55}
+.world.rows-view:not(.landscape-proof) .mat{top:264px;transform:translate(-50%,-50%) scale(.78)}
+.world.rows-view:not(.landscape-proof) .reset-bead{top:264px}
+.world.rows-view.landscape-proof .mat{left:210px;top:320px;transform:translate(-50%,-50%) scale(.78)}
+.world.rows-view.landscape-proof .rows-stage{left:700px;top:368px;width:620px}
+.world.rows-view.landscape-proof .row-line{width:500px}
+.world.rows-view.landscape-proof .odd-leftover-dock{right:4px;top:73px}
+.world.rows-view.landscape-proof .reset-bead{left:210px;top:320px}
+@media (max-height:620px){header{height:50px}.workspace{inset:50px 0 0}.footer{display:none}}
+@media (max-width:680px){.controls{gap:7px}.pill{padding:0 10px}.pill input{width:80px}.icon-btn{width:38px;height:38px}}
+
+/* -- mastery proof layer -- */
+.proof-chooser{position:absolute;left:50%;top:50%;width:260px;height:112px;transform:translate(-50%,-50%) scale(.82);z-index:700;display:flex;gap:18px;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease,transform .45s var(--spring)}
+.proof-chooser.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.proof-choice{width:108px;height:86px;border-radius:28px;border:0;background:rgba(255,255,255,.92);box-shadow:0 14px 30px rgba(0,0,0,.13),inset 1px 1px 0 rgba(255,255,255,.8);display:grid;place-items:center;cursor:pointer;position:relative}
+.proof-choice:active{transform:scale(.94)}.proof-choice.wrong{animation:wrong-choice .42s ease}.proof-choice.right{animation:right-choice .55s var(--spring)}
+@keyframes wrong-choice{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}@keyframes right-choice{0%{transform:scale(1)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-icon{position:relative;width:70px;height:44px}.mini-row{position:absolute;left:0;width:54px;height:14px;border-radius:999px;background:rgba(29,29,31,.08)}.mini-row.top{top:3px}.mini-row.bottom{bottom:3px}.mini-dot{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--bead);transform:translateY(-50%);box-shadow:inset -1px -2px 3px rgba(0,0,0,.18)}.mini-row .mini-dot:nth-child(1){left:8px}.mini-row .mini-dot:nth-child(2){left:22px}.mini-row .mini-dot:nth-child(3){left:36px}.single-leftover{position:absolute;right:1px;top:17px;width:14px;height:14px;border-radius:50%;background:var(--bead);box-shadow:inset -1px -2px 3px rgba(0,0,0,.18),0 0 0 5px rgba(255,214,10,.32)}
+.proof-panel{position:absolute;left:450px;top:386px;width:620px;min-height:104px;transform:translate(-50%,-50%) scale(.92);z-index:750;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .55s var(--spring),left .7s var(--ease),top .7s var(--ease);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}.proof-panel.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.world.rows-view.landscape-proof .proof-panel{left:700px;top:224px;width:620px}
+.skip-strip{position:relative;width:560px;height:34px;display:block;order:2}.skip-chip{position:absolute;left:50%;top:4px;min-width:32px;height:26px;border-radius:999px;background:rgba(255,255,255,.9);box-shadow:0 4px 12px rgba(0,0,0,.08);display:grid;place-items:center;padding:0 8px;font-size:.78rem;font-weight:900;color:rgba(29,29,31,.68);transform:translateX(-50%);animation:chip-pop .42s var(--spring) both}.skip-chip.leftover-chip{background:rgba(255,214,10,.35);color:rgba(29,29,31,.76)}@keyframes chip-pop{from{transform:translateX(-50%) scale(.65);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+.equation-card{order:1;min-width:184px;height:46px;border-radius:23px;background:rgba(255,255,255,.94);box-shadow:0 10px 24px rgba(0,0,0,.1),inset 1px 1px 0 rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;padding:0 18px;font-size:1.22rem;font-weight:900;letter-spacing:-.04em;color:var(--text)}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Math Things<span class="logo-bead"></span></div>
+  <div class="controls">
+    <div class="pill" aria-label="bead count">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="7" cy="12" r="2.6"/><circle cx="17" cy="12" r="2.6"/><path d="M10 12h4"/></svg>
+      <input id="countSlider" type="range" min="1" max="20" value="11" />
+    </div>
+    <button class="icon-btn" id="splitBtn" aria-label="split pairs">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/></svg>
+    </button>
+    <button class="icon-btn" id="resetBtn" aria-label="reset">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+  </div>
+</header>
+<main class="workspace" id="workspace">
+  <div class="world" id="world">
+    <section class="mat" id="mat"><div class="pair-ring" id="pairRing"></div></section>
+    <section class="rows-stage" id="rowsStage">
+      <div class="row-line top"></div><div class="row-line bottom"></div><div class="odd-leftover-dock" id="oddDock"></div>
+    </section>
+
+    <section class="proof-chooser" id="proofChooser" aria-label="choose even or odd">
+      <button class="proof-choice" id="evenChoice" aria-label="all beads paired"><span class="choice-icon"><span class="mini-row top"><i class="mini-dot"></i><i class="mini-dot"></i><i class="mini-dot"></i></span><span class="mini-row bottom"><i class="mini-dot"></i><i class="mini-dot"></i><i class="mini-dot"></i></span></span></button>
+      <button class="proof-choice" id="oddChoice" aria-label="one bead left over"><span class="choice-icon"><span class="mini-row top"><i class="mini-dot"></i><i class="mini-dot"></i><i class="mini-dot"></i></span><span class="mini-row bottom"><i class="mini-dot"></i><i class="mini-dot"></i><i class="mini-dot"></i></span><span class="single-leftover"></span></span></button>
+    </section>
+    <section class="proof-panel" id="proofPanel" aria-live="polite"><div class="skip-strip" id="skipStrip"></div><div class="equation-card" id="equationCard"></div></section>
+    <button class="reset-bead" id="resetBead" aria-label="reset">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+  </div>
+  <div class="footer">Math Things. | Math, in your hands.</div>
+</main>
+<script>
+const PairSorter = (()=>{
+  const state = { count:11, beads:[], slots:[], drag:null, dragPointer:null, offsetX:0, offsetY:0, split:false, complete:false };
+  let root, world, mat, ring, rowsStage, oddDock, countSlider, resetBtn, splitBtn, resetBead, proofChooser, evenChoice, oddChoice, proofPanel, skipStrip, equationCard;
+  const PAIR_SLOTS = 10;
+  const beadSize = 30;
+
+  function init(appRoot=document){
+    root = appRoot;
+    world = document.getElementById('world');
+    mat = document.getElementById('mat');
+    ring = document.getElementById('pairRing');
+    rowsStage = document.getElementById('rowsStage');
+    oddDock = document.getElementById('oddDock');
+    countSlider = document.getElementById('countSlider');
+    resetBtn = document.getElementById('resetBtn');
+    splitBtn = document.getElementById('splitBtn');
+    resetBead = document.getElementById('resetBead');
+    proofChooser = document.getElementById('proofChooser'); evenChoice = document.getElementById('evenChoice'); oddChoice = document.getElementById('oddChoice');
+    proofPanel = document.getElementById('proofPanel'); skipStrip = document.getElementById('skipStrip'); equationCard = document.getElementById('equationCard');
+    countSlider.addEventListener('input',()=>{ state.count = parseInt(countSlider.value,10); blastReset(); });
+    resetBtn.addEventListener('click', blastReset);
+    resetBead.addEventListener('click', blastReset);
+    splitBtn.addEventListener('click', splitPairs);
+    evenChoice.addEventListener('click',()=>chooseParity('even')); oddChoice.addEventListener('click',()=>chooseParity('odd'));
+    window.addEventListener('resize', fitWorld);
+    build(); fitWorld();
+  }
+
+  function fitWorld(){
+    const headerH = document.querySelector('header').getBoundingClientRect().height;
+    const w = window.innerWidth;
+    const h = window.innerHeight - headerH;
+    const landscapeProof = w >= 820 && (w / Math.max(1,h)) > 1.08;
+
+    // The landscape proof view uses more horizontal world than the sorter view.
+    // Fitting against the wider proof width keeps the right-side leftover dock
+    // from clipping on iPad landscape while still letting the rails use the room.
+    const fitW = landscapeProof ? 1120 : 960;
+    const scale = Math.min(1.18, Math.max(.58, Math.min(w/fitW, h/700)));
+    document.documentElement.style.setProperty('--world-scale', scale.toFixed(3));
+    if(world){
+      world.classList.toggle('landscape-proof', landscapeProof);
+      if(state.split){ layoutSplitRows(false); alignSkipChips(); }
+    }
+  }
+  function build(){
+    state.complete=false; state.split=false; document.body.classList.remove('splitting');
+    world.classList.remove('rows-view'); rowsStage.classList.remove('show'); oddDock.classList.remove('show'); resetBead.classList.remove('show'); clearProofLayoutOverrides(); hideProof();
+    ring.innerHTML=''; document.querySelectorAll('.bead').forEach(b=>b.remove());
+    state.beads=[]; state.slots=[];
+    for(let i=0;i<PAIR_SLOTS;i++){
+      const slot = document.createElement('div');
+      slot.className='pair-slot'; slot.dataset.index=i; slot.dataset.count='0';
+      const angle = -90 + i * (360/PAIR_SLOTS);
+      slot.style.setProperty('--a', angle+'deg');
+      slot.innerHTML='<span class="socket-dot left"></span><span class="socket-dot right"></span>';
+      ring.appendChild(slot);
+      state.slots.push({ el:slot, beads:[] });
+    }
+    for(let i=0;i<state.count;i++){
+      const b = document.createElement('div'); b.className='bead'; b.dataset.home='well'; b.dataset.id='b'+i;
+      world.appendChild(b); state.beads.push(b);
+      const p = randomTrayPoint(58);
+      placeInWorld(b, p.x, p.y, false);
+      setTimeout(()=>{ b.removeEventListener('pointerdown', startDrag); b.addEventListener('pointerdown', startDrag); }, 150+i*20);
+    }
+  }
+
+  function worldRect(){ return world.getBoundingClientRect(); }
+  function localFromClient(x,y){ const r=worldRect(); const s=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--world-scale'))||1; return {x:(x-r.left)/s, y:(y-r.top)/s}; }
+  function clientFromLocal(x,y){ const r=worldRect(); const s=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--world-scale'))||1; return {x:r.left+x*s, y:r.top+y*s}; }
+  function matCenter(){ return {x:450,y:320}; }
+  function randomTrayPoint(rad=64){ const c=matCenter(); const a=Math.random()*Math.PI*2; const rr=Math.sqrt(Math.random())*rad; return {x:c.x+Math.cos(a)*rr, y:c.y+Math.sin(a)*rr}; }
+  function randomDishPoint(){ const c=matCenter(); const a=Math.random()*Math.PI*2; const rr=95 + Math.sqrt(Math.random())*115; return {x:c.x+Math.cos(a)*rr, y:c.y+Math.sin(a)*rr}; }
+  function placeInWorld(el,x,y,animate=true){ el.style.position='absolute'; el.style.left=(x-beadSize/2)+'px'; el.style.top=(y-beadSize/2)+'px'; if(!animate) el.style.transition='none'; requestAnimationFrame(()=>{el.style.transition='';}); }
+
+  function startDrag(e){
+    if(state.split || e.currentTarget.classList.contains('locked')) return;
+    e.preventDefault();
+    const bead=e.currentTarget;
+    state.drag=bead;
+    state.dragPointer=e.pointerId;
+
+    const br=bead.getBoundingClientRect();
+    const s=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--world-scale'))||1;
+    state.offsetX=(e.clientX-br.left)/s;
+    state.offsetY=(e.clientY-br.top)/s;
+
+    // Convert whatever visual position the bead currently has into world-local coordinates
+    // before changing its parent/order. This prevents the little jump that was making
+    // click-drag feel broken inside transformed/scaled layouts.
+    const currentCenter=localFromClient(br.left+br.width/2, br.top+br.height/2);
+    detachFromSlot(bead);
+    world.appendChild(bead);
+    placeInWorld(bead,currentCenter.x,currentCenter.y,false);
+    bead.classList.add('dragging');
+    bead.classList.remove('leftover','rolling','flying');
+
+    document.addEventListener('pointermove', moveDrag, {passive:false});
+    document.addEventListener('pointerup', endDrag, {passive:false});
+    document.addEventListener('pointercancel', endDrag, {passive:false});
+    moveDrag(e);
+  }
+  function moveDrag(e){
+    if(!state.drag || e.pointerId!==state.dragPointer) return;
+    e.preventDefault();
+    const p=localFromClient(e.clientX,e.clientY);
+    state.drag.style.left=(p.x-state.offsetX)+'px';
+    state.drag.style.top=(p.y-state.offsetY)+'px';
+    const hot = nearestAvailableSlot(e.clientX,e.clientY);
+    state.slots.forEach(s=>s.el.classList.remove('hot'));
+    if(hot) hot.el.classList.add('hot');
+  }
+  function endDrag(e){
+    if(!state.drag || e.pointerId!==state.dragPointer) return;
+    e.preventDefault();
+    const bead=state.drag;
+    document.removeEventListener('pointermove', moveDrag);
+    document.removeEventListener('pointerup', endDrag);
+    document.removeEventListener('pointercancel', endDrag);
+    bead.classList.remove('dragging');
+    bead.style.zIndex='';
+    bead.style.transition='';
+    state.slots.forEach(s=>s.el.classList.remove('hot'));
+    const slot=nearestAvailableSlot(e.clientX,e.clientY);
+    if(slot){ addToSlot(bead, slot); }
+    else { bead.dataset.home='well'; const p=randomTrayPoint(62); placeInWorld(bead,p.x,p.y,true); }
+    state.drag=null;
+    state.dragPointer=null;
+    checkComplete();
+  }
+  function detachFromSlot(bead){
+    if(!bead.dataset.slot) return;
+    const idx=parseInt(bead.dataset.slot,10); const slot=state.slots[idx];
+    slot.beads=slot.beads.filter(b=>b!==bead); slot.el.dataset.count=slot.beads.length; updateSlotClass(slot); delete bead.dataset.slot;
+  }
+  function nearestAvailableSlot(cx,cy){
+    let best=null, bestD=Infinity;
+    state.slots.forEach(slot=>{
+      if(slot.beads.length>=2) return;
+      const r=slot.el.getBoundingClientRect(); const x=r.left+r.width/2, y=r.top+r.height/2;
+      const d=Math.hypot(cx-x,cy-y);
+      if(d<bestD){bestD=d;best=slot;}
+    });
+    return bestD<105 ? best : null;
+  }
+  function addToSlot(bead, slot){
+    if(slot.beads.length>=2) return;
+    slot.beads.push(bead); slot.el.dataset.count=slot.beads.length; bead.dataset.slot=slot.el.dataset.index; bead.dataset.home='slot';
+    world.appendChild(bead);
+    const r=slot.el.getBoundingClientRect(); const center=localFromClient(r.left+r.width/2,r.top+r.height/2);
+    const dx = slot.beads.length===1 ? -23 : 23;
+    placeInWorld(bead, center.x+dx, center.y, true);
+    updateSlotClass(slot);
+    if(slot.beads.length===2){ slot.beads.forEach(b=>b.classList.add('locked')); }
+  }
+  function updateSlotClass(slot){
+    slot.el.classList.toggle('waiting', slot.beads.length===1);
+    slot.el.classList.toggle('paired', slot.beads.length===2);
+    slot.el.classList.toggle('leftover-slot', false);
+    if(slot.beads.length<2) slot.beads.forEach(b=>b.classList.remove('locked'));
+  }
+  function showCompletion(){
+    if(state.complete) return;
+    state.complete=true;
+    const waitingSlots = state.slots.filter(s=>s.beads.length===1);
+    waitingSlots.forEach(slot=>{
+      slot.el.classList.add('leftover-slot');
+      slot.beads.forEach(b=>b.classList.add('leftover','locked'));
+    });
+    setTimeout(()=>resetBead.classList.add('show'), 450);
+    setTimeout(()=>proofChooser.classList.add('show'), 300);
+  }
+  function checkComplete(){
+    const paired = state.slots.reduce((n,s)=>n+(s.beads.length===2?2:0),0);
+    const loose = state.beads.filter(b=>!b.dataset.slot).length;
+    const waitingSlots = state.slots.filter(s=>s.beads.length===1).length;
+    const isOdd = state.count % 2 === 1;
+    const targetPaired = isOdd ? state.count-1 : state.count;
+
+    // Odd numbers now require the last bead to be sorted into an empty pair pill first.
+    // The this/that chooser does not appear while that bead is still loose in the tray.
+    if(isOdd && paired===targetPaired && waitingSlots===1 && loose===0) showCompletion();
+    if(!isOdd && paired===targetPaired && waitingSlots===0 && loose===0) showCompletion();
+  }
+  function chooseParity(choice){
+    if(!state.complete || state.split) return;
+    const correct = state.count % 2 === 0 ? 'even' : 'odd';
+    const btn = choice === 'even' ? evenChoice : oddChoice;
+    btn.classList.remove('wrong','right'); void btn.offsetWidth;
+    if(choice !== correct){ btn.classList.add('wrong'); navigator.vibrate?.([20,40,20]); return; }
+    btn.classList.add('right'); navigator.vibrate?.(25);
+    setTimeout(()=>{ proofChooser.classList.remove('show'); splitPairs(); }, 420);
+  }
+  function hideProof(){
+    if(proofChooser) proofChooser.classList.remove('show');
+    if(proofPanel) proofPanel.classList.remove('show');
+    if(skipStrip) skipStrip.innerHTML='';
+    if(equationCard) equationCard.textContent='';
+    if(evenChoice) evenChoice.classList.remove('wrong','right');
+    if(oddChoice) oddChoice.classList.remove('wrong','right');
+  }
+  function rowLayout(pairCount=Math.floor(state.count/2)){
+    const landscape = world.classList.contains('landscape-proof');
+    const stripWidth = landscape ? 620 : 620;
+    const rowWidth = landscape ? 500 : 560;
+    const span = landscape ? 420 : 470;
+    const spacing = Math.min(48, span/Math.max(1,pairCount));
+    const cx = landscape ? 700 : 450;
+    const topY = landscape ? 314 : 482;
+    const bottomY = landscape ? 410 : 578;
+    const dockX = landscape ? 975 : 719;
+    const dockY = (topY + bottomY) / 2;
+    return { landscape, stripWidth, rowWidth, spacing, cx, topY, bottomY, dockX, dockY };
+  }
+  function splitLeftovers(){
+    return [
+      ...state.beads.filter(b=>!b.dataset.slot),
+      ...state.slots.filter(s=>s.beads.length===1).flatMap(s=>s.beads)
+    ];
+  }
+  function alignSkipChips(){
+    if(!skipStrip) return;
+    const pairs = Math.floor(state.count/2);
+    const layout = rowLayout(Math.max(1,pairs));
+    skipStrip.style.width = layout.stripWidth+'px';
+    const stripLeftWorld = layout.cx - layout.stripWidth/2;
+    const firstWorldX = layout.cx - ((Math.max(1,pairs)-1)*layout.spacing)/2;
+    skipStrip.querySelectorAll('.skip-chip').forEach(chip=>{
+      if(chip.dataset.kind === 'leftover'){
+        // Keep +1 directly over the actual leftover bead/dock, not merely after the skip-count chips.
+        chip.style.left = (layout.dockX - stripLeftWorld)+'px';
+      } else {
+        const i = parseInt(chip.dataset.index||'0',10);
+        chip.style.left = (firstWorldX + i*layout.spacing - stripLeftWorld)+'px';
+      }
+    });
+  }
+  function clearProofLayoutOverrides(){
+    if(!rowsStage || !proofPanel || !oddDock) return;
+    rowsStage.style.left=''; rowsStage.style.top=''; rowsStage.style.width='';
+    rowsStage.querySelectorAll('.row-line').forEach(line=>{ line.style.width=''; });
+    proofPanel.style.left=''; proofPanel.style.top=''; proofPanel.style.width='';
+    oddDock.style.left=''; oddDock.style.right=''; oddDock.style.top='';
+  }
+
+  function showProofPanel(){
+    const pairs = Math.floor(state.count/2);
+    skipStrip.innerHTML='';
+    for(let v=2; v<=pairs*2; v+=2){
+      const chip=document.createElement('span');
+      chip.className='skip-chip'; chip.textContent=v; chip.dataset.kind='skip'; chip.dataset.index=String(v/2-1);
+      chip.style.animationDelay=((v/2-1)*55)+'ms'; skipStrip.appendChild(chip);
+    }
+    if(state.count%2){
+      const chip=document.createElement('span'); chip.className='skip-chip leftover-chip'; chip.textContent='+1'; chip.dataset.kind='leftover';
+      chip.style.animationDelay=(pairs*55)+'ms'; skipStrip.appendChild(chip); equationCard.textContent = `${state.count} = ${pairs} + ${pairs} + 1`;
+    }
+    else { equationCard.textContent = `${state.count} = ${pairs} + ${pairs}`; }
+    alignSkipChips();
+    setTimeout(()=>proofPanel.classList.add('show'), 520);
+  }
+  function layoutSplitRows(animate=true){
+    const pairs=state.slots.filter(s=>s.beads.length===2).map(s=>s.beads);
+    const n=pairs.length; const layout=rowLayout(Math.max(1,n)); const start=layout.cx-((Math.max(1,n)-1)*layout.spacing)/2;
+    rowsStage.style.left = layout.cx+'px';
+    rowsStage.style.top = (layout.topY + 54)+'px';
+    rowsStage.style.width = layout.stripWidth+'px';
+    rowsStage.querySelectorAll('.row-line').forEach(line=>{ line.style.width = layout.rowWidth+'px'; });
+    proofPanel.style.left = layout.cx+'px';
+    proofPanel.style.width = layout.stripWidth+'px';
+    proofPanel.style.top = (layout.topY - 90)+'px';
+    oddDock.style.right = 'auto';
+    oddDock.style.left = (layout.dockX - (layout.cx - layout.stripWidth/2) - 31)+'px';
+    oddDock.style.top = (layout.dockY - ((layout.topY + 54) - 110) - 31)+'px';
+    pairs.forEach((pair,i)=>{
+      pair[0].classList.remove('locked'); pair[1].classList.remove('locked'); pair[0].style.zIndex=80; pair[1].style.zIndex=80;
+      const move=()=>{ placeInWorld(pair[0], start+i*layout.spacing, layout.topY, animate); placeInWorld(pair[1], start+i*layout.spacing, layout.bottomY, animate); };
+      if(animate) setTimeout(move, i*55); else move();
+    });
+    const leftovers=splitLeftovers();
+    if(leftovers.length){
+      oddDock.classList.add('show');
+      const b=leftovers[0]; b.classList.remove('leftover','locked'); b.style.zIndex=90;
+      const move=()=>placeInWorld(b, layout.dockX, layout.dockY, animate);
+      if(animate) setTimeout(move, n*55+160); else move();
+    }
+  }
+
+  function splitPairs(){
+    if(!state.complete || state.split) return;
+    state.split=true; proofChooser.classList.remove('show'); document.body.classList.add('splitting'); world.classList.add('rows-view'); rowsStage.classList.add('show'); resetBead.classList.add('show'); fitWorld();
+    layoutSplitRows(true);
+    showProofPanel();
+  }
+
+  function blastReset(){
+    state.complete=false; state.split=false; document.body.classList.remove('splitting'); rowsStage.classList.remove('show'); world.classList.remove('rows-view'); oddDock.classList.remove('show'); resetBead.classList.remove('show'); clearProofLayoutOverrides(); hideProof();
+    const beads=[...state.beads];
+    state.slots.forEach(s=>{s.beads=[];s.el.dataset.count='0';s.el.classList.remove('leftover-slot');updateSlotClass(s);});
+    beads.forEach((b,i)=>{
+      b.classList.remove('locked','leftover'); delete b.dataset.slot; b.dataset.home='air'; b.style.zIndex=2000; world.appendChild(b);
+      const x=parseFloat(b.style.left||0)+beadSize/2, y=parseFloat(b.style.top||0)+beadSize/2;
+      const launchX=x+(Math.random()*380-190), launchY=-80-Math.random()*160;
+      setTimeout(()=>{ b.classList.add('flying'); b.style.transition='left .62s cubic-bezier(.18,1.4,.28,1), top .62s cubic-bezier(.18,1.4,.28,1), transform .62s var(--spring)'; placeInWorld(b, launchX, launchY, true); b.style.transform='scale(1.12)'; }, i*12);
+    });
+    setTimeout(()=>{
+      // Reconcile count while beads are airborne. Add/remove invisibly above camera.
+      while(state.beads.length<state.count){ const b=document.createElement('div'); b.className='bead flying'; b.dataset.home='air'; world.appendChild(b); state.beads.push(b); placeInWorld(b,450,-140,false); }
+      while(state.beads.length>state.count){ const b=state.beads.pop(); b.remove(); }
+      state.beads.forEach((b,i)=>{ b.className='bead flying'; b.style.zIndex=2000; delete b.dataset.slot; b.dataset.home='air'; });
+    },260);
+    setTimeout(()=>{
+      state.beads.forEach((b,i)=>{
+        const land=randomDishPoint();
+        b.style.transition='left .55s ease-out, top .55s ease-in, transform .55s ease-out';
+        setTimeout(()=>{ placeInWorld(b, land.x, land.y, true); b.style.transform='scale(1)'; }, i*22);
+      });
+    },650);
+    setTimeout(()=>{
+      state.beads.forEach((b,i)=>{
+        const c=matCenter(); const cur={x:parseFloat(b.style.left)+beadSize/2,y:parseFloat(b.style.top)+beadSize/2};
+        const mid={x:(cur.x+c.x)/2+(Math.random()*90-45), y:(cur.y+c.y)/2+(Math.random()*90-45)};
+        const end=randomTrayPoint(58);
+        b.style.transition='left .44s ease-in-out, top .44s ease-in-out, transform .44s ease-in-out';
+        setTimeout(()=>{ b.classList.remove('flying'); b.classList.add('rolling'); placeInWorld(b, mid.x, mid.y, true); b.style.transform='rotate('+(Math.random()*220-110)+'deg)'; }, i*18);
+        setTimeout(()=>{ b.style.transition='left .72s cubic-bezier(.2,.85,.2,1), top .72s cubic-bezier(.2,.85,.2,1), transform .72s cubic-bezier(.2,.85,.2,1)'; placeInWorld(b, end.x, end.y, true); b.style.transform='rotate('+(Math.random()*420-210)+'deg)'; }, 430+i*18);
+      });
+    },1250);
+    setTimeout(()=>{
+      state.beads.forEach((b,i)=>{ b.className='bead'; b.style.zIndex=''; b.style.transform=''; b.dataset.home='well'; b.removeEventListener('pointerdown', startDrag); b.addEventListener('pointerdown', startDrag); });
+    },2600);
+  }
+  return {init,reset:blastReset,destroy(){window.removeEventListener('resize',fitWorld)}};
+})();
+PairSorter.init();
+</script>
+</body>
+</html>
