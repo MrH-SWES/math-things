@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Things. | Array Architect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F5F7;
+      --glass: rgba(245,245,247,0.85);
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --brand-red: #DC143C;
+      --sky-blue-fill: rgba(135, 206, 235, 0.35);
+      --sky-blue-edge: rgba(65, 150, 225, 0.8);
+      
+      --cols: 12;
+      --cols-total: calc(var(--cols) + 1);
+      --cell-size: min(4vh, 4vw); 
+      --grid-size: calc(var(--cell-size) * var(--cols-total));
+    }
+
+    @media (min-width: 761px) {
+      :root {
+        --cell-size: min(42px, calc((100vh - 245px) / var(--cols-total)), calc((100vw - 650px) / var(--cols-total)));
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; }
+
+    body {
+      font-family: 'Lexend', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+      background-color: #F0ECE1;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── ENVIRONMENT ────────── */
+    .environment {
+      position: fixed; inset: 0;
+      perspective: 1200px; z-index: 0; overflow: hidden;
+    }
+
+    .wall {
+      position: absolute; inset: 0;
+      background-color: #F2EFE9;
+      background-image: radial-gradient(circle at -10% 20%, rgba(255,255,255,1) 0%, rgba(242,239,233,0) 60%);
+    }
+
+    /* Multi-pane studio window, flat against the wall */
+    .window {
+      position: absolute; top: 10%; left: 8%; width: 14vw; height: 45vh;
+      /* Faint blue sky showing through */
+      background: linear-gradient(to bottom, var(--sky-blue-fill), rgba(255,255,255,0.6));
+      box-shadow: 0 0 60px rgba(255,255,255,0.8), inset 4px 4px 10px rgba(0,0,0,0.05);
+      border-radius: 2px; border: 1px solid rgba(255,255,255,0.5);
+      display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(4, 1fr); gap: 6px; padding: 6px;
+    }
+    .window-pane {
+      background: rgba(255,255,255,0.3);
+      /* Frosted glass effect */
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: inset 2px 2px 5px rgba(255,255,255,0.8);
+    }
+
+    .floor {
+      position: absolute; top: 45%; left: -50%; right: -50%; height: 200%;
+      background-color: #E8D8C0;
+      background-image: repeating-linear-gradient(180deg, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 6px);
+      transform-origin: top center; transform: rotateX(75deg);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 10%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%);
+    }
+
+    .floor::after {
+      content: ''; position: absolute; top: 5%; left: 45%; width: 40%; height: 60%;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.08) 0%, transparent 60%);
+      transform: skewX(-50deg); pointer-events: none;
+    }
+
+    /* ─── HEADER ───────────────────────────────────────── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
+      background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 32px; z-index: 200;
+    }
+    .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); display: flex; align-items: baseline; justify-self: start; }
+    .bead {
+      display: inline-block; width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%;
+      background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    }
+    .page-title { font-weight: 300; font-size: 15px; color: var(--text-gray); text-align: center; justify-self: center; letter-spacing: 0.5px; }
+
+    /* ─── TABLE SCENE ── */
+    .table-scene {
+      position: fixed; inset: 0; padding-top: 82px; padding-bottom: 24px;
+      display: flex; align-items: center; justify-content: center; z-index: 1;
+    }
+
+    .table-assembly { position: relative; }
+
+    .leg {
+      position: absolute; width: 44px; height: 44px; border-radius: 6px;
+      box-shadow: 25px 15px 30px rgba(0,0,0,0.15); z-index: 0;
+    }
+    .leg-tl, .leg-bl { background: linear-gradient(135deg, #5a5a5c, #3a3a3c); }
+    .leg-tr, .leg-br { background: linear-gradient(135deg, #2a2a2c, #1a1a1c); }
+    .leg-tl { top: 20px; left: 80px; } .leg-tr { top: 20px; right: 80px; }
+    .leg-bl { bottom: 20px; left: 80px; } .leg-br { bottom: 20px; right: 80px; }
+
+    .drafting-table {
+      position: relative; background: var(--surface); border-radius: 12px;
+      padding: 32px 44px; z-index: 10;
+      box-shadow: 0 1px 0 #fff inset, 0 -1px 2px rgba(0,0,0,0.03) inset, 15px 20px 40px rgba(0,0,0,0.12), 4px 8px 16px rgba(0,0,0,0.06);
+      display: flex; gap: 42px; align-items: stretch; justify-content: center;
+    }
+
+    /* ─── LEFT PANEL (Grid, Rulers, Rails) ────────────────────────── */
+    .left-panel {
+      display: grid; 
+      /* Added 28px gaps specifically for the etched architectural rulers */
+      grid-template-columns: 18px 28px var(--grid-size); 
+      grid-template-rows: 18px 28px var(--grid-size); 
+      gap: 2px;
+    }
+
+    /* ─── ETCHED RULERS (The Scale) ───────────── */
+    .ruler {
+      display: grid; font-family: 'Lexend', sans-serif; font-weight: 600; font-size: min(1.6vh, 13px);
+      color: rgba(0,0,0,0.25); text-shadow: 1px 1px 0 rgba(255,255,255,1);
+      user-select: none;
+    }
+    .ruler-tick {
+      display: flex; align-items: center; justify-content: center; transition: color 0.1s ease;
+    }
+    .ruler-tick.active {
+      color: var(--brand-red); text-shadow: 0 0 8px rgba(220, 20, 60, 0.2); font-weight: 800;
+    }
+    .ruler-x {
+      grid-column: 3; grid-row: 2; width: var(--grid-size);
+      grid-template-columns: repeat(var(--cols-total), var(--cell-size)); align-items: flex-end; padding-bottom: 2px;
+    }
+    .ruler-y {
+      grid-column: 2; grid-row: 3; height: var(--grid-size);
+      grid-template-rows: repeat(var(--cols-total), var(--cell-size)); justify-items: flex-end; padding-right: 2px;
+    }
+
+    /* ─── MULTIPLICATION GRID ────────────────────────── */
+    .grid-surface {
+      grid-column: 3; grid-row: 3; position: relative;
+      width: var(--grid-size); height: var(--grid-size);
+      background: var(--surface); border: 1px solid rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;
+      --curr-x: 5; --curr-y: 5;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(var(--cols-total), var(--cell-size));
+      grid-template-rows: repeat(var(--cols-total), var(--cell-size));
+    }
+
+    .cell {
+      display: flex; justify-content: center; align-items: center;
+      font-size: min(1.8vh, 15px); font-weight: 400; color: rgba(29, 29, 31, 0.12);
+      border-right: 1px solid rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.03);
+      user-select: none; z-index: 2; transition: color 0.15s ease, font-weight 0.15s ease;
+    }
+
+    .cell.zero-cell { background-color: #111; color: rgba(255,255,255,0.4); font-weight: 400; border-right: 1px solid #222; border-bottom: 1px solid #222; z-index: 3; }
+    .cell.perfect-square { background: rgba(0,0,0,0.015); }
+    .cell.zero-cell.perfect-square { background-color: #111; }
+    .cell.ink { color: var(--text-main); font-weight: 800; }
+    .cell.zero-cell.ink { color: #fff; font-weight: 800; }
+
+    /* ─── CROSSHAIR OVERLAYS ───────────── */
+    .transparency-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; mix-blend-mode: multiply; }
+    .strip-x, .strip-y { position: absolute; background: var(--sky-blue-fill); transition: transform 40ms linear; }
+    .strip-x {
+      top: 0; bottom: 0; width: var(--cell-size);
+      border-left: 2px solid var(--sky-blue-edge); border-right: 2px solid var(--sky-blue-edge);
+      transform: translateX(calc(var(--curr-x) * var(--cell-size)));
+    }
+    .strip-y {
+      left: 0; right: 0; height: var(--cell-size);
+      border-top: 2px solid var(--sky-blue-edge); border-bottom: 2px solid var(--sky-blue-edge);
+      transform: translateY(calc(var(--curr-y) * var(--cell-size)));
+    }
+
+    /* ─── THE BEAD (Product Handle) ───────────── */
+    .marble-container {
+      position: absolute; top: 0; left: 0;
+      width: var(--cell-size); height: var(--cell-size);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 40ms linear; cursor: grab; z-index: 30; touch-action: none;
+      transform: translate(calc(var(--curr-x) * var(--cell-size)), calc(var(--curr-y) * var(--cell-size)));
+    }
+    .marble-container:active { cursor: grabbing; }
+
+    .marble-bead {
+      width: 88%; height: 88%; border-radius: 50%;
+      background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: min(1.8vh, 15px); font-weight: 800; color: rgba(0,0,0,0.7);
+      text-shadow: 1px 1px 0 rgba(255,255,255,0.7), -1px -1px 0 rgba(0,0,0,0.1);
+      letter-spacing: -0.5px; user-select: none;
+    }
+
+    /* ─── RECESSED RAILS ─────────────────────────────── */
+    .track-y-wrap { grid-column: 1; grid-row: 3; height: var(--grid-size); display: flex; align-items: center; justify-content: flex-end; }
+    .track-x-wrap { grid-column: 3; grid-row: 1; width: var(--grid-size); display: flex; align-items: flex-end; }
+    .rail { position: relative; background: #e5e5ea; border-radius: 4px; box-shadow: inset 3px 3px 5px rgba(0,0,0,0.1), inset -1px -1px 2px rgba(255,255,255,1), 0 1px 0 rgba(255,255,255,0.8); }
+    .rail-x { width: var(--grid-size); height: 8px; }
+    .rail-y { height: var(--grid-size); width: 8px; }
+
+    /* ─── VINTAGE TYPEWRITER MARGIN STOPS (Calipers) ─────────────── */
+    .margin-stop {
+      position: absolute; cursor: grab; z-index: 20; user-select: none; touch-action: none; background-color: var(--brand-red);
+      background-image: radial-gradient(circle at 10% 20%, rgba(0,0,0,0.6) 1px, transparent 1.5px), radial-gradient(circle at 80% 70%, rgba(0,0,0,0.5) 1.5px, transparent 2px), radial-gradient(circle at 40% 80%, rgba(0,0,0,0.4) 0.5px, transparent 1px), linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%, rgba(0,0,0,0.2) 100%);
+      border: 1px solid #a00; box-shadow: inset 1px 1px 1px rgba(255,255,255,0.6), inset -1px -1px 2px rgba(0,0,0,0.4), 4px 6px 12px rgba(0,0,0,0.2), 1px 2px 4px rgba(0,0,0,0.15);
+      transition: top 40ms linear, left 40ms linear;
+    }
+    .margin-stop:active { cursor: grabbing; }
+    
+    /* Extended to slide completely over the ruler and point right at the grid border */
+    .stop-x { width: 20px; height: 42px; top: -14px; left: 0; transform: translateX(-50%); border-radius: 3px 3px 1px 1px; }
+    .stop-x::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid var(--brand-red); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); }
+    
+    .stop-y { width: 42px; height: 20px; left: -14px; top: 0; transform: translateY(-50%); border-radius: 1px 3px 3px 1px; }
+    .stop-y::after { content: ''; position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 6px solid var(--brand-red); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); }
+
+    /* ─── RIGHT PANEL (Dashboard & Bead Tray) ────────────────────── */
+    .right-panel {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: min(28vw, 320px); gap: 18px;
+    }
+
+    .equation-board {
+      font-size: 30px; font-weight: 800; letter-spacing: 1px;
+      color: rgba(0,0,0,0.04); text-shadow: -1px -1px 1px rgba(0,0,0,0.1), 1px 1px 1px rgba(255,255,255,1);
+    }
+
+    .pivot-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #f0f0f0, #d4d4d4);
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: inset 1px 1px 2px #fff, 0 4px 8px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.1s ease; outline: none;
+    }
+    .pivot-btn:active { transform: scale(0.92) translateY(2px); box-shadow: inset 2px 2px 4px rgba(0,0,0,0.2), 0 1px 1px rgba(0,0,0,0.05); }
+    .pivot-btn svg { width: 22px; height: 22px; fill: none; stroke: #666; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    .bead-tray-container { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+    
+    .bead-tray {
+      display: grid; gap: 6px; padding: 12px; /* Fixed gap and padding */
+      background: rgba(0,0,0,0.03); border-radius: 8px;
+      box-shadow: inset 1px 1px 4px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,1); transform-origin: center;
+      place-content: center; /* Ensures it clusters together neatly */
+    }
+    
+    .mini-bead {
+      /* Fixed size for the beads instead of scaling percentages */
+      width: 14px; height: 14px; 
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fefefe, #b0b0b0);
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.25), inset -1px -1px 2px rgba(0,0,0,0.1);
+    }
+
+
+
+    /* ─── LOCKS, DIAL, NOTATION ─────────────────────── */
+    .lock-btn {
+      border: none; outline: none; cursor: pointer; touch-action: none;
+      display: flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, #f4f4f4, #d7d7d7);
+      box-shadow: inset 1px 1px 2px #fff, 0 3px 6px rgba(0,0,0,0.14);
+      transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+      z-index: 40;
+    }
+    .lock-btn svg { width: 17px; height: 17px; fill: none; stroke: #666; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .lock-btn.active {
+      background: linear-gradient(135deg, #ffe5eb, #f5c6d0);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.9), 0 0 0 2px rgba(220,20,60,0.18), 0 4px 8px rgba(0,0,0,0.16);
+    }
+    .lock-btn.active svg { stroke: var(--brand-red); }
+    .lock-btn:active { transform: scale(0.94); }
+    .track-x-wrap, .track-y-wrap { position: relative; }
+    .lock-x { position: absolute; right: -38px; bottom: -11px; }
+    .lock-y { position: absolute; left: -11px; bottom: -38px; }
+    .locked-stop { filter: saturate(1.2) drop-shadow(0 0 6px rgba(220,20,60,0.35)); }
+
+    .notation-toggle {
+      display: flex; gap: 8px; padding: 6px; border-radius: 999px;
+      background: rgba(0,0,0,0.035); box-shadow: inset 1px 1px 4px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,1);
+    }
+    .mode-btn {
+      border: none; outline: none; width: 42px; height: 34px; border-radius: 999px;
+      background: transparent; color: rgba(0,0,0,0.28); font-family: 'Lexend', sans-serif;
+      font-size: 22px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s ease; touch-action: manipulation;
+    }
+    .mode-btn svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2.4; fill: none; }
+    .mode-btn.active { background: #fff; color: var(--text-main); box-shadow: 0 2px 6px rgba(0,0,0,0.12), inset 1px 1px 0 rgba(255,255,255,1); }
+
+    .equation-board.hidden { visibility: hidden; }
+
+    .dial-wrap { position: relative; width: 154px; height: 154px; display: flex; align-items: center; justify-content: center; }
+    .product-dial {
+      position: relative; width: 140px; height: 140px; border-radius: 50%; cursor: grab; touch-action: none;
+      background: radial-gradient(circle at 50% 50%, #f9f9f9 0%, #f2f2f2 33%, #dddddf 34%, #cfd0d3 55%, #eeeeef 56%, #fafafa 100%);
+      border: 1px solid rgba(0,0,0,0.09);
+      box-shadow: inset 2px 2px 4px rgba(255,255,255,0.9), inset -3px -3px 6px rgba(0,0,0,0.13), 0 8px 18px rgba(0,0,0,0.16);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .product-dial:active { cursor: grabbing; }
+    .dial-center {
+      width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #fff, #e9e9ea);
+      display: flex; align-items: center; justify-content: center; font-family: 'Lexend', sans-serif;
+      font-weight: 900; font-size: 28px; color: var(--text-main); letter-spacing: -1px;
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.95), inset -2px -2px 5px rgba(0,0,0,0.12), 0 2px 5px rgba(0,0,0,0.08);
+      user-select: none;
+    }
+    .dial-dot { position: absolute; top: 14px; left: 50%; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: rgba(0,0,0,0.22); }
+    .dial-lock { position: absolute; right: -4px; bottom: 6px; }
+
+    /* ─── FOOTER ─────────────────────────────────────── */
+    footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 16px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); z-index: 200; }
+    footer .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; }
+
+
+
+
+    /* ─── DESKTOP FIT: scale to available browser viewport, not monitor size ── */
+    @media (min-width: 761px) {
+      .table-scene {
+        padding-top: clamp(62px, 8vh, 82px);
+        padding-bottom: clamp(10px, 2vh, 24px);
+      }
+      .drafting-table {
+        padding: clamp(22px, 3.4vh, 32px) clamp(30px, 3vw, 44px);
+        gap: clamp(24px, 3vw, 42px);
+      }
+      .right-panel {
+        width: clamp(238px, 24vw, 300px);
+        gap: clamp(12px, 2vh, 18px);
+      }
+      .equation-board { font-size: clamp(24px, 3.2vh, 30px); }
+      footer { padding: clamp(8px, 1.4vh, 16px); }
+    }
+
+    @media (min-width: 761px) and (max-height: 820px) {
+      footer { display: none; }
+      :root {
+        --cell-size: min(38px, calc((100vh - 235px) / var(--cols-total)), calc((100vw - 610px) / var(--cols-total)));
+      }
+      header { height: 56px; padding: 0 24px; }
+      .logo { font-size: 1.35rem; }
+      .page-title { font-size: 14px; }
+      .table-scene { padding-top: 64px; padding-bottom: 10px; }
+      .drafting-table { padding: 22px 34px; gap: 28px; }
+      .right-panel { width: 250px; gap: 12px; }
+      .dial-wrap { width: 132px; height: 132px; }
+      .product-dial { width: 120px; height: 120px; }
+      .dial-center { width: 62px; height: 62px; font-size: 25px; }
+      .bead-tray-container { max-height: 150px; }
+      .bead-tray { gap: 4px; padding: 9px; }
+      .mini-bead { width: 10px; height: 10px; }
+      footer { padding: 8px; font-size: 0.58rem; }
+    }
+
+    @media (min-width: 761px) and (max-height: 700px) {
+      :root {
+        --cell-size: min(32px, calc((100vh - 215px) / var(--cols-total)), calc((100vw - 560px) / var(--cols-total)));
+      }
+      header { height: 48px; }
+      .table-scene { padding-top: 54px; padding-bottom: 6px; }
+      .drafting-table { padding: 16px 26px; gap: 22px; }
+      .right-panel { width: 220px; gap: 8px; }
+      .notation-toggle { padding: 4px; gap: 4px; }
+      .mode-btn { width: 34px; height: 28px; font-size: 18px; }
+      .pivot-btn { width: 36px; height: 36px; }
+      .dial-wrap { width: 110px; height: 110px; }
+      .product-dial { width: 100px; height: 100px; }
+      .dial-center { width: 52px; height: 52px; font-size: 21px; }
+      .bead-tray-container { max-height: 112px; }
+      .mini-bead { width: 7px; height: 7px; }
+      footer { display: none; }
+    }
+
+
+    /* ─── RESPONSIVE / TOUCH-FIRST LAYOUT ────────────────────────── */
+    @media (max-width: 760px) {
+      :root {
+        --cell-size: min(calc((100vw - 112px) / var(--cols-total)), calc((100vh - 390px) / var(--cols-total)), 26px);
+      }
+
+      html, body { height: 100%; }
+      body { overflow: hidden; }
+
+      .environment { opacity: 0.72; }
+      .window { display: none; }
+      footer { display: none; }
+
+      header {
+        height: calc(50px + env(safe-area-inset-top));
+        padding: env(safe-area-inset-top) 16px 0 16px;
+        grid-template-columns: auto 1fr auto;
+      }
+      .logo { font-size: 1.1rem; }
+      .page-title { font-size: 12px; justify-self: end; }
+
+      .table-scene {
+        position: fixed;
+        inset: 0;
+        padding: calc(58px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+        align-items: flex-start;
+        justify-content: center;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+      }
+
+      .table-assembly { touch-action: pan-y; }
+      .leg { display: none; }
+      .drafting-table {
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 18px 18px 14px;
+        border-radius: 18px;
+        max-width: calc(100vw - 16px);
+        margin-bottom: 10px;
+      }
+
+      .left-panel {
+        grid-template-columns: 14px 24px var(--grid-size);
+        grid-template-rows: 14px 24px var(--grid-size);
+        gap: 2px;
+      }
+      .ruler { font-size: clamp(8px, 2.2vw, 11px); }
+      .cell { font-size: clamp(8px, 2.35vw, 12px); }
+      .marble-bead { font-size: clamp(8px, 2.35vw, 12px); }
+
+      .stop-x { width: 18px; height: 36px; top: -13px; }
+      .stop-y { width: 36px; height: 18px; left: -13px; }
+      .lock-btn { width: 34px; height: 34px; }
+      .lock-x { right: -40px; bottom: -13px; }
+      .lock-y { left: -13px; bottom: -40px; }
+
+      .right-panel {
+        width: min(calc(var(--grid-size) + 56px), calc(100vw - 52px));
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        grid-auto-rows: auto;
+        align-items: center;
+        justify-items: center;
+        gap: 10px 12px;
+      }
+      .equation-board {
+        grid-column: 1 / -1;
+        min-height: 34px;
+        font-size: clamp(22px, 7vw, 30px);
+        line-height: 1;
+      }
+      .notation-toggle { padding: 5px; gap: 5px; }
+      .mode-btn { width: 36px; height: 30px; font-size: 20px; }
+      .pivot-btn { width: 40px; height: 40px; }
+
+      .dial-wrap { width: 112px; height: 112px; }
+      .product-dial { width: 104px; height: 104px; }
+      .dial-center { width: 54px; height: 54px; font-size: 22px; }
+      .dial-dot { top: 11px; width: 7px; height: 7px; margin-left: -3.5px; }
+      .dial-lock { right: -6px; bottom: 0; }
+
+      .bead-tray-container {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: 158px;
+        aspect-ratio: 1;
+      }
+      .bead-tray { gap: 3px; padding: 8px; }
+      .mini-bead { width: 7px; height: 7px; }
+    }
+
+    @media (max-width: 380px) {
+      :root {
+        --cell-size: min(calc((100vw - 104px) / var(--cols-total)), calc((100vh - 372px) / var(--cols-total)), 24px);
+      }
+      .drafting-table { padding-left: 14px; padding-right: 14px; }
+      .left-panel { grid-template-columns: 12px 22px var(--grid-size); grid-template-rows: 12px 22px var(--grid-size); }
+      .lock-x { right: -36px; }
+      .lock-y { bottom: -36px; }
+      .lock-btn { width: 30px; height: 30px; }
+      .right-panel { width: min(calc(var(--grid-size) + 48px), calc(100vw - 44px)); gap: 8px 10px; }
+      .dial-wrap { width: 100px; height: 100px; }
+      .product-dial { width: 94px; height: 94px; }
+      .dial-center { width: 50px; height: 50px; font-size: 20px; }
+    }
+
+    @media (max-height: 680px) and (max-width: 760px) {
+      :root {
+        --cell-size: min(calc((100vw - 112px) / var(--cols-total)), calc((100vh - 336px) / var(--cols-total)), 24px);
+      }
+      .table-scene { padding-top: calc(52px + env(safe-area-inset-top)); }
+      header { height: calc(44px + env(safe-area-inset-top)); }
+      .logo { font-size: 1rem; }
+      .page-title { font-size: 11px; }
+      .drafting-table { gap: 10px; padding-top: 14px; padding-bottom: 12px; }
+      .right-panel { gap: 7px 10px; }
+      .equation-board { min-height: 28px; font-size: clamp(20px, 6vw, 26px); }
+      .bead-tray-container { max-width: 134px; }
+      .bead-tray { gap: 2px; padding: 7px; }
+      .mini-bead { width: 6px; height: 6px; }
+      .dial-wrap { width: 96px; height: 96px; }
+      .product-dial { width: 90px; height: 90px; }
+      .dial-center { width: 46px; height: 46px; font-size: 19px; }
+      .mode-btn { width: 34px; height: 28px; }
+      .pivot-btn { width: 36px; height: 36px; }
+    }
+
+    @media (orientation: landscape) and (max-height: 620px) {
+      :root { --cell-size: min(calc((100vh - 136px) / var(--cols-total)), 28px); }
+      header { height: 44px; padding: 0 18px; }
+      .logo { font-size: 1.05rem; }
+      .page-title { font-size: 12px; }
+      footer { display: none; }
+      .table-scene {
+        padding: 52px 8px 8px;
+        align-items: center;
+        overflow: hidden;
+      }
+      .leg { display: none; }
+      .drafting-table {
+        flex-direction: row;
+        gap: 18px;
+        padding: 16px 20px;
+        max-height: calc(100vh - 64px);
+      }
+      .right-panel { width: 170px; gap: 8px; }
+      .equation-board { font-size: 22px; min-height: 28px; }
+      .notation-toggle { padding: 4px; gap: 4px; }
+      .mode-btn { width: 32px; height: 28px; font-size: 18px; }
+      .pivot-btn { width: 36px; height: 36px; }
+      .dial-wrap { width: 100px; height: 100px; }
+      .product-dial { width: 92px; height: 92px; }
+      .dial-center { width: 48px; height: 48px; font-size: 20px; }
+      .bead-tray-container { width: 132px; }
+      .bead-tray { gap: 2px; padding: 7px; }
+      .mini-bead { width: 6px; height: 6px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="environment">
+    <div class="wall">
+      <div class="window">
+        <div class="window-pane"></div><div class="window-pane"></div><div class="window-pane"></div>
+        <div class="window-pane"></div><div class="window-pane"></div><div class="window-pane"></div>
+        <div class="window-pane"></div><div class="window-pane"></div><div class="window-pane"></div>
+        <div class="window-pane"></div><div class="window-pane"></div><div class="window-pane"></div>
+      </div>
+    </div>
+    <div class="floor"></div>
+  </div>
+
+  <header>
+    <div class="logo">Math Things<span class="bead"></span></div>
+    <div class="page-title">Array Architect</div>
+    <div></div>
+  </header>
+
+  <div class="table-scene">
+    <div class="table-assembly">
+      <div class="leg leg-tl"></div><div class="leg leg-tr"></div>
+      <div class="leg leg-bl"></div><div class="leg leg-br"></div>
+      
+      <div class="drafting-table">
+        
+        <div class="left-panel">
+          <div class="track-x-wrap">
+            <div class="rail rail-x" id="rail-x"><div class="margin-stop stop-x" id="stop-x"></div></div><button class="lock-btn lock-x" id="lock-x" aria-label="lock top factor"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 018 0v3"></path></svg></button>
+          </div>
+          
+          <div class="ruler ruler-x" id="ruler-x"></div>
+
+          <div class="track-y-wrap">
+            <div class="rail rail-y" id="rail-y"><div class="margin-stop stop-y" id="stop-y"></div></div><button class="lock-btn lock-y" id="lock-y" aria-label="lock side factor"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 018 0v3"></path></svg></button>
+          </div>
+          
+          <div class="ruler ruler-y" id="ruler-y"></div>
+
+          <div class="grid-surface" id="grid-surface">
+            <div class="transparency-layer">
+              <div class="strip-x"></div>
+              <div class="strip-y"></div>
+            </div>
+            
+            <div class="marble-container" id="marble">
+              <div class="marble-bead" id="bead-num">25</div>
+            </div>
+            
+            <div class="grid-container" id="grid"></div>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="equation-board hidden" id="equation-board">
+            <span id="out-x">5</span> × <span id="out-y">5</span> = <span id="out-prod">25</span>
+          </div>
+
+          <div class="notation-toggle" id="notation-toggle">
+            <button class="mode-btn active" id="mode-off" aria-label="notation off"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle></svg></button>
+            <button class="mode-btn" id="mode-mul" aria-label="multiplication notation">×</button>
+            <button class="mode-btn" id="mode-div" aria-label="division notation">÷</button>
+          </div>
+          
+          <button class="pivot-btn" id="pivot-btn">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <div class="dial-wrap">
+            <div class="product-dial" id="product-dial">
+              <div class="dial-dot"></div>
+              <div class="dial-center" id="dial-num">25</div>
+            </div>
+            <button class="lock-btn dial-lock" id="lock-total" aria-label="lock array total"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 018 0v3"></path></svg></button>
+          </div>
+
+          <div class="bead-tray-container">
+             <div class="bead-tray" id="bead-tray"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+  </footer>
+
+  <script>
+    const COLS = 12; 
+    const TOTAL_CELLS = COLS + 1;
+    let currentX = 5;
+    let currentY = 5;
+    let isPivoting = false;
+    let activeLock = null; // null, x, y, total
+    let notationMode = "off";
+    let dialAngleRemainder = 0; 
+
+    const grid       = document.getElementById('grid');
+    const surface    = document.getElementById('grid-surface');
+    const stopX      = document.getElementById('stop-x');
+    const stopY      = document.getElementById('stop-y');
+    const marble     = document.getElementById('marble');
+    const beadNum    = document.getElementById('bead-num');
+    const beadTray   = document.getElementById('bead-tray');
+    const dial       = document.getElementById('product-dial');
+    const dialNum    = document.getElementById('dial-num');
+    const equationBoard = document.getElementById('equation-board');
+    const lockXBtn   = document.getElementById('lock-x');
+    const lockYBtn   = document.getElementById('lock-y');
+    const lockTotalBtn = document.getElementById('lock-total');
+    
+    const rulerXEl   = document.getElementById('ruler-x');
+    const rulerYEl   = document.getElementById('ruler-y');
+    const ticksX     = [];
+    const ticksY     = [];
+
+    const outX    = document.getElementById('out-x');
+    const outY    = document.getElementById('out-y');
+    const outProd = document.getElementById('out-prod');
+    const cells   = [];
+
+
+
+
+
+    function fitToViewport() {
+      const w = window.innerWidth || document.documentElement.clientWidth;
+      const h = window.innerHeight || document.documentElement.clientHeight;
+      const root = document.documentElement;
+      const isPhonePortrait = w <= 760 && h >= w;
+      const isCompactLandscape = h <= 620 && w > h;
+      let cell;
+
+      if (isPhonePortrait) {
+        const topChrome = h <= 680 ? 52 : 60;
+        const controlStack = h <= 680 ? 300 : 360;
+        const widthLimited = (w - 112) / TOTAL_CELLS;
+        const heightLimited = (h - topChrome - controlStack) / TOTAL_CELLS;
+        cell = Math.min(26, widthLimited, heightLimited);
+      } else if (isCompactLandscape) {
+        const widthLimited = (w - 380) / TOTAL_CELLS;
+        const heightLimited = (h - 136) / TOTAL_CELLS;
+        cell = Math.min(28, widthLimited, heightLimited);
+      } else if (w <= 900) {
+        const widthLimited = (w - 510) / TOTAL_CELLS;
+        const heightLimited = (h - 212) / TOTAL_CELLS;
+        cell = Math.min(36, widthLimited, heightLimited);
+      } else {
+        const short = h < 720;
+        const medium = h < 840;
+        const rightPanel = short ? 220 : medium ? 250 : 300;
+        const tableGap = short ? 22 : medium ? 28 : 38;
+        const tableHorizontalPadding = short ? 54 : medium ? 72 : 88;
+        const tableVerticalPadding = short ? 34 : medium ? 46 : 58;
+        const sceneTop = short ? 54 : medium ? 66 : 78;
+        const sceneBottom = short ? 6 : medium ? 12 : 20;
+        const gridOverhead = 18 + 28 + 4;
+        const widthLimited = (w - rightPanel - tableGap - tableHorizontalPadding - 42) / TOTAL_CELLS;
+        const heightLimited = (h - sceneTop - sceneBottom - tableVerticalPadding - gridOverhead) / TOTAL_CELLS;
+        cell = Math.min(42, widthLimited, heightLimited);
+      }
+
+      cell = Math.max(18, Math.floor(cell));
+      root.style.setProperty('--cell-size', `${cell}px`);
+    }
+
+
+    const VALID_PRODUCTS = [...new Set(Array.from({length: COLS}, (_, a) => a + 1).flatMap(a => Array.from({length: COLS}, (_, b) => a * (b + 1))))].sort((a, b) => a - b);
+
+    function factorPairs(total) {
+      const pairs = [];
+      for (let y = 1; y <= COLS; y++) {
+        for (let x = 1; x <= COLS; x++) {
+          if (x * y === total) pairs.push({ x, y });
+        }
+      }
+      return pairs;
+    }
+
+    function widestPair(total) {
+      const pairs = factorPairs(total);
+      if (!pairs.length) return { x: 1, y: Math.min(COLS, total) };
+      return pairs.reduce((best, p) => (p.x > best.x || (p.x === best.x && p.y < best.y)) ? p : best, pairs[0]);
+    }
+
+    function nearestValidProduct(value, productList = VALID_PRODUCTS) {
+      return productList.reduce((best, p) => Math.abs(p - value) < Math.abs(best - value) ? p : best, productList[0]);
+    }
+
+    function compatibleProducts() {
+      if (activeLock === 'x') return Array.from({length: COLS}, (_, i) => currentX * (i + 1)).sort((a, b) => a - b);
+      if (activeLock === 'y') return Array.from({length: COLS}, (_, i) => currentY * (i + 1)).sort((a, b) => a - b);
+      return VALID_PRODUCTS;
+    }
+
+    function setProduct(total) {
+      total = nearestValidProduct(total, compatibleProducts());
+      if (activeLock === 'x') {
+        currentY = Math.max(1, Math.min(COLS, total / currentX));
+      } else if (activeLock === 'y') {
+        currentX = Math.max(1, Math.min(COLS, total / currentY));
+      } else {
+        const pair = widestPair(total);
+        currentX = pair.x;
+        currentY = pair.y;
+      }
+      updateVisuals(true);
+    }
+
+    function nearestPairFor(total, xTarget, yTarget) {
+      const pairs = factorPairs(total);
+      if (!pairs.length) return null;
+      return pairs.reduce((best, p) => {
+        const score = (p.x - xTarget) ** 2 + (p.y - yTarget) ** 2;
+        const bestScore = (best.x - xTarget) ** 2 + (best.y - yTarget) ** 2;
+        return score < bestScore ? p : best;
+      }, pairs[0]);
+    }
+
+    function reshapeLockedTotal(xTarget, yTarget) {
+      const total = currentX * currentY;
+      const p = nearestPairFor(total, xTarget, yTarget);
+      if (!p) return;
+      currentX = p.x;
+      currentY = p.y;
+    }
+
+    function setLock(lockName) {
+      activeLock = (activeLock === lockName) ? null : lockName;
+      navigator.vibrate?.(10);
+      updateVisuals(false);
+    }
+
+    function updateLockUI() {
+      lockXBtn.classList.toggle('active', activeLock === 'x');
+      lockYBtn.classList.toggle('active', activeLock === 'y');
+      lockTotalBtn.classList.toggle('active', activeLock === 'total');
+      stopX.classList.toggle('locked-stop', activeLock === 'x');
+      stopY.classList.toggle('locked-stop', activeLock === 'y');
+    }
+
+    function setNotationMode(mode) {
+      notationMode = mode;
+      document.getElementById('mode-off').classList.toggle('active', mode === 'off');
+      document.getElementById('mode-mul').classList.toggle('active', mode === 'mul');
+      document.getElementById('mode-div').classList.toggle('active', mode === 'div');
+      updateVisuals(false);
+    }
+
+    function signedAngleDelta(prev, next) {
+      let delta = next - prev;
+      while (delta > Math.PI) delta -= Math.PI * 2;
+      while (delta < -Math.PI) delta += Math.PI * 2;
+      return delta;
+    }
+
+    function initGrid() {
+      // Build 0-12 Grid
+      for (let r = 0; r <= COLS; r++) {
+        for (let c = 0; c <= COLS; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          if (r === 0 || c === 0) cell.classList.add('zero-cell');
+          if (r === c) cell.classList.add('perfect-square');
+          cell.textContent = r * c;
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+          grid.appendChild(cell);
+          cells.push(cell);
+        }
+      }
+
+      // Build External Factor Rulers
+      for (let i = 0; i <= COLS; i++) {
+        const tx = document.createElement('div'); tx.textContent = i; tx.className = 'ruler-tick';
+        rulerXEl.appendChild(tx); ticksX.push(tx);
+        
+        const ty = document.createElement('div'); ty.textContent = i; ty.className = 'ruler-tick';
+        rulerYEl.appendChild(ty); ticksY.push(ty);
+      }
+    }
+
+    function renderBeadTray() {
+      beadTray.innerHTML = '';
+      if (currentX === 0 || currentY === 0) {
+        beadTray.style.display = 'none';
+        return;
+      }
+      beadTray.style.display = 'grid';
+      beadTray.style.gridTemplateColumns = `repeat(${currentX}, 1fr)`;
+      
+      // Removed the dynamic proportional scaling width/height overrides 
+      // so the tray sizes itself naturally to the fixed-size beads
+      
+      const total = currentX * currentY;
+      for (let i = 0; i < total; i++) {
+        const b = document.createElement('div');
+        b.className = 'mini-bead';
+        beadTray.appendChild(b);
+      }
+    }
+
+    function updateVisuals(animate = true) {
+      if (isPivoting) return;
+
+      surface.style.setProperty('--curr-x', currentX);
+      surface.style.setProperty('--curr-y', currentY);
+      beadNum.textContent = currentX * currentY;
+
+      stopX.style.transition = animate ? 'left 40ms linear' : 'none';
+      stopY.style.transition = animate ? 'top 40ms linear'  : 'none';
+      
+      const rx = document.getElementById('rail-x');
+      const ry = document.getElementById('rail-y');
+      stopX.style.left = `${((currentX + 0.5) / TOTAL_CELLS) * rx.offsetWidth}px`;
+      stopY.style.top  = `${((currentY + 0.5) / TOTAL_CELLS) * ry.offsetHeight}px`;
+
+      // Highlight active ruler factors
+      ticksX.forEach((t, i) => t.classList.toggle('active', i === currentX));
+      ticksY.forEach((t, i) => t.classList.toggle('active', i === currentY));
+
+      cells.forEach(cell => {
+        const r = parseInt(cell.dataset.r);
+        const c = parseInt(cell.dataset.c);
+        cell.classList.toggle('ink', c <= currentX && r <= currentY);
+      });
+
+      outX.textContent    = currentX;
+      outY.textContent    = currentY;
+      outProd.textContent = currentX * currentY;
+      dialNum.textContent = currentX * currentY;
+      equationBoard.classList.toggle('hidden', notationMode === 'off');
+      if (notationMode === 'mul') {
+        equationBoard.innerHTML = `<span id="out-x">${currentX}</span> × <span id="out-y">${currentY}</span> = <span id="out-prod">${currentX * currentY}</span>`;
+      } else if (notationMode === 'div') {
+        equationBoard.innerHTML = `<span id="out-prod">${currentX * currentY}</span> ÷ <span id="out-x">${currentX}</span> = <span id="out-y">${currentY}</span>`;
+      }
+      updateLockUI();
+
+      renderBeadTray();
+    }
+
+    function triggerPivot() {
+      if (isPivoting || currentX === currentY) return; 
+      
+      isPivoting = true;
+      navigator.vibrate?.(15);
+      
+      const oldX = currentX;
+      const oldY = currentY;
+      currentX = oldY;
+      currentY = oldX;
+
+      beadTray.style.transition = 'transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      beadTray.style.transform = 'rotate3d(1, 1, 0, 180deg)';
+
+      surface.style.setProperty('--curr-x', currentX);
+      surface.style.setProperty('--curr-y', currentY);
+      
+      stopX.style.transition = 'left 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      stopY.style.transition = 'top 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      
+      const rx = document.getElementById('rail-x');
+      const ry = document.getElementById('rail-y');
+      stopX.style.left = `${((currentX + 0.5) / TOTAL_CELLS) * rx.offsetWidth}px`;
+      stopY.style.top  = `${((currentY + 0.5) / TOTAL_CELLS) * ry.offsetHeight}px`;
+
+      setTimeout(() => {
+        beadTray.style.transition = 'none';
+        beadTray.style.transform = 'none';
+        isPivoting = false;
+        updateVisuals(false); 
+      }, 550);
+
+      outX.textContent = currentX;
+      outY.textContent = currentY;
+      
+      // Update ruler highlight mid-pivot
+      ticksX.forEach((t, i) => t.classList.toggle('active', i === currentX));
+      ticksY.forEach((t, i) => t.classList.toggle('active', i === currentY));
+    }
+
+    document.getElementById('pivot-btn').addEventListener('click', triggerPivot);
+
+    function setupRailDrag(stopEl, railEl, isH) {
+      const onMove = e => {
+        if (isPivoting) return;
+        const rect = railEl.getBoundingClientRect();
+        const pos = isH ? (e.clientX ?? e.touches?.[0].clientX) : (e.clientY ?? e.touches?.[0].clientY);
+        if (pos === undefined) return;
+
+        const start = isH ? rect.left : rect.top;
+        const size  = isH ? rect.width : rect.height;
+        let raw = Math.max(0, Math.min(1, (pos - start) / size));
+        let snapped = Math.max(0, Math.min(COLS, Math.floor(raw * TOTAL_CELLS)));
+        if (snapped === 0) snapped = 1;
+        
+        let changed = false;
+        if (activeLock === 'total') {
+          const oldX = currentX, oldY = currentY;
+          reshapeLockedTotal(isH ? snapped : currentX, isH ? currentY : snapped);
+          changed = oldX !== currentX || oldY !== currentY;
+        } else if (isH && activeLock !== 'x' && currentX !== snapped) { currentX = snapped; changed = true; } 
+        else if (!isH && activeLock !== 'y' && currentY !== snapped) { currentY = snapped; changed = true; }
+        if (changed) { navigator.vibrate?.(10); updateVisuals(true); }
+      };
+
+      stopEl.addEventListener('pointerdown', e => {
+        if (isPivoting) return;
+        stopEl.setPointerCapture(e.pointerId);
+        stopEl.addEventListener('pointermove', onMove);
+        e.preventDefault(); 
+      });
+      stopEl.addEventListener('pointerup', e => {
+        stopEl.removeEventListener('pointermove', onMove);
+        stopEl.releasePointerCapture(e.pointerId);
+      });
+    }
+
+    function setupMarbleDrag() {
+      const onMove = e => {
+        if (isPivoting) return;
+        const rect = surface.getBoundingClientRect();
+        const posX = e.clientX ?? e.touches?.[0].clientX;
+        const posY = e.clientY ?? e.touches?.[0].clientY;
+        if (posX === undefined || posY === undefined) return;
+
+        let rawX = Math.max(0, Math.min(1, (posX - rect.left) / rect.width));
+        let rawY = Math.max(0, Math.min(1, (posY - rect.top) / rect.height));
+
+        let snappedX = Math.max(1, Math.min(COLS, Math.floor(rawX * TOTAL_CELLS)));
+        let snappedY = Math.max(1, Math.min(COLS, Math.floor(rawY * TOTAL_CELLS)));
+
+        let changed = false;
+        if (activeLock === 'total') {
+          const oldX = currentX, oldY = currentY;
+          reshapeLockedTotal(snappedX, snappedY);
+          changed = oldX !== currentX || oldY !== currentY;
+        } else {
+          if (activeLock !== 'x' && currentX !== snappedX) { currentX = snappedX; changed = true; }
+          if (activeLock !== 'y' && currentY !== snappedY) { currentY = snappedY; changed = true; }
+        }
+        if (changed) { navigator.vibrate?.(10); updateVisuals(true); }
+      };
+
+      marble.addEventListener('pointerdown', e => {
+        if (isPivoting) return;
+        marble.setPointerCapture(e.pointerId);
+        marble.addEventListener('pointermove', onMove);
+        e.preventDefault();
+      });
+      marble.addEventListener('pointerup', e => {
+        marble.removeEventListener('pointermove', onMove);
+        marble.releasePointerCapture(e.pointerId);
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (isPivoting) return;
+        let changed = false;
+        if (activeLock === 'total') {
+            const targetX = currentX + (e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0);
+            const targetY = currentY + (e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0);
+            const oldX = currentX, oldY = currentY;
+            reshapeLockedTotal(Math.max(1, Math.min(COLS, targetX)), Math.max(1, Math.min(COLS, targetY)));
+            changed = oldX !== currentX || oldY !== currentY;
+        } else {
+            switch(e.key) {
+                case 'ArrowUp':    if (activeLock !== 'y') { currentY = Math.max(1, currentY - 1); changed = true; } break;
+                case 'ArrowDown':  if (activeLock !== 'y') { currentY = Math.min(COLS, currentY + 1); changed = true; } break;
+                case 'ArrowLeft':  if (activeLock !== 'x') { currentX = Math.max(1, currentX - 1); changed = true; } break;
+                case 'ArrowRight': if (activeLock !== 'x') { currentX = Math.min(COLS, currentX + 1); changed = true; } break;
+            }
+        }
+        if (changed) { e.preventDefault(); navigator.vibrate?.(10); updateVisuals(true); }
+    });
+
+
+    lockXBtn.addEventListener('click', () => setLock('x'));
+    lockYBtn.addEventListener('click', () => setLock('y'));
+    lockTotalBtn.addEventListener('click', () => setLock('total'));
+    document.getElementById('mode-off').addEventListener('click', () => setNotationMode('off'));
+    document.getElementById('mode-mul').addEventListener('click', () => setNotationMode('mul'));
+    document.getElementById('mode-div').addEventListener('click', () => setNotationMode('div'));
+
+    function setupDialDrag() {
+      let lastAngle = null;
+      const degreesPerStep = 22;
+
+      const angleFromEvent = (e) => {
+        const rect = dial.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        return Math.atan2(e.clientY - cy, e.clientX - cx);
+      };
+
+      const onMove = (e) => {
+        if (isPivoting || activeLock === 'total') return;
+        const angle = angleFromEvent(e);
+        if (lastAngle === null) { lastAngle = angle; return; }
+        const delta = signedAngleDelta(lastAngle, angle);
+        lastAngle = angle;
+        dialAngleRemainder += delta * 180 / Math.PI;
+        const steps = Math.trunc(dialAngleRemainder / degreesPerStep);
+        if (steps !== 0) {
+          const list = compatibleProducts();
+          const currentTotal = currentX * currentY;
+          let idx = list.indexOf(currentTotal);
+          if (idx < 0) idx = list.indexOf(nearestValidProduct(currentTotal, list));
+          idx = Math.max(0, Math.min(list.length - 1, idx + steps));
+          dialAngleRemainder -= steps * degreesPerStep;
+          setProduct(list[idx]);
+          navigator.vibrate?.(6);
+        }
+      };
+
+      dial.addEventListener('pointerdown', (e) => {
+        if (isPivoting || activeLock === 'total') return;
+        dial.setPointerCapture(e.pointerId);
+        lastAngle = angleFromEvent(e);
+        dialAngleRemainder = 0;
+        dial.addEventListener('pointermove', onMove);
+        e.preventDefault();
+      });
+      dial.addEventListener('pointerup', (e) => {
+        dial.removeEventListener('pointermove', onMove);
+        lastAngle = null;
+        dial.releasePointerCapture(e.pointerId);
+      });
+      dial.addEventListener('wheel', (e) => {
+        if (activeLock === 'total') return;
+        e.preventDefault();
+        const list = compatibleProducts();
+        const currentTotal = currentX * currentY;
+        let idx = list.indexOf(currentTotal);
+        if (idx < 0) idx = list.indexOf(nearestValidProduct(currentTotal, list));
+        idx = Math.max(0, Math.min(list.length - 1, idx + Math.sign(e.deltaY)));
+        setProduct(list[idx]);
+      }, { passive: false });
+    }
+
+    initGrid();
+    setupRailDrag(stopX, document.getElementById('rail-x'), true);
+    setupRailDrag(stopY, document.getElementById('rail-y'), false);
+    setupMarbleDrag();
+    setupDialDrag();
+    
+    fitToViewport();
+    window.addEventListener('resize', () => { fitToViewport(); updateVisuals(false); });
+    window.addEventListener('orientationchange', () => setTimeout(() => { fitToViewport(); updateVisuals(false); }, 120));
+    setTimeout(() => { fitToViewport(); updateVisuals(false); }, 10);
+  </script>
+</body>
+</html>
