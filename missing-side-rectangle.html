@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Math Things. | Missing Side Rectangle</title>
+  <!-- Standards: 3.OA.A.2, 3.OA.A.4, 3.OA.B.6, 3.MD.C.7.b -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #E5E5EA;
+      --glass: rgba(245,245,247,0.85);
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --cell: #DC143C;
+      --grid-size: 50px;
+      --cell-size: 46px;
+      --bead-surface:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      --shadow-block:
+        inset 2px 2px 0 rgba(255,255,255,0.4),
+        inset -2px -2px 0 rgba(0,0,0,0.12),
+        0 8px 20px rgba(0,0,0,0.12),
+        1px -1px 0 rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; user-select: none; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: relative;
+      height: 60px;
+      background: var(--glass);
+      backdrop-filter: blur(40px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      z-index: 20;
+    }
+    .logo { font-weight: 900; font-size: 1.1rem; letter-spacing: -0.05em; display: inline-flex; align-items: baseline; }
+    .logo-bead {
+      width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%;
+      background: var(--bead-surface);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    }
+    .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 0.86rem; font-weight: 700; letter-spacing: 1.2px; color: var(--text-gray); text-transform: uppercase; }
+
+    #new-problem-btn {
+      border: 0;
+      background: var(--surface);
+      color: var(--text-main);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    #workspace {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(rgba(29, 29, 31, 0.12) 2px, transparent 2px),
+        radial-gradient(circle at 50% -20%, #FFFFFF 0%, rgba(255,255,255,0.5) 40%, transparent 80%);
+      background-size: var(--grid-size) var(--grid-size), 100% 100%;
+      background-position: calc(var(--grid-size)/2) calc(var(--grid-size)/2), center top;
+    }
+
+    #board {
+      position: relative;
+      width: calc(var(--grid-size) * 10);
+      height: calc(var(--grid-size) * 10);
+      border: 3px dashed rgba(0,0,0,0.14);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.20);
+      overflow: visible;
+    }
+
+    #dividend {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: calc(var(--grid-size) * 1.1);
+      font-weight: 900;
+      color: rgba(29,29,31,0.20);
+      letter-spacing: 1px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #array { position: absolute; left: 0; top: 0; z-index: 3; }
+
+    .cell {
+      position: absolute;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      border-radius: 6px;
+      background: var(--cell);
+      box-shadow: var(--shadow-block);
+      transition: top 0.22s ease, transform 0.22s ease;
+    }
+
+    .num-label {
+      position: absolute;
+      font-size: 1.04rem;
+      font-weight: 800;
+      color: rgba(29,29,31,0.85);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.65);
+      z-index: 6;
+      pointer-events: none;
+    }
+
+    #drag-handle {
+      position: absolute;
+      width: calc(var(--grid-size) * 0.58);
+      height: calc(var(--grid-size) * 0.58);
+      border-radius: 50%;
+      background: var(--bead-surface);
+      box-shadow: inset 1.5px 1.5px 3px rgba(255,255,255,0.8), inset -1.5px -1.5px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.2);
+      cursor: grab;
+      z-index: 8;
+      transition: top 0.2s ease, transform 0.12s ease;
+    }
+    #drag-handle:active { transform: scale(0.9); cursor: grabbing; }
+    #drag-handle.idle-wiggle { animation: wiggle 0.55s ease-in-out 0s 2; }
+
+    #equations {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      min-height: 60px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+      z-index: 7;
+    }
+    .hidden { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    .show { opacity: 1; transform: translateX(-50%) translateY(0); transition: opacity 0.25s ease, transform 0.25s ease; }
+
+    #board.solved .cell { animation: solvedPulse 0.55s ease; }
+
+    @keyframes solvedPulse {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    @keyframes wiggle {
+      0%,100% { transform: rotate(0deg); }
+      25% { transform: rotate(-9deg); }
+      75% { transform: rotate(9deg); }
+    }
+
+    footer {
+      height: 40px;
+      background: var(--surface);
+      border-top: 1px solid rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <div class="header-title">Array Slicer</div>
+    <button id="new-problem-btn" type="button">New Problem</button>
+  </header>
+
+  <div id="workspace">
+    <div id="board" aria-label="10 by 10 rectangle grid">
+      <div id="dividend"></div>
+      <div id="array"></div>
+      <div id="fixed-label" class="num-label"></div>
+      <div id="quotient-label" class="num-label">?</div>
+      <div id="drag-handle" role="slider" aria-label="Slice array into groups" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"></div>
+    </div>
+
+    <div id="equations" class="hidden" aria-live="polite"></div>
+  </div>
+
+  <footer>Math Things<span class="logo-bead" style="width:0.18em;height:0.18em;box-shadow:none;"></span> &nbsp;|&nbsp; Math, in your hands</footer>
+
+  <script>
+    const board = document.getElementById('board');
+    const arrayEl = document.getElementById('array');
+    const dividendEl = document.getElementById('dividend');
+    const fixedLabel = document.getElementById('fixed-label');
+    const quotientLabel = document.getElementById('quotient-label');
+    const dragHandle = document.getElementById('drag-handle');
+    const equations = document.getElementById('equations');
+    const newProblemBtn = document.getElementById('new-problem-btn');
+
+    let gridSize = 50;
+    let fixedSide = 4;
+    let quotient = 4;
+    let totalArea = 16;
+    let separatedGroups = 0;
+    let hasInteracted = false;
+    let locked = false;
+    let idleTimer = null;
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function updateGridSize() {
+      const maxBoardWidth = Math.min(window.innerWidth - 32, 620);
+      gridSize = Math.max(30, Math.min(58, Math.floor(maxBoardWidth / 10)));
+      document.documentElement.style.setProperty('--grid-size', `${gridSize}px`);
+      document.documentElement.style.setProperty('--cell-size', `${gridSize - 4}px`);
+    }
+
+    function scheduleIdleWiggle() {
+      clearTimeout(idleTimer);
+      dragHandle.classList.remove('idle-wiggle');
+      if (locked) return;
+      idleTimer = setTimeout(() => {
+        if (!locked) dragHandle.classList.add('idle-wiggle');
+      }, 3000);
+    }
+
+    function stopIdleWiggle() {
+      clearTimeout(idleTimer);
+      dragHandle.classList.remove('idle-wiggle');
+    }
+
+    function renderArray() {
+      arrayEl.innerHTML = '';
+      const gap = Math.round(gridSize * 0.32);
+
+      for (let row = 0; row < quotient; row++) {
+        for (let col = 0; col < fixedSide; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          const yOffset = row < separatedGroups ? row * gap : separatedGroups * gap;
+          cell.style.left = `${col * gridSize + 2}px`;
+          cell.style.top = `${row * gridSize + yOffset + 2}px`;
+          arrayEl.appendChild(cell);
+        }
+      }
+
+      const totalHeight = quotient * gridSize + separatedGroups * gap;
+      arrayEl.style.width = `${fixedSide * gridSize}px`;
+      arrayEl.style.height = `${totalHeight}px`;
+
+      dividendEl.textContent = `${totalArea}`;
+      dividendEl.style.left = `${(fixedSide * gridSize) / 2}px`;
+      dividendEl.style.top = `${(totalHeight) / 2}px`;
+
+      fixedLabel.textContent = `${fixedSide}`;
+      fixedLabel.style.left = `${fixedSide * gridSize + 8}px`;
+      fixedLabel.style.top = `${Math.max(4, (gridSize / 2) - 10)}px`;
+
+      quotientLabel.textContent = hasInteracted ? `${separatedGroups}` : '?';
+      quotientLabel.style.left = `${fixedSide * gridSize + 8}px`;
+      quotientLabel.style.top = `${totalHeight - 20}px`;
+
+      dragHandle.style.left = `${(fixedSide * gridSize) / 2 - (gridSize * 0.29)}px`;
+      dragHandle.style.top = `${totalHeight + 8}px`;
+      dragHandle.setAttribute('aria-valuenow', String(separatedGroups));
+
+      checkSolved();
+    }
+
+    function checkSolved() {
+      const solved = separatedGroups === quotient;
+      if (solved && !locked) {
+        locked = true;
+        stopIdleWiggle();
+        board.classList.add('solved');
+        equations.className = 'show';
+        equations.innerHTML = `${totalArea} ÷ ${fixedSide} = ${quotient}<br>${quotient} × ${fixedSide} = ${totalArea}`;
+      }
+      if (!solved) {
+        locked = false;
+        board.classList.remove('solved');
+        equations.className = 'hidden';
+        equations.innerHTML = '';
+      }
+    }
+
+    function setSeparatedGroups(val) {
+      const clamped = Math.max(0, Math.min(quotient, Math.round(val)));
+      if (clamped === separatedGroups) return;
+      separatedGroups = clamped;
+      renderArray();
+      scheduleIdleWiggle();
+    }
+
+    function beginDrag(startEvent) {
+      if (locked) return;
+      stopIdleWiggle();
+
+      if (!hasInteracted) {
+        hasInteracted = true;
+        quotientLabel.textContent = `${separatedGroups}`;
+      }
+
+      const startY = startEvent.clientY;
+      const startGroups = separatedGroups;
+
+      function onMove(e) {
+        const dy = startY - e.clientY;
+        setSeparatedGroups(startGroups + dy / gridSize);
+      }
+
+      function onUp() {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        if (!locked) scheduleIdleWiggle();
+      }
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    }
+
+    function newProblem() {
+      updateGridSize();
+      fixedSide = randInt(2, 10);
+      quotient = randInt(2, 10);
+      totalArea = fixedSide * quotient;
+
+      separatedGroups = 0;
+      hasInteracted = false;
+      locked = false;
+      board.classList.remove('solved');
+      equations.className = 'hidden';
+      equations.innerHTML = '';
+
+      renderArray();
+      scheduleIdleWiggle();
+    }
+
+    dragHandle.addEventListener('pointerdown', beginDrag);
+    newProblemBtn.addEventListener('click', () => {
+      stopIdleWiggle();
+      newProblem();
+    });
+
+    window.addEventListener('resize', () => {
+      updateGridSize();
+      renderArray();
+      scheduleIdleWiggle();
+    });
+
+    newProblem();
+  </script>
+</body>
+</html>
