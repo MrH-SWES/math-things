@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Balance Scale | Math Things.</title>
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg: #f5f5f7;
+        --glass: rgba(255,255,255,0.72);
+        --surface: #ffffff;
+        --ink: #1d1d1f;
+        --gray: #86868b;
+        --light: #b8b8bd;
+        --line: rgba(0,0,0,0.065);
+        --metal-a: #fbfbfd;
+        --metal-b: #c9c9d1;
+        --metal-c: #77777f;
+        --metal-d: #2f2f33;
+        --spring: cubic-bezier(.34,1.56,.64,1);
+        --ease: cubic-bezier(.22,.8,.22,1);
+        --balance-green: #3EF2A4;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+        min-height: 100%;
+        font-family: Lexend, ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+            radial-gradient(circle at 50% 8%, rgba(255,255,255,0.96), rgba(255,255,255,0) 34%),
+            var(--bg);
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+    }
+
+    button { font: inherit; -webkit-tap-highlight-color: transparent; }
+
+    header {
+        height: 52px;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(245,245,247,.86);
+        backdrop-filter: blur(34px);
+        -webkit-backdrop-filter: blur(34px);
+        position: relative;
+        z-index: 50;
+    }
+
+    .logo {
+        justify-self: start;
+        font-weight: 900;
+        font-size: 1.22rem;
+        letter-spacing: -.055em;
+        display: inline-flex;
+        align-items: baseline;
+        color: var(--ink);
+    }
+
+    .dot {
+        width: .24em;
+        height: .24em;
+        margin-left: .035em;
+        margin-bottom: .07em;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 32% 28%, rgba(255,255,255,.95), rgba(255,255,255,.18) 45%, transparent 62%),
+            radial-gradient(circle at 70% 72%, rgba(0,0,0,.17), transparent 52%),
+            linear-gradient(135deg,#f0f0f2,#aaaab1 52%,#e2e2e6);
+        box-shadow: inset 1px 1px 2px rgba(255,255,255,.8), inset -1px -1px 2px rgba(0,0,0,.2), 0 2px 5px rgba(0,0,0,.18);
+    }
+
+    .title {
+        justify-self: center;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -.02em;
+        color: var(--gray);
+    }
+
+    .header-spacer { width: 110px; justify-self: end; }
+
+    .tabs {
+        height: 48px;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(245,245,247,.75);
+        backdrop-filter: blur(28px);
+        -webkit-backdrop-filter: blur(28px);
+        position: relative;
+        z-index: 40;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 0 12px;
+    }
+
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+        min-width: 82px;
+        height: 31px;
+        flex: 0 0 auto;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        color: var(--gray);
+        background: transparent;
+        font-weight: 800;
+        font-size: .8rem;
+        letter-spacing: -.025em;
+        cursor: pointer;
+        transition: background .2s var(--ease), color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--spring);
+    }
+
+    .tab.active {
+        background: rgba(255,255,255,.96);
+        color: var(--ink);
+        border-color: rgba(0,0,0,.055);
+        box-shadow: 0 6px 16px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,.9);
+    }
+
+    .tray-switcher .tab {
+        min-width: 46px;
+        font-size: 1rem;
+    }
+
+    .challenge-tab {
+        margin-left: 10px;
+        border-color: rgba(0,0,0,.055);
+        background: rgba(255,255,255,.48);
+    }
+
+    .challenge-tab.active,
+    body.solve-mode .challenge-tab {
+        background: linear-gradient(180deg,#5cf5b3,#2dd58a);
+        color: #08402a;
+        border-color: rgba(45,213,138,.5);
+        box-shadow: 0 4px 14px rgba(45,213,138,.34), inset 0 1px 0 rgba(255,255,255,.55);
+    }
+
+    .tab:active, .tool:active, .x-step:active, .fulcrum:active { transform: scale(.95); }
+
+    .workspace {
+        flex: 1 1 auto;
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        padding: 8px 24px 124px;
+    }
+
+    .scale {
+        width: min(1120px, 97vw);
+        height: min(620px, 72vh);
+        min-height: 430px;
+        position: relative;
+        --tilt: 0deg;
+        --counter: 0deg;
+    }
+
+    .scale-shadow {
+        position: absolute;
+        left: 50%;
+        top: calc(52% + 276px);
+        width: 580px;
+        height: 38px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,.13), transparent 68%);
+        filter: blur(2px);
+        opacity: .55;
+        pointer-events: none;
+    }
+
+    .stand {
+        position: absolute;
+        left: 50%;
+        top: calc(52% + 58px);
+        width: 238px;
+        height: 214px;
+        transform: translateX(-50%);
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .stand::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 70px;
+        height: 178px;
+        transform: translateX(-50%);
+        clip-path: polygon(42% 0, 58% 0, 77% 100%, 23% 100%);
+        background:
+            linear-gradient(90deg, rgba(255,255,255,.2), transparent 18%, transparent 82%, rgba(0,0,0,.14)),
+            linear-gradient(180deg,#d9d9df,#8e8e96 52%,#55555c);
+        box-shadow: inset 12px 0 18px rgba(255,255,255,.24), inset -14px 0 18px rgba(0,0,0,.18);
+    }
+
+    .stand::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: 238px;
+        height: 38px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background:
+            radial-gradient(ellipse at center 22%, rgba(255,255,255,.94), rgba(255,255,255,.28) 40%, transparent 62%),
+            linear-gradient(180deg,#e3e3e8,#777780 56%,#3b3b40);
+        box-shadow: inset 0 2px 2px rgba(255,255,255,.65), inset 0 -8px 12px rgba(0,0,0,.25), 0 14px 28px rgba(0,0,0,.16);
+    }
+
+    .beam-wrap {
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        width: min(930px, 90vw);
+        height: 30px;
+        transform: translate(-50%, -50%) rotate(var(--tilt));
+        transform-origin: 50% 50%;
+        transition: transform .62s var(--spring);
+        z-index: 6;
+    }
+
+    .beam {
+        position: absolute;
+        left: 7%;
+        right: 7%;
+        top: 50%;
+        height: 16px;
+        transform: translateY(-50%);
+        border-radius: 999px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,.64), rgba(255,255,255,.08) 32%, rgba(0,0,0,.2)),
+            linear-gradient(90deg,#616168 0%,#e2e2e8 42%,#9f9fa8 52%,#56565d 100%);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -4px 5px rgba(0,0,0,.2), 0 10px 22px rgba(0,0,0,.11);
+    }
+
+    .beam::before, .beam::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 22px;
+        height: 22px;
+        transform: translateY(-50%);
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 30% 26%, rgba(255,255,255,.95), rgba(255,255,255,.28) 34%, transparent 58%),
+            linear-gradient(180deg,#eeeeF3,#85858e);
+        border: 1px solid rgba(0,0,0,.08);
+        box-shadow: inset -2px -2px 4px rgba(0,0,0,.13), 0 2px 5px rgba(0,0,0,.13);
+    }
+
+    .beam::before { left: -2px; }
+    .beam::after { right: -2px; }
+
+    .fulcrum {
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        width: 82px;
+        height: 82px;
+        transform: translate(-50%, -50%);
+        z-index: 11;
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        font-size: 2.58rem;
+        font-weight: 900;
+        letter-spacing: -.11em;
+        color: #1d1d1f;
+        background:
+            radial-gradient(circle at 31% 26%, rgba(255,255,255,.98), rgba(255,255,255,.48) 30%, transparent 60%),
+            linear-gradient(180deg,#fdfdff,#c8c8d0);
+        box-shadow: inset 2px 2px 3px rgba(255,255,255,.88), inset -4px -4px 8px rgba(0,0,0,.13), 0 14px 30px rgba(0,0,0,.14);
+        transition: transform .22s var(--spring), box-shadow .28s var(--ease), background .28s var(--ease);
+    }
+
+    .fulcrum.balanced {
+        background:
+            radial-gradient(circle at 31% 26%, rgba(255,255,255,1), rgba(255,255,255,.54) 30%, transparent 60%),
+            linear-gradient(180deg,#ffffff,#dedee5);
+        box-shadow:
+            inset 1px 1px 2px rgba(255,255,255,.88),
+            inset -3px -3px 6px rgba(0,0,0,.12),
+            0 0 0 4px rgba(62,242,164,.15),
+            0 0 18px rgba(62,242,164,.35),
+            0 12px 24px rgba(0,0,0,.13);
+        animation: balancePulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes balancePulse {
+        0%, 100% {
+            box-shadow:
+                inset 1px 1px 2px rgba(255,255,255,.88),
+                inset -3px -3px 6px rgba(0,0,0,.12),
+                0 0 0 4px rgba(62,242,164,.12),
+                0 0 14px rgba(62,242,164,.28),
+                0 12px 24px rgba(0,0,0,.13);
+        }
+        50% {
+            box-shadow:
+                inset 1px 1px 2px rgba(255,255,255,.88),
+                inset -3px -3px 6px rgba(0,0,0,.12),
+                0 0 0 6px rgba(62,242,164,.18),
+                0 0 26px rgba(62,242,164,.45),
+                0 12px 24px rgba(0,0,0,.13);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .fulcrum.balanced { animation: none; }
+    }
+
+    .pan-rig {
+        position: absolute;
+        top: 50%;
+        width: min(360px, 34vw);
+        height: 178px;
+        transform: translate(-50%, -146px) rotate(var(--counter));
+        transform-origin: 50% 146px;
+        transition: transform .62s var(--spring);
+        z-index: 4;
+    }
+
+    .pan-rig.left { left: 10.5%; }
+    .pan-rig.right { left: 89.5%; }
+
+    .post { display: none; }
+
+    .joint {
+        position: absolute;
+        left: 50%;
+        top: 132px;
+        width: 30px;
+        height: 30px;
+        transform: translateX(-50%);
+        z-index: 6;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 32% 28%, rgba(255,255,255,.96), rgba(255,255,255,.25) 34%, transparent 60%),
+            linear-gradient(180deg,#e5e5eb,#8f8f98);
+        border: 1px solid rgba(0,0,0,.1);
+        box-shadow: inset -2px -2px 4px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.13);
+    }
+
+    .joint::before,
+    .joint::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 32% 28%, rgba(255,255,255,.92), rgba(255,255,255,.2) 36%, transparent 60%),
+            linear-gradient(180deg,#dcdce3,#8a8a93);
+        box-shadow: inset -1px -1px 3px rgba(0,0,0,.12), 0 2px 5px rgba(0,0,0,.11);
+        z-index: -1;
+    }
+
+    .joint::before { left: -14px; }
+    .joint::after { right: -14px; }
+
+    .neck {
+        position: absolute;
+        left: 50%;
+        top: 147px;
+        width: 58px;
+        height: 9px;
+        transform: translateX(-50%);
+        z-index: 5;
+        border-radius: 999px;
+        background: linear-gradient(180deg,#d8d8df,#66666e);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.48), 0 3px 6px rgba(0,0,0,.14);
+    }
+
+    .pan {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 100%;
+        height: 150px;
+        transform: translateX(-50%);
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        transition: transform .28s var(--spring), filter .35s var(--ease);
+    }
+
+    /* ACTIVE / INACTIVE SIDE: lift + soft warm accent, NO green
+       (green is reserved for balance/solved state on the fulcrum). */
+    .pan.active { transform: translateX(-50%) translateY(-4px); }
+    .pan:not(.active) { filter: saturate(.6) brightness(.97); opacity: .82; }
+
+    .dish {
+        position: absolute;
+        left: 50%;
+        bottom: 14px;
+        width: 100%;
+        height: 78px;
+        transform: translateX(-50%);
+        z-index: 2;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,.06);
+        background:
+            radial-gradient(ellipse at center 20%, rgba(255,255,255,.98), rgba(255,255,255,.42) 40%, rgba(255,255,255,.06) 68%, transparent 72%),
+            linear-gradient(180deg,#ffffff,#dedee5 54%,#b8b8c1);
+        box-shadow: inset 0 2px 2px rgba(255,255,255,.82), inset 0 -10px 14px rgba(0,0,0,.11), 0 15px 26px rgba(0,0,0,.12);
+        transition: box-shadow .3s var(--ease);
+    }
+
+    .dish::before {
+        content: '';
+        position: absolute;
+        left: 7%;
+        right: 7%;
+        top: 8px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(0,0,0,.025);
+        border: 1px solid rgba(0,0,0,.035);
+    }
+
+    /* Active dish: bright white glow (Math Things. neutral accent).
+       Green is reserved for balanced state on the fulcrum. */
+    .pan.active .dish {
+        box-shadow:
+            inset 0 2px 2px rgba(255,255,255,.95),
+            inset 0 -10px 14px rgba(0,0,0,.11),
+            0 15px 26px rgba(0,0,0,.12),
+            0 0 0 2px rgba(255,255,255,.95),
+            0 0 22px rgba(255,255,255,.85);
+    }
+
+    /* Drop hover state: brighter white halo while dragging over. */
+    .pan.drop-hover .dish {
+        box-shadow:
+            inset 0 2px 2px rgba(255,255,255,1),
+            inset 0 -10px 14px rgba(0,0,0,.11),
+            0 15px 26px rgba(0,0,0,.12),
+            0 0 0 4px rgba(255,255,255,1),
+            0 0 36px rgba(255,255,255,.95),
+            0 0 60px rgba(255,255,255,.6);
+    }
+
+    .pile {
+        position: absolute;
+        left: 50%;
+        bottom: 46px;
+        width: 92%;
+        min-height: 122px;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: flex-end;
+        align-content: flex-end;
+        justify-content: center;
+        flex-wrap: wrap-reverse;
+        gap: 7px;
+        z-index: 4;
+        pointer-events: none;
+    }
+
+    .pile .piece { pointer-events: auto; }
+
+    .total {
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        transform: translateX(-50%);
+        z-index: 5;
+        min-width: 26px;
+        text-align: center;
+        font-size: .66rem;
+        font-weight: 900;
+        letter-spacing: -.03em;
+        color: rgba(0,0,0,.24);
+        opacity: 0;
+        transition: opacity .24s var(--ease);
+        pointer-events: none;
+    }
+
+    body.show-values .total { opacity: 1; }
+
+    .piece {
+        position: relative;
+        border: 0;
+        flex: 0 0 auto;
+        cursor: grab;
+        display: inline-grid;
+        place-items: center;
+        color: #242426;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        transition: transform .18s var(--spring), filter .2s var(--ease);
+        touch-action: none;
+    }
+
+    .piece:hover { filter: brightness(1.04); }
+
+    /* Pile pieces: get a slight tilt jitter for physics-feel pile */
+    .pile .piece {
+        transform: rotate(var(--jitter, 0deg));
+        animation: pieceLand .42s var(--spring);
+    }
+
+    @keyframes pieceLand {
+        0% { transform: translateY(-44px) rotate(var(--jitter, 0deg)) scale(.85); opacity: 0; }
+        55% { transform: translateY(4px) rotate(var(--jitter, 0deg)) scale(1.04); opacity: 1; }
+        100% { transform: translateY(0) rotate(var(--jitter, 0deg)) scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .pile .piece { animation: none; }
+    }
+
+    /* Dragging clone: follows pointer */
+    .drag-clone {
+        position: fixed;
+        z-index: 200;
+        pointer-events: none;
+        transform: translate(-50%, -50%) scale(1.12);
+        filter: drop-shadow(0 18px 28px rgba(0,0,0,.25));
+    }
+
+    .piece.dragging { opacity: .35; cursor: grabbing; }
+
+    .block {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        font-size: .95rem;
+        background:
+            radial-gradient(circle at 28% 22%, rgba(255,255,255,.95), rgba(255,255,255,.32) 36%, transparent 62%),
+            linear-gradient(135deg,#ffffff,#dcdcE2);
+        box-shadow: inset 2px 2px 2px rgba(255,255,255,.78), inset -4px -4px 8px rgba(0,0,0,.075), 0 6px 12px rgba(0,0,0,.11);
+    }
+
+    .equation-piece {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        font-size: .98rem;
+        background:
+            radial-gradient(circle at 29% 24%, rgba(255,255,255,.95), rgba(255,255,255,.26) 36%, transparent 61%),
+            linear-gradient(135deg,#fbfbfd,#d2d2da);
+        box-shadow: inset 2px 2px 2px rgba(255,255,255,.76), inset -4px -4px 8px rgba(0,0,0,.08), 0 6px 12px rgba(0,0,0,.1);
+    }
+
+    /* X piece: dark graphite — visually distinct from numbered pieces
+       without inventing a non-brand color. */
+    .equation-piece.x {
+        color: #f5f5f7;
+        background:
+            radial-gradient(circle at 29% 24%, rgba(255,255,255,.42), rgba(255,255,255,.08) 36%, transparent 61%),
+            linear-gradient(135deg,#4a4a52,#1d1d1f 60%,#0a0a0c);
+        box-shadow:
+            inset 2px 2px 2px rgba(255,255,255,.22),
+            inset -4px -4px 8px rgba(0,0,0,.5),
+            0 6px 12px rgba(0,0,0,.22),
+            0 0 0 1px rgba(0,0,0,.4);
+    }
+
+    .piece.x::after {
+        content: attr(data-hidden);
+        position: absolute;
+        right: -5px;
+        bottom: -4px;
+        min-width: 18px;
+        height: 18px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,.95);
+        color: #1d1d1f;
+        border: 1px solid rgba(0,0,0,.18);
+        box-shadow: 0 3px 8px rgba(0,0,0,.14);
+        font-size: .54rem;
+        opacity: 0;
+        transition: opacity .2s var(--ease);
+    }
+
+    body.show-values .piece.x::after { opacity: 1; }
+
+    .coin {
+        border-radius: 50%;
+        font-size: .68rem;
+        line-height: 1;
+        isolation: isolate;
+    }
+
+    .coin::before {
+        content: '';
+        position: absolute;
+        inset: 2px;
+        border-radius: 50%;
+        z-index: -1;
+        background:
+            repeating-conic-gradient(from 2deg, rgba(255,255,255,.4) 0 3deg, rgba(0,0,0,.13) 3deg 6deg),
+            var(--coin-edge);
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.12), inset 0 0 0 5px rgba(255,255,255,.2);
+    }
+
+    .coin::after {
+        content: '';
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,.18);
+        box-shadow: inset 0 1px 2px rgba(255,255,255,.36), inset 0 -2px 4px rgba(0,0,0,.12);
+        z-index: -1;
+    }
+
+    .coin .mark {
+        display: grid;
+        place-items: center;
+        width: 62%;
+        height: 62%;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,.12);
+        background: radial-gradient(circle at 32% 24%, rgba(255,255,255,.34), transparent 42%);
+        text-shadow: 0 1px 0 rgba(255,255,255,.42);
+    }
+
+    .penny {
+        width: 42px;
+        height: 42px;
+        color: #5d2a13;
+        --coin-edge: linear-gradient(135deg,#f3a36e,#8e4224 48%,#d77a47);
+        background:
+            radial-gradient(circle at 31% 24%, rgba(255,255,255,.58), rgba(255,255,255,.12) 33%, transparent 55%),
+            radial-gradient(circle at 70% 76%, rgba(0,0,0,.22), transparent 54%),
+            linear-gradient(135deg,#d9895a,#a64e2b 52%,#efad7d);
+        box-shadow: inset -3px -3px 7px rgba(0,0,0,.16), 0 5px 11px rgba(0,0,0,.12);
+    }
+
+    .nickel {
+        width: 46px;
+        height: 46px;
+        color: #555962;
+        --coin-edge: linear-gradient(135deg,#f5f5f6,#9fa1a7 52%,#dedee2);
+        background:
+            radial-gradient(circle at 31% 24%, rgba(255,255,255,.82), rgba(255,255,255,.2) 33%, transparent 55%),
+            radial-gradient(circle at 70% 76%, rgba(0,0,0,.18), transparent 54%),
+            linear-gradient(135deg,#f0f0f2,#aaaeb6 52%,#e6e6ea);
+        box-shadow: inset -3px -3px 7px rgba(0,0,0,.14), 0 5px 11px rgba(0,0,0,.12);
+    }
+
+    .dime {
+        width: 36px;
+        height: 36px;
+        color: #555962;
+        font-size: .56rem;
+        --coin-edge: linear-gradient(135deg,#ffffff,#aeb0b8 52%,#e5e5ea);
+        background:
+            radial-gradient(circle at 31% 24%, rgba(255,255,255,.86), rgba(255,255,255,.18) 33%, transparent 55%),
+            radial-gradient(circle at 70% 76%, rgba(0,0,0,.18), transparent 54%),
+            linear-gradient(135deg,#fbfbfc,#babdc5 52%,#eeeeF2);
+        box-shadow: inset -3px -3px 7px rgba(0,0,0,.13), 0 5px 11px rgba(0,0,0,.12);
+    }
+
+    .quarter {
+        width: 52px;
+        height: 52px;
+        color: #525762;
+        --coin-edge: linear-gradient(135deg,#ffffff,#989ba5 52%,#e8e8ed);
+        background:
+            radial-gradient(circle at 31% 24%, rgba(255,255,255,.84), rgba(255,255,255,.17) 33%, transparent 55%),
+            radial-gradient(circle at 70% 76%, rgba(0,0,0,.18), transparent 54%),
+            linear-gradient(135deg,#f9f9fb,#aeb2bd 52%,#e8e8ee);
+        box-shadow: inset -3px -3px 8px rgba(0,0,0,.14), 0 6px 13px rgba(0,0,0,.13);
+    }
+
+    .bill {
+        width: 92px;
+        height: 42px;
+        border-radius: 6px;
+        color: #1f452f;
+        background:
+            radial-gradient(ellipse at center, rgba(255,255,255,.42), transparent 42%),
+            repeating-linear-gradient(135deg, rgba(44,96,64,.12) 0 2px, transparent 2px 5px),
+            linear-gradient(135deg,#dcefdc,#aacaa9 50%,#eef6e8);
+        border: 1px solid rgba(32,90,58,.28);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,.35), inset 0 0 0 5px rgba(31,100,61,.22), 0 6px 13px rgba(0,0,0,.12);
+        overflow: hidden;
+    }
+
+    .bill::before {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border: 1px solid rgba(28,94,56,.33);
+        border-radius: 4px;
+        pointer-events: none;
+    }
+
+    .bill .bill-corner {
+        position: absolute;
+        font-size: .5rem;
+        font-weight: 900;
+        letter-spacing: .02em;
+        color: rgba(30,79,49,.78);
+        z-index: 3;
+        line-height: 1;
+        text-shadow: 0 1px 0 rgba(255,255,255,.4);
+    }
+
+    .bill .bill-corner.tl { top: 7px; left: 7px; }
+    .bill .bill-corner.br { bottom: 7px; right: 7px; }
+
+    .bill::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 28px;
+        height: 31px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background:
+            radial-gradient(ellipse at 48% 38%, rgba(31,82,51,.35) 0 16%, transparent 17%),
+            radial-gradient(ellipse at 50% 65%, rgba(31,82,51,.28) 0 28%, transparent 29%),
+            rgba(255,255,255,.26);
+        border: 1px solid rgba(29,88,54,.32);
+        box-shadow: inset 0 1px 2px rgba(255,255,255,.4);
+    }
+
+    .bill .bill-value {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .78rem;
+        text-shadow: 0 1px 0 rgba(255,255,255,.38);
+    }
+
+    .five { filter: hue-rotate(8deg) saturate(.9); }
+    .ten { filter: hue-rotate(18deg) saturate(.86); }
+    .twenty { filter: hue-rotate(32deg) saturate(.82); }
+
+    .palette {
+        position: absolute;
+        left: 50%;
+        bottom: 45px;
+        min-height: 66px;
+        max-width: min(94vw, 940px);
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 11px;
+        padding: 10px 14px;
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 999px;
+        background: rgba(255,255,255,.72);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        box-shadow: 0 12px 32px rgba(0,0,0,.085), inset 0 1px 0 rgba(255,255,255,.78);
+        z-index: 28;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .palette::-webkit-scrollbar { display: none; }
+    .palette .piece { flex-shrink: 0; }
+
+    /* Solve mode: problem card */
+    .problem-card {
+        position: absolute;
+        left: 50%;
+        top: 12px;
+        transform: translateX(-50%);
+        display: none;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,.07);
+        background: rgba(255,255,255,.82);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        box-shadow: 0 8px 22px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.85);
+        z-index: 32;
+        font-weight: 900;
+        letter-spacing: -.02em;
+    }
+
+    body.solve-mode .problem-card { display: inline-flex; }
+
+    .problem-label {
+        font-size: .64rem;
+        color: var(--gray);
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        font-weight: 900;
+    }
+
+    .problem-eq {
+        font-size: 1.18rem;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .problem-eq .x-token { color: #1d1d1f; font-weight: 900; }
+
+    .problem-counter {
+        font-size: .68rem;
+        color: var(--gray);
+        font-weight: 800;
+        letter-spacing: -.01em;
+    }
+
+    .problem-next {
+        display: none;
+        margin-left: 4px;
+        height: 28px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 0;
+        background: linear-gradient(180deg,#5cf5b3,#2dd58a);
+        color: #08402a;
+        font-weight: 900;
+        font-size: .76rem;
+        letter-spacing: -.01em;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(45,213,138,.35), inset 0 1px 0 rgba(255,255,255,.55);
+        transition: transform .18s var(--spring);
+    }
+
+    .problem-next:active { transform: scale(.95); }
+    body.solve-mode.solved .problem-next { display: inline-flex; align-items: center; }
+
+    .teacher {
+        position: absolute;
+        left: 50%;
+        bottom: 13px;
+        transform: translateX(-50%);
+        height: 26px;
+        display: none;
+        align-items: center;
+        gap: 7px;
+        padding: 3px 10px 3px 7px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,.07);
+        background: rgba(255,255,255,.78);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 6px 18px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.85);
+        z-index: 29;
+        color: var(--ink);
+        font-size: .68rem;
+        font-weight: 900;
+        letter-spacing: -.02em;
+    }
+
+    body.equation-mode .teacher,
+    body.solve-mode .teacher { display: flex; }
+
+    .x-step {
+        width: 22px;
+        height: 22px;
+        border: 0;
+        border-radius: 50%;
+        background: #1d1d1f;
+        color: #f5f5f7;
+        font-size: .9rem;
+        font-weight: 900;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.18), 0 2px 6px rgba(0,0,0,.18);
+    }
+
+    .x-readout {
+        min-width: 22px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        font-weight: 900;
+        color: var(--ink);
+    }
+
+    .tools {
+        position: absolute;
+        right: 20px;
+        bottom: 12px;
+        display: flex;
+        gap: 8px;
+        z-index: 30;
+    }
+
+    .tool {
+        width: 38px;
+        height: 29px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,.055);
+        background: rgba(255,255,255,.65);
+        color: var(--gray);
+        font-weight: 900;
+        font-size: .78rem;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0,0,0,.055), inset 0 1px 0 rgba(255,255,255,.75);
+        transition: transform .18s var(--spring), color .2s var(--ease), background .2s var(--ease);
+    }
+
+    .tool.active { color: var(--ink); background: #fff; }
+
+    /* Goal-mode toggle (Money only): green when active */
+    .tool-goal { font-size: .9rem; }
+    .tool-goal.active {
+        background: linear-gradient(180deg,#5cf5b3,#2dd58a);
+        color: #08402a;
+        border-color: rgba(45,213,138,.5);
+        box-shadow: 0 4px 14px rgba(45,213,138,.4), inset 0 1px 0 rgba(255,255,255,.55);
+    }
+
+    /* Hide the goal toggle except in Money mode */
+    .tool-goal { display: none; }
+    body.money-mode .tool-goal { display: inline-flex; align-items: center; justify-content: center; }
+
+    /* Price tag: rendered in the locked pan when goal mode is on.
+       Cream paper, hole-punched corner, slight rotation — feels real. */
+    .price-tag {
+        position: relative;
+        width: 92px;
+        height: 64px;
+        padding: 6px 12px 6px 22px;
+        border-radius: 6px 14px 14px 6px;
+        background:
+            radial-gradient(ellipse at 75% 30%, rgba(255,255,255,.6), transparent 50%),
+            linear-gradient(135deg, #fbf4e2, #ead8a8 60%, #d8c184);
+        border: 1px solid rgba(120,90,40,.35);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.7),
+            0 8px 18px rgba(0,0,0,.18),
+            0 2px 4px rgba(120,90,40,.2);
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 1.18rem;
+        letter-spacing: -.04em;
+        color: #3d2a08;
+        transform: rotate(-4deg);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Hole-punch on the left edge */
+    .price-tag::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 50%;
+        width: 10px;
+        height: 10px;
+        transform: translateY(-50%);
+        border-radius: 50%;
+        background: rgba(0,0,0,.2);
+        box-shadow:
+            inset 0 1px 2px rgba(0,0,0,.5),
+            inset 0 -1px 1px rgba(255,255,255,.2),
+            0 0 0 1.5px rgba(140,108,52,.55);
+    }
+
+    /* Tiny "string" coming off the hole */
+    .price-tag::after {
+        content: '';
+        position: absolute;
+        left: -22px;
+        top: 50%;
+        width: 26px;
+        height: 1.5px;
+        transform: translateY(-50%) rotate(-12deg);
+        background: linear-gradient(90deg, transparent, #b39658 30%, #8a6f3a);
+        border-radius: 2px;
+        opacity: .75;
+    }
+
+    /* Goal-card banner (shows the current target above the locked pan) */
+    .goal-banner {
+        position: absolute;
+        left: 50%;
+        top: 12px;
+        transform: translateX(-50%);
+        display: none;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,.07);
+        background: rgba(255,255,255,.82);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        box-shadow: 0 8px 22px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.85);
+        z-index: 32;
+        font-weight: 900;
+        letter-spacing: -.02em;
+    }
+
+    body.money-mode.goal-mode .goal-banner { display: inline-flex; }
+
+    .goal-label {
+        font-size: .64rem;
+        color: var(--gray);
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        font-weight: 900;
+    }
+
+    .goal-amount {
+        font-size: 1.18rem;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .goal-counter {
+        font-size: .68rem;
+        color: var(--gray);
+        font-weight: 800;
+    }
+
+    .goal-next {
+        display: none;
+        margin-left: 4px;
+        height: 28px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 0;
+        background: linear-gradient(180deg,#5cf5b3,#2dd58a);
+        color: #08402a;
+        font-weight: 900;
+        font-size: .76rem;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(45,213,138,.35), inset 0 1px 0 rgba(255,255,255,.55);
+        transition: transform .18s var(--spring);
+    }
+
+    .goal-next:active { transform: scale(.95); }
+    body.money-mode.goal-mode.solved .goal-next { display: inline-flex; align-items: center; }
+
+    /* Smaller price tag on phones */
+    @media (max-width: 680px) {
+        .price-tag { width: 76px; height: 54px; font-size: 1rem; padding: 4px 10px 4px 20px; }
+        .price-tag::before { width: 8px; height: 8px; }
+    }
+
+    /* Negative-mode toggle: when active, glows red so it's
+       impossible to forget you're placing negative pieces. */
+    .tool-neg { font-size: 1rem; }
+    .tool-neg.active {
+        color: #fff;
+        background: linear-gradient(180deg,#c8323a,#8a1820);
+        border-color: rgba(120,20,28,.5);
+        box-shadow: 0 4px 14px rgba(168,36,44,.45), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+
+    /* Hide negative toggle in solve mode (sides locked) and money's
+       coin/bill mode if you decide to scope it later — for now show. */
+    body.solve-mode .tool-neg,
+    body.money-mode.goal-mode .tool-neg { display: none; }
+
+    /* Solve celebration sparkle */
+    .spark {
+        position: fixed;
+        pointer-events: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--balance-green);
+        box-shadow: 0 0 14px var(--balance-green);
+        z-index: 40;
+        animation: sparkFly .9s ease-out forwards;
+    }
+
+    @keyframes sparkFly {
+        0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; }
+        20% { opacity: 1; }
+        100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2); opacity: 0; }
+    }
+
+    footer {
+        height: 29px;
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        border-top: 1px solid var(--line);
+        background: rgba(245,245,247,.72);
+        color: var(--light);
+        font-size: .56rem;
+        font-weight: 900;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        position: relative;
+        z-index: 35;
+    }
+
+    :focus-visible { outline: 3px solid rgba(0,0,0,.16); outline-offset: 4px; }
+
+    @media (max-width: 880px) {
+        .workspace { padding-left: 12px; padding-right: 12px; padding-bottom: 124px; }
+        .scale { width: 98vw; height: min(590px, 72vh); }
+        .beam-wrap { width: 94vw; }
+        .pan-rig { width: min(320px, 36vw); }
+        .pan-rig.left { left: 11%; }
+        .pan-rig.right { left: 89%; }
+        .palette { justify-content: flex-start; }
+        .bill { width: 82px; height: 38px; }
+        .block, .equation-piece { width: 42px; height: 42px; }
+    }
+
+    @media (max-width: 680px) {
+        header { padding: 0 13px; }
+        .logo { font-size: 1.02rem; }
+        .title { font-size: .88rem; }
+        .header-spacer { width: 72px; }
+        .tab { min-width: 60px; font-size: .72rem; }
+        .workspace { padding-bottom: 128px; }
+        .scale { height: min(560px, 70vh); min-height: 390px; }
+        .scale-shadow { width: 360px; top: calc(52% + 238px); }
+        .stand { height: 190px; top: calc(52% + 50px); }
+        .stand::before { height: 155px; width: 58px; }
+        .stand::after { width: 176px; }
+        .beam-wrap { width: 95vw; }
+        .beam { left: 6%; right: 6%; }
+        .fulcrum { width: 68px; height: 68px; font-size: 2.08rem; }
+        .pan-rig { width: 40vw; height: 148px; transform: translate(-50%, -122px) rotate(var(--counter)); transform-origin: 50% 122px; }
+        .pan-rig.left { left: 16%; }
+        .pan-rig.right { left: 84%; }
+        .pan { height: 126px; }
+        .dish { height: 64px; bottom: 13px; }
+        .dish::before { top: 7px; height: 23px; }
+        .joint { top: 109px; width: 26px; height: 26px; }
+        .neck { top: 122px; width: 48px; }
+        .pile { width: 96%; bottom: 40px; gap: 4px; min-height: 96px; }
+        .penny { width: 34px; height: 34px; }
+        .nickel { width: 37px; height: 37px; }
+        .dime { width: 30px; height: 30px; }
+        .quarter { width: 41px; height: 41px; }
+        .bill { width: 70px; height: 33px; font-size: .65rem; }
+        .bill .bill-value { font-size: .66rem; }
+        .palette { bottom: 47px; gap: 8px; padding: 8px 10px; min-height: 60px; }
+        .teacher { bottom: 17px; }
+        .tools { right: 12px; }
+        .problem-eq { font-size: 1rem; }
+        .problem-card { padding: 8px 14px; gap: 10px; top: 8px; }
+    }
+
+    @media (max-height: 590px) {
+        .workspace { padding-top: 4px; padding-bottom: 100px; }
+        .tabs { height: 42px; }
+        .scale { height: 380px; min-height: 380px; }
+        .beam-wrap, .fulcrum { top: 46%; }
+        .stand { top: calc(46% + 48px); height: 162px; }
+        .stand::before { height: 130px; }
+        .stand::after { width: 176px; }
+        .scale-shadow { top: calc(46% + 205px); }
+        .palette { bottom: 35px; }
+        .teacher { bottom: 8px; }
+        .pan-rig { transform: translate(-50%, -128px) rotate(var(--counter)); transform-origin: 50% 128px; }
+    }
+
+    /* ============================================================
+       NEGATIVE PIECES (subtraction)
+       Long-press a piece in a pan to flip its sign. Renders with
+       a deep crimson metallic skin and a "−" badge.
+       Works on blocks, equation numbers, coins, and bills.
+       ============================================================ */
+    .piece.negative {
+        filter: none;
+    }
+
+    .piece.negative.block {
+        color: #f5e8e8;
+        background:
+            radial-gradient(circle at 28% 22%, rgba(255,255,255,.5), rgba(255,255,255,.1) 36%, transparent 62%),
+            linear-gradient(135deg,#a8242c,#5a0d12);
+        box-shadow: inset 2px 2px 2px rgba(255,255,255,.28), inset -4px -4px 8px rgba(0,0,0,.45), 0 6px 12px rgba(120,20,28,.3);
+    }
+
+    .piece.negative.equation-piece {
+        color: #f5e8e8;
+        background:
+            radial-gradient(circle at 29% 24%, rgba(255,255,255,.45), rgba(255,255,255,.08) 36%, transparent 61%),
+            linear-gradient(135deg,#a8242c,#5a0d12);
+        box-shadow: inset 2px 2px 2px rgba(255,255,255,.26), inset -4px -4px 8px rgba(0,0,0,.45), 0 6px 12px rgba(120,20,28,.3);
+    }
+
+    /* Negative coins: tint the rim */
+    .piece.negative.coin {
+        filter: hue-rotate(-25deg) saturate(1.4) brightness(.85);
+    }
+
+    /* Negative bills */
+    .piece.negative.bill {
+        filter: hue-rotate(-90deg) saturate(1.3) brightness(.95);
+    }
+
+    /* Minus badge — small white circle with red minus, top-left of piece.
+       Rendered as a child .neg-badge span (not ::before) so it composes
+       with fraction-piece's own ::before (the pie slice). */
+    .neg-badge {
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        width: 18px;
+        height: 18px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: #fff;
+        color: #a8242c;
+        font-size: .85rem;
+        font-weight: 900;
+        line-height: 1;
+        border: 1.5px solid #a8242c;
+        box-shadow: 0 2px 6px rgba(120,20,28,.35);
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    /* Solve-mode problem card: minus token styling for "x − 2 = 3" */
+    .problem-eq .minus-token {
+        color: #a8242c;
+        font-weight: 900;
+        margin: 0 .08em;
+    }
+    /* ============================================================
+       FRACTION PIECES (3.NF, 4.NF, 5.NF)
+       Disc with a pie-slice showing the fraction's area meaning.
+       Slice color shades by denominator: lighter for halves,
+       darker for twelfths.
+       ============================================================ */
+    .fraction-piece {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        position: relative;
+        font-size: 0; /* the visual IS the value; numeral hidden by default */
+        background:
+            radial-gradient(circle at 28% 22%, rgba(255,255,255,.95), rgba(255,255,255,.32) 36%, transparent 62%),
+            linear-gradient(135deg,#fdfdff,#dadae0);
+        box-shadow:
+            inset 2px 2px 2px rgba(255,255,255,.78),
+            inset -4px -4px 8px rgba(0,0,0,.075),
+            0 6px 12px rgba(0,0,0,.11);
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    /* The pie slice. Drawn with conic-gradient. The piece sets
+       --frac-deg (e.g., 180 for ½, 90 for ¼, 60 for ⅙). */
+    .fraction-piece::before {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        border-radius: 50%;
+        background: conic-gradient(
+            from -90deg,
+            var(--frac-color, #4a7fd6) 0deg var(--frac-deg, 0deg),
+            rgba(0,0,0,0) var(--frac-deg, 0deg) 360deg
+        );
+        z-index: 1;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    /* Subtle radial divider to anchor the slice */
+    .fraction-piece::after {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at center, transparent 30%, rgba(0,0,0,.04) 31%, transparent 32%);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* Whole (1): full disc, full color, no slice line */
+    .fraction-piece.whole::before {
+        background: var(--frac-color, #2a5db8);
+    }
+
+    /* Numeral overlay — appears when "show values" is on */
+    .fraction-piece .frac-label {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 6px rgba(0,0,0,.35);
+        z-index: 3;
+        opacity: 0;
+        transition: opacity .2s var(--ease);
+        pointer-events: none;
+        font-variant-numeric: tabular-nums;
+    }
+
+    body.show-values .fraction-piece .frac-label { opacity: 1; }
+
+    /* Color ramp by denominator — same hue family, varied lightness */
+    .fraction-piece.d-1 { --frac-color: #2a5db8; }     /* whole */
+    .fraction-piece.d-2 { --frac-color: #5b8de0; }     /* halves */
+    .fraction-piece.d-3 { --frac-color: #4a7fd6; }     /* thirds */
+    .fraction-piece.d-4 { --frac-color: #3e6fc8; }     /* fourths */
+    .fraction-piece.d-6 { --frac-color: #335eb4; }     /* sixths */
+    .fraction-piece.d-8 { --frac-color: #2a4f9c; }     /* eighths */
+    .fraction-piece.d-10 { --frac-color: #224285; }    /* tenths */
+    .fraction-piece.d-12 { --frac-color: #1c356d; }    /* twelfths */
+
+    /* Negative fraction piece — invert to crimson family */
+    .fraction-piece.negative {
+        background:
+            radial-gradient(circle at 28% 22%, rgba(255,255,255,.5), rgba(255,255,255,.1) 36%, transparent 62%),
+            linear-gradient(135deg,#a8242c,#5a0d12);
+        box-shadow: inset 2px 2px 2px rgba(255,255,255,.28), inset -4px -4px 8px rgba(0,0,0,.45), 0 6px 12px rgba(120,20,28,.3);
+    }
+
+    .fraction-piece.negative::before {
+        background: conic-gradient(
+            from -90deg,
+            #fff 0deg var(--frac-deg, 0deg),
+            rgba(255,255,255,.18) var(--frac-deg, 0deg) 360deg
+        );
+    }
+
+    .fraction-piece.negative.whole::before { background: #fff; }
+
+    /* Smaller fractions on phones */
+    @media (max-width: 680px) {
+        .fraction-piece { width: 46px; height: 46px; }
+        .fraction-piece::before, .fraction-piece::after { inset: 5px; }
+    }
+    /* ============================================================
+       DECIMAL PIECES (4.NF.C.5, 4.NF.C.6, 5.NBT.A.3)
+       Each piece is a card showing a base-10 grid. The whole (1)
+       is a full 10x10 grid; 0.1 is a 10x1 strip; 0.01 is one cell.
+       Visual lineage: Place Value Visualizer's base-10 blocks.
+       ============================================================ */
+    .decimal-piece {
+        position: relative;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        background:
+            radial-gradient(circle at 28% 22%, rgba(255,255,255,.95), rgba(255,255,255,.32) 36%, transparent 62%),
+            linear-gradient(135deg,#fdfdff,#dadae0);
+        box-shadow:
+            inset 2px 2px 2px rgba(255,255,255,.78),
+            inset -4px -4px 8px rgba(0,0,0,.075),
+            0 6px 12px rgba(0,0,0,.11);
+        font-size: 0;
+    }
+
+    /* The grid is rendered inside via SVG-like layered backgrounds.
+       Filled cells use the fraction-blue palette. */
+    .decimal-piece .grid {
+        position: absolute;
+        inset: 5px;
+        border-radius: 4px;
+        background: rgba(0,0,0,.04);
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .decimal-piece .cells {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        gap: 1px;
+        padding: 1px;
+    }
+
+    /* Whole — 10x10 grid all filled */
+    .decimal-piece.d-whole { width: 56px; height: 56px; }
+    .decimal-piece.d-whole .cells {
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+    }
+
+    /* 0.1 — 10x1 strip with all 10 cells filled (one full row of tenths) */
+    .decimal-piece.d-tenth { width: 56px; height: 18px; }
+    .decimal-piece.d-tenth .cells {
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: 1fr;
+    }
+
+    /* 0.01 — single cell */
+    .decimal-piece.d-hundredth { width: 18px; height: 18px; }
+    .decimal-piece.d-hundredth .cells {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+    }
+
+    .decimal-piece .cell {
+        background: linear-gradient(135deg, #5b8de0, #2a5db8);
+        border-radius: 1px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.3);
+    }
+
+    /* Numeral overlay — same pattern as fraction-piece */
+    .decimal-piece .dec-label {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: .68rem;
+        font-weight: 900;
+        letter-spacing: -.03em;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0,0,0,.6), 0 0 6px rgba(0,0,0,.4);
+        z-index: 4;
+        opacity: 0;
+        transition: opacity .2s var(--ease);
+        pointer-events: none;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+    }
+
+    /* The fraction equivalent (small, below the decimal) */
+    .decimal-piece .dec-frac {
+        position: absolute;
+        bottom: -16px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: .56rem;
+        font-weight: 800;
+        color: var(--gray);
+        white-space: nowrap;
+        z-index: 4;
+        opacity: 0;
+        transition: opacity .2s var(--ease);
+        pointer-events: none;
+    }
+
+    body.show-values .decimal-piece .dec-label,
+    body.show-values .decimal-piece .dec-frac { opacity: 1; }
+
+    /* For hundredths, the label is too big — hide it on tiny pieces */
+    .decimal-piece.d-hundredth .dec-label { font-size: .42rem; }
+    .decimal-piece.d-hundredth .dec-frac { font-size: .48rem; bottom: -13px; }
+
+    /* Negative decimals: invert palette */
+    .decimal-piece.negative {
+        background:
+            radial-gradient(circle at 28% 22%, rgba(255,255,255,.5), rgba(255,255,255,.1) 36%, transparent 62%),
+            linear-gradient(135deg,#a8242c,#5a0d12);
+        box-shadow: inset 2px 2px 2px rgba(255,255,255,.28), inset -4px -4px 8px rgba(0,0,0,.45), 0 6px 12px rgba(120,20,28,.3);
+    }
+
+    .decimal-piece.negative .cell {
+        background: linear-gradient(135deg, #fff, #ffd6d8);
+    }
+
+    @media (max-width: 680px) {
+        .decimal-piece.d-whole { width: 48px; height: 48px; }
+        .decimal-piece.d-tenth { width: 48px; height: 16px; }
+        .decimal-piece.d-hundredth { width: 16px; height: 16px; }
+    }
+</style>
+</head>
+<body>
+<header>
+    <div class="logo">Math Things<span class="dot"></span></div>
+    <div class="title">Balance Scale</div>
+    <div class="header-spacer"></div>
+</header>
+
+<nav class="tabs tray-switcher" aria-label="materials">
+    <button class="tab active" data-material="blocks" aria-label="blocks">▦</button>
+    <button class="tab" data-material="money" aria-label="money">¢</button>
+    <button class="tab" data-material="fractions" aria-label="fractions">◐</button>
+    <button class="tab" data-material="decimals" aria-label="decimals">▩</button>
+    <button class="tab" data-material="equation" aria-label="equation pieces">x</button>
+    <button class="tab challenge-tab" id="challengeBtn" aria-label="drop in a challenge">?</button>
+</nav>
+
+<main class="workspace">
+    <section class="scale" id="scale" aria-label="balance scale">
+        <div class="scale-shadow"></div>
+        <div class="stand"></div>
+
+        <div class="beam-wrap" id="beamWrap">
+            <div class="beam"></div>
+
+            <div class="pan-rig left">
+                <div class="post"></div>
+                <div class="joint"></div>
+                <div class="neck"></div>
+                <button class="pan left active" id="leftPan" aria-label="left pan">
+                    <div class="pile" id="leftPile"></div>
+                    <div class="dish"></div>
+                    <div class="total" id="leftTotal">0</div>
+                </button>
+            </div>
+
+            <div class="pan-rig right">
+                <div class="post"></div>
+                <div class="joint"></div>
+                <div class="neck"></div>
+                <button class="pan right" id="rightPan" aria-label="right pan">
+                    <div class="pile" id="rightPile"></div>
+                    <div class="dish"></div>
+                    <div class="total" id="rightTotal">0</div>
+                </button>
+            </div>
+        </div>
+
+        <button class="fulcrum" id="fulcrum" aria-label="show values">=</button>
+
+        <div class="problem-card" id="problemCard" aria-live="polite">
+            <span class="problem-label">Solve</span>
+            <span class="problem-eq" id="problemEq"></span>
+            <span class="problem-counter" id="problemCounter"></span>
+            <button class="problem-next" id="problemNext" aria-label="next problem">Next →</button>
+        </div>
+
+        <div class="goal-banner" id="goalBanner" aria-live="polite">
+            <span class="goal-label">Match</span>
+            <span class="goal-amount" id="goalAmount"></span>
+            <span class="goal-counter" id="goalCounter"></span>
+            <button class="goal-next" id="goalNext" aria-label="next goal">Next →</button>
+        </div>
+    </section>
+
+    <div class="palette" id="palette" aria-label="pieces"></div>
+
+    <div class="teacher" id="teacherControl" aria-label="x value control">
+        <button class="x-step" id="xDown" aria-label="decrease x">−</button>
+        <span>x</span><span>=</span><span class="x-readout" id="xReadout">5</span>
+        <button class="x-step" id="xUp" aria-label="increase x">+</button>
+    </div>
+
+    <div class="tools">
+        <button class="tool tool-goal" id="goalBtn" aria-label="goal mode" title="Goal: match the price">🎯</button>
+        <button class="tool" id="clearBtn" aria-label="clear">↺</button>
+        <button class="tool" id="valuesBtn" aria-label="show values">#</button>
+    </div>
+</main>
+
+<footer>MATH THINGS. &nbsp;|&nbsp; MATH, IN YOUR HANDS.</footer>
+
+<script>
+(function(){
+    /* ============================================================
+       STATE
+       ============================================================ */
+    const state = {
+        mode: 'blocks',
+        challengeActive: false,
+        activeSide: 'left',
+        left: [],
+        right: [],
+        id: 0,
+        showValues: false,
+        xValue: 1,
+        solveIndex: 0,
+        solved: false,
+        negativeMode: false,
+        goalMode: false,
+        goalIndex: 0,
+        locked: { left: false, right: false } /* solve mode: pre-set sides locked */
+    };
+
+    /* ============================================================
+       SOLVE PROGRESSION
+       Each problem pre-loads the scale; student adjusts x until
+       the beam balances. Problems escalate gradually.
+       ============================================================ */
+    const problems = [
+        // Direct: x = n  (1.OA.D.8)
+        { eq: 'x = 3',       answer: 3, left: [{kind:'equation', label:'x', value:'x'}],                                         right: [{kind:'equation', label:'1', value:1},{kind:'equation', label:'1', value:1},{kind:'equation', label:'1', value:1}] },
+        { eq: 'x = 5',       answer: 5, left: [{kind:'equation', label:'x', value:'x'}],                                         right: [{kind:'equation', label:'5', value:5}] },
+        { eq: 'x = 7',       answer: 7, left: [{kind:'equation', label:'x', value:'x'}],                                         right: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'2', value:2}] },
+        // Addition: x + n = total  (1.OA.D.8)
+        { eq: 'x + 2 = 6',   answer: 4, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2}],   right: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'1', value:1}] },
+        { eq: 'x + 3 = 8',   answer: 5, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2},{kind:'equation', label:'1', value:1}], right: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'2', value:2},{kind:'equation', label:'1', value:1}] },
+        { eq: 'x + 4 = 10',  answer: 6, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2},{kind:'equation', label:'2', value:2}], right: [{kind:'equation', label:'10', value:10}] },
+        // Subtraction: x − n = total  (1.OA.D.8 + 1.OA.B.4)
+        { eq: 'x − 2 = 3',   answer: 5, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2, negative:true}], right: [{kind:'equation', label:'2', value:2},{kind:'equation', label:'1', value:1}] },
+        { eq: 'x − 3 = 4',   answer: 7, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2, negative:true},{kind:'equation', label:'1', value:1, negative:true}], right: [{kind:'equation', label:'2', value:2},{kind:'equation', label:'2', value:2}] },
+        { eq: 'x − 5 = 2',   answer: 7, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'5', value:5, negative:true}], right: [{kind:'equation', label:'2', value:2}] },
+        // Subtraction with unknown on RHS: 8 − x = n
+        { eq: '8 − x = 3',   answer: 5, left: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'2', value:2},{kind:'equation', label:'1', value:1},{kind:'equation', label:'x', value:'x', negative:true}], right: [{kind:'equation', label:'2', value:2},{kind:'equation', label:'1', value:1}] },
+        // Multiplication: 2x = n  (extends 1.OA.D.8 toward 3.OA)
+        { eq: '2x = 6',      answer: 3, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'}], right: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'1', value:1}] },
+        { eq: '2x = 10',     answer: 5, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'}], right: [{kind:'equation', label:'10', value:10}] },
+        { eq: '3x = 9',      answer: 3, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'}], right: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'2', value:2},{kind:'equation', label:'2', value:2}] },
+        // Combined: ax + b = c
+        { eq: '2x + 1 = 7',  answer: 3, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'1', value:1}], right: [{kind:'equation', label:'5', value:5},{kind:'equation', label:'2', value:2}] },
+        { eq: '2x + 3 = 11', answer: 4, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2},{kind:'equation', label:'1', value:1}], right: [{kind:'equation', label:'10', value:10},{kind:'equation', label:'1', value:1}] },
+        { eq: '3x + 2 = 14', answer: 4, left: [{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'x', value:'x'},{kind:'equation', label:'2', value:2}], right: [{kind:'equation', label:'10', value:10},{kind:'equation', label:'2', value:2},{kind:'equation', label:'2', value:2}] }
+    ];
+
+    /* ============================================================
+       MONEY GOAL TARGETS  (2.MD.C.8)
+       Values in cents. Progression: pure coins → mixed coins →
+       coins requiring multiples → bills + change.
+       ============================================================ */
+    const goalTargets = [
+        25,    // one quarter, or other combos — easy
+        30,    // 25¢ + 5¢
+        50,    // two quarters / five dimes / etc.
+        75,    // three quarters
+        100,   // $1.00 — bill or coins
+        137,   // $1.37 — quarter + dime + 2¢
+        185,   // $1.85
+        250,   // $2.50 — bill + change
+        285,   // $2.85
+        500,   // $5.00 — bill
+        637,   // $6.37 — multiple bills + change
+        1000,  // $10.00
+        1273,  // $12.73 — top-shelf challenge
+        2000   // $20.00 — bill recognition
+    ];
+
+    /* ============================================================
+       DOM
+       ============================================================ */
+    const scale = document.getElementById('scale');
+    const palette = document.getElementById('palette');
+    const leftPan = document.getElementById('leftPan');
+    const rightPan = document.getElementById('rightPan');
+    const leftPile = document.getElementById('leftPile');
+    const rightPile = document.getElementById('rightPile');
+    const leftTotal = document.getElementById('leftTotal');
+    const rightTotal = document.getElementById('rightTotal');
+    const valuesBtn = document.getElementById('valuesBtn');
+    const fulcrum = document.getElementById('fulcrum');
+    const xReadout = document.getElementById('xReadout');
+    const problemEq = document.getElementById('problemEq');
+    const problemCounter = document.getElementById('problemCounter');
+    const problemNext = document.getElementById('problemNext');
+
+    /* ============================================================
+       PALETTE DEFINITIONS
+       ============================================================ */
+    const modes = {
+        blocks: [
+            { kind: 'block', label: '1', value: 1 },
+            { kind: 'block', label: '2', value: 2 },
+            { kind: 'block', label: '5', value: 5 },
+            { kind: 'block', label: '10', value: 10 }
+        ],
+        money: [
+            { kind: 'coin', coin: 'penny', label: '1¢', value: 1, aria: 'penny' },
+            { kind: 'coin', coin: 'nickel', label: '5¢', value: 5, aria: 'nickel' },
+            { kind: 'coin', coin: 'dime', label: '10¢', value: 10, aria: 'dime' },
+            { kind: 'coin', coin: 'quarter', label: '25¢', value: 25, aria: 'quarter' },
+            { kind: 'bill', bill: 'one', label: '$1', value: 100 },
+            { kind: 'bill', bill: 'five', label: '$5', value: 500 },
+            { kind: 'bill', bill: 'ten', label: '$10', value: 1000 },
+            { kind: 'bill', bill: 'twenty', label: '$20', value: 2000 }
+        ],
+        equation: [
+            { kind: 'equation', label: 'x', value: 'x' },
+            { kind: 'equation', label: '1', value: 1 },
+            { kind: 'equation', label: '2', value: 2 },
+            { kind: 'equation', label: '5', value: 5 },
+            { kind: 'equation', label: '10', value: 10 }
+        ],
+        fractions: [
+            /* num/den → value (decimal, but rendered as fraction).
+               Pieces ordered from largest to smallest denominator. */
+            { kind: 'fraction', num: 1, den: 1, label: '1',    value: 1     },
+            { kind: 'fraction', num: 1, den: 2, label: '½',    value: 1/2   },
+            { kind: 'fraction', num: 1, den: 3, label: '⅓',    value: 1/3   },
+            { kind: 'fraction', num: 1, den: 4, label: '¼',    value: 1/4   },
+            { kind: 'fraction', num: 1, den: 6, label: '⅙',    value: 1/6   },
+            { kind: 'fraction', num: 1, den: 8, label: '⅛',    value: 1/8   },
+            { kind: 'fraction', num: 1, den: 10, label: '¹⁄₁₀', value: 1/10 },
+            { kind: 'fraction', num: 1, den: 12, label: '¹⁄₁₂', value: 1/12 }
+        ],
+        decimals: [
+            /* Place-value pieces. Stored as fraction internally so
+               they compose with fractions math (4.NF.C.5/6 connection). */
+            { kind: 'decimal', size: 'whole',     label: '1',    fracLabel: '1',     num: 100, den: 100, value: 1    },
+            { kind: 'decimal', size: 'tenth',    label: '0.1',  fracLabel: '1/10',  num: 10,  den: 100, value: 0.1  },
+            { kind: 'decimal', size: 'hundredth', label: '0.01', fracLabel: '1/100', num: 1,   den: 100, value: 0.01 }
+        ],
+    };
+
+    /* ============================================================
+       VALUE & TOTAL HELPERS
+       ============================================================ */
+    function numericValue(piece) {
+        const raw = piece.value === 'x' ? state.xValue : piece.value;
+        return piece.negative ? -raw : raw;
+    }
+
+    function total(side) {
+        return state[side].reduce((sum, piece) => sum + numericValue(piece), 0);
+    }
+
+    function formatTotal(value, side) {
+        const pieces = state[side];
+        const hasPieces = pieces.length > 0;
+        const allRational = hasPieces && pieces.every(piece => piece.kind === 'fraction' || piece.kind === 'decimal');
+        const allMoney = hasPieces && pieces.every(piece => piece.kind === 'coin' || piece.kind === 'bill' || piece.kind === 'tag');
+        if (allMoney) return moneyLabel(value);
+        if (allRational && state.mode === 'decimals') return formatDecimal(fractionSum(side));
+        if (allRational) return formatFraction(fractionSum(side));
+        return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+    }
+
+    function formatDecimal(f) {
+        if (f.num === 0) return '0';
+        /* Convert num/den to decimal. Pieces are limited to /100 family,
+           so this is always exact. Output up to 2 decimal places. */
+        const value = f.num / f.den;
+        const sign = value < 0 ? '−' : '';
+        const abs = Math.abs(value);
+        if (abs === Math.floor(abs)) return sign + abs;
+        /* Round to 2 decimal places (decimal pieces only go to hundredths) */
+        return sign + abs.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+    }
+
+    function moneyLabel(value) {
+        const sign = value < 0 ? '−' : '';
+        const abs = Math.abs(value);
+        if (abs >= 100 && abs % 100 === 0) return sign + '$' + (abs / 100);
+        if (abs >= 100) return sign + '$' + (abs / 100).toFixed(2).replace(/\.00$/, '');
+        return sign + abs + '¢';
+    }
+
+    /* ============================================================
+       FRACTION ARITHMETIC
+       Sum a side's fraction pieces exactly (using num/den), reduce
+       to lowest terms, and format for display ("5/6", "1 1/2", "0").
+       Falls back to decimal display only if non-fraction pieces sneak in.
+       ============================================================ */
+    function gcd(a, b) {
+        a = Math.abs(a); b = Math.abs(b);
+        while (b) { [a, b] = [b, a % b]; }
+        return a || 1;
+    }
+
+    function fractionSum(side) {
+        /* Returns { num, den } reduced. Treats negatives properly.
+           Sums both 'fraction' and 'decimal' pieces (decimals are stored
+           with num/den = N/100 so they compose naturally). */
+        let num = 0, den = 1;
+        for (const piece of state[side]) {
+            if (piece.kind !== 'fraction' && piece.kind !== 'decimal') continue;
+            const sign = piece.negative ? -1 : 1;
+            const pNum = sign * piece.num;
+            const pDen = piece.den;
+            num = num * pDen + pNum * den;
+            den = den * pDen;
+            const g = gcd(num, den);
+            num /= g; den /= g;
+        }
+        return { num, den };
+    }
+
+    function formatFraction(f) {
+        if (f.num === 0) return '0';
+        const sign = f.num < 0 ? '−' : '';
+        const n = Math.abs(f.num);
+        const d = f.den;
+        if (d === 1) return sign + n;
+        const whole = Math.floor(n / d);
+        const remainder = n % d;
+        if (whole === 0) return sign + n + '/' + d;
+        if (remainder === 0) return sign + whole;
+        return sign + whole + ' ' + remainder + '/' + d;
+    }
+
+    /* ============================================================
+       SIDE & STATE MUTATION
+       ============================================================ */
+    function setActiveSide(side) {
+        if (state.locked[side]) return;
+        state.activeSide = side;
+        leftPan.classList.toggle('active', side === 'left');
+        rightPan.classList.toggle('active', side === 'right');
+    }
+
+    function clonePiece(piece) {
+        return { ...piece, id: ++state.id, jitter: (Math.random() * 6 - 3).toFixed(2) + 'deg' };
+    }
+
+    function addPiece(piece, side) {
+        const target = side || state.activeSide;
+        if (state.locked[target]) return;
+        const cloned = clonePiece(piece);
+        /* When negative-mode toggle is on, fresh palette pieces drop in
+           as negative. Detected by absence of an id on the source piece. */
+        if (state.negativeMode && piece.id == null) cloned.negative = true;
+        state[target].push(cloned);
+        renderAll();
+    }
+
+    function removePiece(side, id) {
+        if (state.locked[side]) return;
+        state[side] = state[side].filter(piece => piece.id !== id);
+        renderAll();
+    }
+
+    function clearScale() {
+        if (state.challengeActive) {
+            /* Challenge cards reset by replaying the current card. */
+            loadProblem(state.solveIndex);
+        } else if (state.mode === 'money' && state.goalMode) {
+            /* In goal mode, clear only the fillable side, keep the tag */
+            loadGoal(state.goalIndex);
+        } else {
+            state.left = [];
+            state.right = [];
+            state.locked = { left: false, right: false };
+            state.solved = false;
+            state.challengeActive = false;
+            document.body.classList.remove('solve-mode', 'goal-mode', 'solved');
+            renderAll();
+        }
+    }
+
+    /* ============================================================
+       MODE SWITCHING
+       ============================================================ */
+    function setMode(mode) {
+        /* Materials are just trays. The scale stays exactly as it is. */
+        state.mode = mode;
+        state.negativeMode = false;
+        state.goalMode = false;
+        if (!state.challengeActive) state.locked = { left: false, right: false };
+
+        document.body.classList.toggle('equation-mode', mode === 'equation' || state.challengeActive);
+        document.body.classList.toggle('money-mode', mode === 'money');
+        document.body.classList.remove('goal-mode');
+        document.body.classList.remove('solved');
+        document.querySelectorAll('.tab[data-material]').forEach(tab => tab.classList.toggle('active', tab.dataset.material === mode));
+        const challengeBtnEl = document.getElementById('challengeBtn');
+        if (challengeBtnEl) challengeBtnEl.classList.toggle('active', state.challengeActive);
+
+        setActiveSide(state.locked[state.activeSide] ? (state.locked.left ? 'right' : 'left') : state.activeSide);
+        renderAll();
+    }
+
+    /* ============================================================
+       SOLVE MODE: load a problem, lock the scale, expect student
+       to find x via the stepper.
+       ============================================================ */
+    function loadProblem(index) {
+        const p = problems[index];
+        if (!p) return;
+        state.left = p.left.map(clonePiece);
+        state.right = p.right.map(clonePiece);
+        state.mode = 'equation';
+        state.challengeActive = true;
+        state.locked = { left: true, right: true };
+        state.xValue = 1;
+        state.solved = false;
+        document.body.classList.add('solve-mode', 'equation-mode');
+        document.body.classList.remove('solved', 'goal-mode');
+        document.querySelectorAll('.tab[data-material]').forEach(tab => tab.classList.toggle('active', tab.dataset.material === 'equation'));
+        const challengeBtnEl = document.getElementById('challengeBtn');
+        if (challengeBtnEl) challengeBtnEl.classList.add('active');
+
+        problemEq.innerHTML = p.eq
+            .replace(/x/g, '<span class="x-token">x</span>')
+            .replace(/−/g, '<span class="minus-token">−</span>');
+        problemCounter.textContent = (index + 1) + ' / ' + problems.length;
+
+        setActiveSide('left');
+        renderAll();
+    }
+
+    function nextProblem() {
+        state.solveIndex = (state.solveIndex + 1) % problems.length;
+        loadProblem(state.solveIndex);
+    }
+
+    /* ============================================================
+       MONEY GOAL MODE: lock one pan with a price tag, student
+       fills the other side with coins/bills until balance.
+       ============================================================ */
+    function loadGoal(index) {
+        const target = goalTargets[index];
+        if (target == null) return;
+        /* Randomly pick which side gets the tag so the kid can't memorize
+           a side. (But keep it consistent within a single goal.) */
+        const tagSide = (index % 2 === 0) ? 'right' : 'left';
+        const fillSide = tagSide === 'right' ? 'left' : 'right';
+
+        state.left = [];
+        state.right = [];
+        state[tagSide] = [clonePiece({ kind: 'tag', label: moneyLabel(target), value: target })];
+        state.locked = { left: false, right: false };
+        state.locked[tagSide] = true;
+        state.solved = false;
+        document.body.classList.remove('solved');
+
+        document.getElementById('goalAmount').textContent = moneyLabel(target);
+        document.getElementById('goalCounter').textContent = (index + 1) + ' / ' + goalTargets.length;
+
+        setActiveSide(fillSide);
+        renderAll();
+    }
+
+    function nextGoal() {
+        state.goalIndex = (state.goalIndex + 1) % goalTargets.length;
+        loadGoal(state.goalIndex);
+    }
+
+    function toggleGoalMode() {
+        if (state.mode !== 'money') return;
+        state.challengeActive = false;
+        document.body.classList.remove('solve-mode');
+        state.goalMode = !state.goalMode;
+        document.body.classList.toggle('goal-mode', state.goalMode);
+        document.getElementById('goalBtn').classList.toggle('active', state.goalMode);
+        if (state.goalMode) {
+            state.goalIndex = 0;
+            loadGoal(0);
+        } else {
+            state.left = [];
+            state.right = [];
+            state.locked = { left: false, right: false };
+            state.solved = false;
+            document.body.classList.remove('solved');
+            setActiveSide('left');
+            renderAll();
+        }
+    }
+
+    /* ============================================================
+       PIECE RENDERING
+       ============================================================ */
+    function createPiece(piece, inPan, side) {
+        const el = document.createElement('div');
+        el.className = 'piece ' + classFor(piece) + (piece.negative ? ' negative' : '');
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', (inPan ? 'remove ' : 'add ') + (piece.negative ? 'negative ' : '') + (piece.aria || piece.label));
+        el.dataset.role = inPan ? 'pile' : 'palette';
+        if (side) el.dataset.side = side;
+        if (piece.id != null) el.dataset.pieceId = piece.id;
+
+        if (piece.value === 'x') el.dataset.hidden = state.xValue;
+        if (piece.jitter) el.style.setProperty('--jitter', piece.jitter);
+
+        if (piece.kind === 'coin') {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = piece.label;
+            el.appendChild(mark);
+        } else if (piece.kind === 'bill') {
+            const tl = document.createElement('span');
+            tl.className = 'bill-corner tl';
+            tl.textContent = piece.label;
+            const br = document.createElement('span');
+            br.className = 'bill-corner br';
+            br.textContent = piece.label;
+            const value = document.createElement('span');
+            value.className = 'bill-value';
+            value.textContent = piece.label;
+            el.appendChild(tl);
+            el.appendChild(br);
+            el.appendChild(value);
+        } else if (piece.kind === 'tag') {
+            el.textContent = piece.label;
+        } else if (piece.kind === 'fraction') {
+            /* Slice angle = (num/den) * 360°. Whole = 360°. */
+            const deg = (piece.num / piece.den) * 360;
+            el.style.setProperty('--frac-deg', deg + 'deg');
+            const lab = document.createElement('span');
+            lab.className = 'frac-label';
+            lab.textContent = piece.label;
+            el.appendChild(lab);
+        } else if (piece.kind === 'decimal') {
+            /* Build the base-10 grid */
+            const grid = document.createElement('div');
+            grid.className = 'grid';
+            const cells = document.createElement('div');
+            cells.className = 'cells';
+            let cellCount;
+            if (piece.size === 'whole') cellCount = 100;
+            else if (piece.size === 'tenth') cellCount = 10;
+            else cellCount = 1;
+            for (let i = 0; i < cellCount; i++) {
+                const c = document.createElement('div');
+                c.className = 'cell';
+                cells.appendChild(c);
+            }
+            grid.appendChild(cells);
+            el.appendChild(grid);
+
+            const lab = document.createElement('span');
+            lab.className = 'dec-label';
+            lab.textContent = piece.label;
+            el.appendChild(lab);
+
+            const frac = document.createElement('span');
+            frac.className = 'dec-frac';
+            frac.textContent = piece.fracLabel;
+            el.appendChild(frac);
+        } else {
+            el.textContent = piece.label;
+        }
+
+        attachPointer(el, piece, inPan, side);
+
+        /* Negative pieces get a minus badge as a child element
+           (so it composes with fraction's own pseudo-elements). */
+        if (piece.negative) {
+            const badge = document.createElement('span');
+            badge.className = 'neg-badge';
+            badge.textContent = '−';
+            badge.setAttribute('aria-hidden', 'true');
+            el.appendChild(badge);
+        }
+        return el;
+    }
+
+    function classFor(piece) {
+        if (piece.kind === 'block') return 'block';
+        if (piece.kind === 'equation') return 'equation-piece' + (piece.value === 'x' ? ' x' : '');
+        if (piece.kind === 'coin') return 'coin ' + piece.coin;
+        if (piece.kind === 'bill') return 'bill ' + piece.bill;
+        if (piece.kind === 'tag') return 'price-tag';
+        if (piece.kind === 'fraction') return 'fraction-piece d-' + piece.den + (piece.den === 1 ? ' whole' : '');
+        if (piece.kind === 'decimal') return 'decimal-piece d-' + piece.size;
+        return '';
+    }
+
+    function renderPalette() {
+        palette.innerHTML = '';
+        (modes[state.mode] || modes.blocks).forEach(piece => palette.appendChild(createPiece(piece, false)));
+        palette.style.display = '';
+    }
+
+    function renderPile(side, container) {
+        container.innerHTML = '';
+        state[side].forEach(piece => container.appendChild(createPiece(piece, true, side)));
+    }
+
+    /* ============================================================
+       BEAM TILT MATH
+       Money mode now uses signed log scaling so $20 visibly
+       outweighs a penny without slamming the beam sideways.
+       ============================================================ */
+    function renderTilt() {
+        const left = total('left');
+        const right = total('right');
+        const diff = right - left;
+
+        let balanced;
+        const piecesOnScale = [...state.left, ...state.right];
+        const exactRational = piecesOnScale.length > 0 && piecesOnScale.every(p => p.kind === 'fraction' || p.kind === 'decimal');
+        if (exactRational) {
+            /* Exact equality for fractions/decimals, even when the student mixes those two trays. */
+            const fL = fractionSum('left');
+            const fR = fractionSum('right');
+            balanced = (state.left.length > 0 && state.right.length > 0) &&
+                       (fL.num === fR.num && fL.den === fR.den);
+        } else {
+            balanced = left === right && left + right > 0;
+        }
+
+        let tilt;
+        if (balanced) {
+            tilt = 0;
+        } else if (state.mode === 'money') {
+            const sign = Math.sign(diff);
+            const mag = Math.log10(Math.abs(diff) + 1) * 3.4;
+            tilt = sign * Math.min(12, mag);
+        } else if (exactRational) {
+            /* Fractions/decimals are small values; scale the tilt up. */
+            tilt = Math.max(-12, Math.min(12, diff * 8));
+        } else {
+            tilt = Math.max(-12, Math.min(12, diff * 0.72));
+        }
+
+        scale.style.setProperty('--tilt', tilt + 'deg');
+        scale.style.setProperty('--counter', balanced ? '0deg' : (-tilt) + 'deg');
+
+        leftTotal.textContent = formatTotal(left, 'left');
+        rightTotal.textContent = formatTotal(right, 'right');
+
+        fulcrum.classList.toggle('balanced', balanced);
+
+        /* Solve mode: detect win */
+        if (state.challengeActive) {
+            const p = problems[state.solveIndex];
+            const justSolved = balanced && state.xValue === p.answer && !state.solved;
+            if (justSolved) {
+                state.solved = true;
+                document.body.classList.add('solved');
+                celebrate();
+            }
+        }
+
+        /* Money goal mode: balance = solved */
+        if (state.mode === 'money' && state.goalMode) {
+            const justSolved = balanced && !state.solved;
+            if (justSolved) {
+                state.solved = true;
+                document.body.classList.add('solved');
+                celebrate();
+            } else if (!balanced && state.solved) {
+                /* student kept going past the balance — un-solve */
+                state.solved = false;
+                document.body.classList.remove('solved');
+            }
+        }
+    }
+
+    /* ============================================================
+       SOLVE CELEBRATION: green sparks from the fulcrum
+       ============================================================ */
+    function celebrate() {
+        const rect = fulcrum.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        for (let i = 0; i < 14; i++) {
+            const s = document.createElement('div');
+            s.className = 'spark';
+            const angle = (Math.PI * 2) * (i / 14) + Math.random() * 0.4;
+            const dist = 70 + Math.random() * 60;
+            s.style.left = cx + 'px';
+            s.style.top = cy + 'px';
+            s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+            s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+            document.body.appendChild(s);
+            setTimeout(() => s.remove(), 900);
+        }
+    }
+
+    function renderX() {
+        xReadout.textContent = state.xValue;
+        document.querySelectorAll('.piece.x').forEach(piece => piece.dataset.hidden = state.xValue);
+    }
+
+    function renderAll() {
+        renderPalette();
+        renderPile('left', leftPile);
+        renderPile('right', rightPile);
+        renderTilt();
+        renderX();
+    }
+
+    function toggleValues() {
+        state.showValues = !state.showValues;
+        document.body.classList.toggle('show-values', state.showValues);
+        valuesBtn.classList.toggle('active', state.showValues);
+    }
+
+    /* ============================================================
+       DRAG-AND-DROP SYSTEM (pointer events: works on touch + mouse)
+       ============================================================ */
+    let drag = null;
+
+    function attachPointer(el, piece, inPan, side) {
+        let moved = false;
+        let startX = 0, startY = 0;
+        let longPressTimer = null;
+        let longPressed = false;
+        const DRAG_THRESHOLD = 6;
+        const LONG_PRESS_MS = 480;
+
+        el.addEventListener('pointerdown', (e) => {
+            if (e.button !== undefined && e.button !== 0) return;
+            moved = false;
+            longPressed = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            try { el.setPointerCapture(e.pointerId); } catch (_) {}
+
+            /* Long-press flips sign on pile pieces (subtraction).
+               Disabled in solve mode — sides are locked. */
+            if (inPan && !state.challengeActive) {
+                longPressTimer = setTimeout(() => {
+                    if (!moved) {
+                        longPressed = true;
+                        flipPieceSign(side, piece.id);
+                        if (navigator.vibrate) navigator.vibrate(18);
+                    }
+                }, LONG_PRESS_MS);
+            }
+
+            const cancelLongPress = () => {
+                if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+            };
+
+            const onMove = (ev) => {
+                const dx = ev.clientX - startX;
+                const dy = ev.clientY - startY;
+                if (!moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+                    moved = true;
+                    cancelLongPress();
+                    if (state.challengeActive) return; /* no drag in solve mode */
+                    beginDrag(piece, inPan, side, ev, el);
+                }
+                if (drag) updateDrag(ev);
+            };
+
+            const onUp = (ev) => {
+                cancelLongPress();
+                el.removeEventListener('pointermove', onMove);
+                el.removeEventListener('pointerup', onUp);
+                el.removeEventListener('pointercancel', onUp);
+                try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+
+                if (drag) {
+                    endDrag(ev);
+                } else if (!moved && !longPressed) {
+                    /* Click: tap-to-add (palette) or tap-to-remove (pile) */
+                    handleTap(piece, inPan, side);
+                }
+            };
+
+            el.addEventListener('pointermove', onMove);
+            el.addEventListener('pointerup', onUp);
+            el.addEventListener('pointercancel', onUp);
+        });
+
+        /* Right-click on desktop: also flips sign (for pile pieces) */
+        if (inPan) {
+            el.addEventListener('contextmenu', (e) => {
+                if (state.challengeActive) return;
+                e.preventDefault();
+                flipPieceSign(side, piece.id);
+            });
+        }
+    }
+
+    function flipPieceSign(side, id) {
+        if (state.locked[side]) return;
+        const piece = state[side].find(p => p.id === id);
+        if (!piece) return;
+        piece.negative = !piece.negative;
+        renderAll();
+    }
+
+    function handleTap(piece, inPan, side) {
+        if (state.challengeActive) return;
+        if (inPan) {
+            removePiece(side, piece.id);
+        } else {
+            addPiece(piece);
+        }
+    }
+
+    function beginDrag(piece, inPan, side, ev, sourceEl) {
+        const rect = sourceEl.getBoundingClientRect();
+        const clone = sourceEl.cloneNode(true);
+        clone.classList.add('drag-clone');
+        clone.style.left = ev.clientX + 'px';
+        clone.style.top = ev.clientY + 'px';
+        clone.style.width = rect.width + 'px';
+        clone.style.height = rect.height + 'px';
+        document.body.appendChild(clone);
+
+        sourceEl.classList.add('dragging');
+
+        drag = { piece, inPan, side, sourceEl, clone };
+    }
+
+    function updateDrag(ev) {
+        if (!drag) return;
+        drag.clone.style.left = ev.clientX + 'px';
+        drag.clone.style.top = ev.clientY + 'px';
+
+        const overLeft = isOverPan(leftPan, ev.clientX, ev.clientY);
+        const overRight = isOverPan(rightPan, ev.clientX, ev.clientY);
+        leftPan.classList.toggle('drop-hover', overLeft);
+        rightPan.classList.toggle('drop-hover', overRight);
+    }
+
+    function isOverPan(pan, x, y) {
+        const r = pan.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    }
+
+    function endDrag(ev) {
+        if (!drag) return;
+        const overLeft = isOverPan(leftPan, ev.clientX, ev.clientY);
+        const overRight = isOverPan(rightPan, ev.clientX, ev.clientY);
+
+        leftPan.classList.remove('drop-hover');
+        rightPan.classList.remove('drop-hover');
+        drag.clone.remove();
+
+        const { piece, inPan, side } = drag;
+
+        if (overLeft || overRight) {
+            const targetSide = overLeft ? 'left' : 'right';
+
+            if (inPan && side === targetSide) {
+                /* dropped on the same pan it came from: no-op */
+                drag.sourceEl.classList.remove('dragging');
+            } else if (inPan) {
+                /* moving piece between pans */
+                if (!state.locked[side] && !state.locked[targetSide]) {
+                    state[side] = state[side].filter(p => p.id !== piece.id);
+                    state[targetSide].push({ ...piece });
+                    setActiveSide(targetSide);
+                    renderAll();
+                } else {
+                    drag.sourceEl.classList.remove('dragging');
+                }
+            } else {
+                /* new piece from palette */
+                if (!state.locked[targetSide]) {
+                    setActiveSide(targetSide);
+                    addPiece(piece, targetSide);
+                } else {
+                    drag.sourceEl.classList.remove('dragging');
+                }
+            }
+        } else if (inPan) {
+            /* dragged off the pan into empty space: remove the piece */
+            if (!state.locked[side]) {
+                removePiece(side, piece.id);
+            } else {
+                drag.sourceEl.classList.remove('dragging');
+            }
+        } else {
+            drag.sourceEl.classList.remove('dragging');
+        }
+
+        drag = null;
+    }
+
+    /* ============================================================
+       EVENT WIRING
+       ============================================================ */
+    leftPan.addEventListener('click', () => setActiveSide('left'));
+    rightPan.addEventListener('click', () => setActiveSide('right'));
+    fulcrum.addEventListener('click', toggleValues);
+    valuesBtn.addEventListener('click', toggleValues);
+    document.getElementById('clearBtn').addEventListener('click', clearScale);
+
+    const negBtn = document.getElementById('negBtn');
+    if (negBtn) {
+        negBtn.addEventListener('click', () => {
+            state.negativeMode = !state.negativeMode;
+            negBtn.classList.toggle('active', state.negativeMode);
+        });
+    }
+
+    document.getElementById('goalBtn').addEventListener('click', toggleGoalMode);
+    document.getElementById('goalNext').addEventListener('click', nextGoal);
+
+    document.getElementById('xDown').addEventListener('click', () => {
+        state.xValue = Math.max(1, state.xValue - 1);
+        if (state.challengeActive && state.solved) {
+            /* nudging x off the answer un-solves it visually */
+            const p = problems[state.solveIndex];
+            if (state.xValue !== p.answer) {
+                state.solved = false;
+                document.body.classList.remove('solved');
+            }
+        }
+        renderAll();
+    });
+
+    document.getElementById('xUp').addEventListener('click', () => {
+        state.xValue = Math.min(20, state.xValue + 1);
+        if (state.challengeActive && state.solved) {
+            const p = problems[state.solveIndex];
+            if (state.xValue !== p.answer) {
+                state.solved = false;
+                document.body.classList.remove('solved');
+            }
+        }
+        renderAll();
+    });
+
+    problemNext.addEventListener('click', nextProblem);
+
+    document.querySelectorAll('.tab[data-material]').forEach(tab => {
+        tab.addEventListener('click', () => {
+            state.challengeActive = false;
+            state.locked = { left: false, right: false };
+            document.body.classList.remove('solve-mode');
+            setMode(tab.dataset.material);
+        });
+    });
+
+    document.getElementById('challengeBtn').addEventListener('click', () => {
+        state.solveIndex = 0;
+        loadProblem(0);
+    });
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+    document.body.classList.remove('equation-mode');
+    document.body.classList.remove('solve-mode');
+    document.querySelectorAll('.tab[data-material]').forEach(tab => tab.classList.toggle('active', tab.dataset.material === state.mode));
+    renderAll();
+})();
+</script>
+</body>
+</html>
