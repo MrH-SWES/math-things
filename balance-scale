@@ -134,25 +134,6 @@
         box-shadow: 0 6px 16px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,.9);
     }
 
-    .tray-switcher .tab {
-        min-width: 46px;
-        font-size: 1rem;
-    }
-
-    .challenge-tab {
-        margin-left: 10px;
-        border-color: rgba(0,0,0,.055);
-        background: rgba(255,255,255,.48);
-    }
-
-    .challenge-tab.active,
-    body.solve-mode .challenge-tab {
-        background: linear-gradient(180deg,#5cf5b3,#2dd58a);
-        color: #08402a;
-        border-color: rgba(45,213,138,.5);
-        box-shadow: 0 4px 14px rgba(45,213,138,.34), inset 0 1px 0 rgba(255,255,255,.55);
-    }
-
     .tab:active, .tool:active, .x-step:active, .fulcrum:active { transform: scale(.95); }
 
     .workspace {
@@ -1482,22 +1463,354 @@
         .decimal-piece.d-tenth { width: 48px; height: 16px; }
         .decimal-piece.d-hundredth { width: 16px; height: 16px; }
     }
+
+
+    /* ============================================================
+       SYMBOL-ONLY SURFACE + ACCURATE SIMPLIFIED MONEY PASS
+       ============================================================ */
+    .title { min-height: 1px; }
+
+    .tabs.tray-switcher {
+        height: 46px;
+        gap: 10px;
+    }
+
+    .material-icon {
+        min-width: 42px;
+        width: 42px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+    }
+
+    .mt-icon {
+        position: relative;
+        display: block;
+        width: 24px;
+        height: 24px;
+    }
+
+    .icon-blocks::before,
+    .icon-blocks::after {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        background: linear-gradient(135deg,#ffffff,#cfcfd6);
+        box-shadow: inset 1px 1px 1px rgba(255,255,255,.8), inset -2px -2px 4px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.12);
+    }
+    .icon-blocks::before { left: 3px; top: 4px; }
+    .icon-blocks::after { right: 3px; bottom: 4px; }
+
+    .icon-money {
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 32% 28%, rgba(255,255,255,.9), rgba(255,255,255,.22) 38%, transparent 62%),
+            linear-gradient(135deg,#f8f8fa,#aeb1ba 54%,#e9e9ee);
+        box-shadow: inset 0 0 0 2px rgba(0,0,0,.08), inset 0 0 0 5px rgba(255,255,255,.16), 0 3px 6px rgba(0,0,0,.16);
+    }
+    .icon-money::after {
+        content: '';
+        position: absolute;
+        inset: 7px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,.22);
+        background: rgba(255,255,255,.16);
+    }
+
+    .icon-equation {
+        width: auto;
+        height: auto;
+        font-size: 1.28rem;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: -.08em;
+        color: var(--ink);
+    }
+
+    .icon-fraction {
+        border-radius: 50%;
+        background:
+            conic-gradient(from -90deg,#2a5db8 0 180deg, rgba(0,0,0,.06) 180deg 360deg),
+            linear-gradient(135deg,#ffffff,#dadae0);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,.65), inset 0 0 0 1px rgba(0,0,0,.08), 0 3px 6px rgba(0,0,0,.12);
+    }
+
+    .icon-decimal {
+        width: 25px;
+        height: 25px;
+        border-radius: 5px;
+        background: rgba(0,0,0,.045);
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 3px 6px rgba(0,0,0,.1);
+        overflow: hidden;
+    }
+    .icon-decimal::before {
+        content: '';
+        position: absolute;
+        inset: 3px;
+        border-radius: 3px;
+        background:
+            linear-gradient(#2a5db8 0 0) 0 0 / 18% 18% repeat;
+        opacity: .95;
+        -webkit-mask: linear-gradient(#000 0 0) left top / 50% 50% no-repeat;
+        mask: linear-gradient(#000 0 0) left top / 50% 50% no-repeat;
+    }
+
+    .problem-card[hidden],
+    .goal-banner[hidden] { display: none !important; }
+
+    .tools { gap: 9px; }
+
+    footer {
+        height: 18px;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .footer-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--light);
+        opacity: .6;
+    }
+
+    /* Accurate, simplified U.S. coin system: size, color, rims, and relief cues. */
+    .coin {
+        position: relative;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        font-size: 0;
+        line-height: 1;
+        overflow: visible;
+        isolation: isolate;
+        transform-style: preserve-3d;
+        box-shadow:
+            inset 1px 2px 2px rgba(255,255,255,.55),
+            inset -3px -5px 8px rgba(0,0,0,.22),
+            0 7px 12px rgba(0,0,0,.16);
+    }
+
+    .coin::before {
+        content: '';
+        position: absolute;
+        inset: 1.5px;
+        border-radius: 50%;
+        z-index: 1;
+        background: var(--coin-rim);
+        box-shadow:
+            inset 0 0 0 1px rgba(0,0,0,.16),
+            inset 0 0 0 5px rgba(255,255,255,.13),
+            inset 0 -4px 5px rgba(0,0,0,.16);
+    }
+
+    .coin::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -4px;
+        width: 88%;
+        height: 8px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: var(--coin-side);
+        box-shadow: 0 2px 4px rgba(0,0,0,.18);
+        z-index: -1;
+    }
+
+    .coin-relief {
+        position: absolute;
+        inset: 9px;
+        z-index: 3;
+        border-radius: 50%;
+        opacity: .72;
+        filter: drop-shadow(0 1px 0 rgba(255,255,255,.36));
+    }
+
+    .coin-value {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        font-size: .58rem;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        color: rgba(0,0,0,.58);
+        text-shadow: 0 1px 0 rgba(255,255,255,.48);
+        opacity: 0;
+        transition: opacity .2s var(--ease);
+        pointer-events: none;
+        font-variant-numeric: tabular-nums;
+    }
+    body.show-values .coin-value { opacity: 1; }
+
+    .penny {
+        width: 42px;
+        height: 42px;
+        --coin-rim:
+            radial-gradient(circle at 33% 25%, rgba(255,235,216,.9), rgba(255,235,216,.12) 34%, transparent 60%),
+            linear-gradient(135deg,#f0a06e,#b75b32 49%,#7c321b 72%,#e29461);
+        --coin-side: linear-gradient(180deg,#8f3d20,#5e2714 70%,#3f190c);
+        background: linear-gradient(135deg,#f0a06e,#a84c28 54%,#e08a56);
+        color: #5d2a13;
+    }
+
+    .penny .coin-relief::before {
+        content: '';
+        position: absolute;
+        left: 34%;
+        top: 12%;
+        width: 38%;
+        height: 58%;
+        border-radius: 48% 43% 45% 40%;
+        background: rgba(92,38,18,.55);
+        box-shadow: -4px 8px 0 -2px rgba(92,38,18,.42);
+        transform: rotate(-8deg);
+    }
+    .penny .coin-relief::after {
+        content: '';
+        position: absolute;
+        left: 27%;
+        bottom: 15%;
+        width: 48%;
+        height: 12%;
+        border-radius: 999px;
+        background: rgba(92,38,18,.38);
+    }
+
+    .nickel {
+        width: 46px;
+        height: 46px;
+        --coin-rim:
+            radial-gradient(circle at 33% 25%, rgba(255,255,255,.95), rgba(255,255,255,.16) 34%, transparent 60%),
+            linear-gradient(135deg,#f6f6f8,#b1b4bb 53%,#858993 76%,#dedfe4);
+        --coin-side: linear-gradient(180deg,#9ca0a8,#6d717a 72%,#4f535b);
+        background: linear-gradient(135deg,#f0f1f4,#acafb7 54%,#e2e3e8);
+        color: #4e535c;
+    }
+
+    .nickel .coin-relief::before {
+        content: '';
+        position: absolute;
+        left: 13%;
+        right: 13%;
+        bottom: 25%;
+        height: 18%;
+        background: rgba(70,75,84,.48);
+        clip-path: polygon(0 100%, 100% 100%, 88% 0, 12% 0);
+    }
+    .nickel .coin-relief::after {
+        content: '';
+        position: absolute;
+        left: 20%;
+        right: 20%;
+        top: 28%;
+        height: 34%;
+        background:
+            linear-gradient(90deg,
+                rgba(70,75,84,.45) 0 10%, transparent 10% 22%,
+                rgba(70,75,84,.45) 22% 32%, transparent 32% 45%,
+                rgba(70,75,84,.45) 45% 55%, transparent 55% 68%,
+                rgba(70,75,84,.45) 68% 78%, transparent 78% 90%,
+                rgba(70,75,84,.45) 90% 100%);
+    }
+
+    .dime {
+        width: 36px;
+        height: 36px;
+        --coin-rim:
+            repeating-conic-gradient(from 1deg, rgba(255,255,255,.62) 0 2deg, rgba(0,0,0,.16) 2deg 4deg),
+            linear-gradient(135deg,#ffffff,#b8bbc3 55%,#8d929b 76%,#eeeeF2);
+        --coin-side: repeating-linear-gradient(90deg,#6f747d 0 2px,#a6aab2 2px 3px,#545a63 3px 5px);
+        background: linear-gradient(135deg,#fbfbfd,#babdc5 54%,#eeeeF2);
+        color: #4f545d;
+    }
+
+    .dime .coin-relief::before {
+        content: '';
+        position: absolute;
+        left: 47%;
+        top: 15%;
+        width: 10%;
+        height: 68%;
+        border-radius: 999px;
+        background: rgba(72,77,86,.55);
+    }
+    .dime .coin-relief::after {
+        content: '';
+        position: absolute;
+        left: 24%;
+        top: 40%;
+        width: 52%;
+        height: 33%;
+        border-radius: 50%;
+        border-top: 3px solid rgba(72,77,86,.45);
+        border-left: 2px solid rgba(72,77,86,.28);
+        border-right: 2px solid rgba(72,77,86,.28);
+    }
+
+    .quarter {
+        width: 52px;
+        height: 52px;
+        --coin-rim:
+            repeating-conic-gradient(from 1deg, rgba(255,255,255,.62) 0 2deg, rgba(0,0,0,.15) 2deg 4deg),
+            linear-gradient(135deg,#ffffff,#aaadb7 53%,#818692 76%,#e9e9ee);
+        --coin-side: repeating-linear-gradient(90deg,#666b74 0 2px,#a2a6af 2px 3px,#4b5059 3px 5px);
+        background: linear-gradient(135deg,#fafafd,#aeb2bd 54%,#e8e8ee);
+        color: #4d535d;
+    }
+
+    .quarter .coin-relief::before {
+        content: '';
+        position: absolute;
+        left: 33%;
+        top: 13%;
+        width: 39%;
+        height: 57%;
+        border-radius: 49% 43% 45% 40%;
+        background: rgba(70,75,84,.48);
+        box-shadow: -5px 9px 0 -2px rgba(70,75,84,.36);
+        transform: rotate(-7deg);
+    }
+    .quarter .coin-relief::after {
+        content: '';
+        position: absolute;
+        left: 22%;
+        bottom: 16%;
+        width: 58%;
+        height: 10%;
+        border-radius: 999px;
+        background: rgba(70,75,84,.32);
+    }
+
+    @media (max-width: 680px) {
+        .material-icon { min-width: 38px; width: 38px; }
+        .penny { width: 35px; height: 35px; }
+        .nickel { width: 39px; height: 39px; }
+        .dime { width: 31px; height: 31px; }
+        .quarter { width: 43px; height: 43px; }
+        .coin-relief { inset: 7px; }
+    }
+
 </style>
 </head>
 <body>
 <header>
     <div class="logo">Math Things<span class="dot"></span></div>
-    <div class="title">Balance Scale</div>
+    <div class="title" aria-hidden="true"></div>
     <div class="header-spacer"></div>
 </header>
 
 <nav class="tabs tray-switcher" aria-label="materials">
-    <button class="tab active" data-material="blocks" aria-label="blocks">▦</button>
-    <button class="tab" data-material="money" aria-label="money">¢</button>
-    <button class="tab" data-material="fractions" aria-label="fractions">◐</button>
-    <button class="tab" data-material="decimals" aria-label="decimals">▩</button>
-    <button class="tab" data-material="equation" aria-label="equation pieces">x</button>
-    <button class="tab challenge-tab" id="challengeBtn" aria-label="drop in a challenge">?</button>
+    <button class="tab material-icon active" data-mode="blocks" aria-label="blocks"><span class="mt-icon icon-blocks" aria-hidden="true"></span></button>
+    <button class="tab material-icon" data-mode="money" aria-label="money"><span class="mt-icon icon-money" aria-hidden="true"></span></button>
+    <button class="tab material-icon" data-mode="equation" aria-label="equations"><span class="mt-icon icon-equation" aria-hidden="true">x</span></button>
+    <button class="tab material-icon" data-mode="fractions" aria-label="fractions"><span class="mt-icon icon-fraction" aria-hidden="true"></span></button>
+    <button class="tab material-icon" data-mode="decimals" aria-label="decimals"><span class="mt-icon icon-decimal" aria-hidden="true"></span></button>
 </nav>
 
 <main class="workspace">
@@ -1532,20 +1845,8 @@
         </div>
 
         <button class="fulcrum" id="fulcrum" aria-label="show values">=</button>
-
-        <div class="problem-card" id="problemCard" aria-live="polite">
-            <span class="problem-label">Solve</span>
-            <span class="problem-eq" id="problemEq"></span>
-            <span class="problem-counter" id="problemCounter"></span>
-            <button class="problem-next" id="problemNext" aria-label="next problem">Next →</button>
-        </div>
-
-        <div class="goal-banner" id="goalBanner" aria-live="polite">
-            <span class="goal-label">Match</span>
-            <span class="goal-amount" id="goalAmount"></span>
-            <span class="goal-counter" id="goalCounter"></span>
-            <button class="goal-next" id="goalNext" aria-label="next goal">Next →</button>
-        </div>
+        <div class="problem-card" id="problemCard" hidden></div>
+        <div class="goal-banner" id="goalBanner" hidden></div>
     </section>
 
     <div class="palette" id="palette" aria-label="pieces"></div>
@@ -1557,13 +1858,12 @@
     </div>
 
     <div class="tools">
-        <button class="tool tool-goal" id="goalBtn" aria-label="goal mode" title="Goal: match the price">🎯</button>
         <button class="tool" id="clearBtn" aria-label="clear">↺</button>
         <button class="tool" id="valuesBtn" aria-label="show values">#</button>
     </div>
 </main>
 
-<footer>MATH THINGS. &nbsp;|&nbsp; MATH, IN YOUR HANDS.</footer>
+<footer aria-hidden="true"><span class="footer-dot"></span></footer>
 
 <script>
 (function(){
@@ -1572,7 +1872,6 @@
        ============================================================ */
     const state = {
         mode: 'blocks',
-        challengeActive: false,
         activeSide: 'left',
         left: [],
         right: [],
@@ -1622,22 +1921,7 @@
        Values in cents. Progression: pure coins → mixed coins →
        coins requiring multiples → bills + change.
        ============================================================ */
-    const goalTargets = [
-        25,    // one quarter, or other combos — easy
-        30,    // 25¢ + 5¢
-        50,    // two quarters / five dimes / etc.
-        75,    // three quarters
-        100,   // $1.00 — bill or coins
-        137,   // $1.37 — quarter + dime + 2¢
-        185,   // $1.85
-        250,   // $2.50 — bill + change
-        285,   // $2.85
-        500,   // $5.00 — bill
-        637,   // $6.37 — multiple bills + change
-        1000,  // $10.00
-        1273,  // $12.73 — top-shelf challenge
-        2000   // $20.00 — bill recognition
-    ];
+    const goalTargets = [0.25, 0.50, 0.75, 1.00, 1.37, 2.50, 5.00];
 
     /* ============================================================
        DOM
@@ -1668,14 +1952,14 @@
             { kind: 'block', label: '10', value: 10 }
         ],
         money: [
-            { kind: 'coin', coin: 'penny', label: '1¢', value: 1, aria: 'penny' },
-            { kind: 'coin', coin: 'nickel', label: '5¢', value: 5, aria: 'nickel' },
-            { kind: 'coin', coin: 'dime', label: '10¢', value: 10, aria: 'dime' },
-            { kind: 'coin', coin: 'quarter', label: '25¢', value: 25, aria: 'quarter' },
-            { kind: 'bill', bill: 'one', label: '$1', value: 100 },
-            { kind: 'bill', bill: 'five', label: '$5', value: 500 },
-            { kind: 'bill', bill: 'ten', label: '$10', value: 1000 },
-            { kind: 'bill', bill: 'twenty', label: '$20', value: 2000 }
+            { kind: 'coin', coin: 'penny', label: '1¢', value: 0.01, aria: 'penny' },
+            { kind: 'coin', coin: 'nickel', label: '5¢', value: 0.05, aria: 'nickel' },
+            { kind: 'coin', coin: 'dime', label: '10¢', value: 0.10, aria: 'dime' },
+            { kind: 'coin', coin: 'quarter', label: '25¢', value: 0.25, aria: 'quarter' },
+            { kind: 'bill', bill: 'one', label: '$1', value: 1 },
+            { kind: 'bill', bill: 'five', label: '$5', value: 5 },
+            { kind: 'bill', bill: 'ten', label: '$10', value: 10 },
+            { kind: 'bill', bill: 'twenty', label: '$20', value: 20 }
         ],
         equation: [
             { kind: 'equation', label: 'x', value: 'x' },
@@ -1702,7 +1986,7 @@
             { kind: 'decimal', size: 'whole',     label: '1',    fracLabel: '1',     num: 100, den: 100, value: 1    },
             { kind: 'decimal', size: 'tenth',    label: '0.1',  fracLabel: '1/10',  num: 10,  den: 100, value: 0.1  },
             { kind: 'decimal', size: 'hundredth', label: '0.01', fracLabel: '1/100', num: 1,   den: 100, value: 0.01 }
-        ],
+        ]
     };
 
     /* ============================================================
@@ -1718,14 +2002,16 @@
     }
 
     function formatTotal(value, side) {
-        const pieces = state[side];
-        const hasPieces = pieces.length > 0;
-        const allRational = hasPieces && pieces.every(piece => piece.kind === 'fraction' || piece.kind === 'decimal');
-        const allMoney = hasPieces && pieces.every(piece => piece.kind === 'coin' || piece.kind === 'bill' || piece.kind === 'tag');
-        if (allMoney) return moneyLabel(value);
-        if (allRational && state.mode === 'decimals') return formatDecimal(fractionSum(side));
-        if (allRational) return formatFraction(fractionSum(side));
-        return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+        if (state.mode === 'money') return moneyLabel(value);
+        const onlyParts = state[side].every(piece => piece.kind === 'fraction' || piece.kind === 'decimal');
+        if (state.mode === 'fractions' && onlyParts) return formatFraction(fractionSum(side));
+        if (state.mode === 'decimals') return formatNumber(value);
+        return formatNumber(value);
+    }
+
+    function formatNumber(value) {
+        const rounded = Math.round(value * 1000000) / 1000000;
+        return String(rounded).replace(/\.0+$/, '');
     }
 
     function formatDecimal(f) {
@@ -1743,9 +2029,9 @@
     function moneyLabel(value) {
         const sign = value < 0 ? '−' : '';
         const abs = Math.abs(value);
-        if (abs >= 100 && abs % 100 === 0) return sign + '$' + (abs / 100);
-        if (abs >= 100) return sign + '$' + (abs / 100).toFixed(2).replace(/\.00$/, '');
-        return sign + abs + '¢';
+        const rounded = Math.round(abs * 100) / 100;
+        if (rounded >= 1) return sign + '$' + rounded.toFixed(2).replace(/\.00$/, '');
+        return sign + Math.round(rounded * 100) + '¢';
     }
 
     /* ============================================================
@@ -1823,47 +2109,37 @@
     }
 
     function clearScale() {
-        if (state.challengeActive) {
-            /* Challenge cards reset by replaying the current card. */
-            loadProblem(state.solveIndex);
-        } else if (state.mode === 'money' && state.goalMode) {
-            /* In goal mode, clear only the fillable side, keep the tag */
-            loadGoal(state.goalIndex);
-        } else {
-            state.left = [];
-            state.right = [];
-            state.locked = { left: false, right: false };
-            state.solved = false;
-            state.challengeActive = false;
-            document.body.classList.remove('solve-mode', 'goal-mode', 'solved');
-            renderAll();
-        }
-    }
-
-    /* ============================================================
-       MODE SWITCHING
-       ============================================================ */
-    function setMode(mode) {
-        /* Materials are just trays. The scale stays exactly as it is. */
-        state.mode = mode;
-        state.negativeMode = false;
-        state.goalMode = false;
-        if (!state.challengeActive) state.locked = { left: false, right: false };
-
-        document.body.classList.toggle('equation-mode', mode === 'equation' || state.challengeActive);
-        document.body.classList.toggle('money-mode', mode === 'money');
-        document.body.classList.remove('goal-mode');
+        state.left = [];
+        state.right = [];
+        state.locked = { left: false, right: false };
+        state.solved = false;
         document.body.classList.remove('solved');
-        document.querySelectorAll('.tab[data-material]').forEach(tab => tab.classList.toggle('active', tab.dataset.material === mode));
-        const challengeBtnEl = document.getElementById('challengeBtn');
-        if (challengeBtnEl) challengeBtnEl.classList.toggle('active', state.challengeActive);
-
-        setActiveSide(state.locked[state.activeSide] ? (state.locked.left ? 'right' : 'left') : state.activeSide);
         renderAll();
     }
 
     /* ============================================================
-       SOLVE MODE: load a problem, lock the scale, expect student
+       MATERIAL SWITCHING
+       ============================================================ */
+    function setMode(mode) {
+        if (!modes[mode]) return;
+        state.mode = mode;
+        state.locked = { left: false, right: false };
+        state.solved = false;
+        state.negativeMode = false;
+        state.goalMode = false;
+
+        document.body.classList.toggle('equation-mode', mode === 'equation');
+        document.body.classList.toggle('money-mode', mode === 'money');
+        document.body.classList.remove('solve-mode', 'goal-mode', 'solved');
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
+
+        if (mode === 'equation' && state.xValue === 1) state.xValue = 5;
+        if (state.locked[state.activeSide]) setActiveSide('left');
+        renderAll();
+    }
+
+    /* ============================================================
+       INERT CHALLENGE LEGACY: load a problem, lock the scale, expect student
        to find x via the stepper.
        ============================================================ */
     function loadProblem(index) {
@@ -1871,16 +2147,10 @@
         if (!p) return;
         state.left = p.left.map(clonePiece);
         state.right = p.right.map(clonePiece);
-        state.mode = 'equation';
-        state.challengeActive = true;
         state.locked = { left: true, right: true };
         state.xValue = 1;
         state.solved = false;
-        document.body.classList.add('solve-mode', 'equation-mode');
-        document.body.classList.remove('solved', 'goal-mode');
-        document.querySelectorAll('.tab[data-material]').forEach(tab => tab.classList.toggle('active', tab.dataset.material === 'equation'));
-        const challengeBtnEl = document.getElementById('challengeBtn');
-        if (challengeBtnEl) challengeBtnEl.classList.add('active');
+        document.body.classList.remove('solved');
 
         problemEq.innerHTML = p.eq
             .replace(/x/g, '<span class="x-token">x</span>')
@@ -1929,9 +2199,8 @@
     }
 
     function toggleGoalMode() {
+        return;
         if (state.mode !== 'money') return;
-        state.challengeActive = false;
-        document.body.classList.remove('solve-mode');
         state.goalMode = !state.goalMode;
         document.body.classList.toggle('goal-mode', state.goalMode);
         document.getElementById('goalBtn').classList.toggle('active', state.goalMode);
@@ -1965,10 +2234,16 @@
         if (piece.jitter) el.style.setProperty('--jitter', piece.jitter);
 
         if (piece.kind === 'coin') {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = piece.label;
-            el.appendChild(mark);
+            const relief = document.createElement('span');
+            relief.className = 'coin-relief';
+            relief.setAttribute('aria-hidden', 'true');
+            el.appendChild(relief);
+
+            const value = document.createElement('span');
+            value.className = 'coin-value';
+            value.textContent = piece.label;
+            value.setAttribute('aria-hidden', 'true');
+            el.appendChild(value);
         } else if (piece.kind === 'bill') {
             const tl = document.createElement('span');
             tl.className = 'bill-corner tl';
@@ -2073,13 +2348,12 @@
         const piecesOnScale = [...state.left, ...state.right];
         const exactRational = piecesOnScale.length > 0 && piecesOnScale.every(p => p.kind === 'fraction' || p.kind === 'decimal');
         if (exactRational) {
-            /* Exact equality for fractions/decimals, even when the student mixes those two trays. */
             const fL = fractionSum('left');
             const fR = fractionSum('right');
             balanced = (state.left.length > 0 && state.right.length > 0) &&
                        (fL.num === fR.num && fL.den === fR.den);
         } else {
-            balanced = left === right && left + right > 0;
+            balanced = (state.left.length > 0 && state.right.length > 0) && Math.abs(diff) < 0.000001;
         }
 
         let tilt;
@@ -2087,10 +2361,9 @@
             tilt = 0;
         } else if (state.mode === 'money') {
             const sign = Math.sign(diff);
-            const mag = Math.log10(Math.abs(diff) + 1) * 3.4;
+            const mag = Math.log10(Math.abs(diff) + 1) * 6.2;
             tilt = sign * Math.min(12, mag);
         } else if (exactRational) {
-            /* Fractions/decimals are small values; scale the tilt up. */
             tilt = Math.max(-12, Math.min(12, diff * 8));
         } else {
             tilt = Math.max(-12, Math.min(12, diff * 0.72));
@@ -2104,8 +2377,8 @@
 
         fulcrum.classList.toggle('balanced', balanced);
 
-        /* Solve mode: detect win */
-        if (state.challengeActive) {
+        /* Challenge/solve mode removed from the manipulative surface. */
+        if (false) {
             const p = problems[state.solveIndex];
             const justSolved = balanced && state.xValue === p.answer && !state.solved;
             if (justSolved) {
@@ -2193,7 +2466,7 @@
 
             /* Long-press flips sign on pile pieces (subtraction).
                Disabled in solve mode — sides are locked. */
-            if (inPan && !state.challengeActive) {
+            if (inPan && state.mode !== 'solve') {
                 longPressTimer = setTimeout(() => {
                     if (!moved) {
                         longPressed = true;
@@ -2213,7 +2486,7 @@
                 if (!moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
                     moved = true;
                     cancelLongPress();
-                    if (state.challengeActive) return; /* no drag in solve mode */
+                    if (state.mode === 'solve') return; /* no drag in solve mode */
                     beginDrag(piece, inPan, side, ev, el);
                 }
                 if (drag) updateDrag(ev);
@@ -2242,7 +2515,7 @@
         /* Right-click on desktop: also flips sign (for pile pieces) */
         if (inPan) {
             el.addEventListener('contextmenu', (e) => {
-                if (state.challengeActive) return;
+                if (state.mode === 'solve') return;
                 e.preventDefault();
                 flipPieceSign(side, piece.id);
             });
@@ -2258,7 +2531,7 @@
     }
 
     function handleTap(piece, inPan, side) {
-        if (state.challengeActive) return;
+        if (state.mode === 'solve') return;
         if (inPan) {
             removePiece(side, piece.id);
         } else {
@@ -2364,12 +2637,14 @@
         });
     }
 
-    document.getElementById('goalBtn').addEventListener('click', toggleGoalMode);
-    document.getElementById('goalNext').addEventListener('click', nextGoal);
+    const goalBtn = document.getElementById('goalBtn');
+    if (goalBtn) goalBtn.addEventListener('click', toggleGoalMode);
+    const goalNext = document.getElementById('goalNext');
+    if (goalNext) goalNext.addEventListener('click', nextGoal);
 
     document.getElementById('xDown').addEventListener('click', () => {
         state.xValue = Math.max(1, state.xValue - 1);
-        if (state.challengeActive && state.solved) {
+        if (state.mode === 'solve' && state.solved) {
             /* nudging x off the answer un-solves it visually */
             const p = problems[state.solveIndex];
             if (state.xValue !== p.answer) {
@@ -2382,7 +2657,7 @@
 
     document.getElementById('xUp').addEventListener('click', () => {
         state.xValue = Math.min(20, state.xValue + 1);
-        if (state.challengeActive && state.solved) {
+        if (state.mode === 'solve' && state.solved) {
             const p = problems[state.solveIndex];
             if (state.xValue !== p.answer) {
                 state.solved = false;
@@ -2392,20 +2667,10 @@
         renderAll();
     });
 
-    problemNext.addEventListener('click', nextProblem);
+    if (problemNext) problemNext.addEventListener('click', nextProblem);
 
-    document.querySelectorAll('.tab[data-material]').forEach(tab => {
-        tab.addEventListener('click', () => {
-            state.challengeActive = false;
-            state.locked = { left: false, right: false };
-            document.body.classList.remove('solve-mode');
-            setMode(tab.dataset.material);
-        });
-    });
-
-    document.getElementById('challengeBtn').addEventListener('click', () => {
-        state.solveIndex = 0;
-        loadProblem(0);
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => setMode(tab.dataset.mode));
     });
 
     /* ============================================================
@@ -2413,7 +2678,6 @@
        ============================================================ */
     document.body.classList.remove('equation-mode');
     document.body.classList.remove('solve-mode');
-    document.querySelectorAll('.tab[data-material]').forEach(tab => tab.classList.toggle('active', tab.dataset.material === state.mode));
     renderAll();
 })();
 </script>
