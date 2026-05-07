@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Division Bar | Water Focus Pass | Math Things.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #EEF1F5;
+      --surface: #FBFCFE;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --border: rgba(0,0,0,0.055);
+      --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
+      --shadow-card: 0 14px 44px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.035);
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --ones: #DC143C;
+      --tens: #4169E1;
+      --hundredths: #FF9F0A;
+      --water: #64D2FF;
+      --water-deep: #0A84FF;
+      --pipe: rgba(128,138,154,0.32);
+      --pipe-inner: rgba(255,255,255,0.48);
+      --bead-low: #a8a8a8;
+      --bead-mid: #d0d0d0;
+      --bead-high: #efefef;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Lexend', system-ui, sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 18% 10%, rgba(255,255,255,0.74), transparent 36%),
+        radial-gradient(circle at 74% 42%, rgba(255,255,255,0.46), transparent 30%),
+        radial-gradient(rgba(42,48,56,0.052) 1.1px, transparent 1.1px),
+        var(--bg);
+      background-size: auto, auto, 30px 30px, auto;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      height: 58px;
+      padding: 0 clamp(18px, 3.5vw, 34px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: rgba(238,241,245,0.84);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(34px);
+      -webkit-backdrop-filter: blur(34px);
+      z-index: 10;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: baseline;
+      font-size: 1.16rem;
+      font-weight: 900;
+      letter-spacing: -0.055em;
+      user-select: none;
+    }
+
+    .logo-bead,
+    .tiny-bead {
+      display: inline-block;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.34) 40%, transparent 65%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+        linear-gradient(135deg, var(--bead-high) 0%, var(--bead-mid) 25%, var(--bead-low) 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow:
+        inset 1px 1px 2px rgba(255,255,255,0.85),
+        inset -1px -1px 2px rgba(0,0,0,0.22),
+        0 2px 6px rgba(0,0,0,0.22);
+    }
+
+    .logo-bead {
+      width: 0.22em;
+      height: 0.22em;
+      margin-left: 0.04em;
+      margin-bottom: 0.09em;
+    }
+
+    .header-label {
+      color: var(--text-light);
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    main {
+      flex: 1;
+      min-height: 0;
+      padding: clamp(14px, 2.3vw, 28px);
+      display: grid;
+    }
+
+    .stage-card {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      border-radius: 34px;
+      border: 1px solid var(--border);
+      background:
+        radial-gradient(circle at 54% 24%, rgba(255,255,255,0.42), transparent 34%),
+        linear-gradient(180deg, rgba(245,247,251,0.98), rgba(234,239,246,0.96));
+      box-shadow: var(--shadow-card);
+      display: grid;
+      place-items: center;
+    }
+
+    .stage-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,0.36), transparent 32%),
+        radial-gradient(circle at 50% 82%, rgba(65,105,225,0.055), transparent 38%);
+      pointer-events: none;
+    }
+
+    .control-dock {
+      position: absolute;
+      top: 22px;
+      left: 22px;
+      z-index: 5;
+      width: 168px;
+      padding: 14px;
+      border-radius: 24px;
+      border: 1px solid rgba(0,0,0,0.045);
+      background: rgba(255,255,255,0.78);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .control-dock.busy {
+      opacity: 0.72;
+      pointer-events: none;
+    }
+
+    .problem-readout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .readout-number { font-size: 1.82rem; }
+    .readout-op { color: var(--text-light); font-size: 1.34rem; }
+
+    .mini-control {
+      display: grid;
+      grid-template-columns: 32px 1fr 32px;
+      min-height: 38px;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(245,245,247,0.76);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.04);
+    }
+
+    .mini-btn {
+      border: 0;
+      background: rgba(255,255,255,0.75);
+      color: var(--text-gray);
+      cursor: pointer;
+      font-family: 'Lexend', system-ui, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 900;
+      transition: transform 0.16s var(--spring), background 0.16s ease, opacity 0.16s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mini-btn:active { transform: scale(0.86); background: white; }
+    .mini-btn.dimmed { opacity: 0.24; pointer-events: none; }
+
+    .mini-display {
+      display: grid;
+      place-items: center;
+      background: white;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      font-size: 1.26rem;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+    }
+
+    .shape-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+    }
+
+    .shape-btn {
+      min-height: 45px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: white;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: var(--text-light);
+      transition: transform 0.16s var(--spring), box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .shape-btn.active {
+      border-color: rgba(220,20,60,0.5);
+      background: rgba(220,20,60,0.055);
+      box-shadow: 0 0 0 3px rgba(220,20,60,0.08);
+      color: var(--ones);
+    }
+
+    .shape-btn[data-shape="water"].active {
+      border-color: rgba(100,210,255,0.66);
+      background: rgba(100,210,255,0.09);
+      box-shadow: 0 0 0 3px rgba(100,210,255,0.12);
+      color: var(--water-deep);
+    }
+
+    .shape-btn:active { transform: scale(0.9); }
+
+    .scene-wrap {
+      position: relative;
+      z-index: 2;
+      width: min(1160px, 94vw);
+      height: min(520px, calc(100vh - 122px));
+      min-height: 400px;
+      display: grid;
+      place-items: center;
+    }
+
+    #scene-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+      cursor: default;
+    }
+
+    .bead-button-hit {
+      position: absolute;
+      left: 72.5%;
+      top: 38%;
+      width: 170px;
+      height: 230px;
+      transform: translate(-50%, -50%);
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: grab;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      z-index: 4;
+    }
+
+    .bead-button-hit:disabled {
+      cursor: default;
+    }
+
+    .bead-button-hit.dragging { cursor: grabbing; }
+
+    .quiet-caption {
+      position: absolute;
+      right: 24px;
+      bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      color: var(--text-light);
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 1.65px;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.66);
+      border: 1px solid rgba(0,0,0,0.04);
+      box-shadow: var(--shadow-soft);
+      pointer-events: none;
+    }
+
+    .quiet-caption .tiny-bead { width: 10px; height: 10px; }
+
+    .header-symbol {
+      color: var(--text-light);
+      font-size: 1.34rem;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+      user-select: none;
+    }
+
+    .shape-btn span { display: none; }
+    .shape-btn svg { width: 36px; height: 28px; }
+
+    @keyframes leverPulse {
+      0%, 100% { opacity: 0.28; stroke-width: 4; transform: scale(0.92); }
+      50% { opacity: 0.78; stroke-width: 7; transform: scale(1.08); }
+    }
+
+    @keyframes leverHint {
+      0%, 100% { opacity: 0.16; }
+      50% { opacity: 0.36; }
+    }
+
+    @keyframes ghostPath {
+      0%, 100% { opacity: 0.12; }
+      50% { opacity: 0.32; }
+    }
+
+    @keyframes readyHalo {
+      0%, 100% { opacity: 0.10; }
+      50% { opacity: 0.30; }
+    }
+
+    @keyframes regroupPulse {
+      0%, 100% { opacity: 0.18; }
+      50% { opacity: 0.58; }
+    }
+
+    @keyframes bucketRise {
+      0% { opacity: 0; transform: translateY(24px) scale(0.82); }
+      72% { opacity: 1; transform: translateY(-3px) scale(1.04); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes waterSettle {
+      0%, 100% { opacity: 0.86; }
+      50% { opacity: 1; }
+    }
+
+    .water-bucket-pop {
+      animation: bucketRise 0.42s var(--spring) both;
+      transform-box: fill-box;
+      transform-origin: center bottom;
+    }
+
+    .water-full {
+      animation: waterSettle 0.9s ease-in-out infinite;
+    }
+
+    .lever-pulse {
+      animation: leverPulse 1.28s ease-in-out infinite;
+      pointer-events: none;
+      transform-origin: center;
+      transform-box: fill-box;
+    }
+
+    .lever-hint {
+      animation: leverHint 1.45s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .lever-ghost-path,
+    .gravity-thread,
+    .lane-thread {
+      animation: ghostPath 1.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .ready-halo {
+      animation: readyHalo 1.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .regroup-silhouette,
+    .regroup-glow {
+      animation: regroupPulse 1.05s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .regroup-hit {
+      cursor: pointer;
+      pointer-events: all;
+    }
+
+    @media (max-width: 820px) {
+      html, body { overflow: auto; }
+      body { min-height: 100%; }
+      main { min-height: calc(100vh - 58px); }
+      .stage-card { min-height: 760px; }
+      .control-dock {
+        position: relative;
+        top: auto;
+        left: auto;
+        width: min(420px, calc(100% - 28px));
+        margin: 18px auto 0;
+        grid-template-columns: 1fr 1fr;
+        align-items: end;
+      }
+      .problem-readout { grid-column: 1 / -1; }
+      .shape-row { grid-column: 1 / -1; }
+      .scene-wrap {
+        width: 96%;
+        height: 620px;
+        margin-top: 6px;
+      }
+      .quiet-caption { display: none; }
+    }
+
+    @media (max-width: 520px) {
+      header { padding: 0 16px; }
+      .header-label { display: none; }
+      main { padding: 10px; }
+      .stage-card { border-radius: 28px; }
+      .control-dock { grid-template-columns: 1fr; }
+      .scene-wrap { height: 580px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <div class="header-symbol" aria-hidden="true">÷</div>
+  </header>
+
+  <main>
+    <section class="stage-card" aria-label="Division bar stage">
+      <aside class="control-dock" id="controlDock" aria-label="Division bar controls">
+        <div class="problem-readout" aria-live="polite">
+          <span id="readout-dividend" class="readout-number" style="color:var(--ones)">5</span>
+          <span class="readout-op">÷</span>
+          <span id="readout-divisor" class="readout-number" style="color:var(--tens)">2</span>
+        </div>
+
+        <div class="mini-control" aria-label="Change dividend">
+          <button class="mini-btn" id="div-down" aria-label="Decrease dividend">−</button>
+          <div class="mini-display" id="div-display" style="color:var(--ones)">5</div>
+          <button class="mini-btn" id="div-up" aria-label="Increase dividend">+</button>
+        </div>
+
+        <div class="mini-control" aria-label="Change divisor">
+          <button class="mini-btn" id="dsr-down" aria-label="Decrease divisor">−</button>
+          <div class="mini-display" id="dsr-display" style="color:var(--tens)">2</div>
+          <button class="mini-btn" id="dsr-up" aria-label="Increase divisor">+</button>
+        </div>
+
+        <div class="shape-row" role="group" aria-label="Choose a dividend shape">
+          <button class="shape-btn active" data-shape="rect" aria-label="Slabs">
+            <svg width="27" height="18" viewBox="0 0 27 18" aria-hidden="true"><rect x="3" y="4" width="21" height="11" rx="4" fill="var(--ones)" opacity="0.88"/></svg>
+
+          </button>
+          <button class="shape-btn" data-shape="puck" aria-label="Pucks">
+            <svg width="21" height="21" viewBox="0 0 21 21" aria-hidden="true"><circle cx="10.5" cy="10.5" r="8.5" fill="var(--ones)" opacity="0.88"/></svg>
+
+          </button>
+          <button class="shape-btn" data-shape="rod" aria-label="Rods">
+            <svg width="32" height="14" viewBox="0 0 32 14" aria-hidden="true"><rect x="3" y="5" width="26" height="5" rx="3" fill="var(--ones)" opacity="0.88"/></svg>
+
+          </button>
+          <button class="shape-btn" data-shape="water" aria-label="Water">
+            <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+              <path d="M14 3 C14 3 6 12 6 18 Q6 25 14 25 Q22 25 22 18 C22 12 14 3 14 3 Z" fill="var(--water)" opacity="0.9"/>
+              <ellipse cx="11" cy="15" rx="4" ry="6" fill="rgba(255,255,255,0.36)" transform="rotate(18 11 15)"/>
+            </svg>
+
+          </button>
+        </div>
+      </aside>
+
+      <div class="scene-wrap">
+        <button id="beadButton" class="bead-button-hit" aria-label="Pull the division bar lever"></button>
+        <svg id="scene-svg" viewBox="0 0 1040 660" preserveAspectRatio="xMidYMid meet" aria-label="Dividend over division machine over divisor receivers"></svg>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      dividend: 3,
+      divisor: 9,
+      shape: 'water',
+      running: false,
+      done: false,
+      processed: 0,
+      logged: 0,
+      shares: [],
+      wholes: [],
+      active: null,
+      regroup: null,
+      pulse: 0,
+      leverPull: 0,
+      leverDragging: false,
+      waterSimplify: null
+    };
+
+    const LIMITS = {
+      dividend: { min: 1, max: 12 },
+      divisor: { min: 1, max: 9 }
+    };
+
+    const SCENE = { w: 1040, h: 660 };
+    const VISUAL_Y_OFFSET = -96;
+    const MACHINE = { x: 80, y: 250, w: 680, h: 92, cx: 420, cy: 296 };
+    const LEDGER = { x: 884, y: 302 };
+    const INTAKE = { x: 420, y: 246 };
+    const CHAMBER = { x: 420, y: 296 };
+    const RECEIVER_BASE_Y = 466;
+    const PILE_BASE_Y = 548;
+
+    function svgEl(tag, attrs = {}) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+      return el;
+    }
+
+    function addStop(parent, offset, color, opacity) {
+      const stop = svgEl('stop', { offset });
+      stop.setAttribute('stop-color', color);
+      if (opacity !== undefined) stop.setAttribute('stop-opacity', opacity);
+      parent.appendChild(stop);
+    }
+
+    function addDefs(svg) {
+      const defs = svgEl('defs');
+      const bead = svgEl('radialGradient', { id: 'bead', cx: '35%', cy: '28%', r: '82%', fx: '32%', fy: '24%' });
+      addStop(bead, '0%', '#ffffff');
+      addStop(bead, '28%', '#f7f7f8');
+      addStop(bead, '48%', '#d9d9dd');
+      addStop(bead, '72%', '#acacb3');
+      addStop(bead, '100%', '#eeeeef');
+      defs.appendChild(bead);
+
+      const beadLinear = svgEl('linearGradient', { id: 'bead-linear', x1: '0%', y1: '0%', x2: '100%', y2: '100%' });
+      addStop(beadLinear, '0%', '#f0f1f4');
+      addStop(beadLinear, '20%', '#dedfe4');
+      addStop(beadLinear, '48%', '#b4b6bf');
+      addStop(beadLinear, '72%', '#cfd1d7');
+      addStop(beadLinear, '100%', '#f4f5f7');
+      defs.appendChild(beadLinear);
+
+      const slot = svgEl('linearGradient', { id: 'slot', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+      addStop(slot, '0%', '#303036');
+      addStop(slot, '100%', '#161619');
+      defs.appendChild(slot);
+
+      const chamberGlow = svgEl('radialGradient', { id: 'chamber-glow', cx: '50%', cy: '50%', r: '75%' });
+      addStop(chamberGlow, '0%', '#dce2ea', 0.38);
+      addStop(chamberGlow, '56%', '#ffffff', 0.08);
+      addStop(chamberGlow, '100%', '#ffffff', 0);
+      defs.appendChild(chamberGlow);
+
+      const shadow = svgEl('filter', { id: 'shadow', x: '-20%', y: '-45%', width: '140%', height: '190%' });
+      shadow.appendChild(svgEl('feDropShadow', { dx: '0', dy: '13', stdDeviation: '16', 'flood-color': 'rgba(0,0,0,0.14)' }));
+      defs.appendChild(shadow);
+
+      const smallShadow = svgEl('filter', { id: 'small-shadow', x: '-30%', y: '-30%', width: '160%', height: '170%' });
+      smallShadow.appendChild(svgEl('feDropShadow', { dx: '0', dy: '5', stdDeviation: '6', 'flood-color': 'rgba(0,0,0,0.12)' }));
+      defs.appendChild(smallShadow);
+
+      const blur = svgEl('filter', { id: 'blur-soft', x: '-50%', y: '-50%', width: '200%', height: '200%' });
+      blur.appendChild(svgEl('feGaussianBlur', { stdDeviation: '4' }));
+      defs.appendChild(blur);
+
+      svg.appendChild(defs);
+    }
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function shareLayout(n) {
+      if (n === 1) return [{ x: MACHINE.cx, y: RECEIVER_BASE_Y, pileY: PILE_BASE_Y, scale: 1.04, compact: false }];
+
+      const totals = { 2: 360, 3: 450, 4: 555, 5: 590, 6: 620, 7: 640, 8: 660, 9: 680 };
+      const total = totals[n] || 620;
+      const gap = total / (n - 1);
+      const start = MACHINE.cx - total / 2;
+      const compact = n >= 7;
+      const scale = n >= 8 ? 0.72 : n >= 7 ? 0.78 : n >= 6 ? 0.84 : n >= 5 ? 0.9 : 1;
+
+      return Array.from({ length: n }, (_, i) => {
+        const x = start + gap * i;
+        const centered = Math.abs(i - (n - 1) / 2) / ((n - 1) / 2 || 1);
+        const arcDrop = n >= 5 ? (1 - centered) * 18 : 0;
+        return { x, y: RECEIVER_BASE_Y + arcDrop, pileY: PILE_BASE_Y + arcDrop, scale, compact };
+      });
+    }
+
+    function shareXs(n) {
+      return shareLayout(n).map(d => d.x);
+    }
+
+    function dimsFor(shape, size = 'whole') {
+      if (size === 'preview') {
+        return shape === 'rect' ? { w: 92, h: 32 } : shape === 'puck' ? { w: 38, h: 38 } : shape === 'water' ? { w: 72, h: 34 } : { w: 118, h: 18 };
+      }
+      if (size === 'piece') {
+        return shape === 'rect' ? { w: 28, h: 22 } : shape === 'puck' ? { w: 25, h: 25 } : shape === 'water' ? { w: 22, h: 26 } : { w: 35, h: 13 };
+      }
+      return shape === 'rect' ? { w: 66, h: 42 } : shape === 'puck' ? { w: 48, h: 48 } : shape === 'water' ? { w: 64, h: 32 } : { w: 94, h: 22 };
+    }
+
+    function dividendPositions() {
+      const n = state.dividend;
+      const shape = state.shape;
+
+      // Water is now staged as actual unit buckets/cups. The source units
+      // match the receiving unit containers below; otherwise the model lies.
+      if (shape === 'water') {
+        const lanes = shareLayout(state.divisor);
+        const sample = lanes[0] || { scale: 1, compact: false };
+        const baseW = sample.compact ? 42 : 56;
+        const baseH = sample.compact ? 64 : 78;
+        const scale = sample.scale * (sample.compact ? 0.92 : 1);
+        const w = baseW * scale;
+        const h = baseH * scale;
+        const gap = Math.max(7, 10 * scale);
+        const maxCols = Math.max(1, Math.min(n, Math.floor(560 / (w + gap))));
+        const rows = Math.ceil(n / maxCols);
+        const groupW = maxCols * w + (maxCols - 1) * gap;
+        const groupH = rows * h + (rows - 1) * gap;
+        const ox = MACHINE.cx - groupW / 2;
+        const oy = 82 - groupH / 2;
+        return Array.from({ length: n }, (_, i) => {
+          const col = i % maxCols;
+          const row = Math.floor(i / maxCols);
+          return {
+            x: ox + col * (w + gap),
+            y: oy + row * (h + gap),
+            w,
+            h,
+            waterUnit: true,
+            tickCount: state.divisor
+          };
+        });
+      }
+
+      // Rods are intentionally staged as ONE continuous measurable length
+      // (rope, ribbon, string). Slabs and pucks stay as separate wholes
+      // (brownies, crackers, cookies, cakes).
+      if (shape === 'rod') {
+        const maxW = 560;
+        const idealW = 94;
+        const h = 22;
+        const segW = Math.max(42, Math.min(idealW, maxW / n));
+        const groupW = segW * n;
+        const ox = MACHINE.cx - groupW / 2;
+        const oy = 102 - h / 2;
+        return Array.from({ length: n }, (_, i) => ({
+          x: ox + i * segW,
+          y: oy,
+          w: segW,
+          h,
+          contiguous: true,
+          groupX: ox,
+          groupY: oy,
+          groupW,
+          segmentW: segW
+        }));
+      }
+
+      const dims = shape === 'rect'
+        ? { w: 66, h: 42, gapX: 14, gapY: 12, maxCols: 6 }
+        : { w: 48, h: 48, gapX: 13, gapY: 12, maxCols: 7 };
+      const cols = Math.min(n, dims.maxCols);
+      const rows = Math.ceil(n / cols);
+      const groupW = cols * dims.w + (cols - 1) * dims.gapX;
+      const groupH = rows * dims.h + (rows - 1) * dims.gapY;
+      const ox = MACHINE.cx - groupW / 2;
+      const oy = 102 - groupH / 2;
+      return Array.from({ length: n }, (_, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        return { x: ox + col * (dims.w + dims.gapX), y: oy + row * (dims.h + dims.gapY), w: dims.w, h: dims.h };
+      });
+    }
+
+    function drawBead(parent, cx, cy, r, extra = {}) {
+      const bead = svgEl('circle', { cx, cy, r, fill: 'url(#bead)', filter: 'url(#small-shadow)', ...extra });
+      const shine = svgEl('ellipse', { cx: cx - r * 0.29, cy: cy - r * 0.35, rx: r * 0.33, ry: r * 0.22, fill: 'rgba(255,255,255,0.74)', transform: `rotate(-25 ${cx - r * 0.29} ${cy - r * 0.35})` });
+      parent.append(bead, shine);
+    }
+
+    function jaggedPathVertical(x, y1, y2, amp, steps) {
+      let d = `M${x} ${y1}`;
+      for (let i = 1; i <= steps; i++) {
+        const y = y1 + ((y2 - y1) / steps) * i;
+        const dx = (i % 2 === 0 ? -amp : amp);
+        d += ` L${x + dx} ${y}`;
+      }
+      return d;
+    }
+
+    function jaggedSidePoints(x, y1, y2, amp, steps, side) {
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const y = y1 + ((y2 - y1) / steps) * i;
+        const wobble = i === 0 || i === steps ? 0 : (i % 2 === 0 ? -amp : amp) * side;
+        pts.push([x + wobble, y]);
+      }
+      return pts;
+    }
+
+    function cutPiecePath(w, h, rx, cutLeft, cutRight, amp = 2.2) {
+      const l = -w / 2, r = w / 2, t = -h / 2, b = h / 2;
+      if (rx > 0 && !cutLeft && !cutRight) {
+        return `M${l + rx} ${t} H${r - rx} Q${r} ${t} ${r} ${t + rx} V${b - rx} Q${r} ${b} ${r - rx} ${b} H${l + rx} Q${l} ${b} ${l} ${b - rx} V${t + rx} Q${l} ${t} ${l + rx} ${t} Z`;
+      }
+      let d = `M${l} ${t} H${r}`;
+      if (cutRight) {
+        const pts = jaggedSidePoints(r, t, b, amp, 7, 1).slice(1);
+        pts.forEach(([x,y]) => d += ` L${x} ${y}`);
+      } else {
+        d += ` V${b}`;
+      }
+      d += ` H${l}`;
+      if (cutLeft) {
+        const pts = jaggedSidePoints(l, b, t, amp, 7, -1).slice(1);
+        pts.forEach(([x,y]) => d += ` L${x} ${y}`);
+      } else {
+        d += ` V${t}`;
+      }
+      return d + ' Z';
+    }
+
+    function makeThing(shape, x, y, w, h, options = {}) {
+      const { opacity = 0.9, stroke = false, cutLines = 0, noShadow = false, jagged = false, className = '' } = options;
+      const g = svgEl('g', { transform: `translate(${x}, ${y})` });
+      if (className) g.setAttribute('class', className);
+
+      if (!noShadow) {
+        const shadow = svgEl(shape === 'puck' ? 'circle' : 'rect', shape === 'puck'
+          ? { cx: w / 2 + 3, cy: h / 2 + 7, r: Math.min(w, h) / 2, fill: 'rgba(220,20,60,0.14)' }
+          : { x: 3, y: 7, width: w, height: h, rx: shape === 'rod' ? h / 2 : 8, fill: 'rgba(220,20,60,0.14)' }
+        );
+        g.appendChild(shadow);
+      }
+
+      if (shape === 'water') {
+        const rx = Math.min(18, h / 2);
+        g.appendChild(svgEl('rect', { x: 0, y: 0, width: w, height: h, rx, fill: 'var(--water)', opacity, stroke: stroke ? 'rgba(255,255,255,0.7)' : 'none', 'stroke-width': stroke ? 2 : 0 }));
+        g.appendChild(svgEl('ellipse', { cx: w * 0.32, cy: h * 0.38, rx: w * 0.18, ry: h * 0.22, fill: 'rgba(255,255,255,0.34)', transform: `rotate(-18 ${w * 0.32} ${h * 0.38})` }));
+        g.appendChild(svgEl('rect', { x: Math.max(5, h * 0.25), y: Math.max(3, h * 0.16), width: Math.max(0, w - Math.max(10, h * 0.5)), height: Math.max(3, h * 0.18), rx: 999, fill: 'rgba(255,255,255,0.12)' }));
+      } else if (shape === 'rect') {
+        g.appendChild(svgEl('rect', { x: 0, y: 0, width: w, height: h, rx: 8, fill: 'var(--ones)', opacity, stroke: stroke ? 'rgba(255,255,255,0.55)' : 'none', 'stroke-width': stroke ? 2 : 0 }));
+        g.appendChild(svgEl('rect', { x: 5, y: 4, width: Math.max(0, w - 10), height: h * 0.34, rx: 5, fill: 'rgba(255,255,255,0.22)' }));
+        for (let i = 1; i <= cutLines; i++) {
+          const lx = (w / (cutLines + 1)) * i;
+          if (jagged) {
+            g.appendChild(svgEl('path', { d: jaggedPathVertical(lx, 4, h - 4, 2.3, 8), stroke: 'rgba(255,255,255,0.86)', 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }));
+          } else {
+            g.appendChild(svgEl('line', { x1: lx, y1: 4, x2: lx, y2: h - 4, stroke: 'rgba(255,255,255,0.78)', 'stroke-width': 2.2, 'stroke-linecap': 'round' }));
+          }
+        }
+      } else if (shape === 'puck') {
+        const r = Math.min(w, h) / 2;
+        g.appendChild(svgEl('circle', { cx: r, cy: r, r, fill: 'var(--ones)', opacity, stroke: stroke ? 'rgba(255,255,255,0.55)' : 'none', 'stroke-width': stroke ? 2 : 0 }));
+        g.appendChild(svgEl('ellipse', { cx: r * 0.72, cy: r * 0.62, rx: r * 0.42, ry: r * 0.26, fill: 'rgba(255,255,255,0.24)' }));
+        if (cutLines > 0) {
+          const pieces = cutLines + 1;
+          for (let i = 0; i < pieces; i++) {
+            const angle = -Math.PI / 2 + (Math.PI * 2 * i) / pieces;
+            const x2 = r + Math.cos(angle) * (r - 3);
+            const y2 = r + Math.sin(angle) * (r - 3);
+            g.appendChild(svgEl('line', { x1: r, y1: r, x2, y2, stroke: 'rgba(255,255,255,0.78)', 'stroke-width': 2.1, 'stroke-linecap': 'round' }));
+          }
+        }
+      } else {
+        g.appendChild(svgEl('rect', { x: 0, y: 0, width: w, height: h, rx: h / 2, fill: 'var(--ones)', opacity, stroke: stroke ? 'rgba(255,255,255,0.55)' : 'none', 'stroke-width': stroke ? 2 : 0 }));
+        g.appendChild(svgEl('rect', { x: h / 2, y: 3, width: Math.max(0, w - h), height: h * 0.34, rx: h / 4, fill: 'rgba(255,255,255,0.23)' }));
+        for (let i = 1; i <= cutLines; i++) {
+          const lx = (w / (cutLines + 1)) * i;
+          if (jagged) {
+            g.appendChild(svgEl('path', { d: jaggedPathVertical(lx, 3, h - 3, 1.6, 5), stroke: 'rgba(255,255,255,0.86)', 'stroke-width': 2.1, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }));
+          } else {
+            g.appendChild(svgEl('line', { x1: lx, y1: 3, x2: lx, y2: h - 3, stroke: 'rgba(255,255,255,0.78)', 'stroke-width': 2.1, 'stroke-linecap': 'round' }));
+          }
+        }
+      }
+      return g;
+    }
+
+    function sectorPath(cx, cy, r, start, end) {
+      const x1 = cx + Math.cos(start) * r;
+      const y1 = cy + Math.sin(start) * r;
+      const x2 = cx + Math.cos(end) * r;
+      const y2 = cy + Math.sin(end) * r;
+      const large = end - start > Math.PI ? 1 : 0;
+      return `M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+    }
+
+    function makePiece(shape, cx, cy, denom, index, options = {}) {
+      const { opacity = 0.9, scale = 1, rotate = 0, pieceWOverride = null, pieceHOverride = null } = options;
+      const g = svgEl('g', { transform: `translate(${cx}, ${cy}) scale(${scale}) rotate(${rotate})` });
+      if (shape === 'puck' && denom > 1) {
+        const r = (pieceWOverride || 28) / 2;
+        const start = -Math.PI / 2 + (Math.PI * 2 * index) / denom;
+        const end = -Math.PI / 2 + (Math.PI * 2 * (index + 1)) / denom;
+        g.appendChild(svgEl('path', { d: sectorPath(0, 0, r, start, end), fill: 'var(--ones)', opacity, stroke: 'rgba(255,255,255,0.52)', 'stroke-width': 1.4, 'stroke-linejoin': 'round' }));
+        g.appendChild(svgEl('circle', { cx: -3, cy: -4, r: 3, fill: 'rgba(255,255,255,0.18)' }));
+      } else {
+        const d = dimsFor(shape, 'piece');
+        const pieceW = pieceWOverride || (shape === 'rod' ? Math.max(18, 90 / denom) : Math.max(18, 58 / denom));
+        const h = pieceHOverride || d.h;
+        const cutLeft = denom > 1 && index > 0;
+        const cutRight = denom > 1 && index < denom - 1;
+        const rx = shape === 'rod' && !cutLeft && !cutRight ? h / 2 : Math.min(5, h * 0.25);
+        const path = cutPiecePath(pieceW, h, rx, cutLeft, cutRight, shape === 'rod' ? 1.4 : 2.25);
+        g.appendChild(svgEl('path', { d: path, fill: 'var(--ones)', opacity, stroke: 'rgba(255,255,255,0.48)', 'stroke-width': 1.15, 'stroke-linejoin': 'round' }));
+        g.appendChild(svgEl('rect', { x: -pieceW / 2 + 4, y: -h / 2 + 3, width: Math.max(0, pieceW - 8), height: h * 0.26, rx: 3, fill: 'rgba(255,255,255,0.20)' }));
+        if (cutLeft) g.appendChild(svgEl('path', { d: jaggedPathVertical(-pieceW / 2 + 1.5, -h / 2 + 2, h / 2 - 2, shape === 'rod' ? 0.9 : 1.25, 5), stroke: 'rgba(255,255,255,0.56)', 'stroke-width': 1.15, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }));
+        if (cutRight) g.appendChild(svgEl('path', { d: jaggedPathVertical(pieceW / 2 - 1.5, -h / 2 + 2, h / 2 - 2, shape === 'rod' ? 0.9 : 1.25, 5), stroke: 'rgba(255,255,255,0.56)', 'stroke-width': 1.15, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }));
+      }
+      return g;
+    }
+
+
+
+
+    function wholeDims(shape) {
+      if (shape === 'rect') return { w: 42, h: 27 };
+      if (shape === 'puck') return { w: 32, h: 32 };
+      if (shape === 'water') return { w: 42, h: 24 };
+      return { w: 58, h: 14 };
+    }
+
+    function wholeSlot(lane, shareIndex, wholeIndex) {
+      const remaining = state.shares[shareIndex] || 0;
+      const xShift = remaining > 0 ? -28 : 0;
+      const base = lane.compact ? lane.y + 39 : lane.y + 46;
+      const gapY = lane.compact ? 11 : 12;
+      return {
+        cx: lane.x + xShift,
+        cy: base - wholeIndex * gapY,
+        scale: lane.scale * (lane.compact ? 0.72 : 0.82)
+      };
+    }
+
+    function makeWholeResult(shape, cx, cy, options = {}) {
+      const { opacity = 0.92, scale = 1, rotate = 0 } = options;
+      const d = wholeDims(shape);
+      const g = svgEl('g', { transform: `translate(${cx}, ${cy}) scale(${scale}) rotate(${rotate})` });
+      if (shape === 'puck') {
+        const r = d.w / 2;
+        g.appendChild(svgEl('circle', { cx: 0, cy: 0, r, fill: 'var(--ones)', opacity, stroke: 'rgba(255,255,255,0.42)', 'stroke-width': 1.2 }));
+        g.appendChild(svgEl('ellipse', { cx: -5, cy: -6, rx: 6, ry: 4, fill: 'rgba(255,255,255,0.22)' }));
+      } else {
+        g.appendChild(svgEl('rect', { x: -d.w / 2, y: -d.h / 2, width: d.w, height: d.h, rx: shape === 'rod' ? d.h / 2 : 7, fill: 'var(--ones)', opacity, stroke: 'rgba(255,255,255,0.42)', 'stroke-width': 1.2 }));
+        g.appendChild(svgEl('rect', { x: -d.w / 2 + 5, y: -d.h / 2 + 4, width: d.w - 10, height: d.h * 0.3, rx: shape === 'rod' ? d.h / 4 : 4, fill: 'rgba(255,255,255,0.22)' }));
+      }
+      return g;
+    }
+
+    function neighborGapForLane(shareIndex, lane) {
+      const layouts = shareLayout(state.divisor);
+      const leftGap = shareIndex > 0 ? lane.x - layouts[shareIndex - 1].x : 240;
+      const rightGap = shareIndex < layouts.length - 1 ? layouts[shareIndex + 1].x - lane.x : 240;
+      return Math.max(76, Math.min(leftGap, rightGap));
+    }
+
+    function baseFractionPieceSize(shape, denom) {
+      // Each receiving container is the same visual unit as the whole object above.
+      // The denominator only partitions that unit; it does not resize the unit.
+      if (shape === 'rod') return { unitW: 94, unitH: 22, pieceW: Math.max(7, 94 / denom), h: 22, rx: 11, gapExtra: 0 };
+      if (shape === 'puck') return { unitW: 48, unitH: 48, pieceW: 48, h: 48, rx: 24, gapExtra: 10 };
+      if (shape === 'water') return { unitW: 56, unitH: 78, pieceW: 56, h: 78, rx: 9, gapExtra: 8 };
+      return { unitW: 66, unitH: 42, pieceW: Math.max(7, 66 / denom), h: 42, rx: 8, gapExtra: 8 };
+    }
+
+    function rowMetrics(lane, shareIndex, totalCount) {
+      const denom = Math.max(1, state.divisor);
+      const count = Math.max(1, totalCount || 1);
+      const compact = lane.compact;
+      const b = baseFractionPieceSize(state.shape, denom);
+      const neighborGap = neighborGapForLane(shareIndex, lane);
+      const unitCount = Math.max(1, Math.ceil(count / denom));
+      const unitGapBase = state.shape === 'puck' ? 12 : state.shape === 'rod' ? 8 : 9;
+      const naturalW = unitCount * b.unitW + (unitCount - 1) * unitGapBase;
+      const roomyCap = state.divisor <= 3 ? 260 : state.divisor <= 5 ? 220 : 178;
+      const maxRowWidth = Math.min(compact ? 128 : roomyCap, neighborGap * (compact ? 0.82 : 0.88));
+      const squeeze = naturalW <= 0 ? 1 : Math.max(0.38, Math.min(1, maxRowWidth / naturalW));
+      const hasWholes = (state.wholes[shareIndex] || 0) > 0;
+      const centerOffset = hasWholes ? (compact ? 23 : 34) : 0;
+      const unitW = b.unitW * squeeze;
+      const unitH = b.unitH * squeeze;
+      const pieceW = (state.shape === 'puck' ? b.unitW : b.pieceW) * squeeze;
+      const pieceH = b.h * squeeze;
+      const unitGap = unitGapBase * squeeze;
+      const totalW = unitCount * unitW + (unitCount - 1) * unitGap;
+      const xStart = lane.x + centerOffset - totalW / 2;
+      const y = lane.compact ? lane.y + 47 : lane.y + 52;
+      return { count, unitCount, xStart, y, unitW, unitH, unitGap, pieceW, pieceH, totalW, scale: squeeze, rx: b.rx * squeeze };
+    }
+
+    function receptacleMetrics(lane, shareIndex) {
+      const visibleCount = Math.max(state.shares[shareIndex] || 0, state.divisor, 1);
+      const m = rowMetrics(lane, shareIndex, visibleCount);
+      return { width: m.totalW, height: m.unitH };
+    }
+
+    function drawBreakLine(svg, x, y1, y2, amp = 1.9, opacity = 0.72) {
+      svg.appendChild(svgEl('path', {
+        d: jaggedPathVertical(x, y1, y2, amp, 8),
+        stroke: `rgba(255,255,255,${opacity})`,
+        'stroke-width': 1.55,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        fill: 'none'
+      }));
+    }
+
+    function drawUnitContainers(svg, lane, shareIndex, totalCount) {
+      if (state.shape === 'water') return;
+      const visibleCount = Math.max(totalCount || 0, state.divisor, 1);
+      const m = rowMetrics(lane, shareIndex, visibleCount);
+      const g = svgEl('g', { opacity: 0.92 });
+      for (let u = 0; u < m.unitCount; u++) {
+        const x = m.xStart + u * (m.unitW + m.unitGap);
+        const y = m.y - m.unitH / 2;
+        if (state.shape === 'puck') {
+          const r = m.unitW / 2;
+          g.appendChild(svgEl('circle', {
+            cx: x + r,
+            cy: m.y,
+            r,
+            fill: 'rgba(65,105,225,0.040)',
+            stroke: 'rgba(65,105,225,0.30)',
+            'stroke-width': Math.max(1.3, m.unitW * 0.045)
+          }));
+          g.appendChild(svgEl('circle', {
+            cx: x + r,
+            cy: m.y,
+            r: r * 0.78,
+            fill: 'none',
+            stroke: 'rgba(255,255,255,0.52)',
+            'stroke-width': Math.max(1, m.unitW * 0.026)
+          }));
+        } else {
+          const rx = state.shape === 'rod' ? m.unitH / 2 : Math.max(7, m.unitH * 0.18);
+          g.appendChild(svgEl('rect', {
+            x, y,
+            width: m.unitW,
+            height: m.unitH,
+            rx,
+            fill: 'rgba(65,105,225,0.045)',
+            stroke: 'rgba(65,105,225,0.30)',
+            'stroke-width': Math.max(1.3, m.unitH * 0.07)
+          }));
+          g.appendChild(svgEl('line', {
+            x1: x + Math.min(8, m.unitW * 0.12),
+            y1: y,
+            x2: x + m.unitW - Math.min(8, m.unitW * 0.12),
+            y2: y,
+            stroke: 'rgba(65,105,225,0.42)',
+            'stroke-width': Math.max(1.6, m.unitH * 0.09),
+            'stroke-linecap': 'round'
+          }));
+        }
+      }
+      svg.appendChild(g);
+    }
+
+    function drawSegmentedRun(svg, lane, shareIndex, totalCount, options = {}) {
+      const { startIndex = 0, opacity = 0.9 } = options;
+      const count = totalCount || 0;
+      if (count <= startIndex) return;
+      for (let k = startIndex; k < count; k++) {
+        const p = pileSlot(lane, shareIndex, k, count);
+        const isGlowPiece = canRegroupLane(shareIndex) && k < state.divisor;
+        const rot = state.shape === 'puck' ? 0 : 0;
+        svg.appendChild(makePiece(state.shape, p.x, p.y, state.divisor, p.pieceIndex, {
+          opacity: isGlowPiece ? 0.96 : opacity,
+          scale: p.scale,
+          rotate: rot,
+          pieceWOverride: p.pieceW / Math.max(0.01, p.scale),
+          pieceHOverride: p.pieceH / Math.max(0.01, p.scale)
+        }));
+      }
+    }
+
+    function drawCutterGuides(svg, shape, cx, cy, w, h, denom, t) {
+      if (denom <= 1) return;
+      const reveal = Math.min(1, Math.max(0, (t - 0.18) / 0.42));
+      if (reveal <= 0) return;
+      const alpha = Math.sin(reveal * Math.PI) * 0.88;
+      const g = svgEl('g', { opacity: alpha });
+
+      if (shape === 'puck') {
+        const r = Math.min(w, h) / 2 + 14;
+        for (let i = 0; i < denom; i++) {
+          const a = -Math.PI / 2 + (Math.PI * 2 * i) / denom;
+          g.appendChild(svgEl('line', {
+            x1: cx, y1: cy,
+            x2: cx + Math.cos(a) * r,
+            y2: cy + Math.sin(a) * r,
+            stroke: 'rgba(255,255,255,0.92)', 'stroke-width': 2.4,
+            'stroke-linecap': 'round'
+          }));
+        }
+      } else {
+        for (let i = 1; i < denom; i++) {
+          const x = cx - w / 2 + (w / denom) * i;
+          g.appendChild(svgEl('path', {
+            d: jaggedPathVertical(x, cy - h / 2 - 18, cy + h / 2 + 18, shape === 'rod' ? 1.6 : 2.4, 10),
+            stroke: 'rgba(255,255,255,0.94)', 'stroke-width': 2.4,
+            'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none'
+          }));
+          g.appendChild(svgEl('line', {
+            x1: x, y1: cy - h / 2 - 28, x2: x, y2: cy - h / 2 - 16,
+            stroke: 'rgba(29,29,31,0.38)', 'stroke-width': 2.2,
+            'stroke-linecap': 'round'
+          }));
+        }
+      }
+      svg.appendChild(g);
+    }
+
+
+    function canRegroupLane(i) {
+      return state.shape !== 'water' && state.done && !state.running && !state.regroup && state.divisor > 1 && (state.shares[i] || 0) >= state.divisor;
+    }
+
+    function anyRegroupable() {
+      return state.shares.some((_, i) => canRegroupLane(i));
+    }
+
+    function canMakeWaterSimplifier() {
+      return state.shape === 'water' && state.done && !state.running && state.dividend > 1 && state.dividend < state.divisor && state.divisor % state.dividend === 0;
+    }
+
+    function makeWaterSimplifier() {
+      return { n: state.dividend, d: state.divisor, trail: [{ n: state.dividend, d: state.divisor }], busy: false, animation: null };
+    }
+
+    function ensureWaterSimplifier() {
+      if (!canMakeWaterSimplifier()) return;
+      if (!state.waterSimplify) state.waterSimplify = makeWaterSimplifier();
+    }
+
+    function waterSimplifyCanStep() {
+      const s = state.waterSimplify;
+      if (!s || s.busy || s.n <= 1) return false;
+      const raw = s.d * (s.n - 1) / s.n;
+      return Math.abs(raw - Math.round(raw)) < 0.0001;
+    }
+
+    function waterSimplifyPending() {
+      return state.shape === 'water' && !!state.waterSimplify && (state.waterSimplify.busy || waterSimplifyCanStep());
+    }
+
+    function waterSimplifyCupPositions(n) {
+      const cx = 420;
+      const gap = n >= 5 ? 58 : n === 4 ? 72 : 92;
+      const start = cx - ((n - 1) * gap) / 2;
+      return Array.from({ length: n }, (_, i) => start + i * gap);
+    }
+
+    function drawWaterSimplifyFractionTrail(svg, s) {
+      if (!s || !s.trail.length) return;
+      const gap = 86;
+      const totalW = (s.trail.length - 1) * gap;
+      const startX = 420 - totalW / 2;
+      s.trail.forEach((f, i) => drawFraction(svg, startX + i * gap, 410, f.n, f.d, { scale: i === s.trail.length - 1 ? 0.74 : 0.54, opacity: i === s.trail.length - 1 ? 0.98 : 0.30, compact: true }));
+    }
+
+    function drawWaterSimplifyHelper(svg, x, y, t) {
+      const bob = Math.sin(Math.min(1, t) * Math.PI) * -10;
+      const g = svgEl('g', { transform: `translate(${x}, ${y + bob}) scale(0.78)`, opacity: 0.42 + 0.50 * Math.sin(Math.min(1, t) * Math.PI) });
+      g.appendChild(svgEl('circle', { cx: 0, cy: -42, r: 9, fill: 'none', stroke: 'rgba(65,105,225,0.76)', 'stroke-width': 4.5 }));
+      g.appendChild(svgEl('line', { x1: 0, y1: -32, x2: 0, y2: 3, stroke: 'rgba(65,105,225,0.76)', 'stroke-width': 4.5, 'stroke-linecap': 'round' }));
+      g.appendChild(svgEl('path', { d: 'M0 -24 L-18 -50 M0 -24 L18 -50', stroke: 'rgba(65,105,225,0.70)', 'stroke-width': 4.5, 'stroke-linecap': 'round', fill: 'none' }));
+      g.appendChild(svgEl('path', { d: 'M0 3 L-14 34 M0 3 L14 34', stroke: 'rgba(65,105,225,0.70)', 'stroke-width': 4.5, 'stroke-linecap': 'round', fill: 'none' }));
+      svg.appendChild(g);
+    }
+
+    function drawWaterSimplifyStream(svg, x1, y1, x2, y2, alpha) {
+      const mx = (x1 + x2) / 2;
+      const my = Math.min(y1, y2) - 28;
+      const d = `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`;
+      svg.appendChild(svgEl('path', { d, stroke: `rgba(100,210,255,${alpha})`, 'stroke-width': 7, 'stroke-linecap': 'round', fill: 'none', filter: 'url(#blur-soft)' }));
+      svg.appendChild(svgEl('path', { d, stroke: `rgba(255,255,255,${Math.min(0.7, alpha)})`, 'stroke-width': 2.4, 'stroke-linecap': 'round', fill: 'none' }));
+    }
+
+    function drawWaterSimplifyCup(svg, opts) {
+      const { cx, cy, w = 56, h = 104, denominator, fillFraction, glow = false, source = false, opacity = 1, rotate = 0, lift = 0, data = false } = opts;
+      const attrs = { transform: `translate(${cx}, ${cy - lift}) rotate(${rotate})`, opacity, style: data ? 'cursor:pointer' : 'pointer-events:none' };
+      if (data) attrs['data-water-simplify'] = '1';
+      const g = svgEl('g', attrs);
+      if (glow) g.appendChild(svgEl('rect', { x: -w / 2 - 10, y: -h / 2 - 10, width: w + 20, height: h + 20, rx: 18, fill: 'rgba(255,159,10,0.09)', stroke: 'rgba(255,159,10,0.45)', 'stroke-width': 2.5, class: 'lever-pulse' }));
+      const innerPadX = 8, innerPadTop = 10, innerPadBottom = 9;
+      const innerW = w - innerPadX * 2, innerH = h - innerPadTop - innerPadBottom;
+      const bottom = h / 2 - innerPadBottom;
+      const fillH = innerH * Math.max(0, Math.min(1, fillFraction));
+      const fillY = bottom - fillH;
+      g.appendChild(svgEl('ellipse', { cx: 0, cy: h / 2 + 7, rx: w * 0.48, ry: 6, fill: 'rgba(100,210,255,0.10)' }));
+      g.appendChild(svgEl('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 9, fill: 'rgba(255,255,255,0.92)', stroke: source ? 'rgba(255,159,10,0.46)' : 'rgba(65,105,225,0.36)', 'stroke-width': 2.8 }));
+      g.appendChild(svgEl('line', { x1: -w / 2 + 7, y1: -h / 2, x2: w / 2 - 7, y2: -h / 2, stroke: 'rgba(65,105,225,0.56)', 'stroke-width': 3.4, 'stroke-linecap': 'round' }));
+      g.appendChild(svgEl('rect', { x: -innerW / 2, y: -h / 2 + innerPadTop, width: innerW, height: innerH, rx: 6, fill: 'rgba(255,255,255,0.26)', stroke: 'rgba(255,255,255,0.32)', 'stroke-width': 1 }));
+      if (fillH > 0.5) {
+        g.appendChild(svgEl('rect', { x: -innerW / 2, y: fillY, width: innerW, height: fillH, rx: 5, fill: 'rgba(100,210,255,0.58)' }));
+        g.appendChild(svgEl('line', { x1: -innerW / 2 + 4, y1: fillY, x2: innerW / 2 - 4, y2: fillY, stroke: 'rgba(255,255,255,0.58)', 'stroke-width': 2.4, 'stroke-linecap': 'round' }));
+      }
+      for (let i = 1; i < denominator; i++) {
+        const ty = bottom - (innerH / denominator) * i;
+        g.appendChild(svgEl('line', { x1: -innerW / 2 + 4, y1: ty, x2: innerW / 2 - 4, y2: ty, stroke: 'rgba(65,105,225,0.28)', 'stroke-width': 1.1, 'stroke-linecap': 'round' }));
+      }
+      svg.appendChild(g);
+    }
+
+    function unitPourProgress(anim, targetIndex) {
+      if (!anim) return 0;
+      const m = anim.targets.length;
+      const t = anim.t;
+      if (m === 1) {
+        return easeInOut(Math.max(0, Math.min(1, (t - 0.30) / 0.42)));
+      }
+      const windows = [
+        [0.24, 0.47],
+        [0.64, 0.87]
+      ];
+      const w = windows[targetIndex] || [0.24, 0.47];
+      return easeInOut(Math.max(0, Math.min(1, (t - w[0]) / (w[1] - w[0]))));
+    }
+
+    function activePourTargetIndex(anim) {
+      if (!anim) return -1;
+      const m = anim.targets.length;
+      const t = anim.t;
+      if (m === 1) return (t >= 0.30 && t <= 0.76) ? 0 : -1;
+      if (t >= 0.24 && t <= 0.49) return 0;
+      if (t >= 0.64 && t <= 0.89) return 1;
+      return -1;
+    }
+
+    function drawWaterSimplification(svg) {
+      ensureWaterSimplifier();
+      const s = state.waterSimplify;
+      if (!s) return;
+
+      const panel = svgEl('g', { opacity: 1 });
+      panel.appendChild(svgEl('rect', { x: 226, y: 364, width: 388, height: 206, rx: 34, fill: 'rgba(255,255,255,0.90)', stroke: 'rgba(100,126,160,0.09)', 'stroke-width': 1.2, filter: 'url(#small-shadow)' }));
+      panel.appendChild(svgEl('ellipse', { cx: 420, cy: 528, rx: 150, ry: 11, fill: 'rgba(100,210,255,0.08)' }));
+      svg.appendChild(panel);
+
+      const cy = 494;
+      const anim = s.animation;
+      const activeNum = anim ? anim.fromN : s.n;
+      const activeDen = anim ? anim.fromD : s.d;
+      const xs = waterSimplifyCupPositions(activeNum);
+      const sourceIndex = anim ? anim.sourceIndex : (activeNum === 2 ? 0 : Math.floor(activeNum / 2));
+      const targets = anim ? anim.targets : xs.map((_, i) => i).filter(i => i !== sourceIndex);
+      const targetProgress = targets.map((_, i) => anim ? unitPourProgress(anim, i) : 0);
+      const oldFill = 1 / activeDen;
+      const finalFill = anim ? 1 / anim.nextD : 1 / activeDen;
+      const totalProgress = targetProgress.reduce((a, b) => a + b, 0);
+      const activeTargetSlot = activePourTargetIndex(anim);
+
+      let sourceDrawX = xs[sourceIndex];
+      let sourceLift = 0;
+      let sourceRotate = 0;
+      let sourceOpacity = 1;
+
+      if (anim) {
+        const t = anim.t;
+        sourceLift = 112 * easeOutCubic(Math.max(0, Math.min(1, t / 0.18)));
+        sourceOpacity = 1 - Math.max(0, t - 0.92) / 0.08;
+
+        if (targets.length === 1) {
+          const tx = xs[targets[0]];
+          const travel = easeInOut(Math.max(0, Math.min(1, (t - 0.14) / 0.18)));
+          sourceDrawX = lerp(xs[sourceIndex], tx + (tx > xs[sourceIndex] ? -42 : 42), travel);
+          const tip = Math.sin(Math.max(0, Math.min(1, (t - 0.30) / 0.42)) * Math.PI);
+          sourceRotate = (tx > xs[sourceIndex] ? 32 : -32) * tip;
+        } else {
+          const tx1 = xs[targets[0]];
+          const tx2 = xs[targets[1]];
+          if (t < 0.54) {
+            const travel = easeInOut(Math.max(0, Math.min(1, (t - 0.14) / 0.12)));
+            sourceDrawX = lerp(xs[sourceIndex], tx1 + (tx1 > xs[sourceIndex] ? -44 : 44), travel);
+            const tip = Math.sin(Math.max(0, Math.min(1, (t - 0.24) / 0.25)) * Math.PI);
+            sourceRotate = (tx1 > xs[sourceIndex] ? 31 : -31) * tip;
+          } else if (t < 0.64) {
+            const travel = easeInOut(Math.max(0, Math.min(1, (t - 0.54) / 0.10)));
+            const x1 = tx1 + (tx1 > xs[sourceIndex] ? -44 : 44);
+            const x2 = tx2 + (tx2 > xs[sourceIndex] ? -44 : 44);
+            sourceDrawX = lerp(x1, x2, travel);
+            sourceRotate = 0;
+          } else {
+            const tx = tx2;
+            sourceDrawX = tx + (tx > xs[sourceIndex] ? -44 : 44);
+            const tip = Math.sin(Math.max(0, Math.min(1, (t - 0.64) / 0.25)) * Math.PI);
+            sourceRotate = (tx > xs[sourceIndex] ? 31 : -31) * tip;
+          }
+        }
+      }
+
+      xs.forEach((x, i) => {
+        const isSource = i === sourceIndex;
+        const targetSlot = targets.indexOf(i);
+        const isTarget = targetSlot !== -1;
+        let fill = oldFill;
+        let lift = 0;
+        let rotate = 0;
+        let opacity = 1;
+        let drawX = x;
+        let denominator = activeDen;
+
+        if (anim) {
+          if (isSource) {
+            fill = oldFill * Math.max(0, 1 - (totalProgress / Math.max(1, targets.length)));
+            lift = sourceLift;
+            rotate = sourceRotate;
+            opacity = Math.max(0, sourceOpacity);
+            drawX = sourceDrawX;
+          } else if (isTarget) {
+            fill = lerp(oldFill, finalFill, targetProgress[targetSlot]);
+            denominator = anim.t > 0.88 ? anim.nextD : activeDen;
+          }
+        }
+
+        drawWaterSimplifyCup(svg, {
+          cx: drawX,
+          cy,
+          w: 58,
+          h: 104,
+          denominator,
+          fillFraction: fill,
+          glow: !anim && waterSimplifyCanStep() && isSource,
+          source: isSource,
+          opacity,
+          lift,
+          rotate,
+          data: !anim && waterSimplifyCanStep() && isSource
+        });
+      });
+
+      if (anim) {
+        const t = anim.t;
+        const helperAlpha = Math.max(0, Math.min(1, Math.sin(Math.min(1, t / 0.18) * Math.PI / 2))) * (1 - Math.max(0, t - 0.94) / 0.06);
+        if (helperAlpha > 0.02) {
+          drawWaterSimplifyHelper(svg, sourceDrawX, cy + 54, Math.min(1, t * 1.2));
+        }
+
+        if (activeTargetSlot !== -1) {
+          const ti = targets[activeTargetSlot];
+          const tx = xs[ti];
+          const phaseP = targetProgress[activeTargetSlot];
+          const alpha = Math.sin(phaseP * Math.PI) * 0.82;
+          const sx = sourceDrawX + (tx > sourceDrawX ? 22 : -22);
+          drawWaterSimplifyStream(svg, sx, cy - sourceLift - 16, tx, cy - 36, alpha);
+        }
+      }
+
+      drawWaterSimplifyFractionTrail(svg, s);
+    }
+
+    async function startWaterSimplifyStep() {
+      const s = state.waterSimplify;
+      if (!waterSimplifyCanStep()) return;
+      s.busy = true;
+      const fromN = s.n, fromD = s.d;
+      const nextN = fromN - 1;
+      const nextD = Math.round(fromD * nextN / fromN);
+      const sourceIndex = fromN === 2 ? 0 : Math.floor(fromN / 2);
+      const targets = Array.from({ length: fromN }, (_, i) => i).filter(i => i !== sourceIndex);
+      const duration = targets.length === 1 ? 2400 : 3800;
+
+      await new Promise(resolve => {
+        const start = performance.now();
+        function frame(now) {
+          const t = Math.min(1, (now - start) / duration);
+          s.animation = { t, fromN, fromD, nextN, nextD, sourceIndex, targets };
+          renderScene();
+          if (t < 1) requestAnimationFrame(frame);
+          else resolve();
+        }
+        requestAnimationFrame(frame);
+      });
+
+      s.n = nextN;
+      s.d = nextD;
+      s.trail.push({ n: nextN, d: nextD });
+      s.animation = null;
+      s.busy = false;
+      renderScene();
+    }
+
+    function regroupGroupBounds(lane, shareIndex) {
+      const count = state.shares[shareIndex] || 0;
+      const denom = Math.min(state.divisor, count);
+      if (state.shape === 'rod') {
+        const m = rowMetrics(lane, shareIndex, count);
+        return {
+          x1: m.xStart - 9,
+          y1: m.y - m.pieceH / 2 - 10,
+          x2: m.xStart + denom * m.pieceW + 9,
+          y2: m.y + m.pieceH / 2 + 10
+        };
+      }
+      const d = dimsFor(state.shape, 'piece');
+      const pts = [];
+      for (let k = 0; k < denom; k++) {
+        const p = pileSlot(lane, shareIndex, k, count);
+        const pieceW = p.pieceW || d.w;
+        const pieceH = p.pieceH || d.h;
+        pts.push({ x1: p.x - pieceW / 2 - 7, y1: p.y - pieceH / 2 - 7, x2: p.x + pieceW / 2 + 7, y2: p.y + pieceH / 2 + 7 });
+      }
+      return {
+        x1: Math.min(...pts.map(p => p.x1)),
+        y1: Math.min(...pts.map(p => p.y1)),
+        x2: Math.max(...pts.map(p => p.x2)),
+        y2: Math.max(...pts.map(p => p.y2))
+      };
+    }
+
+    function drawFraction(svg, x, y, numerator, denominator, options = {}) {
+      const {
+        scale = 1,
+        opacity = 1,
+        ghost = false,
+        whole = null,
+        compact = false
+      } = options;
+      const numeratorColor = state.shape === 'water' ? 'var(--water-deep)' : 'var(--ones)';
+      const g = svgEl('g', { transform: `translate(${x}, ${y}) scale(${scale})`, opacity });
+      if (whole !== null && whole !== undefined && whole > 0) {
+        const wholeText = svgEl('text', {
+          x: compact ? -48 : -62,
+          y: 10,
+          'text-anchor': 'middle',
+          fill: numeratorColor,
+          'font-family': 'Lexend, sans-serif',
+          'font-size': compact ? 30 : 38,
+          'font-weight': 900,
+          'letter-spacing': '-0.08em',
+          opacity: ghost ? 0.34 : 0.92
+        });
+        wholeText.textContent = whole;
+        g.appendChild(wholeText);
+      }
+
+      const numText = numerator === 0 || numerator === null || numerator === undefined ? '' : String(numerator);
+      if (numText) {
+        const num = svgEl('text', {
+          x: 0,
+          y: compact ? -14 : -46,
+          'text-anchor': 'middle',
+          fill: numeratorColor,
+          'font-family': 'Lexend, sans-serif',
+          'font-size': compact ? 24 : 96,
+          'font-weight': 900,
+          'letter-spacing': '-0.08em',
+          opacity: ghost ? 0.3 : 0.96
+        });
+        num.textContent = numText;
+        g.appendChild(num);
+      } else {
+        drawBead(g, 0, compact ? -24 : -48, compact ? 4 : 7, { opacity: '0.18' });
+      }
+
+      const barW = compact ? 42 : 154;
+      const barY = compact ? -3 : 4;
+      g.appendChild(svgEl('rect', {
+        x: -barW / 2,
+        y: barY,
+        width: barW,
+        height: compact ? 5 : 12,
+        rx: compact ? 2.5 : 6,
+        fill: 'url(#bead-linear)',
+        opacity: ghost ? 0.28 : 0.9,
+        filter: compact ? '' : 'url(#small-shadow)'
+      }));
+
+      const den = svgEl('text', {
+        x: 0,
+        y: compact ? 29 : 92,
+        'text-anchor': 'middle',
+        fill: 'var(--tens)',
+        'font-family': 'Lexend, sans-serif',
+        'font-size': compact ? 24 : 96,
+        'font-weight': 900,
+        'letter-spacing': '-0.08em',
+        opacity: ghost ? 0.3 : 0.96
+      });
+      den.textContent = denominator;
+      g.appendChild(den);
+      svg.appendChild(g);
+      return g;
+    }
+
+    function drawLargeLedger(svg) {
+      const x = LEDGER.x;
+      const y = LEDGER.y;
+      const simplifying = state.shape === 'water' && !!state.waterSimplify;
+      svg.appendChild(svgEl('ellipse', {
+        cx: x,
+        cy: y + 8,
+        rx: 126,
+        ry: 188,
+        fill: simplifying ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.38)',
+        stroke: 'rgba(0,0,0,0.028)',
+        'stroke-width': 1
+      }));
+      drawFraction(svg, x, y, state.logged, state.divisor, { scale: 1, opacity: state.logged ? (simplifying ? 0.56 : 1) : 0.72 });
+    }
+
+    function drawLocalRegroupLedger(svg, lane, shareIndex) {
+      const wholeCount = state.wholes[shareIndex] || 0;
+      if (wholeCount <= 0) return;
+      const numerator = state.shares[shareIndex] || 0;
+      const compact = lane.compact || state.divisor >= 5;
+      const side = state.divisor === 1 ? 1 : (shareIndex < (state.divisor - 1) / 2 ? -1 : 1);
+      const xOffset = side * (compact ? 50 : 82);
+      const yOffset = compact ? 50 : 54;
+      const x = lane.x + xOffset;
+      const y = lane.y + yOffset;
+      const g = svgEl('g', {});
+      svg.appendChild(g);
+      g.appendChild(svgEl('rect', {
+        x: x - (compact ? 48 : 58),
+        y: y - (compact ? 28 : 36),
+        width: compact ? 78 : 96,
+        height: compact ? 64 : 78,
+        rx: 16,
+        fill: 'rgba(255,255,255,0.76)',
+        stroke: 'rgba(0,0,0,0.035)',
+        'stroke-width': 1,
+        filter: 'url(#small-shadow)'
+      }));
+      if (numerator <= 0) {
+        const t = svgEl('text', {
+          x,
+          y: y + 9,
+          'text-anchor': 'middle',
+          fill: 'var(--ones)',
+          'font-family': 'Lexend, sans-serif',
+          'font-size': compact ? 25 : 32,
+          'font-weight': 900,
+          'letter-spacing': '-0.08em',
+          opacity: 0.92
+        });
+        t.textContent = wholeCount;
+        g.appendChild(t);
+      } else {
+        drawFraction(g, x + (compact ? 8 : 10), y - 1, numerator, state.divisor, { whole: wholeCount, compact: true, scale: compact ? 0.82 : 1 });
+      }
+    }
+
+    function drawDividendRun(svg, pos, activeIndex, nextIndex) {
+      if (!pos.length) return false;
+      if (!pos[0].contiguous || state.shape !== 'rod') return false;
+
+      const firstVisible = Math.max(0, state.processed + (activeIndex === state.processed ? 1 : 0));
+      if (firstVisible >= state.dividend) return true;
+
+      const first = pos[firstVisible];
+      const last = pos[state.dividend - 1];
+      const x = first.x;
+      const y = first.y;
+      const h = first.h;
+      const w = (last.x + last.w) - first.x;
+      const rx = state.shape === 'rod' ? h / 2 : 10;
+      const opacity = state.running ? 0.74 : 0.92;
+
+      if (nextIndex >= firstVisible && nextIndex < state.dividend && !state.running) {
+        const p = pos[nextIndex];
+        svg.appendChild(svgEl('ellipse', {
+          cx: p.x + p.w / 2, cy: p.y + p.h / 2 + 4,
+          rx: p.w * 0.72, ry: p.h * 0.86,
+          fill: 'rgba(220,20,60,0.16)', class: 'ready-halo', filter: 'url(#blur-soft)'
+        }));
+      }
+
+      const g = svgEl('g', {});
+      g.appendChild(svgEl('rect', { x: x + 4, y: y + 8, width: w, height: h, rx, fill: 'rgba(220,20,60,0.13)', filter: 'url(#blur-soft)' }));
+      g.appendChild(svgEl('rect', { x, y, width: w, height: h, rx, fill: 'var(--ones)', opacity, stroke: 'rgba(255,255,255,0.38)', 'stroke-width': 1.4 }));
+      g.appendChild(svgEl('rect', { x: x + Math.min(10, h * 0.42), y: y + Math.min(5, h * 0.20), width: Math.max(0, w - Math.min(20, h * 0.84)), height: h * 0.30, rx: Math.max(4, h * 0.18), fill: 'rgba(255,255,255,0.22)' }));
+
+      // Hershey-bar snap points: boundaries between the whole units.
+      for (let i = firstVisible + 1; i < state.dividend; i++) {
+        const bx = pos[i].x;
+        drawBreakLine(g, bx, y + 4, y + h - 4, state.shape === 'rod' ? 1.15 : 1.75, 0.74);
+        g.appendChild(svgEl('line', { x1: bx, y1: y + 1, x2: bx, y2: y + Math.min(7, h * 0.22), stroke: 'rgba(29,29,31,0.18)', 'stroke-width': 1.2, 'stroke-linecap': 'round' }));
+        g.appendChild(svgEl('line', { x1: bx, y1: y + h - Math.min(7, h * 0.22), x2: bx, y2: y + h - 1, stroke: 'rgba(29,29,31,0.18)', 'stroke-width': 1.2, 'stroke-linecap': 'round' }));
+      }
+      svg.appendChild(g);
+      return true;
+    }
+
+    function drawWaterSource(svg, pos, activeIndex, nextIndex) {
+      // Top water objects are the same unit containers as the receiver buckets.
+      // They are not a decorative giant jug; each one is one measurable whole.
+      pos.forEach((p, i) => {
+        if (i < state.processed) return;
+        if (i === activeIndex) return;
+        const b = {
+          cx: p.x + p.w / 2,
+          cy: p.y + p.h / 2,
+          w: p.w,
+          h: p.h,
+          fill: 1,
+          tickCount: Math.max(1, state.divisor)
+        };
+        if (!state.running && !state.done && i === nextIndex) {
+          svg.appendChild(svgEl('ellipse', { cx: b.cx, cy: b.cy + b.h * 0.08, rx: b.w * 0.72, ry: b.h * 0.62, fill: 'rgba(100,210,255,0.18)', class: 'ready-halo', filter: 'url(#blur-soft)' }));
+        }
+        drawSingleWaterBucket(svg, b);
+      });
+    }
+
+    function waterPipeGeometry(lanes) {
+      const xs = lanes.map(l => l.x);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const mainY = 382;
+      const stemTop = 338;
+      const stemX = MACHINE.cx;
+      return { minX, maxX, mainY, stemTop, stemX };
+    }
+
+    function waterBucketLayout(lane, shareIndex, shareCount = null) {
+      const denom = Math.max(1, state.divisor);
+      const count = shareCount === null ? (state.shares[shareIndex] || 0) : Math.max(0, shareCount);
+      const fullBuckets = Math.floor(count / denom);
+      const remainder = count % denom;
+      const remainingSource = state.dividend - state.processed - (state.active ? 1 : 0);
+      const willNeedAnother = state.running && remainingSource > 0;
+      const showActive = remainder > 0 || count === 0 || (fullBuckets > 0 && willNeedAnother);
+      const bucketCount = Math.max(1, fullBuckets + (showActive ? 1 : 0));
+      const neighborGap = neighborGapForLane(shareIndex, lane);
+      const baseW = lane.compact ? 42 : 56;
+      const baseH = lane.compact ? 64 : 78;
+      const gap = lane.compact ? 5 : 7;
+      const naturalW = bucketCount * baseW + (bucketCount - 1) * gap;
+      const cap = Math.max(64, neighborGap * (lane.compact ? 0.82 : 0.9));
+      const rowScale = Math.max(0.58, Math.min(1, cap / naturalW));
+      const scale = lane.scale * (lane.compact ? 0.9 : 1) * rowScale;
+      const totalW = naturalW * scale;
+      const startX = lane.x - totalW / 2;
+      const cy = lane.y + (lane.compact ? 55 : 64);
+      const buckets = [];
+      for (let i = 0; i < bucketCount; i++) {
+        let fill = 0;
+        let kind = 'empty';
+        if (i < fullBuckets) { fill = 1; kind = 'full'; }
+        else if (i === fullBuckets && remainder > 0) { fill = remainder / denom; kind = 'partial'; }
+        else if (i === fullBuckets && count === 0) { fill = 0; kind = 'empty'; }
+        else if (i === fullBuckets && willNeedAnother) { fill = 0; kind = 'new'; }
+        buckets.push({
+          cx: startX + (i * (baseW + gap) + baseW / 2) * scale,
+          cy,
+          w: baseW * scale,
+          h: baseH * scale,
+          fill,
+          index: i,
+          kind,
+          pop: kind === 'new',
+          tickCount: denom
+        });
+      }
+      return buckets;
+    }
+
+    function activeWaterBucketTarget(lane, shareIndex, nextCount = null) {
+      const denom = Math.max(1, state.divisor);
+      const count = nextCount === null ? (state.shares[shareIndex] || 0) : Math.max(0, nextCount);
+      const buckets = waterBucketLayout(lane, shareIndex, count);
+      const rawIndex = count <= 0 ? 0 : Math.floor((count - 1) / denom);
+      const index = Math.max(0, Math.min(buckets.length - 1, rawIndex));
+      const b = buckets[index];
+      return { x: b.cx, y: b.cy - b.h / 2 + 8, bucket: b };
+    }
+
+    function nextWaterBucketTarget(lane, shareIndex) {
+      return activeWaterBucketTarget(lane, shareIndex, (state.shares[shareIndex] || 0) + 1);
+    }
+
+    function drawSingleWaterBucket(parent, b) {
+      const g = svgEl('g', { transform: `translate(${b.cx}, ${b.cy})`, class: b.pop ? 'water-bucket-pop' : '' });
+      const w = b.w;
+      const h = b.h;
+      const bodyRx = Math.max(5, w * 0.13);
+      const padX = Math.max(6, w * 0.14);
+      const padTop = Math.max(8, h * 0.14);
+      const padBottom = Math.max(7, h * 0.12);
+      const innerW = w - padX * 2;
+      const innerH = h - padTop - padBottom;
+      const innerTop = -h / 2 + padTop;
+      const bottomY = h / 2 - padBottom;
+      const fillH = innerH * Math.max(0, Math.min(1, b.fill));
+      const fillY = bottomY - fillH;
+
+      g.appendChild(svgEl('ellipse', { cx: 0, cy: h / 2 + 7, rx: w * 0.48, ry: Math.max(4, h * 0.08), fill: 'rgba(100,210,255,0.08)' }));
+
+      // Straight-sided receiving bucket / quart cup.
+      g.appendChild(svgEl('rect', {
+        x: -w / 2,
+        y: -h / 2,
+        width: w,
+        height: h,
+        rx: bodyRx,
+        fill: 'rgba(255,255,255,0.70)',
+        stroke: 'rgba(65,105,225,0.34)',
+        'stroke-width': Math.max(1.7, w * 0.043)
+      }));
+
+      // Flat open rim.
+      g.appendChild(svgEl('line', {
+        x1: -w / 2 + w * 0.12,
+        y1: -h / 2,
+        x2: w / 2 - w * 0.12,
+        y2: -h / 2,
+        stroke: 'rgba(65,105,225,0.58)',
+        'stroke-width': Math.max(2.4, w * 0.055),
+        'stroke-linecap': 'round'
+      }));
+
+      // Interior panel keeps the water fill visually contained.
+      g.appendChild(svgEl('rect', {
+        x: -innerW / 2,
+        y: innerTop,
+        width: innerW,
+        height: innerH,
+        rx: Math.max(4, bodyRx * 0.72),
+        fill: 'rgba(255,255,255,0.20)',
+        stroke: 'rgba(255,255,255,0.25)',
+        'stroke-width': Math.max(0.7, w * 0.012)
+      }));
+
+      if (fillH > 0.5) {
+        g.appendChild(svgEl('rect', {
+          x: -innerW / 2,
+          y: fillY,
+          width: innerW,
+          height: fillH,
+          rx: Math.max(3.5, bodyRx * 0.62),
+          fill: 'rgba(100,210,255,0.56)',
+          class: b.fill >= 1 ? 'water-full' : ''
+        }));
+        g.appendChild(svgEl('line', {
+          x1: -innerW / 2 + 4,
+          y1: fillY,
+          x2: innerW / 2 - 4,
+          y2: fillY,
+          stroke: 'rgba(255,255,255,0.44)',
+          'stroke-width': Math.max(1.8, h * 0.035),
+          'stroke-linecap': 'round'
+        }));
+      }
+
+      for (let i = 1; i < b.tickCount; i++) {
+        const ty = bottomY - (innerH / b.tickCount) * i;
+        g.appendChild(svgEl('line', { x1: -innerW / 2 + 4, y1: ty, x2: innerW / 2 - 4, y2: ty, stroke: 'rgba(65,105,225,0.25)', 'stroke-width': Math.max(0.8, w * 0.018), 'stroke-linecap': 'round' }));
+      }
+      parent.appendChild(g);
+    }
+
+    function drawWaterPipes(svg, lanes) {
+      const g = waterPipeGeometry(lanes);
+      const flowing = state.active && state.active.phase === 'drop';
+      const pulse = flowing ? 0.5 + Math.sin((state.active.t || 0) * Math.PI) * 0.5 : 0;
+      const pipeStroke = 'rgba(126,136,152,0.30)';
+      const glassStroke = 'rgba(255,255,255,0.54)';
+      svg.appendChild(svgEl('path', { d: `M${g.stemX} ${g.stemTop} L${g.stemX} ${g.mainY} M${g.minX} ${g.mainY} L${g.maxX} ${g.mainY}`, stroke: pipeStroke, 'stroke-width': 18, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }));
+      svg.appendChild(svgEl('path', { d: `M${g.stemX} ${g.stemTop} L${g.stemX} ${g.mainY} M${g.minX} ${g.mainY} L${g.maxX} ${g.mainY}`, stroke: glassStroke, 'stroke-width': 6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none', opacity: 0.38 }));
+      lanes.forEach((lane, i) => {
+        const target = state.active && state.active.phase === 'drop' ? nextWaterBucketTarget(lane, i) : activeWaterBucketTarget(lane, i);
+        const top = g.mainY;
+        const junctionY = lane.y + (lane.compact ? 13 : 27);
+        const d = `M${lane.x} ${top} C${lane.x} ${top + 22} ${lane.x} ${junctionY - 24} ${lane.x} ${junctionY} Q${lane.x} ${target.y - 18} ${target.x} ${target.y}`;
+        svg.appendChild(svgEl('path', { d, stroke: pipeStroke, 'stroke-width': 15, 'stroke-linecap': 'round', fill: 'none' }));
+        svg.appendChild(svgEl('path', { d, stroke: glassStroke, 'stroke-width': 4.5, 'stroke-linecap': 'round', fill: 'none', opacity: 0.32 }));
+      });
+      if (flowing) {
+        const a = 0.38 + pulse * 0.52;
+        svg.appendChild(svgEl('path', { d: `M${g.stemX} ${g.stemTop} L${g.stemX} ${g.mainY} M${g.minX} ${g.mainY} L${g.maxX} ${g.mainY}`, stroke: `rgba(100,210,255,${a})`, 'stroke-width': 8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none', filter: 'url(#blur-soft)' }));
+        lanes.forEach((lane, i) => {
+          const target = nextWaterBucketTarget(lane, i);
+          const junctionY = lane.y + (lane.compact ? 13 : 27);
+          const d = `M${lane.x} ${g.mainY} C${lane.x} ${g.mainY + 22} ${lane.x} ${junctionY - 24} ${lane.x} ${junctionY} Q${lane.x} ${target.y - 18} ${target.x} ${target.y}`;
+          svg.appendChild(svgEl('path', { d, stroke: `rgba(100,210,255,${a})`, 'stroke-width': 7, 'stroke-linecap': 'round', fill: 'none', filter: 'url(#blur-soft)' }));
+        });
+      }
+    }
+
+    function drawWaterBucket(svg, lane, shareIndex) {
+      const buckets = waterBucketLayout(lane, shareIndex);
+      if (!buckets.length) return;
+      const x1 = Math.min(...buckets.map(b => b.cx - b.w / 2));
+      const x2 = Math.max(...buckets.map(b => b.cx + b.w / 2));
+      const cy = buckets[0].cy;
+      svg.appendChild(svgEl('ellipse', { cx: (x1 + x2) / 2, cy: cy + buckets[0].h / 2 + 9, rx: Math.max(26, (x2 - x1) * 0.54), ry: 7, fill: 'rgba(74,84,100,0.055)' }));
+      buckets.forEach(b => drawSingleWaterBucket(svg, b));
+    }
+
+    function drawWaterActive(svg) {
+      if (!state.active) return;
+      const a = state.active;
+      const pos = dividendPositions()[a.itemIndex];
+      if (!pos) return;
+
+      if (a.phase === 'fallIn') {
+        const t = easeInOut(a.t);
+        const sx = pos.x + pos.w / 2;
+        const sy = pos.y + pos.h / 2;
+        const ex = INTAKE.x;
+        const ey = INTAKE.y - 6;
+        const cx = lerp(sx, ex, t);
+        const cy = lerp(sy, ey, t);
+        const scale = lerp(1, 0.78, t);
+        svg.appendChild(makeThing('water', cx - pos.w * scale / 2, cy - pos.h * scale / 2, pos.w * scale, Math.max(pos.h, 18) * scale, { opacity: 0.9, stroke: true }));
+      }
+
+      if (a.phase === 'logged') {
+        const cx = INTAKE.x;
+        const cy = INTAKE.y - 6;
+        const scale = 0.78;
+        svg.appendChild(makeThing('water', cx - pos.w * scale / 2, cy - Math.max(pos.h, 18) * scale / 2, pos.w * scale, Math.max(pos.h, 18) * scale, { opacity: 0.94, stroke: true }));
+      }
+
+      if (a.phase === 'chop') {
+        const t = easeOutCubic(a.t);
+        const pulse = Math.sin(t * Math.PI);
+        svg.appendChild(svgEl('rect', { x: 158, y: 292, width: 524, height: 10, rx: 5, fill: 'rgba(100,210,255,0.42)', opacity: 0.36 + pulse * 0.42, filter: 'url(#blur-soft)' }));
+        const cw = Math.max(36, pos.w * 0.88);
+        const ch = Math.max(20, Math.min(34, pos.h * 0.42));
+        svg.appendChild(makeThing('water', CHAMBER.x - cw / 2, CHAMBER.y - ch / 2, cw, ch, { opacity: 0.54 + pulse * 0.20, stroke: true, noShadow: true }));
+        const lanes = shareLayout(state.divisor);
+        lanes.forEach((lane, i) => {
+          const targetX = lane.x;
+          svg.appendChild(svgEl('path', { d: `M${CHAMBER.x} ${CHAMBER.y + 14} Q${lerp(CHAMBER.x, targetX, 0.45)} ${CHAMBER.y + 35} ${targetX} 342`, stroke: `rgba(100,210,255,${0.18 + pulse * 0.24})`, 'stroke-width': 4.2, 'stroke-linecap': 'round', fill: 'none' }));
+        });
+      }
+
+      if (a.phase === 'drop') {
+        const t = easeInOut(a.t);
+        const lanes = shareLayout(state.divisor);
+        const g = waterPipeGeometry(lanes);
+        lanes.forEach((lane, i) => {
+          const target = nextWaterBucketTarget(lane, i);
+          const y = lerp(g.mainY, target.y, t);
+          const x = lerp(lane.x, target.x, Math.max(0, (t - 0.35) / 0.65));
+          const r = lerp(5, 9, Math.sin(t * Math.PI));
+          svg.appendChild(svgEl('circle', { cx: x, cy: y, r, fill: 'rgba(100,210,255,0.74)', stroke: 'rgba(255,255,255,0.5)', 'stroke-width': 1.1 }));
+        });
+      }
+    }
+
+    function drawDividendLayer(svg) {
+      const pos = dividendPositions();
+      const activeIndex = state.active ? state.active.itemIndex : -1;
+      const nextIndex = !state.running && !state.done ? state.processed : -1;
+
+      if (state.shape === 'water') {
+        const sourceLayer = state.waterSimplify ? svgEl('g', { opacity: 0.20 }) : svg;
+        if (state.waterSimplify) svg.appendChild(sourceLayer);
+        drawWaterSource(sourceLayer, pos, activeIndex, nextIndex);
+        return;
+      }
+
+      if (!drawDividendRun(svg, pos, activeIndex, nextIndex)) {
+        for (let i = 0; i < pos.length; i++) {
+          if (i < state.processed || i === activeIndex) continue;
+          const p = pos[i];
+          const opacity = state.running ? (i === state.processed ? 0.9 : 0.68) : 0.9;
+
+          if (i === nextIndex) {
+            const cx = p.x + p.w / 2;
+            const cy = p.y + p.h / 2;
+            svg.appendChild(svgEl('ellipse', {
+              cx, cy: cy + 4, rx: p.w * 0.58, ry: p.h * 0.66,
+              fill: 'rgba(220,20,60,0.18)', class: 'ready-halo', filter: 'url(#blur-soft)'
+            }));
+          }
+
+          svg.appendChild(makeThing(state.shape, p.x, p.y, p.w, p.h, { opacity }));
+        }
+      }
+
+    }
+
+    function drawMachine(svg) {
+      const lanes = shareLayout(state.divisor);
+      const autoPull = state.active
+        ? (state.active.phase === 'fallIn' ? Math.sin(state.pulse * Math.PI) * 10 : state.active.phase === 'chop' ? 18 : 7)
+        : 0;
+      const pull = Math.max(autoPull, state.leverPull * 58);
+      const glow = state.active && (state.active.phase === 'chop' || state.active.phase === 'drop') ? 1 : 0;
+      const ready = !state.running && !state.regroup && !(state.done && anyRegroupable());
+
+      // soft grounding shadow
+      svg.appendChild(svgEl('ellipse', { cx: 420, cy: 354, rx: 333, ry: 18, fill: 'rgba(0,0,0,0.058)' }));
+
+      // The bead, stretched into a division bar.
+      svg.appendChild(svgEl('rect', { x: 70, y: 260, width: 700, height: 76, rx: 38, fill: 'url(#bead-linear)', stroke: 'rgba(82,88,100,0.26)', 'stroke-width': 1.4, filter: 'url(#shadow)' }));
+      svg.appendChild(svgEl('path', { d: 'M92 302 C146 330 260 339 420 339 C580 339 694 330 748 302 C716 330 655 344 420 346 C185 344 124 330 92 302 Z', fill: 'rgba(82,88,100,0.14)' }));
+      svg.appendChild(svgEl('ellipse', { cx: 266, cy: 275, rx: 132, ry: 12, fill: 'rgba(255,255,255,0.095)', transform: 'rotate(-7 266 275)' }));
+
+      // Division identity: dot / very wide slot / dot.
+      drawBead(svg, 420, 246, 9.2, { opacity: '0.78' });
+      svg.appendChild(svgEl('rect', { x: 125, y: 284, width: 590, height: 34, rx: 17, fill: 'url(#slot)', opacity: '0.94' }));
+      svg.appendChild(svgEl('rect', { x: 164, y: 294, width: 512, height: 7, rx: 5, fill: 'rgba(255,255,255,0.115)' }));
+      drawBead(svg, 420, 354, 9.2, { opacity: '0.68' });
+
+      // Wide translucent chamber around the division slot.
+      svg.appendChild(svgEl('rect', { x: 112, y: 273, width: 616, height: 58, rx: 29, fill: glow ? 'rgba(255,255,255,0.30)' : 'rgba(29,29,31,0.038)', stroke: 'rgba(255,255,255,0.42)', 'stroke-width': 2 }));
+      if (glow) svg.appendChild(svgEl('ellipse', { cx: 420, cy: 302, rx: 286, ry: 39, fill: 'url(#chamber-glow)', opacity: 0.78 }));
+
+      // Quiet preview: the thing-to-be-divided lives inside the division bar.
+      if (!state.running && !state.done) {
+        const d = dimsFor(state.shape, 'preview');
+        if (state.shape === 'water') {
+          svg.appendChild(makeThing('water', 420 - d.w / 2, 302 - d.h / 2, d.w, d.h, {
+            opacity: 0.22,
+            stroke: true,
+            noShadow: true
+          }));
+        } else {
+          svg.appendChild(makeThing(state.shape, 420 - d.w / 2, 302 - d.h / 2, d.w, d.h, {
+            opacity: 0.25,
+            stroke: true,
+            noShadow: true,
+            cutLines: Math.max(0, state.divisor - 1)
+          }));
+        }
+      }
+
+      // Output ports sit along the underside of the bar, one lane per receiver.
+      lanes.forEach(({ x }) => {
+        const wide = state.divisor <= 4 ? 58 : state.divisor <= 6 ? 48 : 36;
+        svg.appendChild(svgEl('rect', { x: x - wide / 2, y: 333, width: wide, height: 12, rx: 6, fill: 'rgba(132,140,154,0.22)', stroke: 'rgba(92,100,114,0.22)', 'stroke-width': 1 }));
+      });
+
+      // Side lever: the bead is a handle, not the protagonist.
+      const pivotX = 752;
+      const pivotY = 302;
+      const angle = -47 + pull;
+      const len = 88;
+      const rad = angle * Math.PI / 180;
+      const knobX = pivotX + Math.cos(rad) * len;
+      const knobY = pivotY + Math.sin(rad) * len;
+      svg.appendChild(svgEl('path', { d: `M${pivotX + 4} ${pivotY - 57} Q${pivotX + 42} ${pivotY} ${pivotX + 4} ${pivotY + 57}`, stroke: ready ? 'rgba(0,0,0,0.085)' : 'rgba(0,0,0,0.06)', 'stroke-width': 9, 'stroke-linecap': 'round', fill: 'none', class: ready ? 'lever-ghost-path' : '' }));
+      if (ready) {
+        const targetX = pivotX + Math.cos((5) * Math.PI / 180) * len;
+        const targetY = pivotY + Math.sin((5) * Math.PI / 180) * len;
+        svg.appendChild(svgEl('circle', { cx: knobX, cy: knobY, r: 33, fill: 'rgba(255,159,10,0.11)', stroke: 'rgba(255,159,10,0.64)', class: 'lever-pulse' }));
+        svg.appendChild(svgEl('circle', { cx: targetX, cy: targetY, r: 14, fill: 'rgba(255,159,10,0.13)', class: 'lever-hint' }));
+      }
+      svg.appendChild(svgEl('line', { x1: pivotX, y1: pivotY, x2: knobX, y2: knobY, stroke: state.leverDragging ? 'rgba(80,80,88,0.62)' : 'rgba(80,80,88,0.44)', 'stroke-width': 8, 'stroke-linecap': 'round' }));
+      drawBead(svg, pivotX, pivotY, 11.5, { opacity: '0.72' });
+      drawBead(svg, knobX, knobY, 18, { opacity: state.running ? '0.86' : '0.99' });
+    }
+
+    function drawReceivers(svg) {
+      const lanes = shareLayout(state.divisor);
+
+      if (state.shape === 'water') {
+        const waterBackLayer = state.waterSimplify ? svgEl('g', { opacity: 0.20 }) : svg;
+        if (state.waterSimplify) svg.appendChild(waterBackLayer);
+        drawWaterPipes(waterBackLayer, lanes);
+        lanes.forEach((lane, i) => drawWaterBucket(waterBackLayer, lane, i));
+        drawWaterSimplification(svg);
+        return;
+      }
+
+      lanes.forEach(({ x, y }) => {
+        const endY = y - 60;
+        svg.appendChild(svgEl('path', { d: `M${x} 342 C${x} 374 ${x} 405 ${x} ${endY}`, stroke: 'rgba(65,105,225,0.115)', 'stroke-width': 8, 'stroke-linecap': 'round', fill: 'none', class: 'lane-thread' }));
+        svg.appendChild(svgEl('path', { d: `M${x - 13} ${endY - 17} L${x} ${endY} L${x + 13} ${endY - 17}`, stroke: 'rgba(65,105,225,0.115)', 'stroke-width': 8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none', class: 'lane-thread' }));
+      });
+
+      lanes.forEach((lane, i) => {
+        if (lane.compact) drawCompactReceiver(svg, lane, i);
+        else drawPersonReceiver(svg, lane, i);
+        drawSharePieces(svg, lane, i);
+      });
+    }
+
+    function drawPersonReceiver(svg, lane, shareIndex) {
+      const { x, y, scale } = lane;
+      const g = svgEl('g', { transform: `translate(${x}, ${y}) scale(${scale})` });
+      g.appendChild(svgEl('ellipse', { cx: 0, cy: 72, rx: 38, ry: 7, fill: 'rgba(65,105,225,0.08)' }));
+      g.appendChild(svgEl('circle', { cx: 0, cy: -41, r: 11, fill: 'var(--tens)', opacity: '0.9' }));
+      g.appendChild(svgEl('ellipse', { cx: -4, cy: -45, rx: 4, ry: 3, fill: 'rgba(255,255,255,0.32)' }));
+      g.appendChild(svgEl('path', { d: 'M0 -29 L0 0', stroke: 'var(--tens)', 'stroke-width': 3.6, 'stroke-linecap': 'round', fill: 'none', opacity: '0.88' }));
+      g.appendChild(svgEl('path', { d: 'M-16 -18 L16 -18', stroke: 'var(--tens)', 'stroke-width': 3.2, 'stroke-linecap': 'round', fill: 'none', opacity: '0.82' }));
+      g.appendChild(svgEl('path', { d: 'M0 0 L-12 28 M0 0 L12 28', stroke: 'var(--tens)', 'stroke-width': 3.2, 'stroke-linecap': 'round', fill: 'none', opacity: '0.82' }));
+      svg.appendChild(g);
+    }
+
+    function drawCompactReceiver(svg, lane, shareIndex) {
+      const { x, y, scale } = lane;
+      const g = svgEl('g', { transform: `translate(${x}, ${y + 22}) scale(${scale})` });
+      g.appendChild(svgEl('ellipse', { cx: 0, cy: 53, rx: 28, ry: 6, fill: 'rgba(65,105,225,0.08)' }));
+      drawBead(g, 0, -23, 7, { opacity: '0.72' });
+      svg.appendChild(g);
+    }
+
+    function pileSlot(lane, shareIndex, k, totalCount) {
+      const denom = Math.max(1, state.divisor);
+      const rowCount = Math.max(1, totalCount);
+      const m = rowMetrics(lane, shareIndex, rowCount);
+      const unitIndex = Math.floor(k / denom);
+      const pieceIndex = k % denom;
+      let x;
+      if (state.shape === 'puck') {
+        x = m.xStart + unitIndex * (m.unitW + m.unitGap) + m.unitW / 2;
+      } else {
+        x = m.xStart + unitIndex * (m.unitW + m.unitGap) + pieceIndex * m.pieceW + m.pieceW / 2;
+      }
+      const y = m.y;
+      return {
+        x,
+        y,
+        scale: lane.scale * (lane.compact ? 0.82 : 0.9) * m.scale,
+        pieceW: state.shape === 'puck' ? m.unitW : m.pieceW,
+        pieceH: state.shape === 'puck' ? m.unitH : m.pieceH,
+        pieceIndex,
+        unitIndex,
+        unitW: m.unitW,
+        unitH: m.unitH
+      };
+    }
+
+    function drawRegroupAnimation(svg, lane, shareIndex) {
+      const active = state.regroup && (
+        state.regroup.laneIndex === shareIndex ||
+        (state.regroup.laneIndices && state.regroup.laneIndices.includes(shareIndex))
+      );
+      if (!active) return;
+      const count = state.regroup.startCounts ? state.regroup.startCounts[shareIndex] : state.regroup.startCount;
+      const denom = state.divisor;
+      const t = easeInOut(state.regroup.t);
+      const wholeTarget = wholeSlot(lane, shareIndex, state.wholes[shareIndex] || 0);
+
+      for (let k = 0; k < denom; k++) {
+        const p = pileSlot(lane, shareIndex, k, count);
+        const spread = (k - (denom - 1) / 2) * 2.2 * (1 - t);
+        const x = lerp(p.x, wholeTarget.cx + spread, t);
+        const y = lerp(p.y, wholeTarget.cy, t);
+        const scale = lerp(p.scale, wholeTarget.scale * 0.55, t);
+        svg.appendChild(makePiece(state.shape, x, y, denom, shareIndex, { opacity: 0.95 - t * 0.34, scale, rotate: (k - denom / 2) * (1 - t), pieceWOverride: p.pieceW / Math.max(0.01, p.scale), pieceHOverride: p.pieceH / Math.max(0.01, p.scale) }));
+      }
+
+      svg.appendChild(makeWholeResult(state.shape, wholeTarget.cx, wholeTarget.cy, { opacity: Math.max(0, t * 0.92), scale: Math.max(0.08, wholeTarget.scale * t), rotate: Math.sin(t * Math.PI) * 3 }));
+      const pop = Math.sin(t * Math.PI);
+      svg.appendChild(svgEl('ellipse', { cx: wholeTarget.cx, cy: wholeTarget.cy, rx: 48 + pop * 16, ry: 24 + pop * 8, fill: 'rgba(255,255,255,0.42)', opacity: pop * 0.55, filter: 'url(#blur-soft)' }));
+    }
+
+    function drawGhostWhole(svg, lane, shareIndex, bounds) {
+      const cx = (bounds.x1 + bounds.x2) / 2;
+      const cy = (bounds.y1 + bounds.y2) / 2;
+      const rx = Math.max(32, (bounds.x2 - bounds.x1) / 2 + 8);
+      const ry = Math.max(18, (bounds.y2 - bounds.y1) / 2 + 8);
+      if (state.shape === 'puck') {
+        svg.appendChild(svgEl('circle', { cx, cy, r: Math.max(rx, ry) * 0.78, fill: 'rgba(255,255,255,0.72)', stroke: 'rgba(220,20,60,0.32)', 'stroke-width': 2.2, class: 'regroup-silhouette' }));
+      } else if (state.shape === 'rod') {
+        svg.appendChild(svgEl('rect', { x: cx - rx, y: cy - ry * 0.5, width: rx * 2, height: ry, rx: ry / 2, fill: 'rgba(255,255,255,0.72)', stroke: 'rgba(220,20,60,0.32)', 'stroke-width': 2.2, class: 'regroup-silhouette' }));
+      } else {
+        svg.appendChild(svgEl('rect', { x: cx - rx, y: cy - ry, width: rx * 2, height: ry * 2, rx: 13, fill: 'rgba(255,255,255,0.72)', stroke: 'rgba(220,20,60,0.32)', 'stroke-width': 2.2, class: 'regroup-silhouette' }));
+      }
+    }
+
+    function drawSharePieces(svg, lane, shareIndex) {
+      if (state.shape === 'water') return;
+      const count = state.shares[shareIndex] || 0;
+      const wholeCount = state.wholes[shareIndex] || 0;
+      const regroupingThisLane = state.regroup && (
+        state.regroup.laneIndex === shareIndex ||
+        (state.regroup.laneIndices && state.regroup.laneIndices.includes(shareIndex))
+      );
+      let regroupHit = null;
+
+      for (let w = 0; w < wholeCount; w++) {
+        const slot = wholeSlot(lane, shareIndex, w);
+        svg.appendChild(makeWholeResult(state.shape, slot.cx, slot.cy, { opacity: 0.88, scale: slot.scale, rotate: ((w % 3) - 1) * 1.5 }));
+      }
+
+      drawUnitContainers(svg, lane, shareIndex, Math.max(count, state.divisor));
+
+      if (canRegroupLane(shareIndex)) {
+        const b = regroupGroupBounds(lane, shareIndex);
+        drawGhostWhole(svg, lane, shareIndex, b);
+        const glow = svgEl('rect', {
+          x: b.x1, y: b.y1, width: b.x2 - b.x1, height: b.y2 - b.y1, rx: 18,
+          fill: 'rgba(220,20,60,0.055)', stroke: 'rgba(220,20,60,0.28)', 'stroke-width': 2.2,
+          class: 'regroup-glow'
+        });
+        const hit = svgEl('rect', {
+          x: b.x1 - 16, y: b.y1 - 16, width: b.x2 - b.x1 + 32, height: b.y2 - b.y1 + 32, rx: 24,
+          fill: 'rgba(255,255,255,0.002)', class: 'regroup-hit'
+        });
+        hit.dataset.regroupLane = String(shareIndex);
+        svg.appendChild(glow);
+        regroupHit = hit;
+      }
+
+      drawSegmentedRun(svg, lane, shareIndex, count, { startIndex: regroupingThisLane ? state.divisor : 0, opacity: canRegroupLane(shareIndex) ? 0.94 : 0.88 });
+
+      drawRegroupAnimation(svg, lane, shareIndex);
+      drawLocalRegroupLedger(svg, lane, shareIndex);
+      if (regroupHit) svg.appendChild(regroupHit);
+    }
+
+    function drawActive(svg) {
+      if (!state.active) return;
+      if (state.shape === 'water') {
+        drawWaterActive(svg);
+        return;
+      }
+      const a = state.active;
+      const pos = dividendPositions()[a.itemIndex];
+      const d = dimsFor(state.shape, 'preview');
+
+      if (a.phase === 'fallIn') {
+        const t = easeInOut(a.t);
+        const sx = pos.x + pos.w / 2;
+        const sy = pos.y + pos.h / 2;
+        const ex = INTAKE.x;
+        const ey = INTAKE.y - 6;
+        const cx = lerp(sx, ex, t);
+        const cy = lerp(sy, ey, t);
+        const scale = lerp(1, 0.76, t);
+        svg.appendChild(makeThing(state.shape, cx - pos.w * scale / 2, cy - pos.h * scale / 2, pos.w * scale, pos.h * scale, { opacity: 0.92 }));
+      }
+
+      if (a.phase === 'logged') {
+        const p = pos;
+        const scale = 0.76;
+        const cx = INTAKE.x;
+        const cy = INTAKE.y - 6;
+        svg.appendChild(makeThing(state.shape, cx - p.w * scale / 2, cy - p.h * scale / 2, p.w * scale, p.h * scale, { opacity: 0.94, stroke: true }));
+        svg.appendChild(svgEl('path', { d: `M${cx + p.w * 0.24} ${cy - p.h * 0.06} C${cx + 95} ${cy - 44} ${LEDGER.x - 70} ${LEDGER.y - 118} ${LEDGER.x - 28} ${LEDGER.y - 110}`, stroke: 'rgba(220,20,60,0.22)', 'stroke-width': 6, 'stroke-linecap': 'round', fill: 'none', class: 'gravity-thread' }));
+      }
+
+      if (a.phase === 'chop') {
+        const t = easeOutCubic(a.t);
+        const wobble = Math.sin(a.t * Math.PI * 5) * (1 - t) * 2.5;
+        const cutCount = a.t < 0.28 ? 0 : Math.max(0, state.divisor - 1);
+        const cx = CHAMBER.x + wobble;
+        const cy = CHAMBER.y;
+        const cw = state.shape === 'puck' ? d.w : Math.max(d.w * 0.72, pos.w * 0.96);
+        const ch = state.shape === 'puck' ? d.h : Math.max(d.h * 0.86, pos.h * 0.92);
+        svg.appendChild(makeThing(state.shape, cx - cw / 2, cy - ch / 2, cw, ch, {
+          opacity: 0.66,
+          stroke: true,
+          noShadow: true,
+          cutLines: cutCount,
+          jagged: true
+        }));
+        drawCutterGuides(svg, state.shape, cx, cy, cw, ch, state.divisor, a.t);
+        if (a.t > 0.28) {
+          const flash = Math.sin(Math.min(1, (a.t - 0.28) / 0.32) * Math.PI);
+          svg.appendChild(svgEl('ellipse', {
+            cx: CHAMBER.x, cy: CHAMBER.y,
+            rx: Math.max(112, cw * 0.86),
+            ry: Math.max(31, ch * 1.2),
+            fill: 'rgba(255,255,255,0.55)',
+            opacity: flash * 0.55,
+            filter: 'url(#blur-soft)'
+          }));
+        }
+      }
+
+      if (a.phase === 'drop') {
+        const t = easeInOut(a.t);
+        const lanes = shareLayout(state.divisor);
+        lanes.forEach((lane, i) => {
+          const target = pileSlot(lane, i, state.shares[i] || 0, (state.shares[i] || 0) + 1);
+          const sx = lane.x;
+          const sy = 338;
+          const ex = target.x;
+          const ey = target.y;
+          const cy = lerp(sy, ey, t);
+          const sway = Math.sin(t * Math.PI) * (i % 2 === 0 ? -7 : 7);
+          const scale = lerp(0.72, target.scale, t);
+          svg.appendChild(makePiece(state.shape, lerp(sx, ex, t) + sway, cy, state.divisor, target.pieceIndex, { opacity: 0.92, scale, rotate: 0, pieceWOverride: target.pieceW / Math.max(0.01, target.scale), pieceHOverride: target.pieceH / Math.max(0.01, target.scale) }));
+        });
+      }
+    }
+
+    function renderScene() {
+      const svg = document.getElementById('scene-svg');
+      svg.innerHTML = '';
+      addDefs(svg);
+      const layer = svgEl('g', { transform: 'translate(0 ' + VISUAL_Y_OFFSET + ')' });
+      svg.appendChild(layer);
+      drawDividendLayer(layer);
+      drawMachine(layer);
+      drawLargeLedger(layer);
+      drawReceivers(layer);
+      drawActive(layer);
+      updateControls();
+    }
+
+    function updateControls() {
+      const div = LIMITS.dividend;
+      const dsr = LIMITS.divisor;
+      document.getElementById('div-down').classList.toggle('dimmed', state.dividend <= div.min);
+      document.getElementById('div-up').classList.toggle('dimmed', state.dividend >= div.max);
+      document.getElementById('dsr-down').classList.toggle('dimmed', state.divisor <= dsr.min);
+      document.getElementById('dsr-up').classList.toggle('dimmed', state.divisor >= dsr.max);
+      const dividendColor = state.shape === 'water' ? 'var(--water-deep)' : 'var(--ones)';
+      document.getElementById('div-display').textContent = state.dividend;
+      document.getElementById('dsr-display').textContent = state.divisor;
+      document.getElementById('readout-dividend').textContent = state.dividend;
+      document.getElementById('readout-divisor').textContent = state.divisor;
+      document.getElementById('div-display').style.color = dividendColor;
+      document.getElementById('readout-dividend').style.color = dividendColor;
+      document.getElementById('controlDock').classList.toggle('busy', state.running);
+      document.getElementById('beadButton').disabled = state.running || !!state.regroup || (state.done && anyRegroupable()) || waterSimplifyPending();
+      document.querySelectorAll('.shape-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.shape === state.shape));
+    }
+
+    function resetProcess() {
+      state.running = false;
+      state.done = false;
+      state.processed = 0;
+      state.logged = 0;
+      state.shares = Array.from({ length: state.divisor }, () => 0);
+      state.wholes = Array.from({ length: state.divisor }, () => 0);
+      state.active = null;
+      state.regroup = null;
+      state.pulse = 0;
+      state.leverPull = 0;
+      state.leverDragging = false;
+      state.waterSimplify = null;
+    }
+
+    function changeValue(key, delta) {
+      if (state.running) return;
+      const limit = LIMITS[key];
+      const next = Math.max(limit.min, Math.min(limit.max, state[key] + delta));
+      if (next === state[key]) return;
+      state[key] = next;
+      resetProcess();
+      renderScene();
+    }
+
+    function animatePhase(itemIndex, phase, duration) {
+      return new Promise(resolve => {
+        const start = performance.now();
+        function frame(now) {
+          const t = Math.min(1, (now - start) / duration);
+          state.active = { itemIndex, phase, t };
+          state.pulse = t;
+          renderScene();
+          if (t < 1) requestAnimationFrame(frame);
+          else resolve();
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+
+    function animateRegroup(laneIndices, duration) {
+      return new Promise(resolve => {
+        const start = performance.now();
+        const startCounts = {};
+        laneIndices.forEach(i => { startCounts[i] = state.shares[i] || 0; });
+        function frame(now) {
+          const t = Math.min(1, (now - start) / duration);
+          state.regroup = { laneIndices, t, startCounts };
+          renderScene();
+          if (t < 1) requestAnimationFrame(frame);
+          else resolve();
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    async function combineLane(laneIndex) {
+      if (!canRegroupLane(laneIndex)) return;
+      const laneIndices = state.shares.map((_, i) => i).filter(i => canRegroupLane(i));
+      if (!laneIndices.length) return;
+      state.running = true;
+      await animateRegroup(laneIndices, 520);
+      laneIndices.forEach(i => {
+        state.shares[i] -= state.divisor;
+        state.wholes[i] += 1;
+      });
+      state.regroup = null;
+      state.running = false;
+      renderScene();
+    }
+
+    async function runMachine() {
+      if (state.running) return;
+      if (state.done && anyRegroupable()) return;
+      if (state.done) {
+        resetProcess();
+        renderScene();
+        return;
+      }
+      resetProcess();
+      state.running = true;
+      state.regroup = null;
+      state.leverPull = 1;
+      renderScene();
+
+      for (let i = 0; i < state.dividend; i++) {
+        await animatePhase(i, 'fallIn', 430);
+        state.logged += 1;
+        state.active = { itemIndex: i, phase: 'logged', t: 1 };
+        renderScene();
+        await new Promise(r => setTimeout(r, 260));
+        await animatePhase(i, 'chop', 520);
+        await animatePhase(i, 'drop', 600);
+        for (let j = 0; j < state.divisor; j++) state.shares[j] += 1;
+        state.processed += 1;
+        state.active = null;
+        renderScene();
+        await new Promise(r => setTimeout(r, 105));
+      }
+
+      state.running = false;
+      state.done = true;
+      state.active = null;
+      state.waterSimplify = null;
+      if (canMakeWaterSimplifier()) state.waterSimplify = makeWaterSimplifier();
+      state.leverPull = 0;
+      state.leverDragging = false;
+      renderScene();
+    }
+
+
+
+    function svgPointFromEvent(svg, event) {
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const matrix = svg.getScreenCTM();
+      return matrix ? point.matrixTransform(matrix.inverse()) : null;
+    }
+
+    function pointerIsOnLever(svg, event) {
+      const p = svgPointFromEvent(svg, event);
+      if (!p) return false;
+      const pivotX = 752;
+      const pivotY = 302 + VISUAL_Y_OFFSET;
+      const angle = (-47 + state.leverPull * 58) * Math.PI / 180;
+      const knobX = pivotX + Math.cos(angle) * 88;
+      const knobY = pivotY + Math.sin(angle) * 88;
+      const inLeverKnob = Math.hypot(p.x - knobX, p.y - knobY) < 72;
+      const inLeverTrack = p.x >= 708 && p.x <= 850 && p.y >= 196 + VISUAL_Y_OFFSET && p.y <= 380 + VISUAL_Y_OFFSET;
+      return inLeverKnob || inLeverTrack;
+    }
+
+    function animateLeverBack() {
+      if (state.running) return;
+      const startPull = state.leverPull;
+      const start = performance.now();
+      function frame(now) {
+        if (state.running || state.leverDragging) return;
+        const t = Math.min(1, (now - start) / 180);
+        state.leverPull = lerp(startPull, 0, easeOutCubic(t));
+        renderScene();
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    async function commitLeverPull() {
+      if (state.running) return;
+      state.leverDragging = false;
+      state.leverPull = 1;
+      renderScene();
+      await new Promise(r => setTimeout(r, 90));
+      runMachine();
+    }
+
+    function startLeverDrag(clientY) {
+      if (state.running || !!state.regroup || (state.done && anyRegroupable())) return;
+      state.leverDragging = true;
+      state.leverStartY = clientY;
+      state.leverPull = Math.max(state.leverPull, 0.16);
+      renderScene();
+    }
+
+    function moveLeverDrag(clientY) {
+      if (!state.leverDragging || state.running) return;
+      const dy = clientY - state.leverStartY;
+      state.leverPull = Math.max(0.12, Math.min(1, 0.16 + dy / 118));
+      renderScene();
+      if (state.leverPull >= 0.82) commitLeverPull();
+    }
+
+    function endLeverDrag() {
+      if (!state.leverDragging || state.running) return;
+      const shouldRun = state.leverPull >= 0.64;
+      state.leverDragging = false;
+      if (shouldRun) commitLeverPull();
+      else animateLeverBack();
+    }
+
+    const beadButton = document.getElementById('beadButton');
+    beadButton.addEventListener('pointerdown', (event) => {
+      if (beadButton.disabled) return;
+      event.preventDefault();
+      beadButton.classList.add('dragging');
+      beadButton.setPointerCapture?.(event.pointerId);
+      startLeverDrag(event.clientY);
+    });
+    beadButton.addEventListener('pointermove', (event) => {
+      if (!state.leverDragging) return;
+      event.preventDefault();
+      moveLeverDrag(event.clientY);
+    });
+    beadButton.addEventListener('pointerup', (event) => {
+      beadButton.classList.remove('dragging');
+      beadButton.releasePointerCapture?.(event.pointerId);
+      endLeverDrag();
+    });
+    beadButton.addEventListener('pointercancel', (event) => {
+      beadButton.classList.remove('dragging');
+      endLeverDrag();
+    });
+
+    document.getElementById('div-down').addEventListener('click', () => changeValue('dividend', -1));
+    document.getElementById('div-up').addEventListener('click', () => changeValue('dividend', 1));
+    document.getElementById('dsr-down').addEventListener('click', () => changeValue('divisor', -1));
+    document.getElementById('dsr-up').addEventListener('click', () => changeValue('divisor', 1));
+    
+
+    const sceneSvg = document.getElementById('scene-svg');
+    sceneSvg.addEventListener('pointerdown', (event) => {
+      if (state.running || !!state.regroup || (state.done && anyRegroupable())) return;
+      if (!pointerIsOnLever(sceneSvg, event)) return;
+      event.preventDefault();
+      sceneSvg.setPointerCapture?.(event.pointerId);
+      startLeverDrag(event.clientY);
+    });
+    sceneSvg.addEventListener('pointermove', (event) => {
+      if (!state.leverDragging) return;
+      event.preventDefault();
+      moveLeverDrag(event.clientY);
+    });
+    sceneSvg.addEventListener('pointerup', (event) => {
+      sceneSvg.releasePointerCapture?.(event.pointerId);
+      endLeverDrag();
+    });
+    sceneSvg.addEventListener('pointercancel', endLeverDrag);
+
+    sceneSvg.addEventListener('click', (event) => {
+      const waterTarget = event.target.closest ? event.target.closest('[data-water-simplify]') : null;
+      if (waterTarget) { startWaterSimplifyStep(); return; }
+      const regroupTarget = event.target.closest ? event.target.closest('[data-regroup-lane]') : null;
+      if (regroupTarget) combineLane(Number(regroupTarget.dataset.regroupLane));
+    });
+
+    document.querySelectorAll('.shape-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (state.running) return;
+        state.shape = btn.dataset.shape;
+        resetProcess();
+        renderScene();
+      });
+    });
+
+    resetProcess();
+    renderScene();
+  </script>
+</body>
+</html>
