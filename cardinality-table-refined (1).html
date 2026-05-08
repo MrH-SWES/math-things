@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Math Things. | Cardinality Table</title>
+  <style>
+    :root {
+      --bg: #F5F5F7;
+      --surface: rgba(255,255,255,0.76);
+      --ink: #1D1D1F;
+      --muted: #86868B;
+      --border: rgba(0,0,0,0.065);
+      --shadow-soft: 0 2px 22px rgba(0,0,0,0.045), 0 1px 4px rgba(0,0,0,0.035);
+      --shadow-card: 0 18px 50px rgba(0,0,0,0.055), 0 3px 14px rgba(0,0,0,0.04);
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --metal-low: #A8A8AD;
+      --metal-mid: #D1D1D6;
+      --metal-high: #F5F5F7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Lexend, ui-rounded, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.95), transparent 42%),
+        radial-gradient(rgba(0,0,0,0.032) 1.05px, transparent 1.05px),
+        var(--bg);
+      background-size: auto, 30px 30px, auto;
+      -webkit-font-smoothing: antialiased;
+      touch-action: manipulation;
+    }
+
+    .brand {
+      position: fixed;
+      top: 22px;
+      left: 24px;
+      z-index: 8;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 2px;
+      color: var(--ink);
+      font-size: clamp(1.35rem, 2.1vw, 2rem);
+      font-weight: 900;
+      letter-spacing: -0.055em;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .tool-title {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 8;
+      color: var(--ink);
+      font-size: clamp(1.55rem, 2.7vw, 2.45rem);
+      font-weight: 900;
+      letter-spacing: -0.055em;
+      user-select: none;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .logo-bead,
+    .footer-bead,
+    .control-button,
+    .reset-button {
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.36) 42%, transparent 66%),
+        radial-gradient(circle at 68% 72%, rgba(0,0,0,0.14) 0%, transparent 56%),
+        linear-gradient(135deg, var(--metal-high) 0%, var(--metal-mid) 28%, var(--metal-low) 56%, #C0C0C0 80%, #E0E0E0 100%);
+      box-shadow:
+        inset 1px 1px 2px rgba(255,255,255,0.88),
+        inset -1px -1px 2px rgba(0,0,0,0.22),
+        0 2px 7px rgba(0,0,0,0.17);
+    }
+
+    .logo-bead,
+    .footer-bead {
+      width: 0.24em;
+      height: 0.24em;
+      border-radius: 50%;
+      margin-left: 0.02em;
+      margin-bottom: 0.08em;
+      display: inline-block;
+    }
+
+    .stage {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: clamp(78px, 10vh, 100px) clamp(16px, 4vw, 42px) clamp(76px, 10vh, 94px);
+    }
+
+    .table-shell {
+      display: grid;
+      grid-template-columns: auto minmax(350px, min(72vh, 64vw)) auto;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(14px, 2.1vw, 30px);
+      width: min(98vw, 1040px);
+    }
+
+    .surface {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 42px;
+      background: var(--surface);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      position: relative;
+      min-width: 0;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .socket-shadow { fill: rgba(0,0,0,0.055); }
+    .socket-face {
+      fill: url(#socketFace);
+      stroke: rgba(108,108,112,0.20);
+      stroke-width: 0.5;
+      filter: drop-shadow(0 0.7px 1px rgba(0,0,0,0.055));
+    }
+    .socket-ring {
+      fill: none;
+      stroke: rgba(255,255,255,0.76);
+      stroke-width: 0.42;
+    }
+    .socket.empty { opacity: 0.55; }
+    .socket.occupied { opacity: 0.92; }
+    .socket.occupied .socket-face { stroke: rgba(132,92,45,0.24); }
+
+    .table-shadow { fill: rgba(0,0,0,0.088); }
+    .table-top {
+      fill: url(#tableFace);
+      stroke: rgba(147,108,55,0.42);
+      stroke-width: 0.8;
+    }
+    .table-rim {
+      fill: none;
+      stroke: url(#tableRim);
+      stroke-width: 1.55;
+      opacity: 0.78;
+    }
+    .table-highlight {
+      fill: none;
+      stroke: rgba(255,255,255,0.54);
+      stroke-width: 0.72;
+      opacity: 0.92;
+      stroke-linecap: round;
+    }
+    .table-sheen {
+      fill: none;
+      stroke: rgba(140,98,44,0.055);
+      stroke-width: 0.36;
+      stroke-linecap: round;
+    }
+
+    .guest-shadow { fill: rgba(0,0,0,0.15); }
+    .guest-bead {
+      fill: url(#guestBead);
+      stroke: rgba(119,83,38,0.22);
+      stroke-width: 0.42;
+      filter: drop-shadow(0 1.2px 1.4px rgba(0,0,0,0.12));
+    }
+    .guest-highlight {
+      fill: none;
+      stroke: rgba(255,255,255,0.84);
+      stroke-width: 0.44;
+      stroke-linecap: round;
+    }
+
+    .count-label {
+      fill: rgba(29,29,31,0.86);
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      user-select: none;
+      filter: drop-shadow(0 2px 1px rgba(255,255,255,0.86)) drop-shadow(0 3px 4px rgba(0,0,0,0.13));
+      opacity: 0;
+    }
+
+    .total-number {
+      fill: rgba(29,29,31,0.80);
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.88;
+      filter: drop-shadow(0 2px 1px rgba(255,255,255,0.50));
+    }
+    .total-number.zero {
+      fill: rgba(29,29,31,0.25);
+      opacity: 1;
+    }
+
+    .side-controls {
+      z-index: 9;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.78);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+    }
+
+    .control-button,
+    .reset-button {
+      width: 58px;
+      height: 58px;
+      border: 0;
+      border-radius: 50%;
+      color: var(--ink);
+      font-family: Lexend, ui-rounded, ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 0.24s var(--spring), opacity 0.2s var(--ease), box-shadow 0.24s var(--ease);
+      -webkit-tap-highlight-color: transparent;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .control-button.guest-control { width: 66px; height: 66px; }
+    .control-button:hover,
+    .reset-button:hover { transform: translateY(-2px) scale(1.03); }
+    .control-button:active,
+    .reset-button:active { transform: translateY(1px) scale(0.98); }
+    .control-button:disabled,
+    .reset-button:disabled { opacity: 0.28; cursor: default; transform: none; }
+
+    .button-symbol {
+      font-size: 31px;
+      font-weight: 800;
+      line-height: 1;
+      transform: translateY(-0.02em);
+    }
+    .guest-control .button-symbol { font-size: 36px; }
+    .reset-symbol {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+      transform: translateY(-0.02em);
+    }
+
+    .control-icon,
+    .reset-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      opacity: 0.76;
+      pointer-events: none;
+    }
+    .socket-mini {
+      width: 21px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid rgba(29,29,31,0.30);
+      background: rgba(255,255,255,0.50);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.75), 0 1px 2px rgba(0,0,0,0.08);
+    }
+    .guest-mini {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 24%, #fff 0%, #F5DBA9 45%, #D3A45A 100%);
+      box-shadow: inset -1px -1px 2px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .reset-button {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      z-index: 10;
+      opacity: 0.82;
+    }
+
+    .footer {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 18px;
+      z-index: 5;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    @media (max-width: 760px) {
+      .brand { top: 14px; left: 16px; font-size: 1.12rem; }
+      .tool-title { top: 44px; font-size: 1.35rem; }
+      .stage { padding: 84px 8px 86px; }
+      .table-shell {
+        grid-template-columns: auto minmax(260px, 1fr) auto;
+        gap: 7px;
+        width: 100vw;
+      }
+      .surface { border-radius: 32px; }
+      .side-controls { gap: 6px; padding: 6px; }
+      .control-button { width: 44px; height: 44px; }
+      .control-button.guest-control { width: 50px; height: 50px; }
+      .button-symbol { font-size: 25px; }
+      .guest-control .button-symbol { font-size: 29px; }
+      .control-icon { width: 26px; height: 26px; }
+      .reset-button { top: 10px; right: 10px; width: 42px; height: 42px; }
+      .footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="brand">Math Things<span class="logo-bead"></span></div>
+  <div class="tool-title">Cardinality Table</div>
+
+  <main class="stage" aria-label="Cardinality Table counting manipulative">
+    <div class="table-shell">
+      <div class="side-controls seat-controls" aria-label="Add or remove places">
+        <button id="addSeat" class="control-button seat-control" type="button" aria-label="Add place"><span class="button-symbol">+</span></button>
+        <span class="control-icon"><span class="socket-mini" aria-hidden="true"></span></span>
+        <button id="removeSeat" class="control-button seat-control" type="button" aria-label="Remove place"><span class="button-symbol">−</span></button>
+      </div>
+
+      <div class="surface">
+        <button id="resetGuests" class="reset-button" type="button" aria-label="Reset guests"><span class="reset-symbol" aria-hidden="true">↺</span></button>
+        <svg id="scene" viewBox="0 0 140 140" role="img" aria-label="A round table with adjustable places around it. Honey beads sit in the places one at a time. A count label appears for each bead, and the final number rests on the tabletop as the total.">
+          <defs>
+            <radialGradient id="socketFace" cx="34%" cy="24%" r="78%">
+              <stop offset="0%" stop-color="#FFFFFF" />
+              <stop offset="46%" stop-color="#F5F5F7" />
+              <stop offset="82%" stop-color="#D9D9DF" />
+              <stop offset="100%" stop-color="#BFC0C6" />
+            </radialGradient>
+            <radialGradient id="guestBead" cx="32%" cy="24%" r="74%">
+              <stop offset="0%" stop-color="#FFFFFF" />
+              <stop offset="48%" stop-color="#F7DEAD" />
+              <stop offset="100%" stop-color="#D1A055" />
+            </radialGradient>
+            <radialGradient id="tableFace" cx="34%" cy="25%" r="78%">
+              <stop offset="0%" stop-color="#FFF8E9" />
+              <stop offset="38%" stop-color="#F2D9A7" />
+              <stop offset="74%" stop-color="#DCB66F" />
+              <stop offset="100%" stop-color="#C99A52" />
+            </radialGradient>
+            <linearGradient id="tableRim" x1="8%" y1="8%" x2="92%" y2="92%">
+              <stop offset="0%" stop-color="#FFF5DE" />
+              <stop offset="36%" stop-color="#E5BF7E" />
+              <stop offset="68%" stop-color="#C49149" />
+              <stop offset="100%" stop-color="#FFF0CC" />
+            </linearGradient>
+          </defs>
+          <g id="socketsLayer"></g>
+          <g id="tableLayer"></g>
+          <g id="guestsLayer"></g>
+          <g id="labelsLayer"></g>
+          <g id="totalLayer"></g>
+        </svg>
+      </div>
+
+      <div class="side-controls guest-controls" aria-label="Add or remove beads">
+        <button id="addGuest" class="control-button guest-control" type="button" aria-label="Add bead"><span class="button-symbol">+</span></button>
+        <span class="control-icon"><span class="guest-mini" aria-hidden="true"></span></span>
+        <button id="removeGuest" class="control-button guest-control" type="button" aria-label="Remove bead"><span class="button-symbol">−</span></button>
+      </div>
+    </div>
+  </main>
+
+  <div class="footer">Math, in your hands<span class="footer-bead"></span></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const MIN_SEATS = 1;
+      const MAX_SEATS = 20;
+      const CENTER = 70;
+      const SEAT_RADIUS = 54;
+      const TABLE_RADIUS = 39.5;
+      let seatCount = 10;
+      let seatedGuests = 0;
+      let isAnimating = false;
+
+      const socketsLayer = document.getElementById("socketsLayer");
+      const tableLayer = document.getElementById("tableLayer");
+      const guestsLayer = document.getElementById("guestsLayer");
+      const labelsLayer = document.getElementById("labelsLayer");
+      const totalLayer = document.getElementById("totalLayer");
+      const addGuestButton = document.getElementById("addGuest");
+      const removeGuestButton = document.getElementById("removeGuest");
+      const addSeatButton = document.getElementById("addSeat");
+      const removeSeatButton = document.getElementById("removeSeat");
+      const resetButton = document.getElementById("resetGuests");
+
+      function svgEl(name, attrs) {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+        Object.keys(attrs || {}).forEach(function (key) {
+          node.setAttribute(key, attrs[key]);
+        });
+        return node;
+      }
+
+      function polar(radius, index, total) {
+        const angle = -90 + (360 / total) * index;
+        const radians = angle * Math.PI / 180;
+        return {
+          angle: angle,
+          x: CENTER + radius * Math.cos(radians),
+          y: CENTER + radius * Math.sin(radians)
+        };
+      }
+
+      function seatPoint(index, total) {
+        const p = polar(SEAT_RADIUS, index, total);
+        return { angle: p.angle, x: p.x, y: p.y };
+      }
+
+      function labelPoint(index, total) {
+        const p = polar(SEAT_RADIUS - 8.5, index, total);
+        return { x: p.x, y: p.y - 1.8 };
+      }
+
+      function entranceFor(index, total) {
+        const destination = seatPoint(index, total);
+        const fromRight = destination.x >= CENTER;
+        return { x: fromRight ? 136.5 : 3.5, y: destination.y };
+      }
+
+      function easeInOut(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function pointOnCubic(p0, p1, p2, p3, t) {
+        const u = 1 - t;
+        const tt = t * t;
+        const uu = u * u;
+        const uuu = uu * u;
+        const ttt = tt * t;
+        return {
+          x: uuu * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + ttt * p3.x,
+          y: uuu * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + ttt * p3.y
+        };
+      }
+
+      function place(node, x, y, scale) {
+        node.setAttribute("transform", "translate(" + x.toFixed(3) + " " + y.toFixed(3) + ") scale(" + scale.toFixed(3) + ")");
+      }
+
+      function drawTable() {
+        tableLayer.replaceChildren();
+        tableLayer.appendChild(svgEl("circle", { class: "table-shadow", cx: CENTER, cy: CENTER + 1.15, r: TABLE_RADIUS + 1.35 }));
+        tableLayer.appendChild(svgEl("circle", { class: "table-top", cx: CENTER, cy: CENTER, r: TABLE_RADIUS }));
+        tableLayer.appendChild(svgEl("circle", { class: "table-rim", cx: CENTER, cy: CENTER, r: TABLE_RADIUS - 1.05 }));
+        tableLayer.appendChild(svgEl("path", { class: "table-highlight", d: "M 47 47 C 59 39, 83 39, 96 50" }));
+        tableLayer.appendChild(svgEl("path", { class: "table-sheen", d: "M 39 59 C 55 52, 84 52, 102 61" }));
+        tableLayer.appendChild(svgEl("path", { class: "table-sheen", d: "M 37 79 C 56 73, 84 73, 103 82" }));
+      }
+
+      function drawSockets() {
+        socketsLayer.replaceChildren();
+        for (let i = 0; i < seatCount; i += 1) {
+          const p = seatPoint(i, seatCount);
+          const socket = svgEl("g", {
+            class: "socket " + (i < seatedGuests ? "occupied" : "empty"),
+            "data-seat": String(i),
+            transform: "translate(" + p.x.toFixed(3) + " " + p.y.toFixed(3) + ") rotate(" + (p.angle + 90).toFixed(3) + ")"
+          });
+          socket.appendChild(svgEl("ellipse", { class: "socket-shadow", cx: "0", cy: "1.1", rx: "4.8", ry: "2.1" }));
+          socket.appendChild(svgEl("ellipse", { class: "socket-face", cx: "0", cy: "0", rx: "4.55", ry: "3.25" }));
+          socket.appendChild(svgEl("ellipse", { class: "socket-ring", cx: "0", cy: "-0.18", rx: "3.45", ry: "2.35" }));
+          socketsLayer.appendChild(socket);
+        }
+      }
+
+      function makeGuest(index, total) {
+        const start = entranceFor(index, total);
+        const guest = svgEl("g", {
+          class: "guest",
+          "data-seat": String(index),
+          "aria-label": "bead " + String(index + 1)
+        });
+        guest.appendChild(svgEl("ellipse", { class: "guest-shadow", cx: "0", cy: "2.5", rx: "3.75", ry: "1.0" }));
+        guest.appendChild(svgEl("circle", { class: "guest-bead", cx: "0", cy: "-0.62", r: "3.55" }));
+        guest.appendChild(svgEl("path", { class: "guest-highlight", d: "M -1.95 -1.9 C -0.75 -2.78, 0.95 -2.78, 1.95 -1.75" }));
+        place(guest, start.x, start.y, 0.88);
+        return guest;
+      }
+
+      function setGuestAtSeat(node, index) {
+        const p = seatPoint(index, seatCount);
+        place(node, p.x, p.y, 1.02);
+      }
+
+      function drawGuests() {
+        guestsLayer.replaceChildren();
+        for (let i = 0; i < seatedGuests; i += 1) {
+          const guest = makeGuest(i, seatCount);
+          setGuestAtSeat(guest, i);
+          guestsLayer.appendChild(guest);
+        }
+      }
+
+      function drawTotal() {
+        totalLayer.replaceChildren();
+        const text = svgEl("text", {
+          id: "totalNumber",
+          class: "total-number" + (seatedGuests === 0 ? " zero" : ""),
+          x: String(CENTER),
+          y: String(CENTER + 1.15),
+          "font-size": seatedGuests < 10 ? "15.8" : "12.8"
+        });
+        text.textContent = String(seatedGuests);
+        totalLayer.appendChild(text);
+      }
+
+      function renderStill() {
+        drawSockets();
+        drawGuests();
+        drawTotal();
+        updateButtons();
+      }
+
+      function pulseTotal() {
+        const start = performance.now();
+        const duration = 260;
+        function frame(now) {
+          const raw = Math.min(1, (now - start) / duration);
+          const scale = 1 + Math.sin(raw * Math.PI) * 0.08;
+          totalLayer.setAttribute("transform", "translate(" + CENTER + " " + (CENTER + 0.1) + ") scale(" + scale.toFixed(3) + ") translate(" + (-CENTER) + " " + (-(CENTER + 0.1)) + ")");
+          if (raw < 1) requestAnimationFrame(frame);
+          else totalLayer.removeAttribute("transform");
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function updateTotal(withPulse) {
+        drawTotal();
+        if (withPulse) pulseTotal();
+      }
+
+      function makeCountLabel(index) {
+        const text = svgEl("text", {
+          class: "count-label",
+          x: "0",
+          y: "0",
+          "data-label": String(index),
+          "font-size": String(index + 1 < 10 ? 10.8 : 8.9)
+        });
+        text.textContent = String(index + 1);
+        return text;
+      }
+
+      function animateGuestToSeat(node, index, done) {
+        const destination = seatPoint(index, seatCount);
+        const p0 = entranceFor(index, seatCount);
+        const fromRight = destination.x >= CENTER;
+        const guideX = fromRight ? Math.max(destination.x + 8, 116) : Math.min(destination.x - 8, 24);
+        const p1 = { x: guideX, y: p0.y };
+        const p2 = { x: guideX, y: destination.y };
+        const p3 = { x: destination.x, y: destination.y };
+        const duration = 600;
+        const start = performance.now();
+
+        function frame(now) {
+          const raw = Math.min(1, (now - start) / duration);
+          const t = easeInOut(raw);
+          const p = pointOnCubic(p0, p1, p2, p3, t);
+          const hop = Math.abs(Math.sin(raw * Math.PI * 4.5)) * (1 - raw * 0.35) * 0.85;
+          const settle = raw > 0.88 ? 1 + Math.sin((raw - 0.88) / 0.12 * Math.PI) * 0.08 : 1;
+          place(node, p.x, p.y - hop, 0.88 + (settle - 1) + raw * 0.14);
+
+          if (raw < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            setGuestAtSeat(node, index);
+            drawSockets();
+            if (done) done();
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function animateGuestOut(node, index, done) {
+        const startPoint = seatPoint(index, seatCount);
+        const endPoint = entranceFor(index, seatCount);
+        const fromRight = startPoint.x >= CENTER;
+        const guideX = fromRight ? Math.max(startPoint.x + 8, 116) : Math.min(startPoint.x - 8, 24);
+        const p0 = { x: startPoint.x, y: startPoint.y };
+        const p1 = { x: guideX, y: startPoint.y };
+        const p2 = { x: guideX, y: endPoint.y };
+        const p3 = { x: endPoint.x, y: endPoint.y };
+        const duration = 430;
+        const start = performance.now();
+
+        function frame(now) {
+          const raw = Math.min(1, (now - start) / duration);
+          const t = easeInOut(raw);
+          const p = pointOnCubic(p0, p1, p2, p3, t);
+          place(node, p.x, p.y, 1.02 - raw * 0.16);
+          node.style.opacity = String(1 - raw * 0.36);
+
+          if (raw < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            node.remove();
+            if (done) done();
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function animateCountLabel(index, done) {
+        const label = makeCountLabel(index);
+        const seatLabel = labelPoint(index, seatCount);
+        const totalSpot = { x: CENTER, y: CENTER + 1.15 };
+        labelsLayer.appendChild(label);
+        label.setAttribute("transform", "translate(" + seatLabel.x.toFixed(3) + " " + (seatLabel.y - 6.6).toFixed(3) + ") scale(0.72)");
+
+        const start = performance.now();
+        const duration = 780;
+
+        function frame(now) {
+          const raw = Math.min(1, (now - start) / duration);
+          const liftDone = Math.min(1, raw / 0.35);
+          const flyRaw = Math.max(0, (raw - 0.35) / 0.65);
+          let x;
+          let y;
+          let scale;
+          let opacity;
+
+          if (raw < 0.35) {
+            const t = easeOut(liftDone);
+            x = seatLabel.x;
+            y = seatLabel.y - 6.6 - t * 3.8;
+            scale = 0.72 + t * 0.42;
+            opacity = t;
+          } else {
+            const t = easeInOut(flyRaw);
+            x = seatLabel.x + (totalSpot.x - seatLabel.x) * t;
+            y = (seatLabel.y - 10.4) + (totalSpot.y - (seatLabel.y - 10.4)) * t;
+            scale = 1.14 - t * 0.15;
+            opacity = 1 - Math.max(0, (flyRaw - 0.72) / 0.28) * 0.82;
+          }
+
+          label.style.opacity = opacity.toFixed(3);
+          label.setAttribute("transform", "translate(" + x.toFixed(3) + " " + y.toFixed(3) + ") scale(" + scale.toFixed(3) + ")");
+
+          if (raw < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            label.remove();
+            if (done) done();
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function animateReset(done) {
+        const nodes = Array.prototype.slice.call(guestsLayer.querySelectorAll(".guest"));
+        if (!nodes.length) {
+          if (done) done();
+          return;
+        }
+        const start = performance.now();
+        const duration = 360;
+        const starts = nodes.map(function (node) {
+          const index = Number(node.getAttribute("data-seat"));
+          const p = seatPoint(index, seatCount);
+          return { node: node, x: p.x, y: p.y };
+        });
+
+        function frame(now) {
+          const raw = Math.min(1, (now - start) / duration);
+          const t = easeOut(raw);
+          starts.forEach(function (item, i) {
+            const drift = (i - (starts.length - 1) / 2) * 0.22;
+            const x = item.x + Math.sin(i * 1.7) * t * 1.4;
+            const y = item.y - t * (8.5 + drift);
+            place(item.node, x, y, 1.02 - t * 0.14);
+            item.node.style.opacity = String(1 - t);
+          });
+          if (raw < 1) requestAnimationFrame(frame);
+          else {
+            guestsLayer.replaceChildren();
+            if (done) done();
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function addGuest() {
+        if (seatedGuests >= seatCount || isAnimating) return;
+        isAnimating = true;
+        const index = seatedGuests;
+        const node = makeGuest(index, seatCount);
+        guestsLayer.appendChild(node);
+        seatedGuests += 1;
+        drawSockets();
+        updateButtons();
+        animateGuestToSeat(node, index, function () {
+          animateCountLabel(index, function () {
+            updateTotal(true);
+            isAnimating = false;
+            updateButtons();
+          });
+        });
+      }
+
+      function removeGuest(done) {
+        if (seatedGuests <= 0 || isAnimating) return;
+        isAnimating = true;
+        seatedGuests -= 1;
+        const index = seatedGuests;
+        const node = guestsLayer.querySelector('[data-seat="' + index + '"]');
+        updateTotal(true);
+        drawSockets();
+        updateButtons();
+        if (node) {
+          animateGuestOut(node, index, function () {
+            drawSockets();
+            isAnimating = false;
+            updateButtons();
+            if (done) done();
+          });
+        } else {
+          isAnimating = false;
+          updateButtons();
+          if (done) done();
+        }
+      }
+
+      function resetGuests() {
+        if (seatedGuests <= 0 || isAnimating) return;
+        isAnimating = true;
+        seatedGuests = 0;
+        updateTotal(true);
+        drawSockets();
+        updateButtons();
+        animateReset(function () {
+          isAnimating = false;
+          updateButtons();
+        });
+      }
+
+      function addSeat() {
+        if (seatCount >= MAX_SEATS || isAnimating) return;
+        seatCount += 1;
+        renderStill();
+      }
+
+      function removeSeat() {
+        if (seatCount <= MIN_SEATS || isAnimating) return;
+        seatCount -= 1;
+        if (seatedGuests > seatCount) seatedGuests = seatCount;
+        renderStill();
+      }
+
+      function updateButtons() {
+        addGuestButton.disabled = seatedGuests >= seatCount || isAnimating;
+        removeGuestButton.disabled = seatedGuests <= 0 || isAnimating;
+        resetButton.disabled = seatedGuests <= 0 || isAnimating;
+        addSeatButton.disabled = seatCount >= MAX_SEATS || isAnimating;
+        removeSeatButton.disabled = seatCount <= MIN_SEATS || isAnimating;
+      }
+
+      addGuestButton.addEventListener("click", addGuest);
+      removeGuestButton.addEventListener("click", function () { removeGuest(); });
+      resetButton.addEventListener("click", resetGuests);
+      addSeatButton.addEventListener("click", addSeat);
+      removeSeatButton.addEventListener("click", removeSeat);
+
+      window.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowUp" || event.key === "ArrowRight" || event.key === "+" || event.key === "=") {
+          event.preventDefault();
+          addGuest();
+        }
+        if (event.key === "ArrowDown" || event.key === "ArrowLeft" || event.key === "-" || event.key === "_") {
+          event.preventDefault();
+          removeGuest();
+        }
+        if (event.key === "r" || event.key === "R" || event.key === "0") {
+          event.preventDefault();
+          resetGuests();
+        }
+        if (event.key === "]") {
+          event.preventDefault();
+          addSeat();
+        }
+        if (event.key === "[") {
+          event.preventDefault();
+          removeSeat();
+        }
+      });
+
+      drawTable();
+      renderStill();
+    }());
+  </script>
+</body>
+</html>
