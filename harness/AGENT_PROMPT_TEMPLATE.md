@@ -15,7 +15,7 @@ Use this structure when writing task prompts for agents working on Math Things a
 [List every file the agent must read before beginning. Always include:]
 - `docs/00_MATH_THINGS_DESIGN_DOCTRINE.md`
 - `docs/12_DO_NOT_VIOLATE.md`
-- The target app file(s)
+- The target app file(s): `apps/<slug>/index.html`
 - Any relevant harness files
 
 ---
@@ -29,9 +29,10 @@ Use this structure when writing task prompts for agents working on Math Things a
 # Do not edit
 
 [List files that must not be touched. Always include:]
-- All other `.html` app files
+- All other `apps/*/index.html` app files
 - Service worker files
 - Deployment files
+- `index.html` (root launcher)
 
 ---
 

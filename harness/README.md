@@ -9,6 +9,7 @@ This directory contains reusable templates and review files for agent work on Ma
 1. **Read `docs/00_MATH_THINGS_DESIGN_DOCTRINE.md`** — the full design doctrine.
 2. **Read `docs/12_DO_NOT_VIOLATE.md`** — short list of hard rules.
 3. **Work on one app at a time** unless explicitly instructed otherwise.
+4. **Target app file is `apps/<slug>/index.html`**, not a root-level HTML file.
 
 ---
 
