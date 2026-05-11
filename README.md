@@ -10,11 +10,16 @@ The teacher teaches. The tool gives the teacher something worth teaching with.
 
 ## Repository Structure
 
-Apps are currently **root-level single-file HTML prototypes**. Each app is self-contained and served via GitHub Pages.
+Each app lives as a self-contained single-file HTML prototype at `apps/<slug>/index.html`.
 
 ```
 math-things/
-├── *.html                        # Root-level single-file app prototypes
+├── index.html                    # App launcher — links to all apps
+├── apps/                         # One directory per app
+│   ├── ten-frame/index.html
+│   ├── rekenrek/index.html
+│   ├── number-bond/index.html
+│   └── ...                       # (one folder per app)
 ├── docs/                         # Shared doctrine, rubrics, and catalog
 │   ├── 00_MATH_THINGS_DESIGN_DOCTRINE.md
 │   ├── 01_MATERIAL_SYSTEM.md
@@ -37,8 +42,7 @@ math-things/
 - Shared doctrine docs in `docs/` define what a Math Thing is and how to build, audit, and improve them.
 - Harness files in `harness/` give agents reusable templates for prompts, reviews, and audits.
 - **Agents should work on one app at a time** unless explicitly instructed otherwise.
-- Existing root-level app URLs must not be broken.
-- The current priority is **preserving working prototypes** while improving them gradually against the doctrine.
+- The authoritative design source is `MATH_THINGS_UPDATED_DESIGN_DOCTRINE.md`.
 
 ## Key Docs
 
@@ -56,7 +60,11 @@ math-things/
 Apps are served at:
 
 ```
-https://mrh-swes.github.io/math-things/<app-filename>.html
+https://mrh-swes.github.io/math-things/apps/<slug>/
 ```
 
-Do not move root HTML files. Do not break existing URLs.
+The app launcher is at:
+
+```
+https://mrh-swes.github.io/math-things/
+```
