@@ -2245,7 +2245,9 @@
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    /* Decompose a positive integer into equation pieces using 10, 5, 2, 1 */
+    /* Decompose a positive integer into equation pieces using 10, 5, 2, 1.
+       Greedy strategy: chosen to keep piece counts small and use familiar
+       denominations already in the equation palette (10, 5, 2, 1). */
     function makeNumPieces(n) {
         const pieces = [];
         for (const d of [10, 5, 2, 1]) {
@@ -2402,7 +2404,7 @@
             state.solved = true;
             document.body.classList.add('solved');
             const x = state.mysteryPuzzle.xValue;
-            setMysteryFeedback('Yes! x is ' + x + '. The mystery block is worth ' + x + '.', true);
+            setMysteryFeedback('Yes! x is ' + x + '. The mystery value is ' + x + '.', true);
             setMysterySub(state.mysteryPuzzle.substitutionText);
             celebrate();
         } else {
@@ -2411,7 +2413,7 @@
             let hint = '';
             if      (lv > rv) hint = ' Try a smaller number.';
             else if (lv < rv) hint = ' Try a bigger number.';
-            setMysteryFeedback('Try again. If x were ' + g + ', would both sides balance?' + hint, false);
+            setMysteryFeedback(`Try again. If x were ${g}, would both sides balance?${hint}`, false);
             setMysterySub('');
         }
 
@@ -2469,7 +2471,7 @@
             btn.textContent = n;
             btn.dataset.num = n;
             btn.setAttribute('aria-label', 'guess x equals ' + n);
-            btn.addEventListener('click', () => setMysteryGuess(n));
+            btn.addEventListener('click', () => setMysteryGuess(+btn.dataset.num));
             container.appendChild(btn);
         }
     }
@@ -3244,9 +3246,9 @@
 
     document.querySelectorAll('.diff-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const lvl = parseInt(btn.dataset.level);
+            const lvl = parseInt(btn.dataset.level, 10);
             state.mysteryLevel = lvl;
-            document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.level) === lvl));
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.level, 10) === lvl));
             loadMysteryPuzzle();
         });
     });
