@@ -879,6 +879,10 @@
     let targetActive = false;
     let isDraggingTarget = false;
 
+    const TARGET_RADIUS = 210;  // px from clock center to target handle / shade rim
+    const CLOCK_CX = 238;       // clock-face center x (476px face / 2)
+    const CLOCK_CY = 238;       // clock-face center y
+
     const targetHandle = document.getElementById('targetHandle');
     const shadePath = document.getElementById('shadePath');
 
@@ -896,23 +900,22 @@
     }
 
     function updateTargetHandle() {
-      const r = 210, cx = 238, cy = 238;
       const rad = targetAngleDeg * Math.PI / 180;
-      targetHandle.style.left = (cx + r * Math.sin(rad)) + 'px';
-      targetHandle.style.top  = (cy - r * Math.cos(rad)) + 'px';
+      targetHandle.style.left = (CLOCK_CX + TARGET_RADIUS * Math.sin(rad)) + 'px';
+      targetHandle.style.top  = (CLOCK_CY - TARGET_RADIUS * Math.cos(rad)) + 'px';
     }
 
     function updateShade() {
       if (!targetActive) return;
-      const cx = 238, cy = 238, r = 210;
       const curAngle = ((STATE.totalMinuteRotation % 360) + 360) % 360;
       const arcSpan = ((targetAngleDeg - curAngle) + 360) % 360;
+      // Skip arcs smaller than half a degree — they would be invisible and cause SVG rendering issues
       if (arcSpan < 0.5) { shadePath.setAttribute('d', ''); return; }
       const toRad = d => d * Math.PI / 180;
-      const x1 = cx + r * Math.sin(toRad(curAngle)), y1 = cy - r * Math.cos(toRad(curAngle));
-      const x2 = cx + r * Math.sin(toRad(targetAngleDeg)), y2 = cy - r * Math.cos(toRad(targetAngleDeg));
+      const x1 = CLOCK_CX + TARGET_RADIUS * Math.sin(toRad(curAngle)), y1 = CLOCK_CY - TARGET_RADIUS * Math.cos(toRad(curAngle));
+      const x2 = CLOCK_CX + TARGET_RADIUS * Math.sin(toRad(targetAngleDeg)), y2 = CLOCK_CY - TARGET_RADIUS * Math.cos(toRad(targetAngleDeg));
       const largeArc = arcSpan > 180 ? 1 : 0;
-      shadePath.setAttribute('d', `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`);
+      shadePath.setAttribute('d', `M ${CLOCK_CX} ${CLOCK_CY} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${TARGET_RADIUS} ${TARGET_RADIUS} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`);
     }
 
     function updateCountdown() {
