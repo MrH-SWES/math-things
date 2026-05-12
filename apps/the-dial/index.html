@@ -859,7 +859,7 @@
       minuteHand.classList.remove('needs-discovery');
       const step = () => {
         if (!isSpinning) return;
-        STATE.totalMinuteRotation += 90;
+        STATE.totalMinuteRotation += 40;
         updateTimeDisplay();
         spinRaf = requestAnimationFrame(step);
       };
