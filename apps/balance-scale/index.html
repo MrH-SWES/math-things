@@ -1798,15 +1798,14 @@
 
     /* ============================================================
        MYSTERY X MODE
-       A 5th-grade pre-algebra scaffold: the balance shows a
-       balanced equation containing x; students figure out what
-       number x must be.
+       A wordless mystery-weight manipulative for 5th graders
+       meeting variables for the first time.
        ============================================================ */
 
-    /* Tab: visually distinct from the material icon tabs */
+    /* Tab: dark graphite to signal mystery */
     .mystery-tab {
-        min-width: 92px !important;
-        font-size: .8rem;
+        min-width: 54px !important;
+        font-size: .82rem;
         padding: 0 10px;
         letter-spacing: -.03em;
     }
@@ -1817,28 +1816,29 @@
         box-shadow: 0 6px 16px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.14) !important;
     }
 
-    /* In mystery mode: hide palette, teacher x-stepper, negative tool */
+    /* In mystery mode: hide regular palette, teacher x-stepper */
     body.mystery-mode .palette    { display: none !important; }
+    body.mystery-mode .teacher    { display: none !important; }
     body.mystery-mode .tools      { right: 20px; }
 
-    /* Extra bottom space for the taller mystery panel */
-    body.mystery-mode .workspace  { padding-bottom: 170px; }
-    @media (max-width: 880px)  { body.mystery-mode .workspace { padding-bottom: 174px; } }
-    @media (max-width: 680px)  { body.mystery-mode .workspace { padding-bottom: 178px; } }
-    @media (max-height: 590px) { body.mystery-mode .workspace { padding-bottom: 130px; } }
+    /* Bottom padding for the mystery panel */
+    body.mystery-mode .workspace  { padding-bottom: 155px; }
+    @media (max-width: 880px)  { body.mystery-mode .workspace { padding-bottom: 158px; } }
+    @media (max-width: 680px)  { body.mystery-mode .workspace { padding-bottom: 162px; } }
+    @media (max-height: 590px) { body.mystery-mode .workspace { padding-bottom: 118px; } }
 
-    /* ---- Mystery panel: replaces palette at the bottom ---- */
+    /* ---- Mystery panel ---- */
     .mystery-panel {
         position: absolute;
         left: 50%;
         bottom: 8px;
-        max-width: min(94vw, 930px);
+        max-width: min(94vw, 580px);
         transform: translateX(-50%);
-        display: none;          /* shown only when body.mystery-mode */
+        display: none;
         flex-direction: column;
         align-items: center;
-        gap: 7px;
-        padding: 11px 20px 10px;
+        gap: 6px;
+        padding: 10px 18px 9px;
         border: 1px solid rgba(0,0,0,.07);
         border-radius: 18px;
         background: rgba(255,255,255,.9);
@@ -1849,25 +1849,15 @@
     }
     body.mystery-mode .mystery-panel { display: flex; }
 
-    /* Equation row */
+    /* Equation row: hidden by default, revealed by # (show-values) */
     .mystery-eq-row {
-        display: flex;
+        display: none;
         align-items: center;
-        gap: 9px;
+        gap: 7px;
     }
-    .mystery-eq-badge {
-        font-size: .6rem;
-        font-weight: 900;
-        color: #f5f5f7;
-        background: linear-gradient(135deg, #2d2d30, #1a1a1d);
-        border-radius: 999px;
-        padding: 2px 8px;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
+    body.show-values.mystery-mode .mystery-eq-row { display: flex; }
     .mystery-eq-text {
-        font-size: 1.08rem;
+        font-size: 1rem;
         font-weight: 900;
         letter-spacing: -.04em;
         color: var(--ink);
@@ -1875,132 +1865,108 @@
     }
     .mystery-eq-text .x-token { color: #1d1d1f; }
 
-    /* Input row */
-    .mystery-main-row {
+    /* Compact value-piece palette (1 · 2 · 5 · 10 blocks to tap into tray) */
+    .mystery-palette-row {
         display: flex;
-        align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
+        align-items: center;
         justify-content: center;
     }
-    .mystery-what-label {
-        font-size: .75rem;
+    .mystery-palette-row .piece { cursor: pointer; transition: transform .18s var(--spring), filter .15s var(--ease); }
+    .mystery-palette-row .piece:hover { filter: brightness(1.06); transform: translateY(-2px); }
+    .mystery-palette-row .piece:active { transform: scale(.9) !important; }
+
+    /* Guess tray wrapper */
+    .mystery-tray-wrap {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 46px;
+    }
+    .mystery-tray-label {
+        font-size: .76rem;
         font-weight: 900;
         color: var(--gray);
-        white-space: nowrap;
         letter-spacing: -.01em;
+        white-space: nowrap;
+        min-width: 20px;
+        text-align: center;
     }
-    .mystery-nums {
+    .mystery-tray {
         display: flex;
         gap: 5px;
         flex-wrap: wrap;
-        justify-content: center;
+        min-width: 100px;
+        min-height: 42px;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 3px 8px;
+        border: 1.5px dashed rgba(0,0,0,.13);
+        border-radius: 12px;
+        background: rgba(0,0,0,.02);
+        transition: border-color .2s var(--ease), background .2s var(--ease);
     }
-    .mystery-num-btn {
-        width: 31px;
-        height: 31px;
+    .mystery-tray:empty::before {
+        content: '?';
+        color: var(--light);
+        font-weight: 900;
+        font-size: .82rem;
+        pointer-events: none;
+    }
+    .mystery-tray .piece { cursor: pointer; transition: transform .15s var(--spring), opacity .15s var(--ease); }
+    .mystery-tray .piece:hover { opacity: .62; transform: scale(.92); }
+    .mystery-tray .piece:active { transform: scale(.84) !important; }
+
+    /* Small round control buttons (clear ↺ and new ⟳) */
+    .mystery-ctrl-btn {
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
-        border: 1px solid rgba(0,0,0,.09);
-        background: rgba(255,255,255,.88);
-        font-size: .8rem;
-        font-weight: 900;
-        letter-spacing: -.03em;
-        color: var(--ink);
-        cursor: pointer;
-        transition: transform .15s var(--spring), background .15s var(--ease), box-shadow .15s var(--ease);
-        box-shadow: 0 2px 5px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,.8);
-    }
-    .mystery-num-btn:hover { background: #fff; transform: scale(1.06); }
-    .mystery-num-btn:active { transform: scale(.9) !important; }
-    .mystery-num-btn.selected {
-        background: linear-gradient(180deg, #2d2d30, #1a1a1d);
-        color: #f5f5f7;
-        border-color: rgba(0,0,0,.3);
-        box-shadow: 0 3px 10px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.14);
-    }
-    .mystery-check-btn {
-        height: 31px;
-        padding: 0 16px;
-        border-radius: 999px;
-        border: 0;
-        background: linear-gradient(180deg, #2d2d30, #1a1a1d);
-        color: #f5f5f7;
-        font-weight: 900;
-        font-size: .78rem;
-        letter-spacing: -.02em;
-        cursor: pointer;
-        box-shadow: 0 4px 11px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.14);
-        transition: transform .18s var(--spring);
-        margin-left: 3px;
-    }
-    .mystery-check-btn:active { transform: scale(.95); }
-    .mystery-new-btn {
-        height: 31px;
-        padding: 0 13px;
-        border-radius: 999px;
         border: 1px solid rgba(0,0,0,.09);
         background: rgba(255,255,255,.82);
         color: var(--gray);
+        font-size: .95rem;
         font-weight: 900;
-        font-size: .78rem;
-        letter-spacing: -.02em;
         cursor: pointer;
         box-shadow: 0 2px 6px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.8);
-        transition: transform .18s var(--spring);
-    }
-    .mystery-new-btn:active { transform: scale(.95); }
-
-    /* Feedback & substitution row (hidden until after a check) */
-    .mystery-info-row {
+        transition: transform .18s var(--spring), background .15s var(--ease);
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        font-size: .76rem;
-        font-weight: 800;
-        letter-spacing: -.01em;
-        text-align: center;
-        transition: max-height .28s var(--ease), opacity .28s var(--ease);
+        flex-shrink: 0;
     }
-    .mystery-info-row.visible { max-height: 60px; opacity: 1; }
-    .mystery-feedback { color: var(--gray); }
-    .mystery-feedback.correct { color: #1a8a54; }
-    .mystery-sep { color: var(--light); font-weight: 400; }
-    .mystery-sub { color: var(--ink); font-weight: 900; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+    .mystery-ctrl-btn:hover { background: #fff; }
+    .mystery-ctrl-btn:active { transform: scale(.88); }
 
-    /* Footer row: difficulty + teacher note */
+    /* Footer row: difficulty dots + new + teacher */
     .mystery-footer-row {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 7px;
-        font-size: .66rem;
-        font-weight: 800;
-        color: var(--light);
-        letter-spacing: .02em;
+        gap: 6px;
     }
-    .mystery-difficulty { display: flex; gap: 4px; }
+    .mystery-difficulty { display: flex; gap: 3px; }
     .diff-btn {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         border: 1px solid rgba(0,0,0,.09);
         background: rgba(255,255,255,.8);
-        font-size: .68rem;
+        font-size: .74rem;
         font-weight: 900;
         color: var(--gray);
         cursor: pointer;
         box-shadow: 0 1px 3px rgba(0,0,0,.06);
-        transition: transform .15s var(--spring);
+        transition: transform .15s var(--spring), background .15s var(--ease);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .diff-btn.active { background: #1d1d1f; color: #f5f5f7; border-color: rgba(0,0,0,.3); }
     .diff-btn:active { transform: scale(.9); }
 
     /* Teacher note toggle + popover */
-    .mystery-teacher-wrap { position: relative; margin-left: 4px; }
+    .mystery-teacher-wrap { position: relative; margin-left: 2px; }
     .mystery-teacher-btn {
         width: 22px;
         height: 22px;
@@ -2040,21 +2006,21 @@
     .teacher-popup.open { display: block; }
     .teacher-popup strong { color: var(--ink); font-weight: 900; }
 
-    /* X-is-mystery hint text inside the mystery panel */
-    .mystery-hint {
-        font-size: .64rem;
-        font-weight: 800;
-        color: var(--light);
-        letter-spacing: .01em;
+    /* Solved: reveal x value badge on all x pieces */
+    body.mystery-solved .piece.x::after { opacity: 1; }
+
+    /* Shake tray when guess produces an unbalanced scale */
+    @keyframes mysteryShake {
+        0%, 100% { transform: translateX(0); }
+        20%       { transform: translateX(-4px); }
+        60%       { transform: translateX(4px); }
     }
+    .mystery-tray.shake { animation: mysteryShake .32s ease-in-out; }
 
     @media (max-width: 680px) {
-        .mystery-num-btn  { width: 27px; height: 27px; font-size: .72rem; }
-        .mystery-check-btn, .mystery-new-btn { height: 27px; font-size: .72rem; padding: 0 11px; }
-        .mystery-eq-text  { font-size: .92rem; }
-        .mystery-panel    { padding: 9px 12px; }
-        .mystery-main-row { gap: 6px; }
-        .mystery-nums     { gap: 4px; }
+        .mystery-panel    { padding: 8px 12px; max-width: 96vw; }
+        .mystery-tray     { min-width: 80px; }
+        .mystery-eq-text  { font-size: .9rem; }
         .teacher-popup    { right: auto; left: 0; }
     }
 
@@ -2114,44 +2080,36 @@
 
     <div class="palette" id="palette" aria-label="pieces"></div>
 
-    <!-- Mystery X mode panel: replaces palette when mystery tab is active -->
-    <div class="mystery-panel" id="mysteryPanel" aria-label="Mystery X controls">
+    <!-- Mystery X mode panel: compact manipulative tray -->
+    <div class="mystery-panel" id="mysteryPanel" aria-label="x? mode">
 
-        <!-- Equation display -->
-        <div class="mystery-eq-row">
-            <span class="mystery-eq-badge">Mystery X</span>
+        <!-- Equation display: hidden by default, visible when # is on -->
+        <div class="mystery-eq-row" id="mysteryEqRow">
             <span class="mystery-eq-text" id="mysteryEq"></span>
         </div>
 
-        <!-- Number picker + action buttons -->
-        <div class="mystery-main-row">
-            <span class="mystery-what-label">What is x?</span>
-            <div class="mystery-nums" id="mysteryNums" aria-label="guess x"></div>
-            <button class="mystery-check-btn" id="mysteryCheck">Check</button>
-            <button class="mystery-new-btn"   id="mysteryNew">New mystery</button>
+        <!-- Compact value palette: tap to add to guess tray -->
+        <div class="mystery-palette-row" id="mysteryPaletteRow" aria-label="value pieces"></div>
+
+        <!-- Guess tray: student builds a value for x -->
+        <div class="mystery-tray-wrap">
+            <span class="mystery-tray-label">x?</span>
+            <div class="mystery-tray" id="mysteryTray" aria-label="guess tray" aria-live="polite"></div>
+            <button class="mystery-ctrl-btn" id="mysteryClearTray" aria-label="clear guess">↺</button>
         </div>
 
-        <!-- Feedback (hidden until Check is clicked) -->
-        <div class="mystery-info-row" id="mysteryInfoRow" aria-live="polite">
-            <span class="mystery-feedback" id="mysteryFeedback"></span>
-            <span class="mystery-sep" id="mysterySepEl" hidden>·</span>
-            <span class="mystery-sub"      id="mysterySub"></span>
-        </div>
-
-        <!-- Footer: difficulty selector + teacher note -->
+        <!-- Footer: difficulty dots + new mystery + teacher note -->
         <div class="mystery-footer-row">
-            <span class="mystery-hint">x is a mystery number · same x, same value</span>
-            <span style="color:var(--line)">|</span>
-            <span>Level:</span>
             <div class="mystery-difficulty" id="mysteryDifficulty">
-                <button class="diff-btn active" data-level="1" aria-label="difficulty level 1">1</button>
-                <button class="diff-btn"        data-level="2" aria-label="difficulty level 2">2</button>
-                <button class="diff-btn"        data-level="3" aria-label="difficulty level 3">3</button>
+                <button class="diff-btn active" data-level="1" aria-label="difficulty 1">●</button>
+                <button class="diff-btn"        data-level="2" aria-label="difficulty 2">○</button>
+                <button class="diff-btn"        data-level="3" aria-label="difficulty 3">○</button>
             </div>
+            <button class="mystery-ctrl-btn" id="mysteryNew" aria-label="new mystery">⟳</button>
             <div class="mystery-teacher-wrap">
                 <button class="mystery-teacher-btn" id="mysteryTeacherBtn" aria-label="teacher note" aria-expanded="false">ⓘ</button>
                 <div class="teacher-popup" id="teacherPopup" role="tooltip">
-                    <strong>Teacher note:</strong> This mode introduces x as a mystery value. Students use the balance to figure out what number x must be. Keep the focus on "same value on both sides," not formal algebra steps. Each puzzle always has a whole-number answer from 1–10.
+                    <strong>Teacher note:</strong> x is a mystery value. Let students use the balance first. Avoid teaching formal inverse operations until they can explain what the mystery object must be worth.
                 </div>
             </div>
         </div>
@@ -2194,8 +2152,7 @@
         /* Mystery X */
         mysteryPuzzle: null,
         mysteryLevel: 1,
-        mysteryGuess: null,
-        mysteryChecked: false
+        mysteryGuessPieces: []   /* pieces the student has built as their guess for x */
     };
 
     /* ============================================================
@@ -2262,17 +2219,19 @@
     function xPiece() { return { kind: 'equation', label: 'x', value: 'x' }; }
 
     function generateMysteryXPuzzle(level) {
-        /* Level 1: x=n, x+a=b, a+x=b
-           Level 2: +2x=b, 3x=b
-           Level 3: +2x+a=b  */
-        const types1 = ['x_eq_n', 'x_plus_a', 'a_plus_x'];
-        const types2 = ['two_x', 'three_x'];
-        const types3 = ['two_x_plus_a'];
+        /* Weighted type pools for each level.
+           Duplicates are intentional: they raise the probability of that type.
+           Level 1: x+a and a+x weighted 2×, x=n only 1× (warm-up only)
+           Level 2: even mix of all intro types + two new multi-x types
+           Level 3: no direct x=n; two_x weighted 2× as the main challenge */
+        const types1 = ['x_plus_a', 'x_plus_a', 'a_plus_x', 'a_plus_x', 'x_eq_n'];
+        const types2 = ['x_plus_a', 'a_plus_x', 'x_eq_n', 'two_x', 'three_x'];
+        const types3 = ['x_plus_a', 'a_plus_x', 'two_x', 'two_x', 'three_x', 'two_x_plus_a'];
 
         let pool;
         if (level === 1)      pool = types1;
-        else if (level === 2) pool = [...types1, ...types2];
-        else                  pool = [...types1, ...types2, ...types3];
+        else if (level === 2) pool = types2;
+        else                  pool = types3;
 
         const type = pool[randomInt(0, pool.length - 1)];
 
@@ -2355,125 +2314,107 @@
        ============================================================ */
     function loadMysteryPuzzle() {
         const puzzle = generateMysteryXPuzzle(state.mysteryLevel);
-        state.mysteryPuzzle  = puzzle;
-        state.mysteryGuess   = null;
-        state.mysteryChecked = false;
-        state.solved         = false;
-        state.xValue         = 1;   /* start with x=1 so scale is tilted */
+        state.mysteryPuzzle     = puzzle;
+        state.mysteryGuessPieces = [];
+        state.solved            = false;
+        state.xValue            = 1;   /* placeholder so scale tilts at start */
 
         state.left   = puzzle.left.map(clonePiece);
         state.right  = puzzle.right.map(clonePiece);
         state.locked = { left: true, right: true };
 
-        /* Update equation display */
+        /* Store equation text internally; only shown when # is active */
         const eqEl = document.getElementById('mysteryEq');
         if (eqEl) {
             eqEl.innerHTML = puzzle.equationText
                 .replace(/x/g, '<span class="x-token">x</span>');
         }
 
-        /* Reset feedback */
-        setMysteryFeedback('', false);
-        setMysterySub('');
-
-        /* Deselect all number buttons */
-        document.querySelectorAll('.mystery-num-btn')
-            .forEach(btn => btn.classList.remove('selected'));
-
-        document.body.classList.remove('solved');
+        document.body.classList.remove('solved', 'mystery-solved');
         setActiveSide('left');
         renderAll();
     }
 
     /* ============================================================
-       MYSTERY X — CHECK ANSWER
+       MYSTERY X — GUESS TRAY
+       Students build a guess for x by tapping value pieces.
        ============================================================ */
-    function checkMysteryAnswer() {
-        if (!state.mysteryPuzzle) return;
 
-        if (state.mysteryGuess === null) {
-            setMysteryFeedback('Pick a number first!', false);
-            showMysteryInfoRow(true);
-            return;
-        }
-
-        state.mysteryChecked = true;
-        const correct = state.mysteryGuess === state.mysteryPuzzle.xValue;
-
-        if (correct) {
-            state.solved = true;
-            document.body.classList.add('solved');
-            const x = state.mysteryPuzzle.xValue;
-            setMysteryFeedback('Yes! x is ' + x + '. The mystery value is ' + x + '.', true);
-            setMysterySub(state.mysteryPuzzle.substitutionText);
-            celebrate();
-        } else {
-            const g = state.mysteryGuess;
-            const lv = total('left'), rv = total('right');
-            let hint = '';
-            if      (lv > rv) hint = ' Try a smaller number.';
-            else if (lv < rv) hint = ' Try a bigger number.';
-            setMysteryFeedback(`Try again. If x were ${g}, would both sides balance?${hint}`, false);
-            setMysterySub('');
-        }
-
-        showMysteryInfoRow(true);
+    /* Sum of all pieces in the guess tray */
+    function mysteryGuessTotal() {
+        return state.mysteryGuessPieces.reduce((sum, p) => sum + p.value, 0);
     }
 
-    /* ---- feedback helpers ---- */
-    function setMysteryFeedback(text, isCorrect) {
-        const el = document.getElementById('mysteryFeedback');
-        if (!el) return;
-        el.textContent = text;
-        el.classList.toggle('correct', isCorrect);
+    /* Tap a mystery palette piece → add one copy to the guess tray */
+    function addToMysteryTray(def) {
+        const piece = { kind: def.kind, label: def.label, value: def.value, id: ++state.id };
+        state.mysteryGuessPieces.push(piece);
+        updateMysteryGuess();
     }
 
-    function setMysterySub(text) {
-        const subEl = document.getElementById('mysterySub');
-        const sepEl = document.getElementById('mysterySepEl');
-        if (!subEl) return;
-        subEl.textContent = text;
-        if (sepEl) sepEl.hidden = !text;
+    /* Tap a guess tray piece → remove it */
+    function removeFromMysteryTray(id) {
+        state.mysteryGuessPieces = state.mysteryGuessPieces.filter(p => p.id !== id);
+        updateMysteryGuess();
     }
 
-    function showMysteryInfoRow(visible) {
-        const row = document.getElementById('mysteryInfoRow');
-        if (row) row.classList.toggle('visible', visible);
+    /* Clear all pieces from the guess tray */
+    function clearMysteryTray() {
+        state.mysteryGuessPieces = [];
+        updateMysteryGuess();
     }
 
-    /* ---- select a number guess ---- */
-    function setMysteryGuess(num) {
-        state.mysteryGuess   = num;
-        state.mysteryChecked = false;
-        state.xValue         = num;
-        state.solved         = false;
-        document.body.classList.remove('solved');
-
-        document.querySelectorAll('.mystery-num-btn')
-            .forEach(btn => btn.classList.toggle('selected', +btn.dataset.num === num));
-
-        /* Clear feedback when a new number is selected */
-        setMysteryFeedback('', false);
-        setMysterySub('');
-        showMysteryInfoRow(false);
-
+    /* Recompute xValue from guess, remove solved state, re-render */
+    function updateMysteryGuess() {
+        const guessTotal = mysteryGuessTotal();
+        /* Use guess total as xValue; fall back to 1 when tray is empty so the
+           scale always has a physical state (shows a tilt rather than a flat line). */
+        state.xValue = guessTotal > 0 ? guessTotal : 1;
+        state.solved = false;
+        document.body.classList.remove('solved', 'mystery-solved');
         renderAll();
     }
 
-    /* ---- build the number buttons 1–10 ---- */
-    function buildMysteryNumButtons() {
-        const container = document.getElementById('mysteryNums');
-        if (!container) return;
-        container.innerHTML = '';
-        for (let n = 1; n <= 10; n++) {
-            const btn = document.createElement('button');
-            btn.className = 'mystery-num-btn';
-            btn.textContent = n;
-            btn.dataset.num = n;
-            btn.setAttribute('aria-label', 'guess x equals ' + n);
-            btn.addEventListener('click', () => setMysteryGuess(+btn.dataset.num));
-            container.appendChild(btn);
-        }
+    /* Re-render the guess tray DOM */
+    function renderMysteryTray() {
+        if (state.mode !== 'mystery') return;
+        const tray = document.getElementById('mysteryTray');
+        if (!tray) return;
+        tray.innerHTML = '';
+        state.mysteryGuessPieces.forEach(piece => {
+            const el = document.createElement('div');
+            el.className = 'piece block';   /* blocks for the tray */
+            el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', 'remove ' + piece.label + ' from guess');
+            el.dataset.role = 'mystery-tray';
+            el.dataset.pieceId = piece.id;
+            el.textContent = piece.label;
+            el.addEventListener('click', () => removeFromMysteryTray(piece.id));
+            tray.appendChild(el);
+        });
+    }
+
+    /* Build the compact mystery palette (1, 2, 5, 10 blocks to tap) */
+    function buildMysteryPaletteRow() {
+        const row = document.getElementById('mysteryPaletteRow');
+        if (!row) return;
+        row.innerHTML = '';
+        const defs = [
+            { kind: 'block', label: '1',  value: 1  },
+            { kind: 'block', label: '2',  value: 2  },
+            { kind: 'block', label: '5',  value: 5  },
+            { kind: 'block', label: '10', value: 10 }
+        ];
+        defs.forEach(def => {
+            const el = document.createElement('div');
+            el.className = 'piece block';
+            el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', 'add ' + def.label + ' to guess');
+            el.dataset.role = 'mystery-palette';
+            el.textContent = def.label;
+            el.addEventListener('click', () => addToMysteryTray(def));
+            row.appendChild(el);
+        });
     }
 
     /* ============================================================
@@ -2663,8 +2604,8 @@
 
     function clearScale() {
         if (state.mode === 'mystery') {
-            /* In mystery mode, "clear" loads a fresh puzzle */
-            loadMysteryPuzzle();
+            /* In mystery mode, "clear" (↺) clears the guess tray only */
+            clearMysteryTray();
             return;
         }
         state.left = [];
@@ -2689,7 +2630,7 @@
         document.body.classList.toggle('equation-mode', mode === 'equation');
         document.body.classList.toggle('money-mode',    mode === 'money');
         document.body.classList.toggle('mystery-mode',  mode === 'mystery');
-        document.body.classList.remove('solve-mode', 'goal-mode', 'solved');
+        document.body.classList.remove('solve-mode', 'goal-mode', 'solved', 'mystery-solved');
         document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
 
         if (mode === 'equation' && state.xValue === 1) state.xValue = 5;
@@ -2965,6 +2906,27 @@
                 document.body.classList.remove('solved');
             }
         }
+
+        /* Mystery X: detect solve when guess total matches puzzle answer and scale balances */
+        if (state.mode === 'mystery' && state.mysteryPuzzle) {
+            const guessTotal = mysteryGuessTotal();
+            if (isMysteryNewlySolved(balanced, guessTotal, state.mysteryPuzzle.xValue, state.solved)) {
+                state.solved = true;
+                document.body.classList.add('solved', 'mystery-solved');
+                celebrate();
+            } else if (state.solved && (!balanced || guessTotal !== state.mysteryPuzzle.xValue)) {
+                /* guess changed away from correct — un-solve */
+                state.solved = false;
+                document.body.classList.remove('solved', 'mystery-solved');
+            }
+        }
+    }
+
+    /* Returns true when a mystery puzzle just reaches the solved state.
+       Requires: scale balanced, non-empty guess, guess equals the true answer,
+       and not already solved (to avoid re-triggering the celebration). */
+    function isMysteryNewlySolved(balanced, guessTotal, puzzleAnswer, alreadySolved) {
+        return balanced && guessTotal > 0 && guessTotal === puzzleAnswer && !alreadySolved;
     }
 
     /* ============================================================
@@ -2999,6 +2961,7 @@
         renderPile('right', rightPile);
         renderTilt();
         renderX();
+        renderMysteryTray();
     }
 
     function toggleValues() {
@@ -3238,8 +3201,8 @@
     });
 
     /* Mystery X event wiring */
-    const mysteryCheckBtn = document.getElementById('mysteryCheck');
-    if (mysteryCheckBtn) mysteryCheckBtn.addEventListener('click', checkMysteryAnswer);
+    const mysteryClearTrayBtn = document.getElementById('mysteryClearTray');
+    if (mysteryClearTrayBtn) mysteryClearTrayBtn.addEventListener('click', clearMysteryTray);
 
     const mysteryNewBtn = document.getElementById('mysteryNew');
     if (mysteryNewBtn) mysteryNewBtn.addEventListener('click', loadMysteryPuzzle);
@@ -3248,7 +3211,11 @@
         btn.addEventListener('click', () => {
             const lvl = parseInt(btn.dataset.level, 10);
             state.mysteryLevel = lvl;
-            document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.level, 10) === lvl));
+            document.querySelectorAll('.diff-btn').forEach(b => {
+                const isActive = parseInt(b.dataset.level, 10) === lvl;
+                b.classList.toggle('active', isActive);
+                b.textContent = isActive ? '●' : '○';
+            });
             loadMysteryPuzzle();
         });
     });
@@ -3272,7 +3239,7 @@
     /* ============================================================
        BOOT
        ============================================================ */
-    buildMysteryNumButtons();  /* build 1–10 buttons once at startup */
+    buildMysteryPaletteRow();  /* build mystery palette once at startup */
     document.body.classList.remove('equation-mode');
     document.body.classList.remove('solve-mode');
     renderAll();
