@@ -368,27 +368,48 @@
     body.is-spinning #spinBtn .icon-spin-stop { display: block; }
     #spinBtn .icon-spin-stop { display: none; }
 
-    /* ── TARGET TIME & COUNTDOWN ── */
-    .target-section {
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
-      width: 100%; padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-    .target-label {
-      font-size: 0.6rem; font-weight: 800; letter-spacing: 1.8px;
-      text-transform: uppercase; color: var(--text-light);
-    }
-    .target-readout { padding: 12px 28px; }
-    .target-readout .time-input { font-size: 2.8rem; width: 2.1ch; }
-    .target-readout .colon { font-size: 2.8rem; }
+    /* ── TARGET & COUNTDOWN ── */
     .countdown-chip {
       background: var(--surface); border-radius: 12px; padding: 8px 20px;
       box-shadow: var(--shadow-raised); border: 1px solid var(--border);
       font-size: 1rem; font-weight: 900; letter-spacing: -0.03em;
       color: var(--text-light); min-width: 120px; text-align: center;
-      transition: color 0.3s;
+      transition: color 0.3s; display: none;
     }
     .countdown-chip.active { color: var(--thousands); }
+    body.target-active .countdown-chip { display: block; }
+
+    /* ── TARGET HANDLE & SHADE ── */
+    .target-handle {
+      position: absolute; width: 30px; height: 30px; border-radius: 50%;
+      background: var(--surface); border: 3px solid var(--thousands);
+      box-shadow: var(--shadow-raised); transform: translate(-50%, -50%);
+      cursor: grab; z-index: 35; display: flex; align-items: center;
+      justify-content: center; color: var(--thousands);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s; touch-action: none;
+    }
+    .target-handle:active { cursor: grabbing; box-shadow: var(--shadow-milled); }
+    body.target-active .target-handle { opacity: 1; pointer-events: auto; }
+
+    .shade-overlay {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 13; overflow: visible;
+    }
+    #shadePath { fill: var(--thousands); opacity: 0.18; }
+
+    /* ── TARGET TOGGLE ── */
+    .target-toggle-container {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .target-icon {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--surface);
+      box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9);
+      opacity: 0.55; transition: 0.25s ease; display: flex; align-items: center;
+      justify-content: center; color: var(--text-light); flex-shrink: 0;
+    }
+    body.target-active .target-icon { opacity: 1; color: var(--thousands); }
+    body.target-active .target-toggle-container .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
 
     /* Footer */
     footer {
@@ -434,6 +455,9 @@
       <div class="clock-chassis" id="clockChassis">
         <div class="clock-face" id="clockFace">
           <div class="active-wedge-overlay" id="wedgeOverlay"></div>
+          <svg class="shade-overlay" id="shadeOverlay" viewBox="0 0 476 476">
+            <path id="shadePath"/>
+          </svg>
           <div class="ticks-container" id="ticksContainer"></div>
           
           <div class="hand-container">
@@ -441,6 +465,16 @@
             <div class="minute-hand needs-discovery" id="minuteHand"></div>
             <div class="second-hand" id="secondHand"></div>
             <div class="center-bead"></div>
+          </div>
+          <div class="target-handle" id="targetHandle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="3"/>
+              <line x1="12" y1="1" x2="12" y2="5"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="1" y1="12" x2="5" y2="12"/>
+              <line x1="19" y1="12" x2="23" y2="12"/>
+            </svg>
           </div>
         </div>
       </div>
@@ -459,6 +493,16 @@
 
         <div class="second-toggle-container" onclick="toggleSecondHand()">
           <div class="second-icon"></div>
+          <div class="toggle-switch"></div>
+        </div>
+
+        <div class="target-toggle-container" onclick="toggleTarget()">
+          <div class="target-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
           <div class="toggle-switch"></div>
         </div>
 
@@ -488,15 +532,7 @@
           </button>
         </div>
 
-        <div class="target-section">
-          <div class="target-label">target time</div>
-          <div class="digital-readout target-readout">
-            <input type="text" id="targetHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
-            <span class="colon">:</span>
-            <input type="text" id="targetMin" class="time-input" inputmode="numeric" maxlength="2" value="00">
-          </div>
-          <div class="countdown-chip" id="countdownChip">set a target</div>
-        </div>
+        <div class="countdown-chip" id="countdownChip"></div>
         
       </div>
     </div>
@@ -606,6 +642,8 @@
       minuteHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation}deg)`;
       hourHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation / 12}deg)`;
 
+      updateShade();
+
       if (isSpinning) return;
 
       let positiveRotation = STATE.totalMinuteRotation % (360 * 12);
@@ -656,6 +694,14 @@
     }
 
     function moveDrag(e) {
+      if (isDraggingTarget) {
+        const angle = getAngleFromCenter(e);
+        targetAngleDeg = ((Math.round(angle / 6) * 6) % 360 + 360) % 360;
+        updateTargetHandle();
+        updateShade();
+        updateCountdown();
+        return;
+      }
       if (!STATE.isDragging) return;
       
       const currentAngle = getAngleFromCenter(e);
@@ -691,6 +737,7 @@
     }
 
     function endDrag() {
+      isDraggingTarget = false;
       STATE.isDragging = false;
       document.body.style.cursor = 'default';
     }
@@ -701,7 +748,7 @@
 
     clockFace.addEventListener('touchstart', startDrag, {passive: false});
     window.addEventListener('touchmove', (e) => {
-        if(STATE.isDragging) e.preventDefault();
+        if(STATE.isDragging || isDraggingTarget) e.preventDefault();
         moveDrag(e);
     }, {passive: false});
     window.addEventListener('touchmove', (e) => { e.preventDefault(); }, {passive: false});
@@ -812,7 +859,7 @@
       minuteHand.classList.remove('needs-discovery');
       const step = () => {
         if (!isSpinning) return;
-        STATE.totalMinuteRotation += 18;
+        STATE.totalMinuteRotation += 90;
         updateTimeDisplay();
         spinRaf = requestAnimationFrame(step);
       };
@@ -827,51 +874,66 @@
       navigator.vibrate?.([15, 10, 15]);
     }
 
-    // --- TARGET TIME & COUNTDOWN ---
-    let targetIsSet = false;
-    const targetHourInput = document.getElementById('targetHour');
-    const targetMinInput = document.getElementById('targetMin');
+    // --- TARGET HANDLE & SHADE ---
+    let targetAngleDeg = 0;
+    let targetActive = false;
+    let isDraggingTarget = false;
 
-    function updateCountdown() {
-      if (!countdownChip || !targetIsSet) return;
-      const curH = parseInt(digHour.value) || 0;
-      const curM = parseInt(digMin.value) || 0;
-      const tgtH = parseInt(targetHourInput.value) || 0;
-      const tgtM = parseInt(targetMinInput.value) || 0;
-      const curTotal = (curH % 12) * 60 + curM;
-      const tgtTotal = (tgtH % 12) * 60 + tgtM;
-      let diff = tgtTotal - curTotal;
-      if (diff < 0) diff += MINUTES_PER_12H;
-      countdownChip.classList.add('active');
-      if (diff === 0) {
-        countdownChip.textContent = "it's time!";
-      } else if (diff === 1) {
-        countdownChip.textContent = '1 min';
+    const targetHandle = document.getElementById('targetHandle');
+    const shadePath = document.getElementById('shadePath');
+
+    function toggleTarget() {
+      targetActive = !targetActive;
+      document.body.classList.toggle('target-active', targetActive);
+      if (targetActive) {
+        updateTargetHandle();
+        updateShade();
+        updateCountdown();
       } else {
-        countdownChip.textContent = `${diff} min`;
+        shadePath.setAttribute('d', '');
+        countdownChip.classList.remove('active');
       }
     }
 
-    function handleTargetInput() {
-      let h = parseInt(targetHourInput.value) || 0;
-      let m = parseInt(targetMinInput.value) || 0;
-      if (h < 1) h = 1;
-      if (h > 12) h = 12;
-      if (m < 0) m = 0;
-      if (m > 59) m = 59;
-      targetHourInput.value = h.toString().padStart(2, '0');
-      targetMinInput.value = m.toString().padStart(2, '0');
-      targetHourInput.blur(); targetMinInput.blur();
-      targetIsSet = true;
-      updateCountdown();
+    function updateTargetHandle() {
+      const r = 210, cx = 238, cy = 238;
+      const rad = targetAngleDeg * Math.PI / 180;
+      targetHandle.style.left = (cx + r * Math.sin(rad)) + 'px';
+      targetHandle.style.top  = (cy - r * Math.cos(rad)) + 'px';
     }
 
-    targetHourInput.addEventListener('change', handleTargetInput);
-    targetMinInput.addEventListener('change', handleTargetInput);
-    targetHourInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleTargetInput(); });
-    targetMinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleTargetInput(); });
-    targetHourInput.addEventListener('focus', () => targetHourInput.select());
-    targetMinInput.addEventListener('focus', () => targetMinInput.select());
+    function updateShade() {
+      if (!targetActive) return;
+      const cx = 238, cy = 238, r = 210;
+      const curAngle = ((STATE.totalMinuteRotation % 360) + 360) % 360;
+      const arcSpan = ((targetAngleDeg - curAngle) + 360) % 360;
+      if (arcSpan < 0.5) { shadePath.setAttribute('d', ''); return; }
+      const toRad = d => d * Math.PI / 180;
+      const x1 = cx + r * Math.sin(toRad(curAngle)), y1 = cy - r * Math.cos(toRad(curAngle));
+      const x2 = cx + r * Math.sin(toRad(targetAngleDeg)), y2 = cy - r * Math.cos(toRad(targetAngleDeg));
+      const largeArc = arcSpan > 180 ? 1 : 0;
+      shadePath.setAttribute('d', `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`);
+    }
+
+    function updateCountdown() {
+      if (!targetActive) return;
+      const curAngle = ((STATE.totalMinuteRotation % 360) + 360) % 360;
+      const curMin = Math.round(curAngle / 6) % 60;
+      const tgtMin = Math.round(targetAngleDeg / 6) % 60;
+      const diff = (tgtMin - curMin + 60) % 60;
+      countdownChip.classList.add('active');
+      countdownChip.textContent = diff === 0 ? '✓' : diff === 1 ? '1 min' : `${diff} min`;
+    }
+
+    targetHandle.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      isDraggingTarget = true;
+      document.body.style.cursor = 'grabbing';
+    });
+    targetHandle.addEventListener('touchstart', e => {
+      e.stopPropagation(); e.preventDefault();
+      isDraggingTarget = true;
+    }, { passive: false });
 
     // Boot
     buildClockFace();
