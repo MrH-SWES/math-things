@@ -2219,9 +2219,11 @@
     function xPiece() { return { kind: 'equation', label: 'x', value: 'x' }; }
 
     function generateMysteryXPuzzle(level) {
-        /* Level 1: mostly x+a=b / a+x=b; x=n only as warm-up (1 in 5)
-           Level 2: adds 2x=b, 3x=b
-           Level 3: adds 2x+a=b, no direct x=n  */
+        /* Weighted type pools for each level.
+           Duplicates are intentional: they raise the probability of that type.
+           Level 1: x+a and a+x weighted 2×, x=n only 1× (warm-up only)
+           Level 2: even mix of all intro types + two new multi-x types
+           Level 3: no direct x=n; two_x weighted 2× as the main challenge */
         const types1 = ['x_plus_a', 'x_plus_a', 'a_plus_x', 'a_plus_x', 'x_eq_n'];
         const types2 = ['x_plus_a', 'a_plus_x', 'x_eq_n', 'two_x', 'three_x'];
         const types3 = ['x_plus_a', 'a_plus_x', 'two_x', 'two_x', 'three_x', 'two_x_plus_a'];
@@ -2365,7 +2367,8 @@
     /* Recompute xValue from guess, remove solved state, re-render */
     function updateMysteryGuess() {
         const guessTotal = mysteryGuessTotal();
-        /* Use guess total as xValue; fall back to 1 (placeholder) when tray is empty */
+        /* Use guess total as xValue; fall back to 1 when tray is empty so the
+           scale always has a physical state (shows a tilt rather than a flat line). */
         state.xValue = guessTotal > 0 ? guessTotal : 1;
         state.solved = false;
         document.body.classList.remove('solved', 'mystery-solved');
@@ -2907,9 +2910,7 @@
         /* Mystery X: detect solve when guess total matches puzzle answer and scale balances */
         if (state.mode === 'mystery' && state.mysteryPuzzle) {
             const guessTotal = mysteryGuessTotal();
-            const mysteryJustSolved = balanced && guessTotal > 0 &&
-                                      guessTotal === state.mysteryPuzzle.xValue && !state.solved;
-            if (mysteryJustSolved) {
+            if (isMysteryNewlySolved(balanced, guessTotal, state.mysteryPuzzle.xValue, state.solved)) {
                 state.solved = true;
                 document.body.classList.add('solved', 'mystery-solved');
                 celebrate();
@@ -2919,6 +2920,13 @@
                 document.body.classList.remove('solved', 'mystery-solved');
             }
         }
+    }
+
+    /* Returns true when a mystery puzzle just reaches the solved state.
+       Requires: scale balanced, non-empty guess, guess equals the true answer,
+       and not already solved (to avoid re-triggering the celebration). */
+    function isMysteryNewlySolved(balanced, guessTotal, puzzleAnswer, alreadySolved) {
+        return balanced && guessTotal > 0 && guessTotal === puzzleAnswer && !alreadySolved;
     }
 
     /* ============================================================
