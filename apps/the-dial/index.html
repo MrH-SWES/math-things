@@ -325,6 +325,71 @@
     .now-btn svg { transition: transform 0.3s; }
     .now-btn:active svg { transform: rotate(45deg); }
 
+    /* ── SECOND HAND ── */
+    .second-hand {
+      position: absolute; bottom: 50%; left: 50%;
+      width: 2px; height: 228px;
+      background: linear-gradient(to top, #c8cacf 0%, #e8e9ed 45%, #b8bbbf 100%);
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(0deg);
+      border-radius: 1px 1px 0 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      z-index: 22;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    body.second-hand-on .second-hand { opacity: 1; }
+
+    .second-toggle-container {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .second-icon {
+      width: 18px; height: 18px; border-radius: 50%; position: relative;
+      background: var(--surface);
+      box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9);
+      opacity: 0.55; transition: 0.25s ease; flex-shrink: 0;
+    }
+    .second-icon::before {
+      content: ''; position: absolute; left: 50%; top: 50%;
+      width: 7px; height: 1.5px;
+      background: var(--alum-base);
+      transform-origin: left center;
+      transform: rotate(-45deg) translateY(-50%);
+      border-radius: 99px;
+    }
+    body.second-hand-on .second-icon { opacity: 1; }
+    body.second-hand-on .second-toggle-container .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
+
+    /* ── SPIN BUTTON ── */
+    body.is-spinning .minute-hand { transition: none; }
+    body.is-spinning #spinBtn { box-shadow: var(--shadow-milled); color: var(--ones); border-color: rgba(220,20,60,0.3); }
+    body.is-spinning #spinBtn .icon-spin-start { display: none; }
+    body.is-spinning #spinBtn .icon-spin-stop { display: block; }
+    #spinBtn .icon-spin-stop { display: none; }
+
+    /* ── TARGET TIME & COUNTDOWN ── */
+    .target-section {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      width: 100%; padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .target-label {
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 1.8px;
+      text-transform: uppercase; color: var(--text-light);
+    }
+    .target-readout { padding: 12px 28px; }
+    .target-readout .time-input { font-size: 2.8rem; width: 2.1ch; }
+    .target-readout .colon { font-size: 2.8rem; }
+    .countdown-chip {
+      background: var(--surface); border-radius: 12px; padding: 8px 20px;
+      box-shadow: var(--shadow-raised); border: 1px solid var(--border);
+      font-size: 1rem; font-weight: 900; letter-spacing: -0.03em;
+      color: var(--text-light); min-width: 120px; text-align: center;
+      transition: color 0.3s;
+    }
+    .countdown-chip.active { color: var(--thousands); }
+
     /* Footer */
     footer {
       text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700;
@@ -374,6 +439,7 @@
           <div class="hand-container">
             <div class="hour-hand" id="hourHand"></div>
             <div class="minute-hand needs-discovery" id="minuteHand"></div>
+            <div class="second-hand" id="secondHand"></div>
             <div class="center-bead"></div>
           </div>
         </div>
@@ -391,7 +457,23 @@
           <div class="toggle-switch"></div>
         </div>
 
+        <div class="second-toggle-container" onclick="toggleSecondHand()">
+          <div class="second-icon"></div>
+          <div class="toggle-switch"></div>
+        </div>
+
         <div class="readout-wrapper">
+          <button id="spinBtn" class="now-btn" onclick="toggleSpin()">
+            <svg class="icon-spin-start" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 3 21 3 21 8"></polyline>
+              <line x1="4" y1="20" x2="21" y2="3"></line>
+              <polyline points="21 16 21 21 16 21"></polyline>
+              <line x1="15" y1="15" x2="21" y2="21"></line>
+            </svg>
+            <svg class="icon-spin-stop" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="3" ry="3"></rect>
+            </svg>
+          </button>
           <div class="digital-readout">
             <input type="text" id="digHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
             <span class="colon blink">:</span>
@@ -404,6 +486,16 @@
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
           </button>
+        </div>
+
+        <div class="target-section">
+          <div class="target-label">target time</div>
+          <div class="digital-readout target-readout">
+            <input type="text" id="targetHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
+            <span class="colon">:</span>
+            <input type="text" id="targetMin" class="time-input" inputmode="numeric" maxlength="2" value="00">
+          </div>
+          <div class="countdown-chip" id="countdownChip">set a target</div>
         </div>
         
       </div>
@@ -423,6 +515,8 @@
       isDragging: false,
       lastAngle: 0
     };
+    let isSpinning = false;
+    const MINUTES_PER_12H = 12 * 60;
 
     const palette = [
       'var(--ones)', 'var(--tens)', 'var(--hundreds)', 'var(--thousands)', 
@@ -434,11 +528,13 @@
     // --- DOM CACHE ---
     const hourHand = document.getElementById('hourHand');
     const minuteHand = document.getElementById('minuteHand');
+    const secondHand = document.getElementById('secondHand');
     const clockFace = document.getElementById('clockFace');
     const digHour = document.getElementById('digHour');
     const digMin = document.getElementById('digMin');
     const wedgeOverlay = document.getElementById('wedgeOverlay');
     const ticksContainer = document.getElementById('ticksContainer');
+    const countdownChip = document.getElementById('countdownChip');
 
     // --- INITIALIZATION ---
     function buildClockFace() {
@@ -510,6 +606,8 @@
       minuteHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation}deg)`;
       hourHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation / 12}deg)`;
 
+      if (isSpinning) return;
+
       let positiveRotation = STATE.totalMinuteRotation % (360 * 12);
       if (positiveRotation < 0) positiveRotation += (360 * 12);
 
@@ -521,6 +619,8 @@
 
       if (document.activeElement !== digHour) digHour.value = displayHour.toString().padStart(2, '0');
       if (document.activeElement !== digMin) digMin.value = minutes.toString().padStart(2, '0');
+
+      updateCountdown();
     }
 
     // --- INTERACTION LOGIC ---
@@ -543,6 +643,7 @@
     }
 
     function startDrag(e) {
+      if (isSpinning) return;
       STATE.isDragging = true;
       STATE.lastAngle = getAngleFromCenter(e);
       document.body.style.cursor = 'grabbing';
@@ -684,6 +785,93 @@
       minuteHand.classList.remove('needs-discovery');
       navigator.vibrate?.(20);
     });
+
+    // --- SECOND HAND ---
+    let secondHandActive = false;
+    function toggleSecondHand() {
+      document.body.classList.toggle('second-hand-on');
+      secondHandActive = document.body.classList.contains('second-hand-on');
+    }
+    (function tickSecondHand() {
+      if (secondHandActive) {
+        const now = new Date();
+        const sec = now.getSeconds() + now.getMilliseconds() / 1000;
+        secondHand.style.transform = `translateX(-50%) rotate(${sec * 6}deg)`;
+      }
+      requestAnimationFrame(tickSecondHand);
+    })();
+
+    // --- RANDOM TIME SPINNER ---
+    let spinRaf = null;
+    function toggleSpin() {
+      if (isSpinning) { stopSpin(); } else { startSpin(); }
+    }
+    function startSpin() {
+      isSpinning = true;
+      document.body.classList.add('is-spinning');
+      minuteHand.classList.remove('needs-discovery');
+      const step = () => {
+        if (!isSpinning) return;
+        STATE.totalMinuteRotation += 18;
+        updateTimeDisplay();
+        spinRaf = requestAnimationFrame(step);
+      };
+      spinRaf = requestAnimationFrame(step);
+    }
+    function stopSpin() {
+      isSpinning = false;
+      document.body.classList.remove('is-spinning');
+      if (spinRaf) { cancelAnimationFrame(spinRaf); spinRaf = null; }
+      STATE.totalMinuteRotation = Math.round(STATE.totalMinuteRotation / 6) * 6;
+      updateTimeDisplay();
+      navigator.vibrate?.([15, 10, 15]);
+    }
+
+    // --- TARGET TIME & COUNTDOWN ---
+    let targetIsSet = false;
+    const targetHourInput = document.getElementById('targetHour');
+    const targetMinInput = document.getElementById('targetMin');
+
+    function updateCountdown() {
+      if (!countdownChip || !targetIsSet) return;
+      const curH = parseInt(digHour.value) || 0;
+      const curM = parseInt(digMin.value) || 0;
+      const tgtH = parseInt(targetHourInput.value) || 0;
+      const tgtM = parseInt(targetMinInput.value) || 0;
+      const curTotal = (curH % 12) * 60 + curM;
+      const tgtTotal = (tgtH % 12) * 60 + tgtM;
+      let diff = tgtTotal - curTotal;
+      if (diff < 0) diff += MINUTES_PER_12H;
+      countdownChip.classList.add('active');
+      if (diff === 0) {
+        countdownChip.textContent = "it's time!";
+      } else if (diff === 1) {
+        countdownChip.textContent = '1 min';
+      } else {
+        countdownChip.textContent = `${diff} min`;
+      }
+    }
+
+    function handleTargetInput() {
+      let h = parseInt(targetHourInput.value) || 0;
+      let m = parseInt(targetMinInput.value) || 0;
+      if (h < 1) h = 1;
+      if (h > 12) h = 12;
+      if (m < 0) m = 0;
+      if (m > 59) m = 59;
+      targetHourInput.value = h.toString().padStart(2, '0');
+      targetMinInput.value = m.toString().padStart(2, '0');
+      targetHourInput.blur(); targetMinInput.blur();
+      targetIsSet = true;
+      updateCountdown();
+    }
+
+    targetHourInput.addEventListener('change', handleTargetInput);
+    targetMinInput.addEventListener('change', handleTargetInput);
+    targetHourInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleTargetInput(); });
+    targetMinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleTargetInput(); });
+    targetHourInput.addEventListener('focus', () => targetHourInput.select());
+    targetMinInput.addEventListener('focus', () => targetMinInput.select());
 
     // Boot
     buildClockFace();
