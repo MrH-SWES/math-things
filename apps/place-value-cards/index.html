@@ -398,9 +398,9 @@
       const color = PALETTE[pv];
 
       el.className = 'tile';
-      el.style.setProperty('--tile-color', color);
-      el.style.setProperty('--tile-border', hexToRgba(color, 0.4));
-      el.style.setProperty('--tile-bg', hexToRgba(color, 0.08));
+      el.style.setProperty('--tile-color', '#ffffff');
+      el.style.setProperty('--tile-border', color);
+      el.style.setProperty('--tile-bg', color);
 
       digits.forEach(char => {
         const d = document.createElement('div');
