@@ -74,19 +74,93 @@
 
     /* ── WORKSHOP ── */
     .workshop {
-      flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: center;
-      gap: 60px; padding: 40px; position: relative;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 236px minmax(620px, 720px);
+      align-items: center;
+      justify-content: center;
+      gap: clamp(18px, 3vw, 48px);
+      padding: 28px clamp(24px, 4vw, 72px);
+      position: relative;
+    }
+
+    /* ── LEFT CONTROL PANEL ── */
+    .left-control-panel {
+      width: 236px;
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(34px);
+      -webkit-backdrop-filter: blur(34px);
+      border-radius: 30px;
+      padding: 16px;
+      box-shadow: 10px 14px 32px rgba(166, 171, 189, 0.22), -10px -10px 24px rgba(255,255,255,0.72);
+      border: 1px solid rgba(255,255,255,0.78);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      justify-self: end;
+    }
+
+    /* ── COMPACT CONTROL PANEL ── */
+    .control-panel {
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+      border: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .control-panel .digital-readout {
+      width: 100%;
+    }
+    .control-panel .button-row {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+
+    /* ── ICON TOGGLE ROW ── */
+    .icon-toggle-row {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; gap: 8px;
+      padding: 2px 0;
+    }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray);
+      flex-shrink: 0; padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active {
+      box-shadow: var(--shadow-milled);
+      color: var(--text-main);
     }
 
     /* ── INVENTORY (Wedges) ── */
     .inventory {
-      width: 140px; background: var(--surface); border-radius: 24px; padding: 24px 24px 32px 24px;
-      box-shadow: var(--shadow-raised); display: flex; flex-direction: column; gap: 24px;
-      align-items: center; border: 1px solid var(--border);
+      width: 100%;
+      background: rgba(245,245,247,0.72);
+      border-radius: 22px;
+      padding: 12px;
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.88), inset -1px -1px 2px rgba(166,171,189,0.18);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      justify-items: center;
+      align-items: center;
+      border: 1px solid rgba(0,0,0,0.035);
+      order: 2;
     }
     
     .wedge-btn {
-      width: 70px; height: 70px; border-radius: 50%; background: var(--alum-base);
+      width: 48px; height: 48px; border-radius: 50%; background: var(--alum-base);
       box-shadow: var(--shadow-raised); border: 2px solid transparent; cursor: pointer;
       position: relative; display: flex; align-items: center; justify-content: center;
       transition: all 0.2s; overflow: hidden;
@@ -110,18 +184,23 @@
     /* ── CLOCK ASSEMBLY ── */
     .clock-assembly {
       display: flex; flex-direction: column; align-items: center; gap: 40px;
+      justify-self: start;
     }
 
     .clock-chassis {
-      width: 560px; height: 560px; border-radius: 50%; background: var(--surface);
+      width: min(680px, calc(100vw - 420px));
+      height: min(680px, calc(100vw - 420px));
+      min-width: 560px;
+      min-height: 560px;
+      border-radius: 50%; background: var(--surface);
       box-shadow: var(--shadow-raised), inset 10px 10px 20px rgba(0,0,0,0.045);
       position: relative; display: flex; align-items: center; justify-content: center;
-      border: 18px solid var(--alum-base);
+      border: 16px solid var(--alum-base);
       flex-shrink: 0;
     }
 
     .clock-face {
-      position: absolute; inset: 42px; border-radius: 50%; background: var(--surface);
+      position: absolute; inset: 30px; border-radius: 50%; background: var(--surface);
       box-shadow: 0 12px 24px rgba(0,0,0,0.1), inset 1px 1px 2px #fff;
       z-index: 10; cursor: grab; overflow: visible;
     }
@@ -130,6 +209,7 @@
     .active-wedge-overlay {
       position: absolute; inset: 0; border-radius: 50%; opacity: 0; pointer-events: none;
       transition: opacity 0.3s; z-index: 12; mix-blend-mode: multiply;
+      transform: rotate(0deg);
     }
 
     /* ── TICKS & NUMBERS ── */
@@ -147,9 +227,9 @@
     
     .tick-number {
       position: absolute; transform: translate(-50%, -50%);
-      width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 2.55rem; color: var(--text-main);
-      transition: color 0.3s; letter-spacing: -0.04em; line-height: 1;
+      width: 82px; height: 72px; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 3.85rem; color: var(--text-main);
+      transition: color 0.3s; letter-spacing: -0.065em; line-height: 0.9;
       z-index: 24;
     }
 
@@ -198,41 +278,36 @@
 
     body.color-coded .minute-label.minute-one { color: var(--tick-color); }
 
-    .minute-toggle-container {
-      display: flex; align-items: center; gap: 12px; cursor: pointer;
-    }
+    /* Numeral-label icon — always previews the layer it controls.
+       Off: ghost 12/3/6/9 numerals make the button read as “number labels.”
+       Mode 1: landmark numerals become solid.
+       Mode 2: 5-minute bubbles join the dial. */
+    .icon-minute .hr-labels { opacity: 0.28; transition: opacity 0.25s ease; }
+    .icon-minute .min-labels { opacity: 0; transition: opacity 0.25s ease, transform 0.25s var(--spring); transform-origin: 20px 20px; transform: scale(0.92); }
+    .icon-minute .label-dial { opacity: 0.68; }
+    body.minute-mode-1 .icon-minute .hr-labels,
+    body.minute-mode-2 .icon-minute .hr-labels { opacity: 1; }
+    body.minute-mode-2 .icon-minute .min-labels { opacity: 0.88; transform: scale(1); }
+    body.minute-mode-1 #minuteBtn,
+    body.minute-mode-2 #minuteBtn { box-shadow: var(--shadow-milled); color: var(--text-main); }
 
-    .minute-icon {
-      width: 18px; height: 18px; border-radius: 50%; position: relative;
-      background: var(--surface); box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9);
-      opacity: 0.55; transition: 0.25s ease;
-    }
-    .minute-icon::before,
-    .minute-icon::after {
-      content: ''; position: absolute; left: 50%; top: 50%; border-radius: 99px;
-      transform-origin: left center; background: var(--text-gray); transition: 0.25s ease;
-    }
-    .minute-icon::before { width: 8px; height: 3px; transform: rotate(0deg) translateY(-50%); }
-    .minute-icon::after { width: 6px; height: 3px; transform: rotate(90deg) translateY(-50%); }
-    body.minute-mode-1 .minute-icon { opacity: 0.9; }
-    body.minute-mode-2 .minute-icon { opacity: 1; box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9), 0 0 0 3px rgba(0,0,0,0.04); }
-
-    .minute-toggle-container .toggle-switch::after { transform: translateX(0); }
-    body.minute-mode-1 .minute-toggle-container .toggle-switch::after { transform: translateX(10px); background: var(--text-gray); }
-    body.minute-mode-2 .minute-toggle-container .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
+    /* Randomizer icon — a tiny clock with a surprise/sparkle cue. */
+    .icon-random .random-hand { transform-origin: 12px 12px; }
+    .icon-random .sparkle { transform-origin: 19px 5px; }
+    #spinBtn:active .icon-random .sparkle { transform: scale(1.18); }
 
     /* ── HANDS & BEAD ── */
     .hand-container { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
     
     .hour-hand {
-      position: absolute; bottom: 50%; left: 50%; width: 14px; height: 112px;
+      position: absolute; bottom: 50%; left: 50%; width: 16px; height: 148px;
       background: var(--steel-dark); transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg); border-radius: 7px 7px 0 0;
       box-shadow: 2px 4px 8px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.4);
     }
     
     .minute-hand {
-      position: absolute; bottom: 50%; left: 50%; width: 8px; height: 212px;
+      position: absolute; bottom: 50%; left: 50%; width: 9px; height: 282px;
       background: var(--ones); transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg); border-radius: 4px 4px 0 0;
       box-shadow: 2px 4px 8px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4);
@@ -249,7 +324,7 @@
 
     .center-bead {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 36px; height: 36px; border-radius: 50%; z-index: 25;
+      width: 38px; height: 38px; border-radius: 50%; z-index: 25;
       background: 
         radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), 
         radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), 
@@ -263,41 +338,28 @@
     /* ── CONTROLS & READOUT ── */
     .control-cluster { display: flex; flex-direction: column; align-items: center; gap: 20px; }
 
-    .color-toggle-container {
-      display: flex; align-items: center; gap: 12px; cursor: pointer;
-    }
+    /* Color wheel — always full color so the function reads at a glance */
     .color-wheel-icon {
-      width: 18px; height: 18px; border-radius: 50%;
+      width: 26px; height: 26px; border-radius: 50%;
       background: conic-gradient(var(--ones), var(--ten-thousands), var(--hundreds), var(--thousands), var(--twelfths), var(--tens), var(--tenths), var(--millions), var(--ones));
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      filter: grayscale(100%) opacity(0.5);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.5);
       transition: 0.3s ease;
     }
-    body.color-coded .color-wheel-icon { filter: grayscale(0%) opacity(1); }
+    #colorBtn.active .color-wheel-icon {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 0 0 2px var(--text-main);
+    }
     
-    .toggle-switch {
-      position: relative; width: 44px; height: 24px; background: var(--alum-base); 
-      border-radius: 12px; box-shadow: var(--shadow-milled); transition: 0.3s;
-      pointer-events: none;
-    }
-    .toggle-switch::after {
-      content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; 
-      background: var(--surface); border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-      transition: transform 0.3s var(--spring), background 0.3s;
-    }
-    body.color-coded .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
-
     .readout-wrapper { display: flex; align-items: center; gap: 16px; }
 
     .digital-readout {
-      background: #2C2F33; border-radius: 16px; padding: 16px 32px;
+      background: #2C2F33; border-radius: 16px; padding: 14px 20px; width: 100%;
       box-shadow: var(--shadow-void); border: 2px solid var(--steel-dark);
       display: flex; align-items: center; justify-content: center;
     }
     
     .time-input {
       background: transparent; border: none; color: #FFF;
-      font-family: 'Lexend', monospace; font-size: 4rem; font-weight: 900;
+      font-family: 'Lexend', monospace; font-size: 3.25rem; font-weight: 900;
       letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,255,255,0.3);
       width: 2.2ch; text-align: center; outline: none;
       padding: 0; margin: 0; cursor: text;
@@ -307,7 +369,7 @@
     .time-input::selection { background: rgba(255,255,255,0.2); }
     
     .colon {
-      font-family: 'Lexend', monospace; font-size: 4rem; font-weight: 900;
+      font-family: 'Lexend', monospace; font-size: 3.25rem; font-weight: 900;
       color: #FFF; text-shadow: 0 0 10px rgba(255,255,255,0.3);
       margin: 0 4px; transform: translateY(-4px); 
     }
@@ -316,7 +378,7 @@
 
     .now-btn {
       background: var(--surface); border: 2px solid var(--border);
-      border-radius: 16px; width: 64px; height: 64px;
+      border-radius: 16px; width: 52px; height: 52px;
       display: flex; align-items: center; justify-content: center;
       color: var(--text-gray); cursor: pointer; transition: 0.2s;
       box-shadow: var(--shadow-raised); outline: none;
@@ -328,7 +390,7 @@
     /* ── SECOND HAND ── */
     .second-hand {
       position: absolute; bottom: 50%; left: 50%;
-      width: 2px; height: 228px;
+      width: 2px; height: 300px;
       background: linear-gradient(to top, #c8cacf 0%, #e8e9ed 45%, #b8bbbf 100%);
       transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg);
@@ -341,28 +403,20 @@
     }
     body.second-hand-on .second-hand { opacity: 1; }
 
-    .second-toggle-container {
-      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    /* Second-hand icon: sweep hand spins when active */
+    .icon-second .sweep-hand { transform-origin: 16px 16px; }
+    body.second-hand-on #secondBtn { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    body.second-hand-on .icon-second .sweep-hand {
+      animation: icon-sweep 6s linear infinite;
     }
-    .second-icon {
-      width: 18px; height: 18px; border-radius: 50%; position: relative;
-      background: var(--surface);
-      box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9);
-      opacity: 0.55; transition: 0.25s ease; flex-shrink: 0;
+    @keyframes icon-sweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
-    .second-icon::before {
-      content: ''; position: absolute; left: 50%; top: 50%;
-      width: 7px; height: 1.5px;
-      background: var(--alum-base);
-      transform-origin: left center;
-      transform: rotate(-45deg) translateY(-50%);
-      border-radius: 99px;
-    }
-    body.second-hand-on .second-icon { opacity: 1; }
-    body.second-hand-on .second-toggle-container .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
 
     /* ── SPIN BUTTON ── */
-    body.is-spinning .minute-hand { transition: none; }
+    body.is-spinning .minute-hand,
+    body.live-on .minute-hand { transition: none; }
     body.is-spinning #spinBtn { box-shadow: var(--shadow-milled); color: var(--ones); border-color: rgba(220,20,60,0.3); }
     body.is-spinning #spinBtn .icon-spin-start { display: none; }
     body.is-spinning #spinBtn .icon-spin-stop { display: block; }
@@ -381,7 +435,7 @@
 
     /* ── TARGET HANDLE & SHADE ── */
     .target-handle {
-      position: absolute; width: 30px; height: 30px; border-radius: 50%;
+      position: absolute; width: 44px; height: 44px; border-radius: 50%;
       background: var(--surface); border: 3px solid var(--thousands);
       box-shadow: var(--shadow-raised); transform: translate(-50%, -50%);
       cursor: grab; z-index: 35; display: flex; align-items: center;
@@ -398,18 +452,43 @@
     #shadePath { fill: var(--thousands); opacity: 0.18; }
 
     /* ── TARGET TOGGLE ── */
-    .target-toggle-container {
-      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    body.target-active #targetBtn {
+      box-shadow: var(--shadow-milled);
+      color: var(--thousands);
+      border-color: rgba(76, 187, 23, 0.3);
     }
-    .target-icon {
-      width: 18px; height: 18px; border-radius: 50%;
-      background: var(--surface);
-      box-shadow: inset 2px 2px 5px rgba(166,171,189,0.55), inset -2px -2px 5px rgba(255,255,255,0.9);
-      opacity: 0.55; transition: 0.25s ease; display: flex; align-items: center;
-      justify-content: center; color: var(--text-light); flex-shrink: 0;
+
+    /* ── LIVE (real-time) TOGGLE — repurposes the clock button below the readout ── */
+    body.live-on #liveBtn {
+      box-shadow: var(--shadow-milled);
+      color: var(--ones);
+      border-color: rgba(220, 20, 60, 0.3);
+      animation: live-pulse 1.6s ease-in-out infinite;
     }
-    body.target-active .target-icon { opacity: 1; color: var(--thousands); }
-    body.target-active .target-toggle-container .toggle-switch::after { transform: translateX(20px); background: var(--text-main); }
+    @keyframes live-pulse {
+      0%, 100% { box-shadow: var(--shadow-milled); }
+      50% { box-shadow: var(--shadow-milled), 0 0 18px rgba(220, 20, 60, 0.45); }
+    }
+
+
+
+    @media (max-width: 980px) {
+      .workshop {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 24px;
+      }
+      .left-control-panel,
+      .clock-assembly { justify-self: center; }
+      .left-control-panel { width: min(360px, calc(100vw - 48px)); }
+      .inventory { grid-template-columns: repeat(6, 1fr); }
+      .clock-chassis {
+        width: min(620px, calc(100vw - 48px));
+        height: min(620px, calc(100vw - 48px));
+        min-width: 0;
+        min-height: 0;
+      }
+    }
 
     /* Footer */
     footer {
@@ -430,6 +509,7 @@
 
   <main class="workshop">
     
+    <div class="left-control-panel">
     <div class="inventory">
       <button class="wedge-btn" data-frac="4-3" data-deg="270" data-color="var(--ones)">
         <div class="wedge-graphic w-three-quarters"></div>
@@ -451,6 +531,93 @@
       </button>
     </div>
 
+      <div class="control-panel">
+
+        <div class="icon-toggle-row">
+          <button class="icon-btn" id="colorBtn" onclick="toggleColorCoding()" aria-label="Color code">
+            <div class="color-wheel-icon"></div>
+          </button>
+
+          <button class="icon-btn" id="minuteBtn" onclick="toggleMinutes()" aria-label="Numeral labels">
+            <svg class="icon-minute" width="32" height="32" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle class="label-dial" cx="20" cy="20" r="16"/>
+              <!-- Off state still shows ghost numerals so the icon explains itself. -->
+              <g class="hr-labels" fill="currentColor" stroke="none" font-family="Lexend, sans-serif" font-weight="900" text-anchor="middle" dominant-baseline="central">
+                <text x="20" y="7.1" font-size="6.4">12</text>
+                <text x="32.4" y="20" font-size="7.1">3</text>
+                <text x="20" y="32.8" font-size="7.1">6</text>
+                <text x="7.6" y="20" font-size="7.1">9</text>
+              </g>
+              <!-- Mode 2: small 5-minute bubbles around the same miniature dial. -->
+              <g class="min-labels" fill="currentColor" stroke="none" font-family="Lexend, sans-serif" font-weight="900" text-anchor="middle" dominant-baseline="central" font-size="4.25">
+                <circle cx="27.5" cy="7.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="27.5" y="7.0">5</text>
+                <circle cx="33.0" cy="13.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="33.0" y="13.0">10</text>
+                <circle cx="33.0" cy="27.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="33.0" y="27.0">20</text>
+                <circle cx="27.5" cy="33.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="27.5" y="33.0">25</text>
+                <circle cx="12.5" cy="33.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="12.5" y="33.0">35</text>
+                <circle cx="7.0" cy="27.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="7.0" y="27.0">40</text>
+                <circle cx="7.0" cy="13.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="7.0" y="13.0">50</text>
+                <circle cx="12.5" cy="7.0" r="3.3" fill="currentColor" opacity="0.14"/>
+                <text x="12.5" y="7.0">55</text>
+              </g>
+            </svg>
+          </button>
+
+          <button class="icon-btn" id="secondBtn" onclick="toggleSecondHand()" aria-label="Second hand">
+            <svg class="icon-second" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="16" cy="16" r="13"/>
+              <!-- Sweeping second hand -->
+              <line class="sweep-hand" x1="16" y1="16" x2="24.5" y2="7.5" stroke-width="1.6"/>
+              <circle cx="16" cy="16" r="1.6" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+
+          <button class="icon-btn" id="targetBtn" onclick="toggleTarget()" aria-label="Target">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="16" cy="16" r="13"/>
+              <circle cx="16" cy="16" r="8"/>
+              <circle cx="16" cy="16" r="3" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="digital-readout">
+          <input type="text" id="digHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
+          <span class="colon blink">:</span>
+          <input type="text" id="digMin" class="time-input" inputmode="numeric" maxlength="2" value="00">
+        </div>
+
+        <div class="button-row">
+          <button id="spinBtn" class="now-btn" onclick="toggleSpin()" aria-label="Random time">
+            <svg class="icon-spin-start icon-random" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9.15 8.35 C9.15 6.55 10.45 5.35 12.2 5.35 C14.05 5.35 15.35 6.55 15.35 8.15 C15.35 9.35 14.7 10.05 13.55 10.82 C12.55 11.5 12.05 12.05 12.05 13.2" />
+              <circle cx="12" cy="17.6" r="1.15" fill="currentColor" stroke="none" />
+            </svg>
+            <svg class="icon-spin-stop" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="3" ry="3"></rect>
+            </svg>
+          </button>
+
+          <button id="liveBtn" class="now-btn" onclick="toggleLive()" aria-label="Track real time">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <div class="countdown-chip" id="countdownChip"></div>
+        
+      </div>
+    </div>
+
     <div class="clock-assembly">
       <div class="clock-chassis" id="clockChassis">
         <div class="clock-face" id="clockFace">
@@ -467,7 +634,7 @@
             <div class="center-bead"></div>
           </div>
           <div class="target-handle" id="targetHandle">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <circle cx="12" cy="12" r="10"/>
               <circle cx="12" cy="12" r="3"/>
               <line x1="12" y1="1" x2="12" y2="5"/>
@@ -477,63 +644,6 @@
             </svg>
           </div>
         </div>
-      </div>
-
-      <div class="control-cluster">
-        
-        <div class="color-toggle-container" onclick="toggleColorCoding()">
-          <div class="color-wheel-icon"></div>
-          <div class="toggle-switch"></div>
-        </div>
-
-        <div class="minute-toggle-container" onclick="toggleMinutes()">
-          <div class="minute-icon"></div>
-          <div class="toggle-switch"></div>
-        </div>
-
-        <div class="second-toggle-container" onclick="toggleSecondHand()">
-          <div class="second-icon"></div>
-          <div class="toggle-switch"></div>
-        </div>
-
-        <div class="target-toggle-container" onclick="toggleTarget()">
-          <div class="target-icon">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <circle cx="12" cy="12" r="10"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </div>
-          <div class="toggle-switch"></div>
-        </div>
-
-        <div class="readout-wrapper">
-          <button id="spinBtn" class="now-btn" onclick="toggleSpin()">
-            <svg class="icon-spin-start" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 3 21 3 21 8"></polyline>
-              <line x1="4" y1="20" x2="21" y2="3"></line>
-              <polyline points="21 16 21 21 16 21"></polyline>
-              <line x1="15" y1="15" x2="21" y2="21"></line>
-            </svg>
-            <svg class="icon-spin-stop" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="4" width="16" height="16" rx="3" ry="3"></rect>
-            </svg>
-          </button>
-          <div class="digital-readout">
-            <input type="text" id="digHour" class="time-input" inputmode="numeric" maxlength="2" value="12">
-            <span class="colon blink">:</span>
-            <input type="text" id="digMin" class="time-input" inputmode="numeric" maxlength="2" value="00">
-          </div>
-          
-          <button id="nowBtn" class="now-btn">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </button>
-        </div>
-
-        <div class="countdown-chip" id="countdownChip"></div>
-        
       </div>
     </div>
 
@@ -548,6 +658,7 @@
     const STATE = {
       totalMinuteRotation: 0,
       activeWedgeDeg: null,
+      wedgeStartRotation: null,
       isDragging: false,
       lastAngle: 0
     };
@@ -577,8 +688,10 @@
       // One geometry source for every radial element. This keeps the numerals and hash marks
       // locked to the same center point, even if the clock face size changes.
       const center = clockFace.offsetWidth / 2;
-      const hourRadius = center - 86;
+      // Keep the hour numerals tucked out at the rim beside the hash marks.
+      // This preserves the current numeral size while moving the layout outward.
       const hashRadius = center - 18;
+      const hourRadius = hashRadius - 58;
       const minuteFiveRadius = hashRadius + 32; // bubbles share the hash angles and sit out in the white rim
       const minuteOneRadius = hashRadius - 20; // fine minute numerals stay just inside the hash marks
 
@@ -626,7 +739,8 @@
     }
 
     function toggleColorCoding() {
-      document.body.classList.toggle('color-coded');
+      const on = document.body.classList.toggle('color-coded');
+      document.getElementById('colorBtn').classList.toggle('active', on);
     }
 
     let minuteRevealMode = 0;
@@ -635,6 +749,7 @@
       document.body.classList.remove('minute-mode-1', 'minute-mode-2');
       if (minuteRevealMode === 1) document.body.classList.add('minute-mode-1');
       if (minuteRevealMode === 2) document.body.classList.add('minute-mode-2');
+      document.getElementById('minuteBtn').classList.toggle('active', minuteRevealMode > 0);
       navigator.vibrate?.(10);
     }
 
@@ -682,6 +797,8 @@
 
     function startDrag(e) {
       if (isSpinning) return;
+      // Dragging the hand means the user wants to set time manually, so exit live mode.
+      if (liveActive) toggleLive();
       STATE.isDragging = true;
       STATE.lastAngle = getAngleFromCenter(e);
       document.body.style.cursor = 'grabbing';
@@ -710,21 +827,16 @@
       if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
 
-      if (STATE.activeWedgeDeg) {
+      if (STATE.activeWedgeDeg && STATE.wedgeStartRotation !== null) {
+        // Snap target is the END of the shaded region: start angle + wedge span.
+        // This lets the shade anchor at "now" and the hand snap when it sweeps through the fraction.
+        const snapTarget = STATE.wedgeStartRotation + STATE.activeWedgeDeg;
         const predictedRotation = STATE.totalMinuteRotation + delta;
-        const predictedMinAngle = predictedRotation % 360;
-        const normMinAngle = predictedMinAngle < 0 ? predictedMinAngle + 360 : predictedMinAngle;
-        
-        const boundary = STATE.activeWedgeDeg;
-        const lastMinAngle = STATE.totalMinuteRotation % 360;
-        const normLastMin = lastMinAngle < 0 ? lastMinAngle + 360 : lastMinAngle;
 
-        if ((normLastMin < boundary && normMinAngle >= boundary && delta > 0) || 
-            (normLastMin > boundary && normMinAngle <= boundary && delta < 0)) {
-            
-            const baseRotations = Math.floor(STATE.totalMinuteRotation / 360) * 360;
-            STATE.totalMinuteRotation = baseRotations + boundary;
-            navigator.vibrate?.(15); 
+        if ((STATE.totalMinuteRotation < snapTarget && predictedRotation >= snapTarget && delta > 0) ||
+            (STATE.totalMinuteRotation > snapTarget && predictedRotation <= snapTarget && delta < 0)) {
+            STATE.totalMinuteRotation = snapTarget;
+            navigator.vibrate?.(15);
             STATE.lastAngle = currentAngle;
             updateTimeDisplay();
             return;
@@ -764,23 +876,33 @@
           btn.classList.remove('active');
           wedgeOverlay.style.opacity = '0';
           STATE.activeWedgeDeg = null;
+          STATE.wedgeStartRotation = null;
           return;
         }
 
         document.querySelectorAll('.wedge-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
+        // Shade begins at the current minute hand position and sweeps `deg` forward.
+        // Anchoring on activation (not on every tick) keeps the shade as a static goal target.
         wedgeOverlay.style.background = `conic-gradient(${color} 0deg ${deg + 0.5}deg, transparent ${deg + 0.5}deg)`;
+        wedgeOverlay.style.transform = `rotate(${STATE.totalMinuteRotation}deg)`;
         wedgeOverlay.style.opacity = '0.35'; 
         STATE.activeWedgeDeg = deg;
+        STATE.wedgeStartRotation = STATE.totalMinuteRotation;
       });
     });
 
     // --- MANUAL TIME ENTRY LOGIC ---
-    function handleManualTimeInput() {
-      let h = parseInt(digHour.value) || 0;
-      let m = parseInt(digMin.value) || 0;
-      
+    // Set time from digital readout. `commit` = whether to also normalize/snap (used on blur/Enter).
+    function setTimeFromInputs(commit) {
+      let hStr = digHour.value.replace(/\D/g, '');
+      let mStr = digMin.value.replace(/\D/g, '');
+      if (hStr === '' || mStr === '') return; // still typing
+
+      let h = parseInt(hStr, 10);
+      let m = parseInt(mStr, 10);
+
       if (h > 12) h = 12;
       if (h <= 0) h = 12;
       if (m > 59) m = 59;
@@ -788,56 +910,111 @@
 
       const targetH = h % 12;
       const targetMod = (targetH * 360) + (m * 6);
-      
+
       let currentMod = STATE.totalMinuteRotation % (360 * 12);
       if (currentMod < 0) currentMod += (360 * 12);
-      
+
       let diff = targetMod - currentMod;
       if (diff > 360 * 6) diff -= 360 * 12;
       if (diff < -360 * 6) diff += 360 * 12;
 
       STATE.totalMinuteRotation += diff;
-      
-      digHour.blur();
-      digMin.blur();
+
+      if (commit) {
+        digHour.value = String(h).padStart(2, '0');
+        digMin.value = String(m).padStart(2, '0');
+      }
       updateTimeDisplay();
       minuteHand.classList.remove('needs-discovery');
     }
 
-    digHour.addEventListener('change', handleManualTimeInput);
-    digMin.addEventListener('change', handleManualTimeInput);
-    digHour.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleManualTimeInput(); });
-    digMin.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleManualTimeInput(); });
+    function handleInput(e) {
+      // Typing manually exits live mode and strips anything non-numeric.
+      if (liveActive) toggleLive();
+      const el = e.target;
+      el.value = el.value.replace(/\D/g, '');
+
+      // Auto-advance from hour to minute once two digits are entered or a value > 1 is typed
+      // (since a leading digit > 1 can't start a valid 2-digit hour ≤ 12).
+      if (el === digHour) {
+        const v = el.value;
+        if (v.length >= 2 || (v.length === 1 && parseInt(v, 10) > 1)) {
+          digMin.focus();
+          digMin.select();
+        }
+      }
+
+      setTimeFromInputs(false);
+    }
+
+    function commitInput() { setTimeFromInputs(true); }
+
+    digHour.addEventListener('input', handleInput);
+    digMin.addEventListener('input', handleInput);
+    digHour.addEventListener('blur', commitInput);
+    digMin.addEventListener('blur', commitInput);
+    digHour.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { commitInput(); digHour.blur(); }
+      if (e.key === 'ArrowRight' && digHour.selectionStart === digHour.value.length) digMin.focus();
+    });
+    digMin.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { commitInput(); digMin.blur(); }
+      if (e.key === 'ArrowLeft' && digMin.selectionStart === 0) digHour.focus();
+      if (e.key === 'Backspace' && digMin.value === '') digHour.focus();
+    });
     digHour.addEventListener('focus', () => digHour.select());
     digMin.addEventListener('focus', () => digMin.select());
 
-    // --- RIGHT NOW TIME SNAP ---
-    document.getElementById('nowBtn').addEventListener('click', () => {
-      const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+    // --- RIGHT NOW TIME SNAP (one-shot) ---
+    function snapToNow() {
+      const now = new Date();
       let h = now.getHours() % 12;
       let m = now.getMinutes();
-      
-      const targetMod = (h * 360) + (m * 6);
-      
+      const s = now.getSeconds();
+      // Include seconds as a fractional minute so the snap is precise to "right now".
+      const targetMod = (h * 360) + (m * 6) + (s * 0.1);
+
       let currentMod = STATE.totalMinuteRotation % (360 * 12);
       if (currentMod < 0) currentMod += (360 * 12);
-      
+
       let diff = targetMod - currentMod;
       if (diff > 360 * 6) diff -= 360 * 12;
       if (diff < -360 * 6) diff += 360 * 12;
-      
-      STATE.totalMinuteRotation += diff;
 
+      STATE.totalMinuteRotation += diff;
       updateTimeDisplay();
       minuteHand.classList.remove('needs-discovery');
-      navigator.vibrate?.(20);
-    });
+    }
+
+    // --- LIVE (track real time) ---
+    let liveActive = false;
+    let liveRaf = null;
+    function toggleLive() {
+      liveActive = !liveActive;
+      document.body.classList.toggle('live-on', liveActive);
+      document.getElementById('liveBtn').classList.toggle('active', liveActive);
+      if (liveActive) {
+        // Stop conflicting motion modes.
+        if (isSpinning) stopSpin();
+        snapToNow();
+        const step = () => {
+          if (!liveActive) return;
+          snapToNow();
+          liveRaf = requestAnimationFrame(step);
+        };
+        liveRaf = requestAnimationFrame(step);
+      } else if (liveRaf) {
+        cancelAnimationFrame(liveRaf);
+        liveRaf = null;
+      }
+    }
 
     // --- SECOND HAND ---
     let secondHandActive = false;
     function toggleSecondHand() {
       document.body.classList.toggle('second-hand-on');
       secondHandActive = document.body.classList.contains('second-hand-on');
+      document.getElementById('secondBtn').classList.toggle('active', secondHandActive);
     }
     (function tickSecondHand() {
       if (secondHandActive) {
@@ -854,6 +1031,7 @@
       if (isSpinning) { stopSpin(); } else { startSpin(); }
     }
     function startSpin() {
+      if (liveActive) toggleLive();
       isSpinning = true;
       document.body.classList.add('is-spinning');
       minuteHand.classList.remove('needs-discovery');
@@ -879,9 +1057,22 @@
     let targetActive = false;
     let isDraggingTarget = false;
 
-    const TARGET_RADIUS = 210;  // px from clock center to target handle / shade rim
-    const CLOCK_CX = 238;       // clock-face center x (476px face / 2)
-    const CLOCK_CY = 238;       // clock-face center y
+    // Clock geometry is measured at boot so target handle/shade sit on the correct radius
+    // regardless of clock face size. The shade ring lives just inside the minute hand tip.
+    let CLOCK_CX = 238;
+    let CLOCK_CY = 238;
+    let TARGET_RADIUS = 210;
+
+    function measureClockGeometry() {
+      const size = clockFace.offsetWidth;
+      CLOCK_CX = size / 2;
+      CLOCK_CY = size / 2;
+      // Minute hand is 212px tall on a 476px face → ratio ≈ 0.445. Sit shade ring just inside that.
+      TARGET_RADIUS = size * 0.44;
+      // Resize the SVG viewBox so shade math maps to face pixels.
+      const shadeOverlay = document.getElementById('shadeOverlay');
+      if (shadeOverlay) shadeOverlay.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    }
 
     const targetHandle = document.getElementById('targetHandle');
     const shadePath = document.getElementById('shadePath');
@@ -889,7 +1080,12 @@
     function toggleTarget() {
       targetActive = !targetActive;
       document.body.classList.toggle('target-active', targetActive);
+      document.getElementById('targetBtn').classList.toggle('active', targetActive);
       if (targetActive) {
+        // Drop the target a few minutes ahead of where the hand currently is, so it's
+        // immediately visible and the shade has something to show.
+        const curAngle = ((STATE.totalMinuteRotation % 360) + 360) % 360;
+        targetAngleDeg = (Math.round((curAngle + 30) / 6) * 6) % 360;
         updateTargetHandle();
         updateShade();
         updateCountdown();
@@ -940,7 +1136,12 @@
 
     // Boot
     buildClockFace();
+    measureClockGeometry();
     updateTimeDisplay();
+    window.addEventListener('resize', () => {
+      measureClockGeometry();
+      if (targetActive) { updateTargetHandle(); updateShade(); }
+    });
   </script>
 </body>
 </html>
