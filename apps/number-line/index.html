@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <title>Dimensional Builder | Math Things.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Brand Palette & UI */
+            --bg: #F5F5F7;
+            --glass: rgba(245,245,247,0.85);
+            --surface: #FFFFFF;
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.05);
+
+            --shadow-soft: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
+            --shadow-heavy: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-block:
+                inset 2px 2px 0 rgba(255,255,255,0.4),
+                inset -2px -2px 0 rgba(0,0,0,0.12),
+                0 8px 20px rgba(0,0,0,0.12),
+                1px -1px 0 rgba(0,0,0,0.08);
+
+            /* Master Palette */
+            --tens: #4169E1;
+            --ones: #DC143C;
+
+            /* Interaction */
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --zoom: 1;
+
+            /* Dynamic Scaling */
+            --cell-size: 64px;    /* canonical slot size; JS updates this on every zoom change */
+            --slot-w: var(--cell-size);
+            --cube-base: calc(54px * var(--zoom));
+            --depth: calc(12px * var(--zoom));
+            --tray-pad: calc(6px * var(--zoom));
+            --font-anchor: calc(24px * var(--zoom));
+            --font-bottom: calc(16px * var(--zoom));
+
+            /* Bead — scales with blocks so the ratio stays constant at every zoom */
+            --bead-size:   calc(20px * var(--zoom));
+            --bead-bottom: calc(7px  * var(--zoom));
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--glass);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 100;
+            gap: 12px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        /* The Bead */
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        /* ── HEADER CONTROLS ── */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* ── PLACE VALUE PILL TOGGLE ── */
+        .pv-toggle-wrap {
+            display: flex;
+            align-items: center;
+        }
+        .pv-pill {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .pv-pill input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        .pv-pill-track {
+            position: absolute;
+            inset: 0;
+            background: #E5E5EA;
+            border-radius: 14px;
+            transition: background 0.25s ease;
+            display: block;
+        }
+        .pv-pill-thumb {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+            transition: left 0.25s var(--spring);
+        }
+        .pv-pill input:checked + .pv-pill-track { background: var(--accent); }
+        .pv-pill input:checked + .pv-pill-track .pv-pill-thumb { left: 22px; }
+
+        /* zoom is now app-owned (pinch / wheel / keyboard); no visible slider */
+
+        /* ── WORKSPACE ── */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0 0 0;
+            gap: 12px;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* ── RUNNING TOTAL DISPLAY ── */
+        .board-total-display {
+            font-size: 5rem;
+            font-weight: 900;
+            color: var(--text-main);
+            letter-spacing: -0.04em;
+            line-height: 1;
+            text-align: center;
+            user-select: none;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        .anim-total-pop { animation: totalPop 0.3s var(--spring); }
+
+        /* ── THE NUMBER LINE ── */
+        .tray-scroller {
+            flex: 1;
+            align-self: stretch;
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            padding-bottom: max(24px, env(safe-area-inset-bottom));
+            cursor: grab;
+            touch-action: pan-x;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+        }
+        .tray-scroller::-webkit-scrollbar { display: none; }
+        .tray-scroller { -ms-overflow-style: none; scrollbar-width: none; }
+        .tray-scroller:active { cursor: grabbing; }
+
+        .tray-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 0 80px;
+            pointer-events: none;
+            touch-action: pan-x;
+            flex-shrink: 0;
+        }
+        .tray, .number-line-top, .number-line-bottom { pointer-events: auto; touch-action: pan-x; }
+
+        .number-line-top, .number-line-bottom { display: flex; position: relative; z-index: 10; padding-left: var(--tray-pad); padding-right: var(--tray-pad); }
+        .number-line-top { border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+        .number-line-bottom { padding-top: 6px; }
+
+        .tray {
+            display: flex;
+            background: #E5E5EA;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 8px var(--tray-pad);
+            box-shadow: inset 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            min-height: calc(var(--slot-w) + 16px);
+        }
+
+        .tray::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 6px;
+            background: var(--surface);
+            z-index: 999;
+            pointer-events: none;
+            border-radius: 0 0 14px 14px;
+        }
+
+        .slot {
+            width: var(--slot-w);
+            height: var(--slot-w);
+            position: relative;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: calc(4px * var(--zoom));
+            touch-action: pan-x;
+        }
+        .slot.bg-light { background: #FFFFFF; border-right: 1px solid rgba(0,0,0,0.04); box-shadow: inset 0 2px 8px rgba(0,0,0,0.02); }
+        .slot.bg-dark  { background: #D1D1D6; border-right: 1px solid rgba(0,0,0,0.1);  box-shadow: inset 0 2px 8px rgba(0,0,0,0.08); }
+        .slot:first-child { border-radius: 8px 0 0 8px; }
+        .slot.last-visible { border-radius: 0 8px 8px 0 !important; border-right: none !important; }
+
+        .number-label {
+            width: var(--slot-w);
+            text-align: center;
+            font-size: calc(20px * var(--zoom));
+            font-weight: 300;
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+        .number-label.anchor { font-weight: 800; color: var(--text-main); font-size: var(--font-anchor); }
+        .number-label.bottom { font-weight: 600; font-size: var(--font-bottom); }
+
+        /* ── BLOCKS ON TRACK ── */
+        .cube {
+            width: var(--cube-base);
+            height: var(--cube-base);
+            border-radius: calc(6px * var(--zoom));
+            background: var(--ones);
+            position: absolute;
+            transform: rotateX(10deg);
+            box-shadow: var(--shadow-block);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .ten-bar {
+            width: calc(var(--slot-w) * 10 - var(--depth));
+            height: var(--cube-base);
+            border-radius: calc(6px * var(--zoom));
+            background: var(--tens);
+            position: absolute;
+            transform: rotateX(10deg);
+            display: flex;
+            box-shadow: var(--shadow-block);
+            z-index: 15;
+            pointer-events: none;
+        }
+        .ten-segment { flex: 1; border-right: 1px solid rgba(0,0,0,0.15); }
+        .ten-segment:last-child { border-right: none; }
+
+        /* Vertical ten-stick — same material as .ten-bar, spans 10 rows, 1 column wide.
+           Height mirrors the horizontal ten-bar's width formula (10×slot - depth) so the
+           leading-edge gap is at the bottom, matching the horizontal bar's right-side gap. */
+        .ten-bar-vert {
+            width: var(--cube-base);
+            height: calc(var(--slot-w) * 10 - var(--depth)); /* depth gap at bottom, mirrors horiz bar */
+            border-radius: calc(6px * var(--zoom));
+            background: var(--tens);
+            position: absolute;
+            transform: rotateX(10deg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-block);
+            z-index: 15;
+            pointer-events: none;
+        }
+        .ten-bar-vert::before {
+            content: '10';
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6);
+            font-size: calc(22px * var(--zoom));
+            pointer-events: none; z-index: 5;
+        }
+        .ten-seg-vert { flex: 1; border-bottom: 1px solid rgba(0,0,0,0.15); }
+        .ten-seg-vert:last-child { border-bottom: none; }
+
+        /* ── NUMBER STAMPS ── */
+        .cube::after {
+            content: '1';
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6);
+            font-size: calc(22px * var(--zoom));
+            pointer-events: none;
+        }
+        .ten-bar::before {
+            content: '10';
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.6);
+            font-size: calc(22px * var(--zoom));
+            pointer-events: none; z-index: 5;
+        }
+
+        /* ── PULL BEAD ── */
+        .pull-bead {
+            position: absolute;
+            width: var(--bead-size);
+            height: var(--bead-size);
+            border-radius: 50%;
+            bottom: var(--bead-bottom);
+            /* left is set by JS */
+            transform: translateX(-50%);
+            background:
+                radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.15) 50%, transparent 70%),
+                radial-gradient(circle at 68% 72%, rgba(0,0,0,0.1) 0%, transparent 50%),
+                linear-gradient(145deg, #f2f2f2 0%, #d8d8d8 30%, #b0b0b0 58%, #c8c8c8 80%, #e8e8e8 100%);
+            box-shadow:
+                inset 1px 1px 3px rgba(255,255,255,0.85),
+                inset -1px -1px 2px rgba(0,0,0,0.18),
+                0 3px 10px rgba(0,0,0,0.28),
+                0 1px 3px rgba(0,0,0,0.14);
+            cursor: grab;
+            z-index: 1000;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s var(--spring), box-shadow 0.15s ease;
+        }
+        .pull-bead:hover {
+            transform: translateX(-50%) scale(1.2);
+            box-shadow:
+                inset 1px 1px 3px rgba(255,255,255,0.85),
+                inset -1px -1px 2px rgba(0,0,0,0.18),
+                0 5px 16px rgba(0,0,0,0.32),
+                0 2px 5px rgba(0,0,0,0.16);
+        }
+        .pull-bead.dragging {
+            cursor: grabbing;
+            transform: translateX(-50%) scale(1.25);
+            box-shadow:
+                inset 1px 1px 3px rgba(255,255,255,0.85),
+                inset -1px -1px 2px rgba(0,0,0,0.18),
+                0 6px 20px rgba(0,0,0,0.35),
+                0 2px 6px rgba(0,0,0,0.18);
+        }
+
+        /* Three-line grip indicator — scales with bead */
+        .pull-bead-grip {
+            width: calc(1.5px * var(--zoom));
+            height: calc(8px * var(--zoom));
+            background: rgba(0,0,0,0.3);
+            border-radius: 1px;
+            position: relative;
+        }
+        .pull-bead-grip::before,
+        .pull-bead-grip::after {
+            content: '';
+            position: absolute;
+            width: calc(1.5px * var(--zoom));
+            height: calc(8px * var(--zoom));
+            background: rgba(0,0,0,0.3);
+            border-radius: 1px;
+            top: 0;
+        }
+        .pull-bead-grip::before { left: calc(-4px * var(--zoom)); }
+        .pull-bead-grip::after  { left:  calc( 4px * var(--zoom)); }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 14px;
+            padding-bottom: max(14px, env(safe-area-inset-bottom));
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            margin-bottom: 0.08em;
+            background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: baseline;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes totalPop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.15); color: var(--accent); }
+            100% { transform: scale(1); color: var(--text-main); }
+        }
+
+        /* Unit snap — small, snappy pop for each newly added red cube */
+        @keyframes unitSnap {
+            0%   { transform: scale(0.65); opacity: 0.55; }
+            60%  { transform: scale(1.14); }
+            100% { transform: scale(1);    opacity: 1; }
+        }
+        .cube.unit-snap { animation: unitSnap 0.18s var(--spring) both; }
+
+        /* Ten-merge — heavier thud/settle when 10 units fuse into a ten-stick */
+        @keyframes tenMerge {
+            0%   { transform: rotateX(10deg) scaleX(0.88) scaleY(0.88); opacity: 0.45; }
+            50%  { transform: rotateX(10deg) scaleX(1.05) scaleY(1.05); }
+            78%  { transform: rotateX(10deg) scaleX(0.97) scaleY(0.97); }
+            100% { transform: rotateX(10deg) scaleX(1)    scaleY(1);    opacity: 1; }
+        }
+        .ten-bar.ten-merge { animation: tenMerge 0.35s var(--spring) both; }
+
+        /* Respect reduced-motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .cube.unit-snap,
+            .ten-bar.ten-merge { animation: none !important; }
+        }
+
+        /* ── PV TOGGLE ICON ── */
+        .pv-icon {
+            display: flex;
+            align-items: center;
+            margin-right: 6px;
+            opacity: 0.75;
+            flex-shrink: 0;
+        }
+
+        /* ── MODE TOGGLE ── */
+        .mode-toggle {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .mode-btn {
+            width: 34px;
+            height: 30px;
+            border: none;
+            background: transparent;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+            color: var(--text-gray);
+            padding: 0;
+        }
+        .mode-btn.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06);
+        }
+        .mode-btn svg { display: block; }
+
+        /* ── Y-AXIS AREA ── */
+        .y-axis-area {
+            display: none;
+            flex-direction: column;
+            position: relative;
+            flex-shrink: 0;
+            margin-right: 3px;
+        }
+        body.grid-mode .y-axis-area { display: flex; }
+
+        /* ── X CONTENT AREA ── */
+        .x-content-area {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        /* ── Y-AXIS TRACK (vertical number line) ── */
+        .y-axis-track {
+            display: flex;
+            flex-direction: column;
+            background: #E5E5EA;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 8px var(--tray-pad); /* matches nlTray vertical padding for row alignment */
+            box-shadow: inset 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .y-slot {
+            width: var(--slot-w);
+            height: var(--slot-w);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .y-slot.bg-light { background: #FFFFFF; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .y-slot.bg-dark  { background: #D1D1D6; border-bottom: 1px solid rgba(0,0,0,0.1);  }
+        .y-slot:first-child { border-radius: 8px 8px 0 0; }
+        .y-slot.last-y-slot { border-radius: 0 0 8px 8px !important; border-bottom: none !important; }
+        .y-slot-label {
+            font-size: calc(16px * var(--zoom));
+            font-weight: 300;
+            color: var(--text-light);
+            line-height: 1;
+        }
+        .y-slot-label.anchor { font-weight: 800; color: var(--text-main); font-size: calc(20px * var(--zoom)); }
+
+        /* ── ARRAY SURFACE (unified grid body) ── */
+        .array-surface {
+            display: none; /* shown by JS in grid mode when rows > 1 */
+            flex-direction: column;
+            background: #E5E5EA;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
+            position: relative;
+        }
+        /* Array row — no individual tray styling, unified surface */
+        .array-row {
+            display: flex;
+            flex-shrink: 0;
+            position: relative;
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+        /* Override slot border-radius inside array rows */
+        .array-row .slot:first-child { border-radius: 0; }
+        .array-row .slot.last-visible { border-radius: 0 !important; }
+
+        /* ── Y-BEAD ── */
+        .y-bead {
+            position: absolute;
+            width: var(--bead-size);
+            height: var(--bead-size);
+            border-radius: 50%;
+            /* left and top set by JS */
+            transform: translate(-50%, -50%);
+            background:
+                radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.15) 50%, transparent 70%),
+                radial-gradient(circle at 68% 72%, rgba(0,0,0,0.1) 0%, transparent 50%),
+                linear-gradient(145deg, #f2f2f2 0%, #d8d8d8 30%, #b0b0b0 58%, #c8c8c8 80%, #e8e8e8 100%);
+            box-shadow:
+                inset 1px 1px 3px rgba(255,255,255,0.85),
+                inset -1px -1px 2px rgba(0,0,0,0.18),
+                0 3px 10px rgba(0,0,0,0.28),
+                0 1px 3px rgba(0,0,0,0.14);
+            cursor: grab;
+            z-index: 1001;
+            touch-action: none;
+            pointer-events: auto;
+            display: none; /* shown only in Grid mode by JS */
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s var(--spring), box-shadow 0.15s ease;
+        }
+        .y-bead:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            box-shadow:
+                inset 1px 1px 3px rgba(255,255,255,0.85),
+                inset -1px -1px 2px rgba(0,0,0,0.18),
+                0 5px 16px rgba(0,0,0,0.32),
+                0 2px 5px rgba(0,0,0,0.16);
+        }
+        .y-bead.dragging {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.25);
+            box-shadow:
+                inset 1px 1px 3px rgba(255,255,255,0.85),
+                inset -1px -1px 2px rgba(0,0,0,0.18),
+                0 6px 20px rgba(0,0,0,0.35),
+                0 2px 6px rgba(0,0,0,0.18);
+        }
+        /* Three-line horizontal grip indicator for the y-bead */
+        .y-bead-grip {
+            width: calc(8px * var(--zoom));
+            height: calc(1.5px * var(--zoom));
+            background: rgba(0,0,0,0.3);
+            border-radius: 1px;
+            position: relative;
+        }
+        .y-bead-grip::before,
+        .y-bead-grip::after {
+            content: '';
+            position: absolute;
+            width: calc(8px * var(--zoom));
+            height: calc(1.5px * var(--zoom));
+            background: rgba(0,0,0,0.3);
+            border-radius: 1px;
+            left: 0;
+        }
+        .y-bead-grip::before { top: calc(-4px * var(--zoom)); }
+        .y-bead-grip::after  { top: calc( 4px * var(--zoom)); }
+
+        /* ── GRID MODE BODY CLASS ── */
+        /* Layout: y-axis column sits left of the x-content column */
+        body.grid-mode .tray-wrapper {
+            flex-direction: row;
+            align-items: flex-start;
+            padding-left: 20px;
+        }
+        /* Allow vertical scrolling inside the scroller when rows overflow */
+        body.grid-mode .tray-scroller {
+            overflow-y: auto;
+            touch-action: pan-x pan-y;
+        }
+        body.grid-mode .tray-wrapper,
+        body.grid-mode .tray,
+        body.grid-mode .number-line-top,
+        body.grid-mode .number-line-bottom,
+        body.grid-mode .y-axis-area,
+        body.grid-mode .y-axis-track,
+        body.grid-mode .array-surface,
+        body.grid-mode .array-row,
+        body.grid-mode .grid-canvas,
+        body.grid-mode .grid-row {
+            touch-action: pan-x pan-y;
+        }
+        /* ── GRID CANVAS (unified surface — replaces nlTray+arraySurface in grid mode) ── */
+        .grid-canvas {
+            display: none;               /* shown by JS in grid mode */
+            flex-direction: column;
+            background: #E5E5EA;
+            border-radius: 16px;
+            /* spread-only shadow looks like a 1-px border without affecting geometry */
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.1), inset 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            flex-shrink: 0;
+            overflow: hidden;
+            padding: 0 var(--tray-pad);  /* horizontal breathing room; NO vertical padding → rows are exactly --slot-w */
+        }
+        body.grid-mode .grid-canvas { display: flex; }
+
+        /* Grid row — flat strip with no seam border; slot bg alternation provides column structure */
+        .grid-row {
+            display: flex;
+            flex-shrink: 0;
+            position: relative;
+            height: var(--slot-w);      /* exactly one slot height; 10 rows = 10×--slot-w = square */
+        }
+        .grid-row .slot:first-child { border-radius: 0; }
+        .grid-row .slot.last-visible { border-radius: 0 !important; }
+
+        /* Heavy bottom rail rides at the bottom of the full array */
+        .grid-canvas::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 6px;
+            background: var(--surface);
+            z-index: 999;
+            pointer-events: none;
+            border-radius: 0 0 14px 14px;
+        }
+
+        /* Hundred-flat — enameled cast-iron yellow hundreds block */
+        .hundred-flat {
+            position: absolute;
+            width:  calc(var(--slot-w) * 10);
+            height: calc(var(--slot-w) * 10);     /* exactly square */
+            border-radius: calc(6px * var(--zoom));
+            background:
+                repeating-linear-gradient(to right,  rgba(0,0,0,0.07) 0 1px, transparent 1px var(--slot-w)),
+                repeating-linear-gradient(to bottom, rgba(0,0,0,0.07) 0 1px, transparent 1px var(--slot-w)),
+                #C8960C;                           /* warm golden yellow — cast-iron hundreds */
+            box-shadow:
+                inset 2px 2px 0 rgba(255,255,255,0.35),
+                inset -2px -2px 0 rgba(0,0,0,0.15),
+                0 8px 20px rgba(0,0,0,0.14),
+                1px -1px 0 rgba(0,0,0,0.08);
+            transform: rotateX(10deg);
+            z-index: 25;
+            pointer-events: none;
+        }
+        .hundred-flat::before {
+            content: '100';
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(255,255,255,0.45);
+            font-size: calc(40px * var(--zoom));
+            pointer-events: none; z-index: 5;
+        }
+
+        /* ── GRID MODE OVERRIDES FOR EXISTING ELEMENTS ── */
+
+        /* nlTray → zero-height bead-and-metric anchor; slots stay in DOM for getSlotMetrics() */
+        body.grid-mode #nlTray {
+            height: 0;
+            min-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: visible;   /* lets the bead (absolute) render above grid-canvas */
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+        }
+        body.grid-mode #nlTray::after { display: none; }
+        /* Slots are invisible in grid mode; offsetWidth / offsetLeft still valid for metrics */
+        body.grid-mode #nlTray .slot {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* X-bead rides on the centerline of the top x-axis rail */
+        body.grid-mode .pull-bead {
+            bottom: auto;
+            top: calc(var(--slot-w) / 2);
+            transform: translate(-50%, -50%);
+        }
+        body.grid-mode .pull-bead:hover  { transform: translate(-50%, -50%) scale(1.2); }
+        body.grid-mode .pull-bead.dragging { transform: translate(-50%, -50%) scale(1.25); }
+
+        /* Y-axis track: remove vertical padding/border so y-slots align exactly to grid rows */
+        body.grid-mode .y-axis-track {
+            padding-top: 0;
+            padding-bottom: 0;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.1), inset 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* arraySurface is fully superseded by grid-canvas in grid mode */
+        body.grid-mode #arraySurface { display: none !important; }
+
+        /* ── Grid mode: one canonical cell lattice ──
+           Every block must occupy exactly the same --slot-w square cells.
+           Remove the 3-D rotateX tilt so nothing shifts off the grid. */
+
+        /* Red unit cubes: exactly 1×1 cells */
+        body.grid-mode .cube {
+            width: var(--slot-w);
+            height: var(--slot-w);
+            top: 0;
+            left: 0;
+            transform: none;
+            border-radius: calc(3px * var(--zoom));
+        }
+        /* Horizontal ten-sticks: exactly 10×1 cells */
+        body.grid-mode .ten-bar {
+            width: calc(var(--slot-w) * 10);
+            height: var(--slot-w);
+            top: 0;
+            transform: none;
+        }
+        /* Vertical ten-sticks: exactly 1×10 cells */
+        body.grid-mode .ten-bar-vert {
+            width: var(--slot-w);
+            height: calc(var(--slot-w) * 10);
+            transform: none;
+        }
+        /* Hundred-flats: already 10×10 cells in width/height; only remove the tilt */
+        body.grid-mode .hundred-flat {
+            transform: none;
+        }
+
+        /* Hide per-decade bottom labels in grid mode */
+        body.grid-mode #nlBot { display: none; }
+        /* Smaller record text to fit "x × y = total" */
+        body.grid-mode .board-total-display {
+            font-size: 2.8rem;
+            letter-spacing: -0.03em;
+        }
+
+        /* ── COMPACT LANDSCAPE (short viewports, e.g. phone landscape) ── */
+        @media (max-height: 500px) {
+            header { height: 48px; padding: 0 16px; }
+            .logo  { font-size: 1.1rem; }
+            .board-total-display { font-size: 3rem; }
+            .workspace { padding: 6px 0 0 0; gap: 6px; }
+            body.grid-mode .board-total-display { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+        <div class="header-controls">
+            <!-- Wordless mode toggle: Line | Grid -->
+            <div class="mode-toggle" role="group" aria-label="Builder mode">
+                <button class="mode-btn active" id="modeLine"
+                        aria-label="Line mode" title="Line mode">
+                    <svg width="20" height="14" viewBox="0 0 20 14" fill="none"
+                         xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <line x1="1" y1="7" x2="19" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <line x1="1" y1="4" x2="1" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <line x1="19" y1="4" x2="19" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="13" cy="7" r="2.5" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button class="mode-btn" id="modeGrid"
+                        aria-label="Grid mode" title="Grid mode">
+                    <svg width="20" height="16" viewBox="0 0 20 16" fill="none"
+                         xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <rect x="1"  y="1" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <rect x="8"  y="1" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <rect x="14" y="1" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <rect x="1"  y="9" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <rect x="8"  y="9" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <rect x="14" y="9" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="pv-toggle-wrap">
+                <!-- Wordless icon: small red unit cubes fusing into a blue ten-stick -->
+                <svg class="pv-icon" width="38" height="18" viewBox="0 0 38 18"
+                     fill="none" xmlns="http://www.w3.org/2000/svg"
+                     aria-hidden="true" focusable="false">
+                    <!-- two red unit cubes -->
+                    <rect x="0" y="4" width="7" height="10" rx="1.5" fill="#DC143C"/>
+                    <rect x="9" y="4" width="7" height="10" rx="1.5" fill="#DC143C"/>
+                    <!-- arrow -->
+                    <polyline points="18,9 21,9" stroke="#86868B" stroke-width="1.5"
+                              stroke-linecap="round"/>
+                    <polyline points="19.5,6.5 22,9 19.5,11.5" stroke="#86868B" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- blue ten-stick -->
+                    <rect x="23" y="4" width="15" height="10" rx="1.5" fill="#4169E1"/>
+                    <line x1="28.5" y1="4" x2="28.5" y2="14" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+                    <line x1="33"   y1="4" x2="33"   y2="14" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+                </svg>
+                <label class="pv-pill" title="Toggle Place Value grouping">
+                    <input type="checkbox" id="pvToggle" aria-label="Place Value grouping">
+                    <span class="pv-pill-track"><span class="pv-pill-thumb"></span></span>
+                </label>
+            </div>
+
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div id="boardTotal" class="board-total-display">0</div>
+        <div class="tray-scroller" id="scrollContainer">
+            <div class="tray-wrapper">
+                <!-- Y-axis area: shown only in Grid mode -->
+                <div class="y-axis-area" id="yAxisArea">
+                    <div class="y-axis-track" id="yAxisTrack"></div>
+                </div>
+                <!-- X-axis + array content -->
+                <div class="x-content-area">
+                    <div class="number-line-top" id="nlTop"></div>
+                    <div class="tray" id="nlTray"></div>
+                    <div class="grid-canvas" id="gridCanvas"></div>
+                    <div class="array-surface" id="arraySurface"></div>
+                    <div class="number-line-bottom" id="nlBot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+
+    <script>
+        // ── STATE ──
+        let quantity = 0;
+        let placeValueMode = false;
+        let mode = 'line'; // 'line' | 'grid'
+        let rows = 1;      // y-axis row count (Grid mode)
+        const MAX_CAPACITY = 150;
+        const MAX_ROWS = 150;          // must match or approach MAX_CAPACITY for y-pull scaling tests
+        const BASE_CELL_SIZE = 64;     // canonical slot side length at zoom = 1
+        function getCellSize() { return BASE_CELL_SIZE * zoom; }
+
+        // ── ELEMENTS ──
+        const nlTop   = document.getElementById('nlTop');
+        const nlTray  = document.getElementById('nlTray');
+        const nlBot   = document.getElementById('nlBot');
+        const scroller = document.getElementById('scrollContainer');
+        const pvToggle   = document.getElementById('pvToggle');
+        const totalDisplay = document.getElementById('boardTotal');
+        const yAxisArea  = document.getElementById('yAxisArea');
+        const yAxisTrack = document.getElementById('yAxisTrack');
+        const arraySurface = document.getElementById('arraySurface');
+        const gridCanvas   = document.getElementById('gridCanvas');
+
+        // Bead element — created in bootstrap after initBoard()
+        let bead = null;
+        let yBead = null; // y-axis bead, created in bootstrap
+
+        // ── ZOOM (app-owned; no visible slider) ──
+        let zoom = 1;
+        const ZOOM_MIN = 0.3, ZOOM_MAX = 1.2;
+
+        // Set zoom, optionally preserving the visual position of focalClientX
+        // (a clientX coordinate) on the scroller.
+        function setZoom(newZoom, focalClientX) {
+            newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+            if (Math.abs(newZoom - zoom) < 0.001) return;
+            const ratio = newZoom / zoom;
+            let savedContentX, savedRelX;
+            if (focalClientX !== undefined) {
+                const sr = scroller.getBoundingClientRect();
+                savedRelX    = focalClientX - sr.left;
+                savedContentX = scroller.scrollLeft + savedRelX;
+            }
+            zoom = newZoom;
+            document.documentElement.style.setProperty('--zoom', zoom);
+            document.documentElement.style.setProperty('--cell-size', `${getCellSize()}px`);
+            renderBlocks();
+            // Shift scroll so the focal content position stays under the finger/cursor
+            if (savedContentX !== undefined) {
+                scroller.scrollLeft = savedContentX * ratio - savedRelX;
+            }
+        }
+
+        // ── PLACE VALUE TOGGLE ──
+        pvToggle.addEventListener('change', () => {
+            placeValueMode = pvToggle.checked;
+            renderBlocks();
+        });
+
+        // ── RUNNING TOTAL ──
+        function updateRunningTotal() {
+            let newText;
+            if (mode === 'grid') {
+                // In Grid mode: quantity = x (column count), rows = y; show x × y = total
+                newText = quantity === 0 ? '0' : `${quantity} × ${rows} = ${quantity * rows}`;
+            } else {
+                newText = String(quantity);
+            }
+            if (totalDisplay.innerText !== newText) {
+                totalDisplay.innerText = newText;
+                totalDisplay.classList.remove('anim-total-pop');
+                void totalDisplay.offsetWidth; // force reflow
+                totalDisplay.classList.add('anim-total-pop');
+            }
+        }
+
+        // ── HAPTICS (optional, safe) ──
+        // Very short pulses on browsers that support it; silent otherwise.
+        // Always skipped when prefers-reduced-motion is active.
+        function vibrate(pattern) {
+            if (!('vibrate' in navigator)) return;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            try { navigator.vibrate(pattern); } catch (e) { /* ignore */ }
+        }
+
+        // ── TRACK VISIBILITY ──
+        // Shows one extra decade beyond the built quantity so there's always
+        // blank track ahead of the bead.
+        function updateTrackVisibility() {
+            let visibleMax = Math.ceil(quantity / 10) * 10 + 10;
+            if (visibleMax < 20) visibleMax = 20;
+            if (visibleMax > MAX_CAPACITY) visibleMax = MAX_CAPACITY;
+            for (let i = 1; i <= MAX_CAPACITY; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                const top  = nlTop.children[i - 1];
+                const bot  = nlBot.children[i - 1];
+                slot.classList.remove('last-visible');
+                if (i <= visibleMax) {
+                    slot.style.display = 'flex';
+                    top.style.display  = 'block';
+                    bot.style.display  = 'block';
+                    if (i === visibleMax) slot.classList.add('last-visible');
+                } else {
+                    slot.style.display = 'none';
+                    top.style.display  = 'none';
+                    bot.style.display  = 'none';
+                }
+            }
+        }
+
+        // ── SLOT METRICS ──
+        // Returns the canonical cell size (never DOM-rounded) and the tray's horizontal padding.
+        // getCellSize() is the single source of truth for all grid geometry.
+        function getSlotMetrics() {
+            return { w: getCellSize(), pad: 6 * zoom };
+        }
+
+        // ── POSITION BEAD ──
+        function positionBead() {
+            if (!bead) return;
+            const { w, pad } = getSlotMetrics();
+            bead.style.left = (quantity * w + pad) + 'px';
+        }
+
+        // ── RENDER BLOCKS ──
+        // Removes old cubes/ten-bars, redraws according to quantity + PV mode,
+        // then repositions the bead.
+        // animFlags: { newUnit: bool, newTen: bool } — used in Line mode only.
+        function renderBlocks(animFlags) {
+            nlTray.querySelectorAll('.cube, .ten-bar').forEach(el => el.remove());
+
+            if (mode === 'line') {
+                // ── Line mode: render blocks in nlTray ──
+                gridCanvas.style.display = 'none'; // clear any inline style from grid mode
+                const { w: slotW, pad: trayPad } = getSlotMetrics();
+
+                if (placeValueMode) {
+                    const tens = Math.floor(quantity / 10);
+                    const ones = quantity % 10;
+                    let cur = 1;
+
+                    for (let t = 0; t < tens; t++) {
+                        const bar = document.createElement('div');
+                        bar.className = 'ten-bar';
+                        // Position using measured metrics so zoom changes are instant
+                        bar.style.left = (trayPad + (cur - 1) * slotW) + 'px';
+                        for (let j = 0; j < 10; j++) {
+                            const seg = document.createElement('div');
+                            seg.className = 'ten-segment';
+                            bar.appendChild(seg);
+                        }
+                        nlTray.appendChild(bar);
+                        cur += 10;
+                    }
+                    for (let o = 0; o < ones; o++) {
+                        const cube = document.createElement('div');
+                        cube.className = 'cube';
+                        const slot = document.getElementById(`slot-${cur}`);
+                        if (slot) slot.appendChild(cube);
+                        cur++;
+                    }
+                } else {
+                    // PV off: all raw red unit cubes
+                    for (let o = 0; o < quantity; o++) {
+                        const cube = document.createElement('div');
+                        cube.className = 'cube';
+                        const slot = document.getElementById(`slot-${o + 1}`);
+                        if (slot) slot.appendChild(cube);
+                    }
+                }
+
+                // ── Tactile feedback animations (Line mode only) ──
+                if (animFlags && animFlags.newTen) {
+                    // Heavier thud: animate the last (newest) ten-bar
+                    const bars = nlTray.querySelectorAll('.ten-bar');
+                    if (bars.length > 0) {
+                        const lastBar = bars[bars.length - 1];
+                        void lastBar.offsetWidth; // force reflow so animation restarts
+                        lastBar.classList.add('ten-merge');
+                        vibrate([18]);
+                    }
+                } else if (animFlags && animFlags.newUnit) {
+                    // Light snap: animate only the most recently added cube
+                    const cubes = nlTray.querySelectorAll('.cube');
+                    if (cubes.length > 0) {
+                        const lastCube = cubes[cubes.length - 1];
+                        void lastCube.offsetWidth;
+                        lastCube.classList.add('unit-snap');
+                        vibrate([8]);
+                    }
+                }
+            } else {
+                // ── Grid mode: render all rows in gridCanvas ──
+                renderGridCanvas();
+            }
+
+            // ── Grid mode: build y-axis track + align ──
+            renderYAxisTrack();
+            if (mode === 'grid') alignYAxis();
+
+            positionBead();
+            updateTrackVisibility();
+            updateRunningTotal();
+            positionYBead();
+        }
+
+        // ── VISIBLE MAX (shared helper) ──
+        function getVisibleMax() {
+            let v = Math.ceil(quantity / 10) * 10 + 10;
+            if (v < 20) v = 20;
+            if (v > MAX_CAPACITY) v = MAX_CAPACITY;
+            return v;
+        }
+
+        // ── RENDER Y-AXIS TRACK ──
+        // Builds the vertical number-line slots 1..rows on the left side.
+        function renderYAxisTrack() {
+            yAxisTrack.innerHTML = '';
+            if (mode !== 'grid' || quantity === 0) return;
+            for (let r = 1; r <= rows; r++) {
+                const decadeIdx = Math.floor((r - 1) / 10);
+                const theme = decadeIdx % 2 === 0 ? 'bg-light' : 'bg-dark';
+                const isAnchor = r % 10 === 0;
+                const slot = document.createElement('div');
+                slot.className = `y-slot ${theme}`;
+                if (r === rows) slot.classList.add('last-y-slot');
+                const lbl = document.createElement('span');
+                lbl.className = `y-slot-label${isAnchor ? ' anchor' : ''}`;
+                lbl.textContent = r;
+                slot.appendChild(lbl);
+                yAxisTrack.appendChild(slot);
+            }
+        }
+
+        // ── RENDER ARRAY SURFACE ──
+        // Builds the unified array body for rows 2..rows below the x-axis tray.
+        function renderArraySurface() {
+            arraySurface.innerHTML = '';
+            if (mode !== 'grid' || quantity === 0 || rows <= 1) {
+                arraySurface.style.display = 'none';
+                return;
+            }
+            arraySurface.style.display = 'flex';
+            const { w: slotW, pad: trayPad } = getSlotMetrics();
+            const visMax = getVisibleMax();
+            for (let r = 2; r <= rows; r++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'array-row';
+                for (let i = 1; i <= visMax; i++) {
+                    const decadeIdx = Math.floor((i - 1) / 10);
+                    const theme = decadeIdx % 2 === 0 ? 'bg-light' : 'bg-dark';
+                    const slot = document.createElement('div');
+                    slot.className = `slot ${theme}`;
+                    if (i === visMax) slot.classList.add('last-visible');
+                    rowEl.appendChild(slot);
+                }
+                const slots = rowEl.querySelectorAll('.slot');
+                if (placeValueMode) {
+                    const tens = Math.floor(quantity / 10);
+                    const ones = quantity % 10;
+                    let cur = 1;
+                    for (let t = 0; t < tens; t++) {
+                        const bar = document.createElement('div');
+                        bar.className = 'ten-bar';
+                        bar.style.left = (trayPad + (cur - 1) * slotW) + 'px';
+                        for (let j = 0; j < 10; j++) {
+                            const seg = document.createElement('div');
+                            seg.className = 'ten-segment';
+                            bar.appendChild(seg);
+                        }
+                        rowEl.appendChild(bar);
+                        cur += 10;
+                    }
+                    for (let o = 0; o < ones; o++) {
+                        const cube = document.createElement('div');
+                        cube.className = 'cube';
+                        if (slots[cur - 1]) slots[cur - 1].appendChild(cube);
+                        cur++;
+                    }
+                } else {
+                    for (let o = 0; o < quantity; o++) {
+                        const cube = document.createElement('div');
+                        cube.className = 'cube';
+                        if (slots[o]) slots[o].appendChild(cube);
+                    }
+                }
+                arraySurface.appendChild(rowEl);
+            }
+        }
+
+        // ── ALIGN Y-AXIS ──
+        // Offset the y-axis-track by the height of nlTop so row-1 aligns with the x-axis tray.
+        function alignYAxis() {
+            if (mode !== 'grid') return;
+            // In grid mode, nlTray has height 0; gridCanvas starts immediately after nlTop.
+            yAxisTrack.style.marginTop = nlTop.offsetHeight + 'px';
+        }
+
+        // ── RENDER GRID CANVAS ──
+        // Builds ALL rows (1..rows) and ALL blocks in the unified gridCanvas.
+        // In grid mode this fully replaces the nlTray+arraySurface pair.
+        function renderGridCanvas() {
+            gridCanvas.innerHTML = '';
+            if (mode !== 'grid' || quantity === 0) {
+                gridCanvas.style.display = 'none';
+                return;
+            }
+            gridCanvas.style.display = 'flex';
+
+            const { w: slotW, pad: trayPad } = getSlotMetrics();
+            const visMax    = getVisibleMax();
+            // PV groupings
+            const hvFlatsX  = placeValueMode ? Math.floor(quantity / 10) : 0;
+            const hvFlatsY  = placeValueMode ? Math.floor(rows     / 10) : 0;
+            const onesX     = placeValueMode ? (quantity % 10)            : quantity;
+
+            // ── 1. Slot-background rows (all rows) ──
+            for (let r = 1; r <= rows; r++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'grid-row';
+                for (let c = 1; c <= visMax; c++) {
+                    const decadeIdx = Math.floor((c - 1) / 10);
+                    const theme = decadeIdx % 2 === 0 ? 'bg-light' : 'bg-dark';
+                    const slot  = document.createElement('div');
+                    slot.className = `slot ${theme}`;
+                    if (c === visMax) slot.classList.add('last-visible');
+                    rowEl.appendChild(slot);
+                }
+                gridCanvas.appendChild(rowEl);
+            }
+
+            // ── 2. Blocks ──
+            const gridRows = gridCanvas.querySelectorAll('.grid-row');
+
+            if (!placeValueMode) {
+                // PV off: red unit cubes in each slot (every row identical)
+                for (let r = 1; r <= rows; r++) {
+                    const rowSlots = gridRows[r - 1].querySelectorAll('.slot');
+                    for (let c = 0; c < quantity; c++) {
+                        const cube = document.createElement('div');
+                        cube.className = 'cube';
+                        if (rowSlots[c]) rowSlots[c].appendChild(cube);
+                    }
+                }
+            } else {
+                // PV on ──────────────────────────────────────────────────────
+
+                // 2a. Hundred-flats (absolutely positioned in gridCanvas)
+                //     One flat covers tx*10..tx*10+9 cols × ty*10..ty*10+9 rows.
+                //     gridCanvas has padding: 0 trayPad, so the content area starts
+                //     at trayPad from gridCanvas's left edge; absolute children are
+                //     relative to gridCanvas's PADDING EDGE.
+                for (let ty = 0; ty < hvFlatsY; ty++) {
+                    for (let tx = 0; tx < hvFlatsX; tx++) {
+                        const flat = document.createElement('div');
+                        flat.className = 'hundred-flat';
+                        flat.style.left = (trayPad + tx * 10 * slotW) + 'px';
+                        flat.style.top  = (ty * 10 * slotW) + 'px';
+                        gridCanvas.appendChild(flat);
+                    }
+                }
+
+                // 2b. Rows in the non-hundred-flat zone (rows hvFlatsY*10+1 .. rows)
+                //     Ten-sticks for each complete decade; cubes for the partial group.
+                //     Blocks are absolute within their grid-row (no trayPad offset needed
+                //     because the row itself is already shifted by gridCanvas's padding).
+                for (let r = hvFlatsY * 10 + 1; r <= rows; r++) {
+                    const rowEl    = gridRows[r - 1];
+                    const rowSlots = rowEl.querySelectorAll('.slot');
+                    for (let tx = 0; tx < hvFlatsX; tx++) {
+                        const bar = document.createElement('div');
+                        bar.className  = 'ten-bar';
+                        bar.style.left = (tx * 10 * slotW) + 'px';
+                        for (let j = 0; j < 10; j++) {
+                            const seg = document.createElement('div');
+                            seg.className = 'ten-segment';
+                            bar.appendChild(seg);
+                        }
+                        rowEl.appendChild(bar);
+                    }
+                    for (let o = 0; o < onesX; o++) {
+                        const cube = document.createElement('div');
+                        cube.className = 'cube';
+                        const colIdx = hvFlatsX * 10 + o;
+                        if (rowSlots[colIdx]) rowSlots[colIdx].appendChild(cube);
+                    }
+                }
+
+                // 2c. Vertical ten-sticks for partial columns inside the hundred-flat zone.
+                //     Each partial column has hvFlatsY complete groups of 10 rows, so each
+                //     group fuses into a vertical ten-stick (10 cells tall, 1 column wide).
+                //     Positioned absolutely in gridCanvas (like hundred-flats), not inside a grid-row.
+                if (hvFlatsY > 0 && onesX > 0) {
+                    for (let o = 0; o < onesX; o++) {
+                        const colIdx = hvFlatsX * 10 + o;
+                        for (let ty = 0; ty < hvFlatsY; ty++) {
+                            const stick = document.createElement('div');
+                            stick.className = 'ten-bar-vert';
+                            stick.style.left = (trayPad + colIdx * slotW) + 'px';
+                            stick.style.top  = (ty * 10 * slotW) + 'px'; // 10 rows per stick
+                            for (let j = 0; j < 10; j++) { // 10 segments — one per row cell
+                                const seg = document.createElement('div');
+                                seg.className = 'ten-seg-vert';
+                                stick.appendChild(seg);
+                            }
+                            gridCanvas.appendChild(stick);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── POSITION Y-BEAD ──
+        // Places the y-bead centered on the y-axis track, at its bottom edge.
+        function positionYBead() {
+            if (!yBead) return;
+            if (mode !== 'grid' || quantity === 0) {
+                yBead.style.display = 'none';
+                return;
+            }
+            yBead.style.display = 'flex';
+            // Center horizontally on the y-axis area
+            yBead.style.left = (yAxisArea.offsetWidth / 2) + 'px';
+            // Bottom edge of the y-axis track
+            const trackBottom = yAxisTrack.offsetTop + yAxisTrack.offsetHeight;
+            yBead.style.top = trackBottom + 'px';
+        }
+
+        // ── SET MODE ──
+        function setMode(newMode) {
+            if (newMode === mode) return;
+            mode = newMode;
+            document.body.classList.toggle('grid-mode', mode === 'grid');
+            if (mode === 'grid' && rows < 1) rows = 1;
+            document.getElementById('modeLine').classList.toggle('active', mode === 'line');
+            document.getElementById('modeGrid').classList.toggle('active', mode === 'grid');
+            renderBlocks();
+        }
+
+        // ── ENSURE BEAD VISIBLE ──
+        // Scrolls the container so the bead stays within the visible window.
+        function ensureBeadVisible() {
+            if (!bead) return;
+            const br = bead.getBoundingClientRect();
+            const sr = scroller.getBoundingClientRect();
+            const margin = 72;
+            if (br.right > sr.right - margin) {
+                scroller.scrollLeft += br.right - (sr.right - margin);
+            } else if (br.left < sr.left + margin) {
+                scroller.scrollLeft -= (sr.left + margin) - br.left;
+            }
+        }
+
+        // ── INIT BOARD ──
+        function initBoard() {
+            nlTop.innerHTML = '';
+            nlTray.innerHTML = '';
+            nlBot.innerHTML = '';
+            for (let i = 1; i <= MAX_CAPACITY; i++) {
+                const decadeIdx = Math.floor((i - 1) / 10);
+                const isAnchor  = i % 10 === 0;
+                const theme     = decadeIdx % 2 === 0 ? 'bg-light' : 'bg-dark';
+
+                const tLbl = document.createElement('div');
+                tLbl.className = `number-label ${isAnchor ? 'anchor' : ''} ${theme}`;
+                tLbl.textContent = i;
+                nlTop.appendChild(tLbl);
+
+                const slot = document.createElement('div');
+                slot.className = `slot ${theme}`;
+                slot.id = `slot-${i}`;
+                nlTray.appendChild(slot);
+
+                const bLbl = document.createElement('div');
+                bLbl.className = `number-label bottom ${theme}`;
+                let botNum = i % 10;
+                if (botNum === 0) botNum = 10;
+                bLbl.textContent = botNum;
+                nlBot.appendChild(bLbl);
+            }
+        }
+
+        // ── MOUSE PAN (scroller) ──
+        let isPanning = false, panStartX, panStartY, panScrollLeft, panScrollTop;
+
+        scroller.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.pull-bead, .y-bead')) return;
+            isPanning = true;
+            panStartX     = e.pageX - scroller.offsetLeft;
+            panStartY     = e.pageY - scroller.offsetTop;
+            panScrollLeft = scroller.scrollLeft;
+            panScrollTop  = scroller.scrollTop;
+        });
+        scroller.addEventListener('mouseleave', () => { isPanning = false; });
+        scroller.addEventListener('mouseup',    () => { isPanning = false; });
+        scroller.addEventListener('mousemove',  (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            const x = e.pageX - scroller.offsetLeft;
+            scroller.scrollLeft = panScrollLeft - (x - panStartX) * 1.5;
+            if (mode === 'grid') {
+                const y = e.pageY - scroller.offsetTop;
+                scroller.scrollTop = panScrollTop - (y - panStartY) * 1.5;
+            }
+        });
+
+        // ── WORKSPACE TOUCH PAN + PINCH-TO-ZOOM ──
+        // One finger → horizontal pan.  Two fingers (no bead) → pinch zoom.
+        const workspace = document.querySelector('.workspace');
+        let wsTouchStartX = null, wsTouchStartY = null,
+            wsScrollLeft  = null, wsScrollTop   = null, wsAxisLocked = null;
+        let pinchActive = false, pinchStartDist = 0, pinchStartZoom = 1;
+        let pinchRafId = null, pendingPinchZoom = null, pendingPinchMidX = null;
+
+        function touchDist(t0, t1) {
+            return Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+        }
+
+        function flushPinchZoom() {
+            pinchRafId = null;
+            if (pendingPinchZoom !== null) {
+                setZoom(pendingPinchZoom, pendingPinchMidX);
+                pendingPinchZoom = null;
+            }
+        }
+
+        workspace.addEventListener('touchstart', (e) => {
+            // Two-finger pinch — only when the bead is not already being dragged
+            if (e.touches.length === 2 && !beadDragging) {
+                pinchActive    = true;
+                pinchStartDist = touchDist(e.touches[0], e.touches[1]);
+                pinchStartZoom = zoom;
+                wsTouchStartX  = null; // cancel any ongoing pan
+                e.preventDefault();   // stop browser from attempting its own zoom
+                return;
+            }
+            if (e.touches.length !== 1) return;
+            if (e.target.closest('.pull-bead, .y-bead, input')) return;
+            wsTouchStartX = e.touches[0].clientX;
+            wsTouchStartY = e.touches[0].clientY;
+            wsScrollLeft  = scroller.scrollLeft;
+            wsScrollTop   = scroller.scrollTop;
+            wsAxisLocked  = null;
+            pinchActive   = false;
+        }, { passive: false });
+
+        workspace.addEventListener('touchmove', (e) => {
+            if (pinchActive && e.touches.length === 2) {
+                e.preventDefault();
+                const dist  = touchDist(e.touches[0], e.touches[1]);
+                const midX  = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                // Throttle DOM work to one update per animation frame
+                pendingPinchZoom = pinchStartZoom * (dist / pinchStartDist);
+                pendingPinchMidX = midX;
+                if (!pinchRafId) pinchRafId = requestAnimationFrame(flushPinchZoom);
+                return;
+            }
+            if (wsTouchStartX === null) return;
+            const dx = e.touches[0].clientX - wsTouchStartX;
+            const dy = e.touches[0].clientY - wsTouchStartY;
+            if (wsAxisLocked === null) {
+                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) wsAxisLocked = 'x';
+                else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 5) wsAxisLocked = 'y';
+            }
+            if (wsAxisLocked === 'x') {
+                e.preventDefault();
+                scroller.scrollLeft = wsScrollLeft - dx;
+            } else if (wsAxisLocked === 'y' && mode === 'grid') {
+                e.preventDefault();
+                scroller.scrollTop = wsScrollTop - dy;
+            }
+        }, { passive: false });
+
+        workspace.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                pinchActive = false;
+                if (pinchRafId) { cancelAnimationFrame(pinchRafId); pinchRafId = null; }
+                pendingPinchZoom = pendingPinchMidX = null;
+            }
+            if (e.touches.length === 0) {
+                wsTouchStartX = wsTouchStartY = wsScrollLeft = wsScrollTop = wsAxisLocked = null;
+            }
+        });
+
+        // ── BEAD DRAG ──
+        let beadDragging = false;
+        let beadStartClientX = 0;
+        let beadStartQuantity = 0;
+
+        // ── Y-BEAD DRAG ──
+        let yBeadDragging = false;
+        let yBeadStartClientY = 0;
+        let yBeadStartRows = 0;
+
+        function startBeadDrag(clientX) {
+            beadDragging = true;
+            beadStartClientX  = clientX;
+            beadStartQuantity = quantity;
+            bead.classList.add('dragging');
+        }
+
+        function updateBeadDrag(clientX) {
+            if (!beadDragging) return;
+            const { w: slotW } = getSlotMetrics();
+            const delta = Math.round((clientX - beadStartClientX) / slotW);
+            const newQ  = Math.max(0, Math.min(MAX_CAPACITY, beadStartQuantity + delta));
+            if (newQ !== quantity) {
+                const adding   = newQ > quantity;
+                const prevTens = Math.floor(quantity / 10);
+                const newTens  = Math.floor(newQ / 10);
+                quantity = newQ;
+                // newTen fires when a full group of 10 fuses (adding only)
+                const newTen  = adding && placeValueMode && newTens > prevTens;
+                const newUnit = adding && !newTen;
+                renderBlocks({ newUnit, newTen });
+                ensureBeadVisible();
+            }
+        }
+
+        function endBeadDrag() {
+            if (!beadDragging) return;
+            beadDragging = false;
+            if (bead) bead.classList.remove('dragging');
+        }
+
+        function startYBeadDrag(clientY) {
+            yBeadDragging = true;
+            yBeadStartClientY = clientY;
+            yBeadStartRows    = rows;
+            yBead.classList.add('dragging');
+        }
+
+        function updateYBeadDrag(clientY) {
+            if (!yBeadDragging) return;
+            const cellSize   = getCellSize();
+            const delta      = Math.round((clientY - yBeadStartClientY) / cellSize);
+            const targetRows = Math.max(1, Math.min(MAX_ROWS, yBeadStartRows + delta));
+
+            // Dynamic y-pull scaling: when the growing grid would push below the visible
+            // viewport, smoothly reduce zoom so the full array stays in view.
+            // This feels like the camera backing up to make room — no manual zoom needed.
+            let zoomChanged = false;
+            if (targetRows >= rows) {
+                const gridTop = nlTop.offsetHeight;          // px above the gridCanvas
+                const availH  = scroller.clientHeight - gridTop - 48; // 48 px bead margin
+                if (availH > 0 && targetRows * cellSize > availH) {
+                    const newZoom = Math.max(ZOOM_MIN, availH / (targetRows * BASE_CELL_SIZE));
+                    if (newZoom < zoom) {
+                        zoom = newZoom;
+                        document.documentElement.style.setProperty('--zoom', zoom);
+                        document.documentElement.style.setProperty('--cell-size', `${getCellSize()}px`);
+                        scroller.scrollTop = 0; // keep origin at top-left
+                        zoomChanged = true;
+                    }
+                }
+            }
+
+            if (targetRows !== rows || zoomChanged) {
+                rows = targetRows;
+                renderBlocks();
+            }
+        }
+
+        function endYBeadDrag() {
+            if (!yBeadDragging) return;
+            yBeadDragging = false;
+            if (yBead) yBead.classList.remove('dragging');
+        }
+
+        // Document-level listeners so the drag continues even if the pointer
+        // leaves the bead element.
+        document.addEventListener('mousemove', (e) => {
+            updateBeadDrag(e.clientX);
+            updateYBeadDrag(e.clientY);
+        });
+        document.addEventListener('mouseup', () => {
+            endBeadDrag();
+            endYBeadDrag();
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (beadDragging) {
+                e.preventDefault();
+                updateBeadDrag(e.touches[0].clientX);
+            } else if (yBeadDragging) {
+                e.preventDefault();
+                updateYBeadDrag(e.touches[0].clientY);
+            }
+        }, { passive: false });
+        document.addEventListener('touchend', () => {
+            endBeadDrag();
+            endYBeadDrag();
+        });
+        document.addEventListener('touchcancel', () => {
+            endBeadDrag();
+            endYBeadDrag();
+        });
+
+        // ── CTRL+WHEEL / TRACKPAD PINCH ZOOM (desktop) ──
+        // Only intercept when Ctrl is held so normal page scrolling is untouched.
+        // On macOS trackpads Chrome/Safari report ctrlKey+wheel for pinch gestures:
+        //   deltaY < 0  →  fingers spreading apart  →  zoom in  (+step)
+        //   deltaY > 0  →  fingers pinching together →  zoom out (−step)
+        scroller.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            const step = e.deltaY < 0 ? 0.1 : -0.1;
+            setZoom(zoom + step, e.clientX);
+        }, { passive: false });
+
+        // ── KEYBOARD + / - ZOOM ──
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+            const zoomIn  = e.key === '+' || e.key === '=';
+            const zoomOut = e.key === '-' || e.key === '_';
+            if (!zoomIn && !zoomOut) return;
+            e.preventDefault();
+            const sr = scroller.getBoundingClientRect();
+            const cx = sr.left + sr.width / 2;
+            setZoom(zoom + (zoomIn ? 0.1 : -0.1), cx);
+        });
+
+        // ── BOOTSTRAP ──
+        initBoard();
+
+        // Set the canonical --cell-size CSS variable to match the initial zoom = 1.
+        // (Kept in sync by setZoom and the y-pull scaler thereafter.)
+        document.documentElement.style.setProperty('--cell-size', `${getCellSize()}px`);
+
+        // Build the x pull bead and attach it to the tray.
+        // Done here (after initBoard) so querySelectorAll('.cube,.ten-bar') in
+        // renderBlocks never accidentally removes it.
+        bead = document.createElement('div');
+        bead.className = 'pull-bead';
+        bead.setAttribute('aria-label', 'Drag right to add units, drag left to remove');
+        const beadGrip = document.createElement('div');
+        beadGrip.className = 'pull-bead-grip';
+        bead.appendChild(beadGrip);
+        nlTray.appendChild(bead);
+
+        // Attach bead-specific pointer listeners
+        bead.addEventListener('mousedown', (e) => {
+            startBeadDrag(e.clientX);
+            e.preventDefault(); // suppress text selection
+        });
+        bead.addEventListener('touchstart', (e) => {
+            startBeadDrag(e.touches[0].clientX);
+            e.preventDefault();    // suppress scroll & selection
+            e.stopPropagation();   // don't let workspace pan handler fire
+        }, { passive: false });
+
+        // Build the y-bead and attach it to the y-axis area (left-side vertical axis).
+        yBead = document.createElement('div');
+        yBead.className = 'y-bead';
+        yBead.setAttribute('aria-label', 'Drag down to add rows, drag up to remove rows');
+        const yBeadGrip = document.createElement('div');
+        yBeadGrip.className = 'y-bead-grip';
+        yBead.appendChild(yBeadGrip);
+        yAxisArea.appendChild(yBead);
+
+        yBead.addEventListener('mousedown', (e) => {
+            if (mode !== 'grid') return;
+            startYBeadDrag(e.clientY);
+            e.preventDefault();
+        });
+        yBead.addEventListener('touchstart', (e) => {
+            if (mode !== 'grid') return;
+            startYBeadDrag(e.touches[0].clientY);
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+
+        // Mode toggle listeners
+        document.getElementById('modeLine').addEventListener('click', () => setMode('line'));
+        document.getElementById('modeGrid').addEventListener('click', () => setMode('grid'));
+
+        // Initial render
+        renderBlocks();
+    </script>
+</body>
+</html>
