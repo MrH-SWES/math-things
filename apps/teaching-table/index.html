@@ -46,6 +46,17 @@
       padding: 12px;
       box-shadow: var(--shadow);
       overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #pad-frame {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      border-radius: 24px;
+      overflow: hidden;
     }
     #pad {
       height: 100%;
@@ -694,6 +705,176 @@
     }
     /* ===== end Worksheet source modal ===== */
 
+    /* ===== Tools dock and floating tool windows ===== */
+    #tools-dock {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 7px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: 18px;
+      box-shadow: 0 6px 14px rgba(40, 34, 24, 0.08);
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: stretch;
+      scrollbar-width: thin;
+    }
+    #tools-dock::-webkit-scrollbar { height: 6px; }
+    #tools-dock::-webkit-scrollbar-thumb { background: rgba(40,34,24,.15); border-radius: 3px; }
+
+    .tool-btn {
+      flex: 0 0 auto;
+      min-width: 76px;
+      padding: 6px 8px 5px;
+      background: linear-gradient(#fff, #f7f3e6);
+      border: 1px solid var(--button-border);
+      border-radius: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      color: var(--ink);
+      box-shadow: 0 2px 0 rgba(93,80,55,.18), 0 5px 11px rgba(70,58,35,.06);
+      transition: transform 90ms ease, box-shadow 90ms ease;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tool-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(93,80,55,.20); }
+    .tool-btn.active {
+      background: linear-gradient(#fffce4, #f1e9c5);
+      border-color: rgba(120, 95, 35, 0.55);
+      color: #5a4615;
+      box-shadow: 0 2px 0 rgba(120, 95, 35, 0.32), inset 0 1px 0 rgba(255,255,255,.65);
+    }
+    .tool-btn .ti {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .tool-btn .tn {
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.01em;
+      line-height: 1.1;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    #tools-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      overflow: hidden;
+      border-radius: 24px;
+    }
+
+    .tool-window {
+      position: absolute;
+      background: rgba(255, 253, 247, 0.98);
+      border: 1px solid rgba(150, 140, 120, 0.45);
+      border-radius: 20px;
+      box-shadow: 0 18px 38px rgba(40, 34, 24, 0.22), 0 4px 8px rgba(40, 34, 24, 0.08);
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 220px;
+      min-height: 170px;
+      transition: box-shadow 130ms ease;
+    }
+    .tool-window.dragging {
+      box-shadow: 0 24px 56px rgba(40, 34, 24, 0.34), 0 6px 12px rgba(40, 34, 24, 0.12);
+    }
+    .tool-titlebar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 6px 0 8px;
+      background: linear-gradient(180deg, rgba(248, 244, 232, 0.94), rgba(241, 234, 215, 0.86));
+      border-bottom: 1px solid rgba(150, 140, 120, 0.28);
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    .tool-titlebar:active { cursor: grabbing; }
+    .tool-grip {
+      width: 14px;
+      height: 18px;
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .tool-grip::before {
+      content: "";
+      position: absolute;
+      inset: 1px 4px;
+      background-image: radial-gradient(circle, rgba(40,34,24,0.55) 1.2px, transparent 1.4px);
+      background-size: 4px 5px;
+      background-repeat: repeat;
+    }
+    .tool-title {
+      flex: 1 1 auto;
+      font-size: 13px;
+      font-weight: 850;
+      color: rgba(29, 29, 31, 0.66);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tool-close {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(29,29,31,0.45);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+    }
+    .tool-close:hover { background: rgba(157, 58, 54, 0.16); color: var(--danger); }
+    .tool-frame {
+      flex: 1 1 auto;
+      width: 100%;
+      border: none;
+      background: white;
+      display: block;
+    }
+    .tool-resize {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 22px;
+      height: 22px;
+      cursor: nwse-resize;
+      touch-action: none;
+    }
+    .tool-resize::after {
+      content: "";
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      width: 12px;
+      height: 12px;
+      background-image:
+        linear-gradient(135deg, transparent 60%, rgba(40,34,24,0.4) 60%, rgba(40,34,24,0.4) 68%, transparent 68%),
+        linear-gradient(135deg, transparent 78%, rgba(40,34,24,0.4) 78%, rgba(40,34,24,0.4) 86%, transparent 86%);
+    }
+    /* ===== end Tools dock and floating tool windows ===== */
+
     @media (max-width: 760px) {
       :root { --side-width: 154px; --math-size: 38px; }
       .shell { gap: 7px; padding: 7px; }
@@ -714,11 +895,15 @@
 <body>
   <div class="shell">
     <main class="pad-wrap">
-      <section id="pad" class="plain" aria-label="math scratch pad">
-        <div id="stage">
-          <img id="worksheet-img" class="hidden" alt="" />
-        </div>
-      </section>
+      <div id="tools-dock" aria-label="Math Things tools"></div>
+      <div id="pad-frame">
+        <section id="pad" class="plain" aria-label="math scratch pad">
+          <div id="stage">
+            <img id="worksheet-img" class="hidden" alt="" />
+          </div>
+        </section>
+        <div id="tools-layer" aria-label="floating tools"></div>
+      </div>
     </main>
 
     <input type="file" id="worksheetFile" accept="image/*" style="display:none" />
@@ -803,7 +988,31 @@
   // After deploying the Cloudflare Worker, paste its URL below (no trailing slash).
   // Example: 'https://teaching-table-relay.willmcw.workers.dev'
   // Leave as the empty string '' to disable phone scan and use file picker only.
-  const WORKER_URL = 'https://teaching-table-relay.ssccchef.workers.dev';  // =========================
+  const WORKER_URL = 'https://teaching-table-relay.ssccchef.workers.dev';
+
+  // Tools available in the dock. Each entry creates a button in the top dock.
+  // Tapping a button opens the tool as a draggable, resizable window over the pad.
+  // - id:   unique slug (used for save/restore)
+  // - name: short label shown under the icon
+  // - url:  filename or path of the tool's HTML, relative to this file's location
+  // - icon: a short text glyph shown on the button (1–3 chars works best)
+  // - w/h:  default window size in pixels when first summoned
+  // Edit this list to match the actual filenames in your math-things repo.
+  // Add or remove rows freely; nothing else needs to change.
+  const TOOLS = [
+    { id: 'numberline', name: 'Number Line', url: '../number-line/', icon: '━●━', w: 720, h: 220 },
+    { id: 'timestable', name: 'Times Table', url: '../array-architect/', icon: '⊞', w: 560, h: 560 },
+    { id: 'placevalue', name: 'Place Value', url: '../place-value-cards/', icon: '▥', w: 660, h: 420 },
+    { id: 'base10', name: 'Base 10 Blocks', url: '../place-value-blocks/', icon: '▦', w: 600, h: 480 },
+    { id: 'primealtar', name: 'Prime Altar', url: '../prime-altar/', icon: '◆', w: 720, h: 560 },
+    { id: 'geolab', name: 'Geo Lab', url: '../geo-lab/', icon: '△', w: 600, h: 600 },
+    { id: 'rounding', name: 'Rounding Wave', url: '../rounding-waves/', icon: '∼', w: 720, h: 360 },
+    
+    // I added two of your core manipulatives here as a bonus!
+    { id: 'tenframe', name: 'Ten Frame', url: '../ten-frame/', icon: '◫', w: 500, h: 400 },
+    { id: 'rekenrek', name: 'Rekenrek', url: '../rekenrek/', icon: '≡', w: 600, h: 350 },
+  ];
+  // =========================
 
   const pad = document.getElementById('pad');
   const stage = document.getElementById('stage');
@@ -1212,6 +1421,7 @@
       mode: currentMode,
       mathSize,
       worksheet: worksheetDataUrl,
+      tools: toolStates,
     }));
   }
 
@@ -1276,6 +1486,16 @@
       activeCell = null;
       clearActiveCell();
       setActive(document.querySelector('math-field') || makeRow(''));
+
+      // Restore tool states; will be rendered after dock builds.
+      if (data.tools && typeof data.tools === 'object') {
+        Object.entries(data.tools).forEach(([id, s]) => {
+          if (TOOLS.find(t => t.id === id)) {
+            toolStates[id] = { ...s };
+            if (typeof s.z === 'number' && s.z > toolZTop) toolZTop = s.z + 1;
+          }
+        });
+      }
       return true;
     } catch (err) {
       return false;
@@ -1570,12 +1790,230 @@
 
   // ===== end Worksheet source modal =====
 
+  // ===== Tools dock and floating tool windows =====
+
+  const toolStates = {}; // { id: { x, y, w, h, open, z } }
+  let toolZTop = 100;
+
+  function defaultToolPosition(tool) {
+    const openCount = Object.values(toolStates).filter(s => s.open).length;
+    const offset = openCount * 32;
+    return { x: 28 + offset, y: 28 + offset, w: tool.w, h: tool.h };
+  }
+
+  function renderDock() {
+    const dock = document.getElementById('tools-dock');
+    if (!dock) return;
+    dock.innerHTML = '';
+    TOOLS.forEach(tool => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tool-btn';
+      btn.dataset.toolId = tool.id;
+      btn.setAttribute('aria-label', tool.name);
+      btn.innerHTML = `<span class="ti">${tool.icon}</span><span class="tn">${tool.name}</span>`;
+      btn.addEventListener('click', () => toggleTool(tool.id));
+      dock.appendChild(btn);
+    });
+    updateDockButtonStates();
+  }
+
+  function updateDockButtonStates() {
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      const id = btn.dataset.toolId;
+      btn.classList.toggle('active', !!toolStates[id]?.open);
+    });
+  }
+
+  function toggleTool(id) {
+    if (toolStates[id]?.open) {
+      closeTool(id);
+    } else {
+      openTool(id);
+    }
+  }
+
+  function openTool(id) {
+    const tool = TOOLS.find(t => t.id === id);
+    if (!tool) return;
+    if (!toolStates[id]) {
+      toolStates[id] = { ...defaultToolPosition(tool), open: true, z: ++toolZTop };
+    } else {
+      toolStates[id].open = true;
+      toolStates[id].z = ++toolZTop;
+    }
+    buildToolWindow(tool);
+    updateDockButtonStates();
+    scheduleSave();
+  }
+
+  function closeTool(id) {
+    if (!toolStates[id]) return;
+    toolStates[id].open = false;
+    const el = document.querySelector(`.tool-window[data-tool-id="${id}"]`);
+    if (el) el.remove();
+    updateDockButtonStates();
+    scheduleSave();
+  }
+
+  function buildToolWindow(tool) {
+    const state = toolStates[tool.id];
+    const layer = document.getElementById('tools-layer');
+    if (!layer) return null;
+
+    let win = document.querySelector(`.tool-window[data-tool-id="${tool.id}"]`);
+    if (win) {
+      win.style.left = state.x + 'px';
+      win.style.top = state.y + 'px';
+      win.style.width = state.w + 'px';
+      win.style.height = state.h + 'px';
+      win.style.zIndex = state.z;
+      return win;
+    }
+
+    win = document.createElement('div');
+    win.className = 'tool-window';
+    win.dataset.toolId = tool.id;
+    win.style.left = state.x + 'px';
+    win.style.top = state.y + 'px';
+    win.style.width = state.w + 'px';
+    win.style.height = state.h + 'px';
+    win.style.zIndex = state.z;
+
+    const titlebar = document.createElement('div');
+    titlebar.className = 'tool-titlebar';
+    const grip = document.createElement('div');
+    grip.className = 'tool-grip';
+    const title = document.createElement('div');
+    title.className = 'tool-title';
+    title.textContent = tool.name;
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'tool-close';
+    closeBtn.setAttribute('aria-label', `close ${tool.name}`);
+    closeBtn.textContent = '×';
+    titlebar.appendChild(grip);
+    titlebar.appendChild(title);
+    titlebar.appendChild(closeBtn);
+
+    const iframe = document.createElement('iframe');
+    iframe.className = 'tool-frame';
+    iframe.src = tool.url;
+    iframe.title = tool.name;
+    iframe.setAttribute('loading', 'lazy');
+
+    const resize = document.createElement('div');
+    resize.className = 'tool-resize';
+    resize.setAttribute('aria-label', 'resize');
+
+    win.appendChild(titlebar);
+    win.appendChild(iframe);
+    win.appendChild(resize);
+    layer.appendChild(win);
+
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeTool(tool.id);
+    });
+
+    // Bring window to front on any interaction.
+    win.addEventListener('pointerdown', () => {
+      if (toolStates[tool.id]) {
+        toolStates[tool.id].z = ++toolZTop;
+        win.style.zIndex = toolStates[tool.id].z;
+      }
+    }, true);
+
+    enableToolDrag(win, titlebar, iframe, tool.id);
+    enableToolResize(win, resize, iframe, tool.id);
+
+    return win;
+  }
+
+  function enableToolDrag(win, handle, iframe, toolId) {
+    let st = null;
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.target.classList.contains('tool-close')) return;
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      iframe.style.pointerEvents = 'none';
+      win.classList.add('dragging');
+      const left = parseFloat(win.style.left) || 0;
+      const top = parseFloat(win.style.top) || 0;
+      st = { id: e.pointerId, startX: e.clientX, startY: e.clientY, startLeft: left, startTop: top };
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      win.style.left = (st.startLeft + e.clientX - st.startX) + 'px';
+      win.style.top = (st.startTop + e.clientY - st.startY) + 'px';
+    });
+    function end(e) {
+      if (!st || e.pointerId !== st.id) return;
+      iframe.style.pointerEvents = '';
+      win.classList.remove('dragging');
+      if (toolStates[toolId]) {
+        toolStates[toolId].x = parseFloat(win.style.left) || 0;
+        toolStates[toolId].y = parseFloat(win.style.top) || 0;
+      }
+      st = null;
+      scheduleSave();
+    }
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  }
+
+  function enableToolResize(win, handle, iframe, toolId) {
+    let st = null;
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handle.setPointerCapture(e.pointerId);
+      iframe.style.pointerEvents = 'none';
+      const w = parseFloat(win.style.width) || win.offsetWidth;
+      const h = parseFloat(win.style.height) || win.offsetHeight;
+      st = { id: e.pointerId, startX: e.clientX, startY: e.clientY, startW: w, startH: h };
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      win.style.width = Math.max(220, st.startW + e.clientX - st.startX) + 'px';
+      win.style.height = Math.max(170, st.startH + e.clientY - st.startY) + 'px';
+    });
+    function end(e) {
+      if (!st || e.pointerId !== st.id) return;
+      iframe.style.pointerEvents = '';
+      if (toolStates[toolId]) {
+        toolStates[toolId].w = parseFloat(win.style.width) || 400;
+        toolStates[toolId].h = parseFloat(win.style.height) || 400;
+      }
+      st = null;
+      scheduleSave();
+    }
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  }
+
+  function restoreOpenTools() {
+    // Reopen any tools whose state.open is true (drawn from localStorage).
+    TOOLS.forEach(tool => {
+      const s = toolStates[tool.id];
+      if (s && s.open) {
+        buildToolWindow(tool);
+      }
+    });
+    updateDockButtonStates();
+  }
+
+  // ===== end Tools dock and floating tool windows =====
+
+
   // ===== end Teaching Table additions =====
 
   afterMathliveReady(() => {
     applyMathSize();
     if (!load()) { makeRow(''); setMode('plain'); }
     setActive(document.querySelector('math-field'));
+    renderDock();
+    restoreOpenTools();
 
     document.querySelectorAll('[data-insert]').forEach(button => {
       button.addEventListener('pointerdown', event => {
