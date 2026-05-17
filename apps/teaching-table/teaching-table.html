@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Math Things Teaching Table v1</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>  <style>
+    :root {
+      --paper: #fffdf7;
+      --ink: #1d1d1f;
+      --muted: rgba(29,29,31,.58);
+      --line: rgba(55, 83, 135, 0.23);
+      --grid: rgba(55, 83, 135, 0.16);
+      --button: #fffefa;
+      --button-border: #c8c1b0;
+      --accent: #365f9d;
+      --danger: #9d3a36;
+      --shadow: 0 18px 40px rgba(40, 34, 24, 0.18);
+      --math-size: 44px;
+      --side-width: clamp(190px, 21vw, 285px);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.88), transparent 34rem),
+        linear-gradient(135deg, #e8e1d0, #f7f4ec 48%, #ded8c8);
+      overflow: hidden;
+    }
+    .shell {
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--side-width);
+      gap: 10px;
+      padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
+    }
+    .pad-wrap {
+      min-height: 0;
+      background: rgba(255,255,255,.35);
+      border: 1px solid rgba(255,255,255,.60);
+      border-radius: 30px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    #pad {
+      height: 100%;
+      overflow: auto;
+      border-radius: 24px;
+      border: 1px solid rgba(0,0,0,.10);
+      background-color: var(--paper);
+      padding: 14px;
+      scroll-padding-bottom: 80px;
+    }
+    #pad.lined {
+      background-image: linear-gradient(to bottom, transparent 0, transparent 47px, var(--line) 48px);
+      background-size: 100% 48px;
+    }
+    #pad.grid {
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .row {
+      min-height: calc(var(--math-size) * 1.28);
+      margin: 0 0 8px 0;
+      padding: 5px 8px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      background: transparent;
+      border: 2px solid transparent;
+    }
+    .row.active {
+      background: rgba(255, 242, 179, .42);
+      border-color: rgba(215, 182, 81, .52);
+    }
+    math-field {
+      width: 100%;
+      min-height: calc(var(--math-size) * 1.12);
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: var(--math-size);
+      --caret-color: #1b4f9b;
+      --selection-background-color: rgba(74, 130, 210, .25);
+      --contains-highlight-background-color: transparent;
+    }
+    math-field::part(menu-toggle),
+    math-field::part(virtual-keyboard-toggle) { display: none; }
+
+    .side {
+      min-height: 0;
+      overflow: auto;
+      background: rgba(255,255,255,.50);
+      border: 1px solid rgba(255,255,255,.68);
+      border-radius: 24px;
+      box-shadow: 0 14px 30px rgba(40,34,24,.13);
+      padding: 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      line-height: .94;
+      padding: 2px 3px 5px;
+      user-select: none;
+    }
+    .brand .math-things {
+      font-size: 25px;
+      font-weight: 950;
+      letter-spacing: -0.055em;
+    }
+    .brand .pad-name {
+      font-size: 15px;
+      font-weight: 850;
+      color: var(--muted);
+      letter-spacing: -0.035em;
+    }
+    .tools.paper-modes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .keys {
+      display: grid;
+      gap: 7px;
+      align-content: start;
+    }
+    .keys.digit-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .keys.op-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .keys.edit-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .utility {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-top: 4px;
+    }
+    button {
+      border: 1px solid var(--button-border);
+      background: linear-gradient(#fff, #f8f6ee);
+      color: var(--ink);
+      border-radius: 13px;
+      min-height: 42px;
+      height: 42px;
+      font: inherit;
+      font-size: 20px;
+      font-weight: 850;
+      box-shadow: 0 3px 0 rgba(93,80,55,.20), 0 9px 14px rgba(70,58,35,.08);
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      padding: 0 4px;
+      display: inline-grid;
+      place-items: center;
+    }
+    button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(93,80,55,.22); }
+    button.accent { border-color: rgba(54,95,157,.38); color: #173f78; }
+    button.danger { color: var(--danger); }
+    button.small { font-size: 16px; }
+    button.is-on {
+      background: linear-gradient(#fffce4, #f1e9c5);
+      border-color: rgba(120, 95, 35, 0.55);
+      box-shadow: 0 2px 0 rgba(93,80,55,.20), inset 0 1px 0 rgba(255,255,255,.65);
+      color: #5a4615;
+    }
+    button.is-on:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(93,80,55,.22); }
+    .fraction-icon {
+      display: inline-grid;
+      grid-template-rows: 1fr 2px 1fr;
+      align-items: center;
+      justify-items: center;
+      width: 32px;
+      height: 32px;
+      line-height: 1;
+      font-size: 14px;
+      font-weight: 900;
+      font-style: italic;
+    }
+    .fraction-icon .bar { width: 26px; height: 2.5px; background: currentColor; border-radius: 3px; }
+    .frac-key {
+      background: linear-gradient(#e7eef8, #d5e0f0);
+      border-color: rgba(54,95,157,.55);
+      color: #143565;
+    }
+    .frac-key:active { box-shadow: 0 1px 0 rgba(45,70,120,.32); }
+    .glyph {
+      font-size: 22px;
+      font-weight: 950;
+      color: rgba(40, 34, 24, 0.72);
+    }
+    .util {
+      min-height: 34px;
+      height: 34px;
+      font-size: 14px;
+      border-radius: 11px;
+    }
+    .paper-icon {
+      display: inline-block;
+      width: 21px;
+      height: 25px;
+      border: 2px solid currentColor;
+      border-radius: 4px;
+      opacity: .9;
+      position: relative;
+    }
+    .paper-icon.lined::before {
+      content: "";
+      position: absolute;
+      left: 4px; right: 4px; top: 6px; height: 2px;
+      background: currentColor;
+      box-shadow: 0 6px 0 currentColor, 0 12px 0 currentColor;
+    }
+    .paper-icon.grid {
+      background-image:
+        linear-gradient(to right, currentColor 1px, transparent 1px),
+        linear-gradient(to bottom, currentColor 1px, transparent 1px);
+      background-size: 7px 7px;
+      background-position: 3px 3px;
+    }
+    .trash-icon {
+      display: inline-block;
+      width: 21px;
+      height: 23px;
+      border: 2px solid currentColor;
+      border-top: 0;
+      border-radius: 0 0 5px 5px;
+      position: relative;
+      margin-top: 6px;
+    }
+    .trash-icon::before {
+      content: "";
+      position: absolute;
+      left: -3px; right: -3px; top: -7px; height: 3px;
+      background: currentColor;
+      border-radius: 3px;
+    }
+    .trash-icon::after {
+      content: "";
+      position: absolute;
+      left: 7px; top: -12px; width: 7px; height: 4px;
+      border: 2px solid currentColor;
+      border-bottom: 0;
+      border-radius: 4px 4px 0 0;
+    }
+
+
+    .algorithms {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .alg-btn {
+      min-height: 58px;
+      height: 58px;
+      padding: 6px 4px 8px;
+      font-size: 18px;
+      line-height: 1;
+      background: linear-gradient(#fff8e8, #f0e6c8);
+      border-color: rgba(180, 150, 90, 0.55);
+      color: #4d3a0e;
+    }
+    .alg-symbol {
+      position: relative;
+      display: inline-block;
+      font-size: 28px;
+      font-weight: 950;
+      line-height: 1;
+      padding: 2px 6px 10px;
+    }
+    .alg-symbol::after {
+      content: "";
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      bottom: 2px;
+      height: 3px;
+      background: currentColor;
+      opacity: 0.78;
+      border-radius: 1px;
+    }
+    .alg-symbol-div {
+      font-size: 32px;
+      padding: 0 4px;
+    }
+    .alg-symbol-div::after { display: none; }
+    .algo-block {
+      display: inline-block;
+      margin: 10px 0 16px 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 242, 179, .22);
+      border: 2px solid transparent;
+      vertical-align: top;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 850;
+      font-size: calc(var(--math-size) * .72);
+      color: var(--ink);
+    }
+    .algo-block.active { border-color: rgba(215, 182, 81, .62); }
+    .algo-row {
+      display: grid;
+      grid-template-columns: 1.1em repeat(5, 1.05em);
+      gap: .12em;
+      align-items: center;
+      justify-content: end;
+      min-height: 1.25em;
+    }
+    .algo-row.answer, .algo-row.partial { border-top: .075em solid currentColor; margin-top: .1em; padding-top: .1em; }
+    .algo-row.carry {
+      min-height: .86em;
+      font-size: .58em;
+      opacity: .82;
+      margin-bottom: -.12em;
+    }
+    .algo-row.carry .digit-cell {
+      min-height: .92em;
+      min-width: 1.05em;
+      border-radius: .2em;
+      box-shadow: inset 0 -0.04em 0 rgba(0,0,0,.16);
+    }
+    .algo-row.borrow .digit-cell {
+      color: var(--danger);
+    }
+    .opcell { text-align: center; opacity: .95; }
+    .digit-cell {
+      min-width: 1.05em;
+      min-height: 1.18em;
+      display: inline-grid;
+      place-items: center;
+      border-radius: .18em;
+      outline: none;
+      background: rgba(255,255,255,.08);
+    }
+    .digit-cell.active {
+      background: rgba(54, 95, 157, .16);
+      box-shadow: inset 0 -0.08em 0 #365f9d;
+    }
+    .longdiv-block { min-width: 10em; }
+    .longdiv-quotient {
+      display: grid;
+      grid-template-columns: 2.5em repeat(5, 1.05em);
+      gap: .12em;
+      margin-left: .35em;
+      margin-bottom: .08em;
+    }
+    .longdiv-main {
+      display: grid;
+      grid-template-columns: 2.4em repeat(5, 1.05em);
+      gap: .12em;
+      align-items: stretch;
+    }
+    .divisor-cells { display: grid; grid-template-columns: repeat(2, 1.05em); gap: .12em; align-items: center; }
+    .dividend-cells {
+      grid-column: 2 / span 5;
+      display: grid;
+      grid-template-columns: repeat(5, 1.05em);
+      gap: .12em;
+      border-top: .075em solid currentColor;
+      border-left: .075em solid currentColor;
+      border-radius: .16em 0 0 0;
+      padding-left: .18em;
+    }
+    .work-row {
+      display: grid;
+      grid-template-columns: 2.5em repeat(5, 1.05em);
+      gap: .12em;
+      min-height: 1.25em;
+      margin-left: .35em;
+    }
+
+    /* ----- Teaching Table additions ----- */
+    #pad { position: relative; }
+    #stage {
+      position: relative;
+      min-height: 100%;
+    }
+    #worksheet-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+      border-radius: 6px;
+      margin: 0 0 14px 0;
+      box-shadow: 0 1px 0 rgba(0,0,0,.06);
+    }
+    #worksheet-img.hidden { display: none; }
+    #pad.worksheet { background-image: none; }
+    #pad.worksheet #stage { cursor: crosshair; }
+    #pad.worksheet #stage .row, #pad.worksheet #stage .algo-holder { cursor: default; }
+
+    .row { position: relative; }
+    .row.positioned {
+      position: absolute;
+      margin: 0;
+      padding: 3px 8px 3px 22px;
+      background: transparent;
+      border: 1.5px solid transparent;
+      border-radius: 12px;
+      box-shadow: none;
+      z-index: 10;
+      max-width: 90%;
+      min-width: 130px;
+      width: max-content;
+      transition: background-color 130ms ease, border-color 130ms ease, box-shadow 130ms ease;
+    }
+    .row.positioned math-field {
+      width: auto;
+      min-width: 110px;
+    }
+    .row.positioned:hover {
+      background: rgba(255, 253, 247, 0.62);
+      border-color: rgba(150, 140, 120, 0.28);
+    }
+    .row.positioned.active {
+      background: rgba(255, 245, 200, 0.94);
+      border-color: rgba(215, 182, 81, 0.72);
+      box-shadow: 0 5px 14px rgba(40, 34, 24, 0.14);
+      z-index: 20;
+    }
+    .row-grip {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 22px;
+      display: none;
+      cursor: grab;
+      touch-action: none;
+      border-radius: 12px 0 0 12px;
+      opacity: 0;
+      transition: opacity 130ms ease;
+    }
+    .row-grip::before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 18px;
+      background-image: radial-gradient(circle, rgba(40,34,24,0.55) 1.2px, transparent 1.4px);
+      background-size: 4px 5px;
+      background-repeat: repeat-y;
+    }
+    .row.positioned .row-grip { display: block; }
+    .row.positioned:hover .row-grip,
+    .row.positioned.active .row-grip { opacity: 1; }
+    .row-grip:active { cursor: grabbing; }
+
+    .algo-holder { position: relative; }
+    .algo-holder.positioned {
+      position: absolute;
+      z-index: 10;
+      transition: filter 130ms ease;
+    }
+    .algo-holder.positioned .algo-block {
+      margin: 0;
+      padding-left: 30px;
+      background: rgba(255, 253, 247, 0.0);
+      border: 1.5px solid transparent;
+      border-radius: 14px;
+      box-shadow: none;
+      transition: background-color 130ms ease, border-color 130ms ease, box-shadow 130ms ease;
+    }
+    .algo-holder.positioned:hover .algo-block {
+      background: rgba(255, 253, 247, 0.7);
+      border-color: rgba(150, 140, 120, 0.28);
+    }
+    .algo-holder.positioned.active .algo-block {
+      background: rgba(255, 245, 200, 0.94);
+      border-color: rgba(215, 182, 81, 0.72);
+      box-shadow: 0 5px 14px rgba(40, 34, 24, 0.14);
+      z-index: 20;
+    }
+    .algo-grip {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      display: none;
+      cursor: grab;
+      touch-action: none;
+      border-radius: 12px 0 0 12px;
+      opacity: 0;
+      transition: opacity 130ms ease;
+      z-index: 30;
+    }
+    .algo-grip::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 22px;
+      background-image: radial-gradient(circle, rgba(40,34,24,0.55) 1.2px, transparent 1.4px);
+      background-size: 4px 5px;
+      background-repeat: repeat-y;
+    }
+    .algo-holder.positioned .algo-grip { display: block; }
+    .algo-holder.positioned:hover .algo-grip,
+    .algo-holder.positioned.active .algo-grip { opacity: 1; }
+    .algo-grip:active { cursor: grabbing; }
+
+    /* Worksheet upload icon */
+    .worksheet-icon {
+      display: inline-block;
+      width: 21px;
+      height: 25px;
+      border: 2px solid currentColor;
+      border-radius: 4px;
+      opacity: .9;
+      position: relative;
+    }
+    .worksheet-icon::before {
+      content: "";
+      position: absolute;
+      left: 3px; right: 3px; top: 5px;
+      height: 2px;
+      background: currentColor;
+      box-shadow: 0 4px 0 currentColor, 0 8px 0 currentColor, 0 12px 0 currentColor;
+      opacity: .85;
+    }
+    .worksheet-icon::after {
+      content: "";
+      position: absolute;
+      top: -3px; right: -3px;
+      width: 8px; height: 8px;
+      background: var(--button);
+      border: 2px solid currentColor;
+      border-radius: 50%;
+    }
+
+    /* Drop zone overlay */
+    #drop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(54, 95, 157, 0.18);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #drop-overlay.show { display: flex; }
+    #drop-overlay .label {
+      font-size: 32px;
+      font-weight: 950;
+      color: var(--accent);
+      background: rgba(255, 253, 247, 0.94);
+      padding: 24px 36px;
+      border-radius: 22px;
+      border: 3px dashed var(--accent);
+      letter-spacing: -0.02em;
+    }
+    /* ----- end Teaching Table additions ----- */
+
+    /* ===== Worksheet source modal (QR + file picker) ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 34, 24, 0.42);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+      padding: 24px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal-card {
+      background: linear-gradient(135deg, #fffdf6 0%, #f7f1e0 100%);
+      border-radius: 28px;
+      padding: 28px 30px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 28px 64px rgba(40, 34, 24, 0.32);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      text-align: center;
+      position: relative;
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+      margin: 0 0 4px;
+      color: #1d1d1f;
+    }
+    .modal-sub {
+      font-size: 15px;
+      color: rgba(29, 29, 31, 0.62);
+      font-weight: 700;
+      margin: 0 0 18px;
+    }
+    .qr-frame {
+      display: inline-block;
+      padding: 14px;
+      background: #fffdf6;
+      border-radius: 18px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 14px rgba(40, 34, 24, 0.10);
+      margin: 4px 0 14px;
+      line-height: 0;
+    }
+    .qr-frame canvas { display: block; }
+    .qr-frame.placeholder {
+      width: 248px;
+      height: 248px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(29, 29, 31, 0.45);
+      font-size: 14px;
+      padding: 24px;
+      line-height: 1.4;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    .modal-url {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      color: rgba(29, 29, 31, 0.62);
+      margin: 0 0 10px;
+      word-break: break-all;
+    }
+    .modal-status {
+      font-size: 15px;
+      font-weight: 800;
+      color: rgba(29, 29, 31, 0.7);
+      margin: 0 0 18px;
+      min-height: 22px;
+    }
+    .modal-status.success { color: #2d7a3a; }
+    .modal-status.error { color: var(--danger); }
+    .modal-sep {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 14px 0 14px;
+      color: rgba(29, 29, 31, 0.4);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .modal-sep::before, .modal-sep::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(29, 29, 31, 0.18);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      flex-direction: column;
+    }
+    .modal-actions button {
+      width: 100%;
+      min-height: 48px;
+      height: 48px;
+      font-size: 16px;
+    }
+    .modal-actions .pick-btn {
+      background: linear-gradient(#e7eef8, #d5e0f0);
+      border-color: rgba(54, 95, 157, 0.55);
+      color: #143565;
+    }
+    .modal-actions .cancel-btn {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      color: rgba(29, 29, 31, 0.55);
+      font-size: 15px;
+      min-height: 36px;
+      height: 36px;
+    }
+    .modal-actions .cancel-btn:active { transform: none; }
+
+    @media (max-width: 760px) {
+      .modal-card { padding: 20px; }
+      .qr-frame.placeholder { width: 220px; height: 220px; }
+    }
+    /* ===== end Worksheet source modal ===== */
+
+    @media (max-width: 760px) {
+      :root { --side-width: 154px; --math-size: 38px; }
+      .shell { gap: 7px; padding: 7px; }
+      .pad-wrap { border-radius: 20px; padding: 7px; }
+      #pad { border-radius: 16px; padding: 8px; }
+      .row { padding: 4px 6px; border-radius: 12px; }
+      .side { border-radius: 18px; padding: 7px; gap: 7px; }
+      .brand .math-things { font-size: 20px; }
+      .brand .pad-name { font-size: 12px; }
+      .tools, .keys { gap: 5px; }
+      button { min-height: 37px; height: 37px; font-size: 17px; border-radius: 11px; }
+      button.small { font-size: 13px; }
+      .alg-btn { height: 42px; min-height: 42px; font-size: 15px; }
+      .fraction-icon { width: 23px; height: 23px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <main class="pad-wrap">
+      <section id="pad" class="plain" aria-label="math scratch pad">
+        <div id="stage">
+          <img id="worksheet-img" class="hidden" alt="" />
+        </div>
+      </section>
+    </main>
+
+    <input type="file" id="worksheetFile" accept="image/*" style="display:none" />
+    <div id="drop-overlay"><div class="label">Drop worksheet image to load</div></div>
+
+    <aside class="side" aria-label="Math Things Teaching Table controls">
+      <div class="brand" aria-label="Math Things Teaching Table">
+        <span class="math-things">Math Things</span>
+        <span class="pad-name">Teaching Table</span>
+      </div>
+
+      <nav class="tools paper-modes" aria-label="paper">
+        <button id="plainBtn" aria-label="plain paper"><span class="paper-icon"></span></button>
+        <button id="linedBtn" aria-label="lined paper"><span class="paper-icon lined"></span></button>
+        <button id="gridBtn" aria-label="grid paper"><span class="paper-icon grid"></span></button>
+        <button id="worksheetBtn" aria-label="load worksheet image"><span class="worksheet-icon"></span></button>
+      </nav>
+
+      <nav class="algorithms" aria-label="vertical algorithm templates">
+        <button class="alg-btn" data-alg="add" aria-label="vertical addition"><span class="alg-symbol">+</span></button>
+        <button class="alg-btn" data-alg="sub" aria-label="vertical subtraction"><span class="alg-symbol">−</span></button>
+        <button class="alg-btn" data-alg="mul" aria-label="vertical multiplication"><span class="alg-symbol">×</span></button>
+        <button class="alg-btn" data-alg="div" aria-label="long division"><span class="alg-symbol alg-symbol-div">⟌</span></button>
+      </nav>
+
+      <nav class="keys digit-pad" aria-label="number pad">
+        <button data-insert="7">7</button>
+        <button data-insert="8">8</button>
+        <button data-insert="9">9</button>
+        <button data-insert="4">4</button>
+        <button data-insert="5">5</button>
+        <button data-insert="6">6</button>
+        <button data-insert="1">1</button>
+        <button data-insert="2">2</button>
+        <button data-insert="3">3</button>
+        <button data-insert="0">0</button>
+        <button data-insert=".">.</button>
+        <button data-cmd="backspace" class="glyph" aria-label="backspace">⌫</button>
+      </nav>
+
+      <nav class="keys op-pad" aria-label="operators">
+        <button data-insert="+">+</button>
+        <button data-insert="-">−</button>
+        <button data-latex="\times">×</button>
+        <button data-latex="\div">÷</button>
+        <button data-insert="=">=</button>
+        <button id="fracBtn" class="accent frac-key" aria-label="insert fraction"><span class="fraction-icon"><span>n</span><span class="bar"></span><span>d</span></span></button>
+      </nav>
+
+      <nav class="keys edit-pad" aria-label="editing">
+        <button data-cmd="newline" class="glyph" aria-label="new line">↵</button>
+        <button data-cmd="advance" class="glyph" aria-label="next">→</button>
+        <button data-cmd="undo" class="glyph" aria-label="undo">↶</button>
+      </nav>
+
+      <nav class="utility" aria-label="utilities">
+        <button id="smallTextBtn" class="util" aria-label="smaller math text">A−</button>
+        <button id="bigTextBtn" class="util" aria-label="larger math text">A+</button>
+        <button class="danger util" id="clearBtn" aria-label="clear pad"><span class="trash-icon"></span></button>
+      </nav>
+    </aside>
+  </div>
+
+  <div id="worksheet-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h2 class="modal-title">Send a worksheet</h2>
+      <p class="modal-sub">Scan with your phone, then pick or take a photo</p>
+      <div class="qr-frame placeholder" id="qr-frame">Phone scan not configured yet. See deployment notes.</div>
+      <p class="modal-url" id="modal-url"></p>
+      <p class="modal-status" id="modal-status">Waiting for phone…</p>
+      <div class="modal-sep">or</div>
+      <div class="modal-actions">
+        <button class="pick-btn" id="modal-pick-btn">Pick a file from this device</button>
+        <button class="cancel-btn" id="modal-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  // ===== Configuration =====
+  // After deploying the Cloudflare Worker, paste its URL below (no trailing slash).
+  // Example: 'https://teaching-table-relay.willmcw.workers.dev'
+  // Leave as the empty string '' to disable phone scan and use file picker only.
+  const WORKER_URL = 'https://teaching-table-relay.ssccchef.workers.dev';  // =========================
+
+  const pad = document.getElementById('pad');
+  const stage = document.getElementById('stage');
+  const worksheetImg = document.getElementById('worksheet-img');
+  const worksheetFileInput = document.getElementById('worksheetFile');
+  const dropOverlay = document.getElementById('drop-overlay');
+  const worksheetModal = document.getElementById('worksheet-modal');
+  const qrFrame = document.getElementById('qr-frame');
+  const modalUrl = document.getElementById('modal-url');
+  const modalStatus = document.getElementById('modal-status');
+  const modalPickBtn = document.getElementById('modal-pick-btn');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+  const storageKey = 'math-things-teaching-table-v1';
+  let mathSize = Number(localStorage.getItem('math-things-math-pad-size') || '44');
+  let activeField = null;
+  let activeCell = null;
+  let saveTimer = null;
+  let currentMode = 'plain';
+  let worksheetDataUrl = null;
+  let pollTimer = null;
+  let activeSessionId = null;
+
+  function afterMathliveReady(callback) {
+    if (window.MathfieldElement) callback();
+    else window.addEventListener('load', callback, { once: true });
+  }
+
+  function makeRow(latex = '') {
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const grip = document.createElement('div');
+    grip.className = 'row-grip';
+    grip.setAttribute('aria-label', 'drag annotation');
+    row.appendChild(grip);
+    enableDrag(row, grip);
+
+    const mf = document.createElement('math-field');
+    mf.setAttribute('virtual-keyboard-mode', 'manual');
+    mf.setAttribute('math-virtual-keyboard-policy', 'manual');
+    mf.setAttribute('smart-fence', 'true');
+    mf.setAttribute('smart-mode', 'true');
+    mf.setAttribute('letter-shape-style', 'tex');
+    mf.setAttribute('default-mode', 'math');
+    mf.value = latex;
+
+    mf.addEventListener('focusin', () => setActive(mf));
+    mf.addEventListener('pointerdown', () => setActive(mf));
+    mf.addEventListener('input', scheduleSave);
+    mf.addEventListener('keydown', (event) => {
+      if (event.key === '/') {
+        event.preventDefault();
+        insertFraction();
+      }
+      if (event.key === ' ') {
+        event.preventDefault();
+        insertSpace();
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        newLineAfter(mf);
+      }
+    });
+
+    row.appendChild(mf);
+    stage.appendChild(row);
+    return mf;
+  }
+
+  function setActive(mf) {
+    if (!mf) return;
+    activeCell = null;
+    clearActiveCell();
+    activeField = mf;
+    document.querySelectorAll('.row').forEach(row => row.classList.remove('active'));
+    document.querySelectorAll('.algo-holder').forEach(h => h.classList.remove('active'));
+    mf.closest('.row').classList.add('active');
+  }
+
+  function focusActive() {
+    if (!activeField) activeField = document.querySelector('math-field') || makeRow();
+    setActive(activeField);
+    activeField.focus({ preventScroll: true });
+    return activeField;
+  }
+
+  function insertLatex(latex) {
+    const mf = focusActive();
+    try {
+      mf.executeCommand(['insert', latex]);
+    } catch (err) {
+      try { mf.insert(latex); } catch (ignored) {}
+    }
+    scheduleSave();
+  }
+
+  function insertText(text) {
+    if (activeCell && /^[0-9.]$/.test(text)) { insertIntoCell(text); return; }
+    insertLatex(text);
+  }
+
+  function moveAfterParentIfPossible(mf) {
+    try { mf.executeCommand('moveAfterParent'); } catch (ignored) {}
+  }
+
+  function insertSpace() {
+    const mf = focusActive();
+    // Space is used as the natural "I am done with this fraction" gesture.
+    // If the caret is inside a numerator/denominator, this pops it out first.
+    moveAfterParentIfPossible(mf);
+    insertLatex('\\,');
+  }
+
+  function insertFraction() {
+    const mf = focusActive();
+    // Always add a thin math space before a fraction. This makes mixed numbers
+    // like 7 1/2 work without requiring the teacher to manually press space first.
+    try {
+      mf.executeCommand(['insert', '\\,\\frac{#@}{#?}']);
+    } catch (err) {
+      try { mf.insert('\\;\\frac{}{}'); } catch (ignored) {}
+    }
+    scheduleSave();
+  }
+
+  function command(name) {
+    if (activeCell) {
+      if (name === 'backspace') { backspaceCell(); return; }
+      if (name === 'next' || name === 'out' || name === 'advance') { moveCell(1); return; }
+      if (name === 'newline') { activeCell = null; clearActiveCell(); const mf = makeRow(''); setActive(mf); mf.focus({ preventScroll: true }); scheduleSave(); return; }
+    }
+    const mf = focusActive();
+    try {
+      if (name === 'backspace') mf.executeCommand('deleteBackward');
+      if (name === 'next') mf.executeCommand('moveToNextPlaceholder');
+      if (name === 'out') mf.executeCommand('moveAfterParent');
+      if (name === 'advance') {
+        // Try next placeholder; if none, exit current parent (e.g. fraction).
+        if (!mf.executeCommand('moveToNextPlaceholder')) {
+          mf.executeCommand('moveAfterParent');
+        }
+      }
+      if (name === 'undo') mf.executeCommand('undo');
+      if (name === 'redo') mf.executeCommand('redo');
+      if (name === 'newline') newLineAfter(mf);
+    } catch (err) {
+      if (name === 'newline') newLineAfter(mf);
+    }
+    scheduleSave();
+  }
+
+  function newLineAfter(mf) {
+    const row = mf.closest('.row');
+    const newMf = makeRow('');
+    const newRow = newMf.closest('.row');
+    if (row.classList.contains('positioned')) {
+      const x = parseFloat(row.style.left) || 0;
+      const y = parseFloat(row.style.top) || 0;
+      const h = row.offsetHeight || 60;
+      positionRow(newRow, x, y + h + 6);
+    } else {
+      stage.insertBefore(newRow, row.nextSibling);
+    }
+    setActive(newMf);
+    newMf.focus({ preventScroll: true });
+    newMf.scrollIntoView({ block: 'nearest' });
+    scheduleSave();
+  }
+
+
+  function clearActiveCell() {
+    document.querySelectorAll('.digit-cell.active').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.algo-block.active').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.algo-holder.active').forEach(h => h.classList.remove('active'));
+  }
+
+  function setActiveCell(cell) {
+    clearActiveCell();
+    activeCell = cell;
+    if (cell) {
+      cell.classList.add('active');
+      cell.closest('.algo-block')?.classList.add('active');
+      cell.closest('.algo-holder')?.classList.add('active');
+      document.querySelectorAll('.row').forEach(row => row.classList.remove('active'));
+    }
+  }
+
+  function orderedCells(block) {
+    const cells = [...block.querySelectorAll('.digit-cell')];
+    return cells
+      .map((cell, fallback) => ({ cell, order: Number(cell.dataset.entryOrder ?? fallback) }))
+      .sort((a, b) => a.order - b.order)
+      .map(item => item.cell);
+  }
+
+  function assignRightToLeftOrders(block, options = {}) {
+    let order = 0;
+    const rows = [...block.querySelectorAll('.algo-row, .work-row, .longdiv-quotient, .longdiv-main')];
+
+    function assignRow(row, direction = 'rtl') {
+      const cells = [...row.querySelectorAll('.digit-cell')];
+      const ordered = direction === 'rtl' ? cells.reverse() : cells;
+      ordered.forEach(cell => { cell.dataset.entryOrder = String(order++); });
+    }
+
+    if (options.type === 'div') {
+      // Long division setup and solving naturally move left-to-right through the dividend/quotient work.
+      rows.forEach(row => assignRow(row, 'ltr'));
+      return;
+    }
+
+    // For vertical addition/subtraction/multiplication, operand entry begins in the ones place.
+    // Carry/borrow, work, partial, and answer rows are place-specific marks: tap the column and enter there.
+    const operandRows = rows.filter(row => row.classList.contains('operand'));
+    const supportRows = rows.filter(row => row.classList.contains('carry'));
+    const finishRows = rows.filter(row => row.classList.contains('partial') || row.classList.contains('answer') || row.classList.contains('work'));
+    [...operandRows, ...supportRows, ...finishRows].forEach(row => assignRow(row, 'rtl'));
+  }
+
+  function cellsForRow(row) {
+    return [...row.querySelectorAll('.digit-cell')];
+  }
+
+  function readRowDigits(row) {
+    const saved = row.dataset.entryValue;
+    if (saved !== undefined) return saved;
+    return cellsForRow(row).map(c => c.textContent || '').join('').replace(/^\s+/, '');
+  }
+
+  function writeRowDigits(row, value) {
+    const cells = cellsForRow(row);
+    const clean = String(value || '').replace(/[^0-9]/g, '').slice(-cells.length);
+    row.dataset.entryValue = clean;
+    cells.forEach(c => { c.textContent = ''; });
+    let cellIndex = cells.length - 1;
+    for (let i = clean.length - 1; i >= 0 && cellIndex >= 0; i--, cellIndex--) {
+      cells[cellIndex].textContent = clean[i];
+    }
+    // Keep the active target at the ones place. New digits append to the right of the number,
+    // while the displayed digits shift left like place-value boxes.
+    setActiveCell(cells[cells.length - 1]);
+  }
+
+  function activeAlgorithmRow() {
+    if (!activeCell) return null;
+    const block = activeCell.closest('.algo-block');
+    if (!block || block.classList.contains('longdiv-block')) return null;
+    return activeCell.closest('.algo-row');
+  }
+
+  function isAutoNumberRow(row) {
+    // Only the actual operands behave like typed numbers that build from the ones place.
+    // Carries, borrows, partial products, work rows, and final answers are column-specific.
+    return !!row && row.classList.contains('operand');
+  }
+
+  function insertIntoCell(text) {
+    if (!activeCell) return false;
+    const row = activeAlgorithmRow();
+    if (isAutoNumberRow(row) && /^[0-9]$/.test(text)) {
+      writeRowDigits(row, readRowDigits(row) + text);
+      scheduleSave();
+      return true;
+    }
+    // Carry/borrow, work/partial, and answer rows are place-specific: tap the exact place, then enter the digit.
+    // Do not shift these like full-number operand rows.
+    activeCell.textContent = text;
+    if (!row || isAutoNumberRow(row)) moveCell(1);
+    scheduleSave();
+    return true;
+  }
+
+  function backspaceCell() {
+    if (!activeCell) return false;
+    const row = activeAlgorithmRow();
+    if (isAutoNumberRow(row)) {
+      const current = readRowDigits(row);
+      if (current.length) {
+        writeRowDigits(row, current.slice(0, -1));
+      } else {
+        moveCell(-1);
+      }
+      scheduleSave();
+      return true;
+    }
+    const t = activeCell.textContent || '';
+    if (t.length) activeCell.textContent = '';
+    else if (!row) moveCell(-1);
+    scheduleSave();
+    return true;
+  }
+
+  function moveCell(delta) {
+    if (!activeCell) return false;
+    const cells = orderedCells(activeCell.closest('.algo-block'));
+    const i = cells.indexOf(activeCell);
+    const next = cells[Math.max(0, Math.min(cells.length - 1, i + delta))];
+    setActiveCell(next);
+    return true;
+  }
+
+  function makeCells(n) {
+    return Array.from({ length: n }, () => '<span class="digit-cell" tabindex="0"></span>').join('');
+  }
+
+  function makeAlgoBlock(type) {
+    const block = document.createElement('div');
+    block.className = 'algo-block ' + type + (type === 'div' ? ' longdiv-block' : '');
+    block.dataset.alg = type;
+    if (type === 'add' || type === 'sub') {
+      const op = type === 'add' ? '+' : '−';
+      const carryClass = type === 'sub' ? 'algo-row carry borrow' : 'algo-row carry';
+      block.innerHTML = `
+        <div class="${carryClass}"><span class="opcell"></span>${makeCells(5)}</div>
+        <div class="algo-row operand"><span class="opcell"></span>${makeCells(5)}</div>
+        <div class="algo-row operand"><span class="opcell">${op}</span>${makeCells(5)}</div>
+        <div class="algo-row answer"><span class="opcell"></span>${makeCells(5)}</div>`;
+    } else if (type === 'mul') {
+      block.innerHTML = `
+        <div class="algo-row carry"><span class="opcell"></span>${makeCells(5)}</div>
+        <div class="algo-row operand"><span class="opcell"></span>${makeCells(5)}</div>
+        <div class="algo-row operand"><span class="opcell">×</span>${makeCells(5)}</div>
+        <div class="algo-row partial"><span class="opcell"></span>${makeCells(5)}</div>
+        <div class="algo-row partial"><span class="opcell"></span>${makeCells(5)}</div>
+        <div class="algo-row answer"><span class="opcell"></span>${makeCells(5)}</div>`;
+    } else if (type === 'div') {
+      block.innerHTML = `
+        <div class="longdiv-quotient"><span></span>${makeCells(5)}</div>
+        <div class="longdiv-main"><div class="divisor-cells">${makeCells(2)}</div><div class="dividend-cells">${makeCells(5)}</div></div>
+        <div class="work-row"><span></span>${makeCells(5)}</div>
+        <div class="work-row"><span></span>${makeCells(5)}</div>
+        <div class="work-row"><span></span>${makeCells(5)}</div>
+        <div class="work-row"><span></span>${makeCells(5)}</div>`;
+    }
+    assignRightToLeftOrders(block, { type });
+    block.querySelectorAll('.digit-cell').forEach(cell => {
+      cell.addEventListener('pointerdown', event => { event.preventDefault(); setActiveCell(cell); });
+    });
+    const holder = document.createElement('div');
+    holder.className = 'algo-holder';
+
+    const grip = document.createElement('div');
+    grip.className = 'algo-grip';
+    grip.setAttribute('aria-label', 'drag algorithm');
+    holder.appendChild(grip);
+    holder.appendChild(block);
+    enableDrag(holder, grip);
+
+    // Decide placement: positioned alongside current positioned context, or flow at insertion point.
+    const currentRow = activeField?.closest('.row');
+    const currentHolder = activeCell?.closest('.algo-holder');
+    if (currentRow && currentRow.classList.contains('positioned')) {
+      stage.appendChild(holder);
+      const x = parseFloat(currentRow.style.left) || 0;
+      const y = parseFloat(currentRow.style.top) || 0;
+      const h = currentRow.offsetHeight || 60;
+      positionAlgo(holder, x, y + h + 6);
+    } else if (currentHolder && currentHolder.classList.contains('positioned')) {
+      stage.appendChild(holder);
+      const x = parseFloat(currentHolder.style.left) || 0;
+      const y = parseFloat(currentHolder.style.top) || 0;
+      const h = currentHolder.offsetHeight || 120;
+      positionAlgo(holder, x + h * 0.6, y + 12);
+    } else if (currentMode === 'worksheet') {
+      // Worksheet mode with no positioned context: place at top-left of visible stage.
+      stage.appendChild(holder);
+      const scrollTop = pad.scrollTop || 0;
+      positionAlgo(holder, 24, scrollTop + 24);
+    } else if (currentRow && currentRow.nextSibling) {
+      stage.insertBefore(holder, currentRow.nextSibling);
+    } else {
+      stage.appendChild(holder);
+    }
+    setActiveCell(orderedCells(block)[0] || block.querySelector('.digit-cell'));
+    scheduleSave();
+  }
+
+  function saveNow() {
+    const items = [...stage.children]
+      .filter(el => el !== worksheetImg)
+      .map(el => {
+        const positioned = el.classList.contains('positioned');
+        const x = positioned ? (parseFloat(el.dataset.x) || parseFloat(el.style.left) || 0) : null;
+        const y = positioned ? (parseFloat(el.dataset.y) || parseFloat(el.style.top) || 0) : null;
+        if (el.classList.contains('row')) {
+          return {
+            kind: 'row',
+            latex: el.querySelector('math-field')?.value || '',
+            positioned, x, y,
+          };
+        }
+        if (el.classList.contains('algo-holder')) {
+          const b = el.querySelector('.algo-block');
+          return {
+            kind: 'alg',
+            type: b?.dataset.alg || 'add',
+            values: [...b.querySelectorAll('.digit-cell')].map(c => c.textContent || ''),
+            positioned, x, y,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+    localStorage.setItem(storageKey, JSON.stringify({
+      items,
+      mode: currentMode,
+      mathSize,
+      worksheet: worksheetDataUrl,
+    }));
+  }
+
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 120);
+  }
+
+  function applyMathSize() {
+    mathSize = Math.max(24, Math.min(76, mathSize));
+    document.documentElement.style.setProperty('--math-size', mathSize + 'px');
+    localStorage.setItem('math-things-math-pad-size', String(mathSize));
+  }
+
+  function changeMathSize(delta) {
+    mathSize += delta;
+    applyMathSize();
+    scheduleSave();
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (typeof data.mathSize === 'number') mathSize = data.mathSize;
+      applyMathSize();
+
+      // Clear stage but preserve the worksheet img element.
+      [...stage.children].forEach(el => { if (el !== worksheetImg) el.remove(); });
+
+      if (data.worksheet) {
+        worksheetDataUrl = data.worksheet;
+        worksheetImg.src = worksheetDataUrl;
+      } else {
+        worksheetDataUrl = null;
+        worksheetImg.src = '';
+        worksheetImg.classList.add('hidden');
+      }
+
+      let modeToSet = data.mode || 'plain';
+      if (modeToSet === 'worksheet' && !worksheetDataUrl) modeToSet = 'plain';
+      setMode(modeToSet);
+
+      const items = Array.isArray(data.items) && data.items.length
+        ? data.items
+        : (Array.isArray(data.rows) ? data.rows.map(latex => ({ kind: 'row', latex })) : [{ kind: 'row', latex: '' }]);
+      items.forEach(item => {
+        if (item.kind === 'row') {
+          const mf = makeRow(item.latex || '');
+          if (item.positioned) positionRow(mf.closest('.row'), item.x || 0, item.y || 0);
+        }
+        if (item.kind === 'alg') {
+          makeAlgoBlock(item.type || 'add');
+          const holder = stage.lastElementChild;
+          const block = holder?.querySelector('.algo-block');
+          const cells = block ? [...block.querySelectorAll('.digit-cell')] : [];
+          (item.values || []).forEach((v, i) => { if (cells[i]) cells[i].textContent = v; });
+          if (holder && item.positioned) positionAlgo(holder, item.x || 0, item.y || 0);
+        }
+      });
+      activeCell = null;
+      clearActiveCell();
+      setActive(document.querySelector('math-field') || makeRow(''));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // ===== Teaching Table: positioning, dragging, worksheet =====
+
+  function positionRow(row, x, y) {
+    row.classList.add('positioned');
+    row.style.left = Math.max(0, x) + 'px';
+    row.style.top = Math.max(0, y) + 'px';
+    row.dataset.x = String(Math.max(0, x));
+    row.dataset.y = String(Math.max(0, y));
+    updateStageMinHeight();
+  }
+
+  function positionAlgo(holder, x, y) {
+    holder.classList.add('positioned');
+    holder.style.left = Math.max(0, x) + 'px';
+    holder.style.top = Math.max(0, y) + 'px';
+    holder.dataset.x = String(Math.max(0, x));
+    holder.dataset.y = String(Math.max(0, y));
+    updateStageMinHeight();
+  }
+
+  function updateStageMinHeight() {
+    let maxBottom = 0;
+    [...stage.children].forEach(el => {
+      if (el === worksheetImg) return;
+      if (el.classList.contains('positioned')) {
+        const top = parseFloat(el.style.top) || 0;
+        const bottom = top + (el.offsetHeight || 0) + 60;
+        if (bottom > maxBottom) maxBottom = bottom;
+      }
+    });
+    stage.style.minHeight = maxBottom > 0 ? maxBottom + 'px' : '';
+  }
+
+  function enableDrag(target, handle) {
+    let state = null;
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handle.setPointerCapture(e.pointerId);
+      // If target is not yet positioned, capture current visual location and switch to positioned.
+      if (!target.classList.contains('positioned')) {
+        const tRect = target.getBoundingClientRect();
+        const sRect = stage.getBoundingClientRect();
+        if (target.classList.contains('row')) {
+          positionRow(target, tRect.left - sRect.left, tRect.top - sRect.top);
+        } else if (target.classList.contains('algo-holder')) {
+          positionAlgo(target, tRect.left - sRect.left, tRect.top - sRect.top);
+        }
+      }
+      const left = parseFloat(target.style.left) || 0;
+      const top = parseFloat(target.style.top) || 0;
+      state = { id: e.pointerId, startX: e.clientX, startY: e.clientY, startLeft: left, startTop: top };
+      target.classList.add('active');
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!state || e.pointerId !== state.id) return;
+      const dx = e.clientX - state.startX;
+      const dy = e.clientY - state.startY;
+      target.style.left = Math.max(0, state.startLeft + dx) + 'px';
+      target.style.top = Math.max(0, state.startTop + dy) + 'px';
+      updateStageMinHeight();
+    });
+    function commit(e) {
+      if (!state || e.pointerId !== state.id) return;
+      const x = parseFloat(target.style.left) || 0;
+      const y = parseFloat(target.style.top) || 0;
+      target.dataset.x = String(x);
+      target.dataset.y = String(y);
+      state = null;
+      scheduleSave();
+    }
+    handle.addEventListener('pointerup', commit);
+    handle.addEventListener('pointercancel', commit);
+  }
+
+  function setMode(mode) {
+    if (!['plain', 'lined', 'grid', 'worksheet'].includes(mode)) mode = 'plain';
+    currentMode = mode;
+    pad.className = mode;
+    ['plain', 'lined', 'grid', 'worksheet'].forEach(m => {
+      const btn = document.getElementById(m + 'Btn');
+      if (btn) btn.classList.toggle('is-on', m === mode);
+    });
+    if (mode === 'worksheet' && worksheetDataUrl) {
+      worksheetImg.src = worksheetDataUrl;
+      worksheetImg.classList.remove('hidden');
+    } else {
+      worksheetImg.classList.add('hidden');
+    }
+    scheduleSave();
+  }
+
+  function loadWorksheetImage(dataUrl) {
+    worksheetDataUrl = dataUrl;
+    worksheetImg.src = dataUrl;
+    setMode('worksheet');
+    // Scroll to top so the new worksheet is visible.
+    pad.scrollTop = 0;
+  }
+
+  worksheetImg.addEventListener('load', () => { updateStageMinHeight(); });
+
+  function chooseWorksheetFile() {
+    worksheetFileInput.value = '';
+    worksheetFileInput.click();
+  }
+
+  function handleImageFile(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return false;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadWorksheetImage(ev.target.result);
+    reader.readAsDataURL(file);
+    return true;
+  }
+
+  // Stage click → create positioned row in worksheet mode.
+  stage.addEventListener('click', (e) => {
+    if (currentMode !== 'worksheet') return;
+    if (e.target !== stage && e.target !== worksheetImg) return;
+    const rect = stage.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const mf = makeRow('');
+    positionRow(mf.closest('.row'), x, y);
+    setActive(mf);
+    mf.focus({ preventScroll: true });
+    scheduleSave();
+  });
+
+  // File input change.
+  worksheetFileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    handleImageFile(file);
+  });
+
+  // Drag-and-drop image anywhere on window.
+  let dragCounter = 0;
+  window.addEventListener('dragenter', (e) => {
+    if (!e.dataTransfer || !e.dataTransfer.types) return;
+    if ([...e.dataTransfer.types].includes('Files')) {
+      e.preventDefault();
+      dragCounter++;
+      dropOverlay.classList.add('show');
+    }
+  });
+  window.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer || !e.dataTransfer.types) return;
+    if ([...e.dataTransfer.types].includes('Files')) e.preventDefault();
+  });
+  window.addEventListener('dragleave', () => {
+    dragCounter = Math.max(0, dragCounter - 1);
+    if (dragCounter === 0) dropOverlay.classList.remove('show');
+  });
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    dropOverlay.classList.remove('show');
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    handleImageFile(file);
+  });
+
+  // Paste image from clipboard.
+  window.addEventListener('paste', (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (handleImageFile(file)) { e.preventDefault(); return; }
+      }
+    }
+  });
+
+  // ===== Worksheet source modal: QR phone scan + file picker =====
+
+  function makeSessionId() {
+    // 8-char base36 uppercase. ~2.8 trillion possibilities. Plenty for short-lived sessions.
+    const part = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+    return part() + part();
+  }
+
+  function renderQrCode(url) {
+    // Replace placeholder with a canvas, then draw QR.
+    qrFrame.classList.remove('placeholder');
+    qrFrame.innerHTML = '';
+    const canvas = document.createElement('canvas');
+    qrFrame.appendChild(canvas);
+    if (typeof QRCode === 'undefined') {
+      qrFrame.classList.add('placeholder');
+      qrFrame.textContent = 'QR library failed to load. Check internet connection.';
+      return;
+    }
+    QRCode.toCanvas(canvas, url, {
+      width: 248,
+      margin: 1,
+      color: { dark: '#1d1d1f', light: '#fffdf6' },
+      errorCorrectionLevel: 'M',
+    }, (err) => {
+      if (err) {
+        qrFrame.classList.add('placeholder');
+        qrFrame.textContent = 'Could not render QR code: ' + err.message;
+      }
+    });
+  }
+
+  function showQrPlaceholder(message) {
+    qrFrame.innerHTML = '';
+    qrFrame.classList.add('placeholder');
+    qrFrame.textContent = message;
+  }
+
+  async function pollOnce(sessionId) {
+    if (!WORKER_URL || sessionId !== activeSessionId) return;
+    try {
+      const res = await fetch(`${WORKER_URL}/image/${sessionId}`, { method: 'GET' });
+      if (res.status === 200) {
+        const dataUrl = (await res.text()).trim();
+        if (dataUrl.startsWith('data:image/')) {
+          modalStatus.textContent = '✓ Received from phone';
+          modalStatus.classList.add('success');
+          stopPolling();
+          loadWorksheetImage(dataUrl);
+          setTimeout(closeWorksheetModal, 600);
+        }
+      }
+      // 204 = nothing yet; just keep polling
+    } catch (e) {
+      // Network blip — keep polling silently
+    }
+  }
+
+  function startPolling(sessionId) {
+    stopPolling();
+    if (!WORKER_URL) return;
+    pollTimer = setInterval(() => pollOnce(sessionId), 1500);
+    // Run one immediately so the first cycle is fast
+    pollOnce(sessionId);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function openWorksheetModal() {
+    modalStatus.classList.remove('success', 'error');
+    modalStatus.textContent = 'Waiting for phone…';
+    if (WORKER_URL) {
+      const sessionId = makeSessionId();
+      activeSessionId = sessionId;
+      const phoneUrl = `${WORKER_URL}/u/${sessionId}`;
+      renderQrCode(phoneUrl);
+      modalUrl.textContent = phoneUrl;
+      startPolling(sessionId);
+    } else {
+      activeSessionId = null;
+      showQrPlaceholder('Phone scan not configured yet.\nSee deployment notes to enable.');
+      modalUrl.textContent = '';
+      modalStatus.textContent = 'Pick a file below to load a worksheet.';
+    }
+    worksheetModal.classList.add('show');
+  }
+
+  function closeWorksheetModal() {
+    stopPolling();
+    activeSessionId = null;
+    worksheetModal.classList.remove('show');
+  }
+
+  modalPickBtn.addEventListener('click', () => {
+    closeWorksheetModal();
+    chooseWorksheetFile();
+  });
+  modalCancelBtn.addEventListener('click', closeWorksheetModal);
+
+  // Click outside the card to close.
+  worksheetModal.addEventListener('click', (e) => {
+    if (e.target === worksheetModal) closeWorksheetModal();
+  });
+
+  // Escape key to close.
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && worksheetModal.classList.contains('show')) {
+      closeWorksheetModal();
+    }
+  });
+
+  // ===== end Worksheet source modal =====
+
+  // ===== end Teaching Table additions =====
+
+  afterMathliveReady(() => {
+    applyMathSize();
+    if (!load()) { makeRow(''); setMode('plain'); }
+    setActive(document.querySelector('math-field'));
+
+    document.querySelectorAll('[data-insert]').forEach(button => {
+      button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        insertText(button.dataset.insert);
+      });
+    });
+    document.querySelectorAll('[data-latex]').forEach(button => {
+      button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        insertLatex(button.dataset.latex);
+      });
+    });
+    document.querySelectorAll('[data-space]').forEach(button => {
+      button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        insertSpace();
+      });
+    });
+    document.querySelectorAll('[data-cmd]').forEach(button => {
+      button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        command(button.dataset.cmd);
+      });
+    });
+    document.getElementById('fracBtn').addEventListener('pointerdown', event => {
+      event.preventDefault();
+      insertFraction();
+    });
+    document.getElementById('plainBtn').addEventListener('pointerdown', event => { event.preventDefault(); setMode('plain'); });
+    document.getElementById('linedBtn').addEventListener('pointerdown', event => { event.preventDefault(); setMode('lined'); });
+    document.getElementById('gridBtn').addEventListener('pointerdown', event => { event.preventDefault(); setMode('grid'); });
+    document.getElementById('worksheetBtn').addEventListener('pointerdown', event => {
+      event.preventDefault();
+      // If we have a worksheet cached but are in another paper mode, just switch back.
+      // Otherwise open the source modal (QR + file picker).
+      if (worksheetDataUrl && currentMode !== 'worksheet') {
+        setMode('worksheet');
+      } else {
+        openWorksheetModal();
+      }
+    });
+    document.getElementById('smallTextBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeMathSize(-4); });
+    document.getElementById('bigTextBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeMathSize(4); });
+    document.querySelectorAll('[data-alg]').forEach(button => {
+      button.addEventListener('pointerdown', event => { event.preventDefault(); makeAlgoBlock(button.dataset.alg); });
+    });
+    document.getElementById('clearBtn').addEventListener('pointerdown', event => {
+      event.preventDefault();
+      // Clear annotations and worksheet, return to plain paper.
+      [...stage.children].forEach(el => { if (el !== worksheetImg) el.remove(); });
+      worksheetDataUrl = null;
+      worksheetImg.src = '';
+      worksheetImg.classList.add('hidden');
+      setMode('plain');
+      makeRow('');
+      setActive(document.querySelector('math-field'));
+      saveNow();
+    });
+  });
+})();
+</script>
+</body>
+</html>
