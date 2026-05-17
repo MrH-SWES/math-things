@@ -4,32 +4,69 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Math Things Teaching Table v1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>  <style>
     :root {
-      --paper: #fffdf7;
+      --paper: #f7efdc;
       --ink: #1d1d1f;
       --muted: rgba(29,29,31,.58);
-      --line: rgba(55, 83, 135, 0.23);
-      --grid: rgba(55, 83, 135, 0.16);
+      --line: rgba(35, 56, 96, 0.26);
+      --grid: rgba(35, 56, 96, 0.16);
       --button: #fffefa;
       --button-border: #c8c1b0;
-      --accent: #365f9d;
+      --accent: #2e5894;
       --danger: #9d3a36;
-      --shadow: 0 18px 40px rgba(40, 34, 24, 0.18);
+      --shadow: 0 18px 40px rgba(20, 16, 8, 0.32);
       --math-size: 44px;
       --side-width: clamp(190px, 21vw, 285px);
+
+      /* Cabinet body — dark graphite metal */
+      --cabinet:        #2a2722;
+      --cabinet-edge:   #15120e;
+      --cabinet-up:     #3a3530;
+      --cabinet-down:   #1c1915;
+      --cabinet-rim:    rgba(255,255,255,0.06);
+
+      /* Brushed metal — for buttons, infrastructure */
+      --metal-up:       #e8e3d8;
+      --metal-mid:      #cbc5b9;
+      --metal-down:     #a39d92;
+      --metal-edge:     #5a554e;
+      --metal-hi:       rgba(255,255,255,0.55);
+      --metal-shadow:   rgba(0,0,0,0.30);
+
+      /* Enamel — saturated math-object colors */
+      --enamel-blue:    #28528c;
+      --enamel-blue-up: #4a78b4;
+      --enamel-blue-dn: #173c70;
+      --enamel-cream:   #f1d99c;
+      --enamel-cream-up:#fbe9b8;
+      --enamel-cream-dn:#c9a85e;
+      --enamel-rust:    #a8421d;
+      --enamel-rust-up: #c25e34;
+      --enamel-rust-dn: #6e2a10;
+      --enamel-ochre:   #b8893e;
+      --enamel-ochre-up:#d4a55c;
+      --enamel-ochre-dn:#7d5a1e;
+      --enamel-forest:  #2f5d3f;
+      --enamel-forest-up:#4a7d5b;
+      --enamel-forest-dn:#1c3e26;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: "Lexend", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,.88), transparent 34rem),
-        linear-gradient(135deg, #e8e1d0, #f7f4ec 48%, #ded8c8);
+        radial-gradient(ellipse at 50% -10%, rgba(255, 246, 220, 0.55), transparent 50%),
+        radial-gradient(ellipse at 50% 110%, rgba(15, 12, 8, 0.42), transparent 55%),
+        linear-gradient(165deg, #d3c8aa 0%, #c7bb9d 38%, #a89c81 100%);
       overflow: hidden;
+      letter-spacing: -0.005em;
     }
     .shell {
       height: 100%;
@@ -40,31 +77,41 @@
     }
     .pad-wrap {
       min-height: 0;
-      background: rgba(255,255,255,.35);
-      border: 1px solid rgba(255,255,255,.60);
-      border-radius: 30px;
-      padding: 12px;
-      box-shadow: var(--shadow);
+      background:
+        linear-gradient(180deg, var(--cabinet-up) 0%, var(--cabinet) 50%, var(--cabinet-down) 100%);
+      border: 1px solid var(--cabinet-edge);
+      border-radius: 24px;
+      padding: 10px;
+      box-shadow:
+        inset 0 1px 0 var(--cabinet-rim),
+        inset 0 -1px 0 rgba(0,0,0,0.5),
+        0 22px 44px rgba(15, 12, 8, 0.40),
+        0 2px 6px rgba(15, 12, 8, 0.30);
       overflow: hidden;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
     #pad-frame {
       position: relative;
       flex: 1 1 auto;
       min-height: 0;
-      border-radius: 24px;
+      border-radius: 14px;
       overflow: hidden;
+      border: 1px solid var(--cabinet-edge);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.35);
     }
     #pad {
       height: 100%;
       overflow: auto;
-      border-radius: 24px;
-      border: 1px solid rgba(0,0,0,.10);
+      border-radius: 13px;
+      border: none;
       background-color: var(--paper);
-      padding: 14px;
+      background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.55), transparent 60%),
+        radial-gradient(ellipse at 50% 110%, rgba(180, 155, 100, 0.18), transparent 55%);
+      padding: 18px;
       scroll-padding-bottom: 80px;
     }
     #pad.lined {
@@ -108,11 +155,16 @@
     .side {
       min-height: 0;
       overflow: auto;
-      background: rgba(255,255,255,.50);
-      border: 1px solid rgba(255,255,255,.68);
+      background:
+        linear-gradient(180deg, var(--cabinet-up) 0%, var(--cabinet) 50%, var(--cabinet-down) 100%);
+      border: 1px solid var(--cabinet-edge);
       border-radius: 24px;
-      box-shadow: 0 14px 30px rgba(40,34,24,.13);
-      padding: 9px;
+      box-shadow:
+        inset 0 1px 0 var(--cabinet-rim),
+        inset 0 -1px 0 rgba(0,0,0,0.45),
+        0 22px 44px rgba(15, 12, 8, 0.40),
+        0 2px 6px rgba(15, 12, 8, 0.30);
+      padding: 10px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -122,19 +174,21 @@
       flex-direction: column;
       gap: 0;
       line-height: .94;
-      padding: 2px 3px 5px;
+      padding: 4px 3px 7px;
       user-select: none;
     }
     .brand .math-things {
       font-size: 25px;
-      font-weight: 950;
+      font-weight: 900;
       letter-spacing: -0.055em;
+      color: #f0e8d6;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.4);
     }
     .brand .pad-name {
       font-size: 15px;
-      font-weight: 850;
-      color: var(--muted);
-      letter-spacing: -0.035em;
+      font-weight: 700;
+      color: rgba(240, 232, 214, 0.55);
+      letter-spacing: -0.025em;
     }
     .tools.paper-modes {
       display: grid;
@@ -156,34 +210,62 @@
       margin-top: 4px;
     }
     button {
-      border: 1px solid var(--button-border);
-      background: linear-gradient(#fff, #f8f6ee);
-      color: var(--ink);
-      border-radius: 13px;
+      border: 1px solid var(--metal-edge);
+      background:
+        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 55%, var(--metal-down) 100%),
+        repeating-linear-gradient(90deg, transparent 0, transparent 1px, rgba(255,255,255,0.04) 1px, rgba(255,255,255,0.04) 2px);
+      color: #1d1d1f;
+      border-radius: 11px;
       min-height: 42px;
       height: 42px;
       font: inherit;
+      font-family: inherit;
       font-size: 20px;
-      font-weight: 850;
-      box-shadow: 0 3px 0 rgba(93,80,55,.20), 0 9px 14px rgba(70,58,35,.08);
+      font-weight: 700;
+      box-shadow:
+        inset 0 1px 0 var(--metal-hi),
+        inset 0 -1px 0 rgba(0,0,0,0.20),
+        0 2px 0 rgba(0,0,0,0.40),
+        0 4px 8px rgba(0,0,0,0.22);
       touch-action: manipulation;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       padding: 0 4px;
       display: inline-grid;
       place-items: center;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.42);
     }
-    button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(93,80,55,.22); }
-    button.accent { border-color: rgba(54,95,157,.38); color: #173f78; }
-    button.danger { color: var(--danger); }
+    button:active {
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 1px 0 var(--metal-hi),
+        inset 0 -1px 0 rgba(0,0,0,0.20),
+        0 0 0 rgba(0,0,0,0.40),
+        0 1px 3px rgba(0,0,0,0.22);
+    }
+    button.accent { color: var(--accent); }
+    button.danger { color: var(--danger); text-shadow: 0 1px 0 rgba(255,255,255,0.42); }
     button.small { font-size: 16px; }
     button.is-on {
-      background: linear-gradient(#fffce4, #f1e9c5);
-      border-color: rgba(120, 95, 35, 0.55);
-      box-shadow: 0 2px 0 rgba(93,80,55,.20), inset 0 1px 0 rgba(255,255,255,.65);
-      color: #5a4615;
+      background:
+        linear-gradient(180deg, var(--enamel-cream-up) 0%, var(--enamel-cream) 55%, var(--enamel-cream-dn) 100%);
+      border-color: #6a4f1a;
+      color: #3a2810;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        inset 0 -1px 0 rgba(0,0,0,0.22),
+        0 2px 0 rgba(50, 38, 14, 0.55),
+        0 4px 9px rgba(50, 38, 14, 0.28);
     }
-    button.is-on:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(93,80,55,.22); }
+    button.is-on:active {
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        inset 0 -1px 0 rgba(0,0,0,0.22),
+        0 0 0 rgba(50, 38, 14, 0.55),
+        0 1px 3px rgba(50, 38, 14, 0.28);
+    }
     .fraction-icon {
       display: inline-grid;
       grid-template-rows: 1fr 2px 1fr;
@@ -193,26 +275,39 @@
       height: 32px;
       line-height: 1;
       font-size: 14px;
-      font-weight: 900;
+      font-weight: 800;
       font-style: italic;
     }
     .fraction-icon .bar { width: 26px; height: 2.5px; background: currentColor; border-radius: 3px; }
     .frac-key {
-      background: linear-gradient(#e7eef8, #d5e0f0);
-      border-color: rgba(54,95,157,.55);
-      color: #143565;
+      background:
+        linear-gradient(180deg, var(--enamel-blue-up) 0%, var(--enamel-blue) 55%, var(--enamel-blue-dn) 100%) !important;
+      border-color: #0d2347 !important;
+      color: #ffffff !important;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.35) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.42),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        0 2px 0 rgba(10, 24, 50, 0.55),
+        0 4px 10px rgba(10, 24, 50, 0.32) !important;
     }
-    .frac-key:active { box-shadow: 0 1px 0 rgba(45,70,120,.32); }
+    .frac-key:active {
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.42),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        0 0 0 rgba(10, 24, 50, 0.55),
+        0 1px 3px rgba(10, 24, 50, 0.32) !important;
+    }
     .glyph {
       font-size: 22px;
-      font-weight: 950;
-      color: rgba(40, 34, 24, 0.72);
+      font-weight: 800;
+      color: rgba(20, 16, 10, 0.78);
     }
     .util {
       min-height: 34px;
       height: 34px;
       font-size: 14px;
-      border-radius: 11px;
+      border-radius: 9px;
     }
     .paper-icon {
       display: inline-block;
@@ -275,15 +370,30 @@
       padding: 6px 4px 8px;
       font-size: 18px;
       line-height: 1;
-      background: linear-gradient(#fff8e8, #f0e6c8);
-      border-color: rgba(180, 150, 90, 0.55);
-      color: #4d3a0e;
+      background:
+        linear-gradient(180deg, var(--enamel-rust-up) 0%, var(--enamel-rust) 55%, var(--enamel-rust-dn) 100%) !important;
+      border-color: #4a1a08 !important;
+      color: #ffffff !important;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.4) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        0 2px 0 rgba(50, 16, 6, 0.65),
+        0 5px 11px rgba(50, 16, 6, 0.36) !important;
+    }
+    .alg-btn:active {
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        0 0 0 rgba(50, 16, 6, 0.65),
+        0 1px 3px rgba(50, 16, 6, 0.36) !important;
     }
     .alg-symbol {
       position: relative;
       display: inline-block;
       font-size: 28px;
-      font-weight: 950;
+      font-weight: 800;
       line-height: 1;
       padding: 2px 6px 10px;
     }
@@ -295,7 +405,7 @@
       bottom: 2px;
       height: 3px;
       background: currentColor;
-      opacity: 0.78;
+      opacity: 0.85;
       border-radius: 1px;
     }
     .alg-symbol-div {
@@ -549,7 +659,7 @@
       position: absolute;
       top: -3px; right: -3px;
       width: 8px; height: 8px;
-      background: var(--button);
+      background: var(--metal-mid);
       border: 2px solid currentColor;
       border-radius: 50%;
     }
@@ -709,54 +819,84 @@
     #tools-dock {
       flex: 0 0 auto;
       display: flex;
-      gap: 7px;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.65);
-      border-radius: 18px;
-      box-shadow: 0 6px 14px rgba(40, 34, 24, 0.08);
+      gap: 6px;
+      padding: 6px;
+      background:
+        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 60%, var(--metal-down) 100%);
+      border: 1px solid var(--metal-edge);
+      border-radius: 12px;
+      box-shadow:
+        inset 0 1px 0 var(--metal-hi),
+        inset 0 -1px 0 rgba(0,0,0,0.22),
+        0 2px 6px rgba(0,0,0,0.18);
       overflow-x: auto;
       overflow-y: hidden;
       align-items: stretch;
       scrollbar-width: thin;
     }
     #tools-dock::-webkit-scrollbar { height: 6px; }
-    #tools-dock::-webkit-scrollbar-thumb { background: rgba(40,34,24,.15); border-radius: 3px; }
+    #tools-dock::-webkit-scrollbar-thumb { background: rgba(20,16,10,0.32); border-radius: 3px; }
 
     .tool-btn {
       flex: 0 0 auto;
-      min-width: 76px;
-      padding: 6px 8px 5px;
-      background: linear-gradient(#fff, #f7f3e6);
-      border: 1px solid var(--button-border);
-      border-radius: 13px;
+      min-width: 78px;
+      padding: 7px 8px 6px;
+      background:
+        linear-gradient(180deg, var(--enamel-cream-up) 0%, var(--enamel-cream) 55%, var(--enamel-cream-dn) 100%);
+      border: 1px solid #6a4f1a;
+      border-radius: 9px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 2px;
       cursor: pointer;
-      color: var(--ink);
-      box-shadow: 0 2px 0 rgba(93,80,55,.18), 0 5px 11px rgba(70,58,35,.06);
+      color: #3a2810;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.32);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.50),
+        inset 0 -1px 0 rgba(0,0,0,0.22),
+        0 2px 0 rgba(40, 28, 8, 0.55),
+        0 5px 10px rgba(40, 28, 8, 0.25);
       transition: transform 90ms ease, box-shadow 90ms ease;
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
     }
-    .tool-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(93,80,55,.20); }
+    .tool-btn:active {
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.50),
+        inset 0 -1px 0 rgba(0,0,0,0.22),
+        0 0 0 rgba(40, 28, 8, 0.55),
+        0 1px 3px rgba(40, 28, 8, 0.25);
+    }
     .tool-btn.active {
-      background: linear-gradient(#fffce4, #f1e9c5);
-      border-color: rgba(120, 95, 35, 0.55);
-      color: #5a4615;
-      box-shadow: 0 2px 0 rgba(120, 95, 35, 0.32), inset 0 1px 0 rgba(255,255,255,.65);
+      background:
+        linear-gradient(180deg, var(--enamel-forest-up) 0%, var(--enamel-forest) 55%, var(--enamel-forest-dn) 100%);
+      border-color: #122c1a;
+      color: #ffffff;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        0 2px 0 rgba(10, 22, 14, 0.6),
+        0 5px 10px rgba(10, 22, 14, 0.30);
+    }
+    .tool-btn.active:active {
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        0 0 0 rgba(10, 22, 14, 0.6),
+        0 1px 3px rgba(10, 22, 14, 0.30);
     }
     .tool-btn .ti {
       font-size: 22px;
       line-height: 1;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.02em;
     }
     .tool-btn .tn {
       font-size: 11px;
-      font-weight: 850;
+      font-weight: 700;
       letter-spacing: 0.01em;
       line-height: 1.1;
       text-align: center;
@@ -765,15 +905,29 @@
 
     .tool-tidy {
       margin-left: auto;
-      background: linear-gradient(#f1ece0, #e2dcc8);
-      border-color: rgba(120, 105, 65, 0.42);
-      color: #4d4118;
+      background:
+        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 55%, var(--metal-down) 100%) !important;
+      border-color: var(--metal-edge) !important;
+      color: #1d1d1f !important;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.42) !important;
+      box-shadow:
+        inset 0 1px 0 var(--metal-hi),
+        inset 0 -1px 0 rgba(0,0,0,0.20),
+        0 2px 0 rgba(0,0,0,0.40),
+        0 4px 8px rgba(0,0,0,0.22) !important;
     }
-    .tool-tidy:active { transform: translateY(2px); }
+    .tool-tidy:active {
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 1px 0 var(--metal-hi),
+        inset 0 -1px 0 rgba(0,0,0,0.20),
+        0 0 0 rgba(0,0,0,0.40),
+        0 1px 3px rgba(0,0,0,0.22) !important;
+    }
     .tool-tidy .ti {
       font-size: 24px;
       font-weight: 700;
-      color: rgba(77, 65, 24, 0.78);
+      color: rgba(20, 16, 10, 0.80);
     }
 
     #tools-layer {
@@ -788,9 +942,12 @@
     .tool-window {
       position: absolute;
       background: rgba(255, 253, 247, 0.98);
-      border: 1px solid rgba(150, 140, 120, 0.45);
-      border-radius: 20px;
-      box-shadow: 0 18px 38px rgba(40, 34, 24, 0.22), 0 4px 8px rgba(40, 34, 24, 0.08);
+      border: 1px solid var(--cabinet-edge);
+      border-radius: 12px;
+      box-shadow:
+        0 22px 48px rgba(15, 12, 8, 0.42),
+        0 6px 14px rgba(15, 12, 8, 0.22),
+        inset 0 0 0 1px rgba(255, 253, 247, 0.4);
       pointer-events: auto;
       display: flex;
       flex-direction: column;
@@ -800,7 +957,10 @@
       transition: box-shadow 130ms ease;
     }
     .tool-window.dragging {
-      box-shadow: 0 24px 56px rgba(40, 34, 24, 0.34), 0 6px 12px rgba(40, 34, 24, 0.12);
+      box-shadow:
+        0 30px 64px rgba(15, 12, 8, 0.55),
+        0 8px 18px rgba(15, 12, 8, 0.32),
+        inset 0 0 0 1px rgba(255, 253, 247, 0.4);
     }
     .tool-titlebar {
       flex: 0 0 auto;
@@ -809,8 +969,10 @@
       gap: 6px;
       height: 32px;
       padding: 0 6px 0 8px;
-      background: linear-gradient(180deg, rgba(248, 244, 232, 0.94), rgba(241, 234, 215, 0.86));
-      border-bottom: 1px solid rgba(150, 140, 120, 0.28);
+      background:
+        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 55%, var(--metal-down) 100%);
+      border-bottom: 1px solid var(--metal-edge);
+      box-shadow: inset 0 1px 0 var(--metal-hi), inset 0 -1px 0 rgba(0,0,0,0.18);
       cursor: grab;
       user-select: none;
       -webkit-user-select: none;
@@ -827,38 +989,42 @@
       content: "";
       position: absolute;
       inset: 1px 4px;
-      background-image: radial-gradient(circle, rgba(40,34,24,0.55) 1.2px, transparent 1.4px);
+      background-image: radial-gradient(circle, rgba(15,12,8,0.65) 1.2px, transparent 1.4px);
       background-size: 4px 5px;
       background-repeat: repeat;
     }
     .tool-title {
       flex: 1 1 auto;
       font-size: 13px;
-      font-weight: 850;
-      color: rgba(29, 29, 31, 0.66);
+      font-weight: 700;
+      color: rgba(15, 12, 8, 0.72);
       letter-spacing: 0.01em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.42);
     }
     .tool-close {
       flex: 0 0 auto;
       width: 26px;
       height: 26px;
-      border-radius: 8px;
+      border-radius: 7px;
       background: transparent;
       border: none;
+      box-shadow: none;
       font-size: 20px;
       font-weight: 700;
-      color: rgba(29,29,31,0.45);
+      color: rgba(15, 12, 8, 0.55);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       line-height: 1;
       padding: 0;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.42);
     }
-    .tool-close:hover { background: rgba(157, 58, 54, 0.16); color: var(--danger); }
+    .tool-close:hover { background: rgba(157, 58, 54, 0.20); color: var(--danger); }
+    .tool-close:active { transform: none; box-shadow: none; }
     .tool-frame {
       flex: 1 1 auto;
       width: 100%;
@@ -1014,7 +1180,7 @@
   // Add or remove rows freely; nothing else needs to change.
   // NOTE: If you've already customized this list in your live copy (e.g. Ten Frame,
   // Rekenrek), copy your edited TOOLS array over the one below before deploying.
- const TOOLS = [
+  const TOOLS = [
     { id: 'numberline', name: 'Number Line', url: '../number-line/', icon: '━●━', w: 720, h: 220 },
     { id: 'timestable', name: 'Times Table', url: '../array-architect/', icon: '⊞', w: 560, h: 560 },
     { id: 'placevalue', name: 'Place Value', url: '../place-value-cards/', icon: '▥', w: 660, h: 420 },
