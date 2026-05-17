@@ -763,6 +763,19 @@
       white-space: nowrap;
     }
 
+    .tool-tidy {
+      margin-left: auto;
+      background: linear-gradient(#f1ece0, #e2dcc8);
+      border-color: rgba(120, 105, 65, 0.42);
+      color: #4d4118;
+    }
+    .tool-tidy:active { transform: translateY(2px); }
+    .tool-tidy .ti {
+      font-size: 24px;
+      font-weight: 700;
+      color: rgba(77, 65, 24, 0.78);
+    }
+
     #tools-layer {
       position: absolute;
       inset: 0;
@@ -999,18 +1012,18 @@
   // - w/h:  default window size in pixels when first summoned
   // Edit this list to match the actual filenames in your math-things repo.
   // Add or remove rows freely; nothing else needs to change.
+  // NOTE: If you've already customized this list in your live copy (e.g. Ten Frame,
+  // Rekenrek), copy your edited TOOLS array over the one below before deploying.
   const TOOLS = [
-    { id: 'numberline', name: 'Number Line', url: '../number-line/', icon: '━●━', w: 720, h: 220 },
-    { id: 'timestable', name: 'Times Table', url: '../array-architect/', icon: '⊞', w: 560, h: 560 },
-    { id: 'placevalue', name: 'Place Value', url: '../place-value-cards/', icon: '▥', w: 660, h: 420 },
-    { id: 'base10', name: 'Base 10 Blocks', url: '../place-value-blocks/', icon: '▦', w: 600, h: 480 },
-    { id: 'primealtar', name: 'Prime Altar', url: '../prime-altar/', icon: '◆', w: 720, h: 560 },
-    { id: 'geolab', name: 'Geo Lab', url: '../geo-lab/', icon: '△', w: 600, h: 600 },
-    { id: 'rounding', name: 'Rounding Wave', url: '../rounding-waves/', icon: '∼', w: 720, h: 360 },
-    
-    // I added two of your core manipulatives here as a bonus!
-    { id: 'tenframe', name: 'Ten Frame', url: '../ten-frame/', icon: '◫', w: 500, h: 400 },
-    { id: 'rekenrek', name: 'Rekenrek', url: '../rekenrek/', icon: '≡', w: 600, h: 350 },
+    { id: 'numberline',  name: 'Number Line',    url: 'number-line-explorer.html',  icon: '━●━', w: 820, h: 440 },
+    { id: 'timestable',  name: 'Times Table',    url: 'times-table-architect.html', icon: '⊞',   w: 600, h: 600 },
+    { id: 'placevalue',  name: 'Place Value',    url: 'place-value-visualizer.html', icon: '▥',  w: 720, h: 480 },
+    { id: 'base10',      name: 'Base 10 Blocks', url: 'base-10-blocks.html',        icon: '▦',   w: 660, h: 540 },
+    { id: 'primealtar',  name: 'Prime Altar',    url: 'prime-altar.html',           icon: '◆',   w: 780, h: 620 },
+    { id: 'geolab',      name: 'Geo Lab',        url: 'geo-lab.html',               icon: '△',  w: 660, h: 640 },
+    { id: 'rounding',    name: 'Rounding Wave',  url: 'rounding-wave.html',         icon: '⌒',  w: 700, h: 440 },
+    { id: 'tenframe',    name: 'Ten Frame',      url: 'ten-frame.html',             icon: '⊟',   w: 560, h: 360 },
+    { id: 'rekenrek',    name: 'Rekenrek',       url: 'rekenrek.html',              icon: '◯◯', w: 700, h: 360 },
   ];
   // =========================
 
@@ -1801,6 +1814,99 @@
     return { x: 28 + offset, y: 28 + offset, w: tool.w, h: tool.h };
   }
 
+  function getLayerBounds() {
+    const layer = document.getElementById('tools-layer');
+    if (!layer) return { width: 800, height: 600 };
+    return { width: layer.offsetWidth, height: layer.offsetHeight };
+  }
+
+  // Minimum portion of the title bar that must remain visible so a window
+  // can always be grabbed and dragged back. Without this, dragging a window
+  // off-screen makes it unrecoverable.
+  const TITLEBAR_HEIGHT = 32;
+  const MIN_VISIBLE_X = 110;
+
+  function clampWindowPosition(width, height, x, y) {
+    const b = getLayerBounds();
+    return {
+      x: Math.max(-(width - MIN_VISIBLE_X), Math.min(b.width - MIN_VISIBLE_X, x)),
+      y: Math.max(0, Math.min(b.height - TITLEBAR_HEIGHT, y)),
+    };
+  }
+
+  function getWinRect(win) {
+    return {
+      left: parseFloat(win.style.left) || 0,
+      top: parseFloat(win.style.top) || 0,
+      width: parseFloat(win.style.width) || win.offsetWidth,
+      height: parseFloat(win.style.height) || win.offsetHeight,
+    };
+  }
+
+  function getRectOverlap(a, b) {
+    const dx = Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left);
+    const dy = Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top);
+    if (dx <= 0 || dy <= 0) return null;
+    return { dx, dy };
+  }
+
+  // Push collision: when the moved window overlaps another, shove the other
+  // along the axis of least overlap. Cascade if the push causes new overlaps.
+  // Each window is visited at most once per resolution pass to avoid loops.
+  function applyPushCollisions(movedWin) {
+    const allWindows = [...document.querySelectorAll('.tool-window')];
+    if (allWindows.length < 2) return;
+    const visited = new Set([movedWin]);
+    const queue = [movedWin];
+    let safety = 0;
+
+    while (queue.length > 0 && safety++ < 60) {
+      const current = queue.shift();
+      const cur = getWinRect(current);
+
+      for (const other of allWindows) {
+        if (visited.has(other)) continue;
+        const oth = getWinRect(other);
+        const overlap = getRectOverlap(cur, oth);
+        if (!overlap) continue;
+
+        let nx = oth.left, ny = oth.top;
+        if (overlap.dx <= overlap.dy) {
+          // Horizontal push
+          const cCx = cur.left + cur.width / 2;
+          const oCx = oth.left + oth.width / 2;
+          if (oCx >= cCx) {
+            nx = cur.left + cur.width + 2;
+          } else {
+            nx = cur.left - oth.width - 2;
+          }
+        } else {
+          // Vertical push
+          const cCy = cur.top + cur.height / 2;
+          const oCy = oth.top + oth.height / 2;
+          if (oCy >= cCy) {
+            ny = cur.top + cur.height + 2;
+          } else {
+            ny = cur.top - oth.height - 2;
+          }
+        }
+
+        const clamped = clampWindowPosition(oth.width, oth.height, nx, ny);
+        other.style.left = clamped.x + 'px';
+        other.style.top = clamped.y + 'px';
+
+        const id = other.dataset.toolId;
+        if (toolStates[id]) {
+          toolStates[id].x = clamped.x;
+          toolStates[id].y = clamped.y;
+        }
+
+        visited.add(other);
+        queue.push(other);
+      }
+    }
+  }
+
   function renderDock() {
     const dock = document.getElementById('tools-dock');
     if (!dock) return;
@@ -1815,7 +1921,52 @@
       btn.addEventListener('click', () => toggleTool(tool.id));
       dock.appendChild(btn);
     });
+
+    // Tidy button: corral all open windows back into a visible cascade.
+    const tidyBtn = document.createElement('button');
+    tidyBtn.type = 'button';
+    tidyBtn.className = 'tool-btn tool-tidy';
+    tidyBtn.setAttribute('aria-label', 'tidy windows');
+    tidyBtn.innerHTML = `<span class="ti">⌖</span><span class="tn">Tidy</span>`;
+    tidyBtn.addEventListener('click', tidyTools);
+    dock.appendChild(tidyBtn);
+
     updateDockButtonStates();
+  }
+
+  function tidyTools() {
+    const bounds = getLayerBounds();
+    const maxW = Math.max(280, Math.floor(bounds.width * 0.62));
+    const maxH = Math.max(220, Math.floor(bounds.height * 0.78));
+    let x = 24, y = 24;
+    const stepX = 36, stepY = 30;
+    let row = 0;
+
+    TOOLS.forEach((tool) => {
+      const s = toolStates[tool.id];
+      if (!s || !s.open) return;
+      const w = Math.min(tool.w, maxW);
+      const h = Math.min(tool.h, maxH);
+      const win = document.querySelector(`.tool-window[data-tool-id="${tool.id}"]`);
+      if (!win) return;
+      // Wrap to next column if running off the bottom
+      if (y + h > bounds.height - 20) {
+        row++;
+        y = 24;
+        x = 24 + row * (stepX * 3);
+      }
+      const clamped = clampWindowPosition(w, h, x, y);
+      win.style.width = w + 'px';
+      win.style.height = h + 'px';
+      win.style.left = clamped.x + 'px';
+      win.style.top = clamped.y + 'px';
+      s.w = w; s.h = h; s.x = clamped.x; s.y = clamped.y;
+      s.z = ++toolZTop;
+      win.style.zIndex = s.z;
+      x += stepX;
+      y += stepY;
+    });
+    scheduleSave();
   }
 
   function updateDockButtonStates() {
@@ -1860,6 +2011,11 @@
     const state = toolStates[tool.id];
     const layer = document.getElementById('tools-layer');
     if (!layer) return null;
+
+    // Clamp position into current viewport in case it was saved on a larger screen.
+    const clamped = clampWindowPosition(state.w, state.h, state.x, state.y);
+    state.x = clamped.x;
+    state.y = clamped.y;
 
     let win = document.querySelector(`.tool-window[data-tool-id="${tool.id}"]`);
     if (win) {
@@ -1937,6 +2093,12 @@
       e.preventDefault();
       handle.setPointerCapture(e.pointerId);
       iframe.style.pointerEvents = 'none';
+      // Also disable pointer events on OTHER tool iframes so drag-overs don't
+      // get swallowed by them. Restored on drag end.
+      document.querySelectorAll('.tool-frame').forEach(f => {
+        if (f !== iframe) f.dataset._priorPe = f.style.pointerEvents || '';
+        if (f !== iframe) f.style.pointerEvents = 'none';
+      });
       win.classList.add('dragging');
       const left = parseFloat(win.style.left) || 0;
       const top = parseFloat(win.style.top) || 0;
@@ -1944,12 +2106,24 @@
     });
     handle.addEventListener('pointermove', (e) => {
       if (!st || e.pointerId !== st.id) return;
-      win.style.left = (st.startLeft + e.clientX - st.startX) + 'px';
-      win.style.top = (st.startTop + e.clientY - st.startY) + 'px';
+      const proposedX = st.startLeft + e.clientX - st.startX;
+      const proposedY = st.startTop + e.clientY - st.startY;
+      const w = win.offsetWidth;
+      const h = win.offsetHeight;
+      const clamped = clampWindowPosition(w, h, proposedX, proposedY);
+      win.style.left = clamped.x + 'px';
+      win.style.top = clamped.y + 'px';
+      applyPushCollisions(win);
     });
     function end(e) {
       if (!st || e.pointerId !== st.id) return;
       iframe.style.pointerEvents = '';
+      document.querySelectorAll('.tool-frame').forEach(f => {
+        if (f !== iframe) {
+          f.style.pointerEvents = f.dataset._priorPe || '';
+          delete f.dataset._priorPe;
+        }
+      });
       win.classList.remove('dragging');
       if (toolStates[toolId]) {
         toolStates[toolId].x = parseFloat(win.style.left) || 0;
