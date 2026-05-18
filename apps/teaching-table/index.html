@@ -508,6 +508,7 @@
       display: block;
       width: 100%;
       height: auto;
+      max-width: none;
       user-select: none;
       -webkit-user-drag: none;
       pointer-events: none;
@@ -1058,6 +1059,18 @@
       height: 14px;
       width: 12px;
     }
+    .tool-move-edge {
+      position: absolute;
+      z-index: 4;
+      touch-action: none;
+      opacity: 0;
+      background: transparent;
+    }
+    .tool-move-edge.n { left: 34px; right: 34px; top: 0; height: 10px; cursor: grab; }
+    .tool-move-edge.s { left: 0; right: 28px; bottom: 0; height: 12px; cursor: grab; }
+    .tool-move-edge.w { left: 0; top: 0; bottom: 28px; width: 12px; cursor: grab; }
+    .tool-move-edge.e { right: 0; top: 0; bottom: 28px; width: 12px; cursor: grab; }
+    .tool-move-edge:active { cursor: grabbing; }
     .tool-resize {
       position: absolute;
       right: 0;
@@ -1066,6 +1079,7 @@
       height: 22px;
       cursor: nwse-resize;
       touch-action: none;
+      z-index: 6;
     }
     .tool-resize::after {
       content: "";
@@ -1167,6 +1181,8 @@
       <nav class="utility" aria-label="utilities">
         <button id="smallTextBtn" class="util" aria-label="smaller math text">A−</button>
         <button id="bigTextBtn" class="util" aria-label="larger math text">A+</button>
+        <button id="worksheetSmallBtn" class="util" aria-label="smaller worksheet">▣−</button>
+        <button id="worksheetBigBtn" class="util" aria-label="larger worksheet">▣+</button>
         <button class="danger util" id="clearBtn" aria-label="clear pad"><span class="trash-icon"></span></button>
       </nav>
     </aside>
@@ -1239,6 +1255,7 @@
   let saveTimer = null;
   let currentMode = 'plain';
   let worksheetDataUrl = null;
+  let worksheetScale = Number(localStorage.getItem('math-things-worksheet-scale') || '1');
   let pollTimer = null;
   let activeSessionId = null;
 
@@ -1628,6 +1645,7 @@
       mode: currentMode,
       mathSize,
       worksheet: worksheetDataUrl,
+      worksheetScale,
       tools: toolStates,
     }));
   }
@@ -1649,13 +1667,42 @@
     scheduleSave();
   }
 
+  function applyWorksheetScale() {
+    worksheetScale = Math.max(0.55, Math.min(2.4, worksheetScale));
+    worksheetImg.style.width = (worksheetScale * 100) + '%';
+    localStorage.setItem('math-things-worksheet-scale', String(worksheetScale));
+    updateStageMinHeight();
+  }
+
+  function scalePositionedAnnotations(ratio) {
+    if (!Number.isFinite(ratio) || ratio <= 0 || Math.abs(ratio - 1) < 0.001) return;
+    [...stage.children].forEach(el => {
+      if (el === worksheetImg || !el.classList.contains('positioned')) return;
+      const x = (parseFloat(el.dataset.x) || parseFloat(el.style.left) || 0) * ratio;
+      const y = (parseFloat(el.dataset.y) || parseFloat(el.style.top) || 0) * ratio;
+      if (el.classList.contains('row')) positionRow(el, x, y);
+      if (el.classList.contains('algo-holder')) positionAlgo(el, x, y);
+    });
+  }
+
+  function changeWorksheetScale(delta) {
+    const old = worksheetScale;
+    worksheetScale = Math.max(0.55, Math.min(2.4, worksheetScale + delta));
+    const ratio = worksheetScale / old;
+    if (currentMode === 'worksheet') scalePositionedAnnotations(ratio);
+    applyWorksheetScale();
+    scheduleSave();
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (typeof data.mathSize === 'number') mathSize = data.mathSize;
+      if (typeof data.worksheetScale === 'number') worksheetScale = data.worksheetScale;
       applyMathSize();
+      applyWorksheetScale();
 
       // Clear stage but preserve the worksheet img element.
       [...stage.children].forEach(el => { if (el !== worksheetImg) el.remove(); });
@@ -1663,6 +1710,7 @@
       if (data.worksheet) {
         worksheetDataUrl = data.worksheet;
         worksheetImg.src = worksheetDataUrl;
+        applyWorksheetScale();
       } else {
         worksheetDataUrl = null;
         worksheetImg.src = '';
@@ -1804,6 +1852,7 @@
   function loadWorksheetImage(dataUrl) {
     worksheetDataUrl = dataUrl;
     worksheetImg.src = dataUrl;
+    applyWorksheetScale();
     setMode('worksheet');
     // Scroll to top so the new worksheet is visible.
     pad.scrollTop = 0;
@@ -2042,28 +2091,29 @@
     let h = Math.max(min.h, Number(height) || min.h);
     let nx = Number(x) || 0;
     let ny = Number(y) || 0;
-    const ratio = w / h;
 
-    // Left/top edges clamp directly. Right/bottom edges squeeze the tool into
-    // the remaining space first, then clamp. This gives the "push into a corner
-    // and it smallifies there" behavior instead of a window sliding offscreen.
-    if (nx < 0) nx = 0;
-    if (ny < 0) ny = 0;
-
-    const availW = Math.max(min.w, b.width - nx);
-    const availH = Math.max(min.h, b.height - ny);
-    if (w > availW || h > availH) {
-      const scale = Math.min(availW / w, availH / h, 1);
+    // When a tool is pushed past any bench edge, treat the over-push as
+    // "smallify pressure." This makes shoving a tool into a corner compress
+    // it to its minimum bench footprint instead of merely clamping position.
+    const pressureLeft = Math.max(0, -nx);
+    const pressureTop = Math.max(0, -ny);
+    const pressureRight = Math.max(0, nx + w - b.width);
+    const pressureBottom = Math.max(0, ny + h - b.height);
+    const pressure = Math.max(pressureLeft, pressureTop, pressureRight, pressureBottom);
+    if (pressure > 0) {
+      const pressureTravel = Math.max(180, Math.min(420, Math.max(w, h) * 0.45));
+      const scale = Math.max(min.w / w, min.h / h, 1 - pressure / pressureTravel);
       w = Math.max(min.w, Math.floor(w * scale));
       h = Math.max(min.h, Math.floor(h * scale));
-
-      // Keep a sane shape when proportional shrinking bottoms out on one axis.
-      if (w / h > ratio * 1.18) w = Math.max(min.w, Math.round(h * ratio));
-      if (w / h < ratio / 1.18) h = Math.max(min.h, Math.round(w / ratio));
     }
 
+    // Final clamp: never let the object leave the visible bench.
     w = Math.min(w, Math.max(min.w, b.width));
     h = Math.min(h, Math.max(min.h, b.height));
+    if (pressureLeft > 0) nx = 0;
+    if (pressureTop > 0) ny = 0;
+    if (pressureRight > 0) nx = b.width - w;
+    if (pressureBottom > 0) ny = b.height - h;
     nx = Math.max(0, Math.min(Math.max(0, b.width - w), nx));
     ny = Math.max(0, Math.min(Math.max(0, b.height - h), ny));
     return { x: nx, y: ny, w, h };
@@ -2094,12 +2144,25 @@
     const vh = Math.max(1, viewport.clientHeight);
     const baseW = tool.baseW || tool.w || 800;
     const baseH = tool.baseH || tool.h || 600;
+
+    // If the body is smaller than the tool's natural canvas, scale down.
+    // If the body is larger, let the iframe grow to the actual body size so
+    // responsive tools (especially Number Line) can notice the expansion.
     const scale = Math.min(vw / baseW, vh / baseH, 1);
-    iframe.style.width = baseW + 'px';
-    iframe.style.height = baseH + 'px';
+    const frameW = Math.max(baseW, Math.ceil(vw / scale));
+    const frameH = Math.max(baseH, Math.ceil(vh / scale));
+    iframe.style.width = frameW + 'px';
+    iframe.style.height = frameH + 'px';
     iframe.style.transform = `scale(${scale})`;
     iframe.style.transformOrigin = '0 0';
     win.classList.toggle('is-short', win.offsetHeight < 190);
+
+    // Same-origin tools should get a resize event after the iframe dimensions
+    // change. Cross-origin frames will simply ignore this attempt.
+    clearTimeout(win.__resizePingTimer);
+    win.__resizePingTimer = setTimeout(() => {
+      try { iframe.contentWindow && iframe.contentWindow.dispatchEvent(new Event('resize')); } catch (ignored) {}
+    }, 40);
   }
 
   function getWinRect(win) {
@@ -2323,13 +2386,26 @@
     iframe.setAttribute('loading', 'lazy');
     viewport.appendChild(iframe);
     iframe.addEventListener('load', () => updateToolScale(win));
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => updateToolScale(win));
+      ro.observe(viewport);
+      win.__toolResizeObserver = ro;
+    }
 
     const resize = document.createElement('div');
     resize.className = 'tool-resize';
     resize.setAttribute('aria-label', 'resize');
 
+    const edgeGrips = ['n', 'e', 's', 'w'].map(edge => {
+      const gripEl = document.createElement('div');
+      gripEl.className = 'tool-move-edge ' + edge;
+      gripEl.setAttribute('aria-label', 'move tool');
+      return gripEl;
+    });
+
     win.appendChild(titlebar);
     win.appendChild(viewport);
+    edgeGrips.forEach(g => win.appendChild(g));
     win.appendChild(resize);
     layer.appendChild(win);
     updateToolScale(win);
@@ -2348,6 +2424,7 @@
     }, true);
 
     enableToolDrag(win, titlebar, iframe, tool.id);
+    edgeGrips.forEach(g => enableToolDrag(win, g, iframe, tool.id));
     enableToolResize(win, resize, iframe, tool.id);
 
     return win;
@@ -2467,6 +2544,13 @@
     window.__toolResizeTimer = setTimeout(refitOpenTools, 120);
   });
 
+  pad.addEventListener('wheel', (e) => {
+    if (currentMode !== 'worksheet') return;
+    if (!(e.ctrlKey || e.metaKey || e.altKey)) return;
+    e.preventDefault();
+    changeWorksheetScale(e.deltaY > 0 ? -0.08 : 0.08);
+  }, { passive: false });
+
   // ===== end Tools dock and floating tool windows =====
 
 
@@ -2522,6 +2606,8 @@
     });
     document.getElementById('smallTextBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeMathSize(-4); });
     document.getElementById('bigTextBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeMathSize(4); });
+    document.getElementById('worksheetSmallBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeWorksheetScale(-0.1); });
+    document.getElementById('worksheetBigBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeWorksheetScale(0.1); });
     document.querySelectorAll('[data-alg]').forEach(button => {
       button.addEventListener('pointerdown', event => { event.preventDefault(); makeAlgoBlock(button.dataset.alg); });
     });
@@ -2530,6 +2616,8 @@
       // Clear annotations and worksheet, return to plain paper.
       [...stage.children].forEach(el => { if (el !== worksheetImg) el.remove(); });
       worksheetDataUrl = null;
+      worksheetScale = 1;
+      applyWorksheetScale();
       worksheetImg.src = '';
       worksheetImg.classList.add('hidden');
       setMode('plain');
