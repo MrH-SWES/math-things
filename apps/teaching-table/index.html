@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Math Things Teaching Table v1</title>
+  <title>Math Things Teaching Table v4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -810,6 +810,163 @@
     }
     .modal-actions .cancel-btn:active { transform: none; }
 
+
+
+    /* ===== v4: Math Things. light-glass reskin + note delete + pinch affordances ===== */
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.92), transparent 38%),
+        radial-gradient(rgba(0,0,0,0.04) 1.2px, transparent 1.2px),
+        #F5F5F7;
+      background-size: auto, 30px 30px, auto;
+    }
+    .shell { gap: 12px; }
+    .pad-wrap,
+    .side {
+      background: rgba(245,245,247,0.82);
+      backdrop-filter: blur(34px);
+      -webkit-backdrop-filter: blur(34px);
+      border: 1px solid rgba(255,255,255,0.78);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05);
+    }
+    #pad-frame {
+      border: 1px solid rgba(0,0,0,0.065);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.76), 0 1px 5px rgba(0,0,0,0.04);
+      background: rgba(255,255,255,0.62);
+    }
+    #pad {
+      background-color: #fffdf7;
+      border-radius: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.84);
+    }
+    .brand .math-things {
+      color: #1D1D1F;
+      text-shadow: none;
+      letter-spacing: -0.055em;
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.03em;
+    }
+    .brand .math-things::after {
+      content: "";
+      width: 0.24em;
+      height: 0.24em;
+      border-radius: 50%;
+      margin-bottom: 0.08em;
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.32) 40%, transparent 64%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.16) 0%, transparent 55%),
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.85), inset -1px -1px 2px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.22);
+    }
+    .brand .pad-name { color: #86868B; text-shadow: none; }
+    #tools-dock {
+      background: rgba(255,255,255,0.66);
+      border: 1px solid rgba(0,0,0,0.075);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.82);
+    }
+    button,
+    .tool-tidy {
+      background: linear-gradient(180deg, #ffffff 0%, #f3f3f5 55%, #dedee3 100%) !important;
+      border-color: rgba(0,0,0,0.14) !important;
+      color: #1D1D1F !important;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.7) !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.08), 0 2px 0 rgba(0,0,0,0.18), 0 6px 14px rgba(0,0,0,0.08) !important;
+    }
+    button.is-on,
+    .tool-btn.active {
+      background: linear-gradient(180deg, #ffffff 0%, #f0f7ff 45%, #d5e8ff 100%) !important;
+      border-color: rgba(0,122,255,0.36) !important;
+      color: #0a56b3 !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -1px 0 rgba(0,122,255,0.15), 0 2px 0 rgba(0,62,130,0.18), 0 9px 18px rgba(0,122,255,0.10) !important;
+    }
+    .frac-key {
+      background: linear-gradient(180deg, #64D2FF 0%, #007AFF 60%, #0055b8 100%) !important;
+      color: #fff !important;
+      border-color: rgba(0,73,160,0.65) !important;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.28) !important;
+    }
+    .alg-btn {
+      background: linear-gradient(180deg, #ffb969 0%, #ff9f0a 55%, #c76f00 100%) !important;
+      border-color: rgba(140,76,0,0.62) !important;
+      color: #fff !important;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.32) !important;
+    }
+    .tool-btn {
+      background: rgba(255,255,255,0.92) !important;
+      border: 1px solid rgba(0,0,0,0.10) !important;
+      border-radius: 14px;
+      color: #1D1D1F !important;
+      text-shadow: none !important;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.86) !important;
+    }
+    .tool-window {
+      border-radius: 20px;
+      border: 1px solid rgba(0,0,0,0.09);
+      background: rgba(255,255,255,0.94);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.86);
+      transition: box-shadow 130ms ease, border-color 130ms ease;
+    }
+    .tool-window.dragging,
+    .tool-window.pinching {
+      border-color: rgba(0,122,255,0.28);
+      box-shadow: 0 24px 62px rgba(0,0,0,0.18), 0 8px 22px rgba(0,122,255,0.08), inset 0 1px 0 rgba(255,255,255,0.86);
+    }
+    .tool-titlebar {
+      background: rgba(245,245,247,0.88);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .tool-title { color: #4d4d52; text-shadow: none; }
+    .tool-close { color: #86868B !important; text-shadow: none !important; }
+    .tool-viewport { background: #fff; }
+    .note-delete,
+    .algo-delete {
+      position: absolute;
+      z-index: 45;
+      width: 24px;
+      height: 24px;
+      min-height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 120ms ease, transform 120ms ease;
+      background: rgba(255,255,255,0.92) !important;
+      color: #9d3a36 !important;
+      border-color: rgba(157,58,54,0.22) !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.11) !important;
+    }
+    .note-delete { right: -10px; top: -10px; }
+    .algo-delete { right: -10px; top: -10px; }
+    .row:hover .note-delete,
+    .row.active .note-delete,
+    .algo-holder:hover .algo-delete,
+    .algo-holder.active .algo-delete {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .row.positioned.active,
+    .algo-holder.positioned.active .algo-block {
+      background: rgba(255,255,255,0.82);
+      border-color: rgba(0,122,255,0.22);
+      box-shadow: 0 7px 20px rgba(0,0,0,0.10);
+    }
+    .tool-move-edge.n { left: 16px; right: 16px; height: 16px; }
+    .tool-move-edge.s { left: 16px; right: 16px; height: 16px; }
+    .tool-move-edge.w { top: 16px; bottom: 16px; width: 16px; }
+    .tool-move-edge.e { top: 16px; bottom: 16px; width: 16px; }
+    .tool-resize { width: 30px; height: 30px; }
+    /* ===== end v4 additions ===== */
+
     @media (max-width: 760px) {
       .modal-card { padding: 20px; }
       .qr-frame.placeholder { width: 220px; height: 220px; }
@@ -956,6 +1113,7 @@
       min-width: 220px;
       min-height: 170px;
       transition: box-shadow 130ms ease;
+      touch-action: none;
     }
     .tool-window.dragging {
       box-shadow:
@@ -1274,6 +1432,27 @@
     row.appendChild(grip);
     enableDrag(row, grip);
 
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'note-delete';
+    del.setAttribute('aria-label', 'delete note');
+    del.textContent = '×';
+    del.addEventListener('pointerdown', event => { event.preventDefault(); event.stopPropagation(); });
+    del.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      row.remove();
+      if (!document.querySelector('.row')) {
+        const mf = makeRow('');
+        setActive(mf);
+      } else if (activeField && activeField.closest('.row') === row) {
+        const mf = document.querySelector('math-field');
+        setActive(mf);
+      }
+      scheduleSave();
+    });
+    row.appendChild(del);
+
     const mf = document.createElement('math-field');
     mf.setAttribute('virtual-keyboard-mode', 'manual');
     mf.setAttribute('math-virtual-keyboard-policy', 'manual');
@@ -1582,6 +1761,21 @@
     grip.className = 'algo-grip';
     grip.setAttribute('aria-label', 'drag algorithm');
     holder.appendChild(grip);
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'algo-delete';
+    del.setAttribute('aria-label', 'delete algorithm block');
+    del.textContent = '×';
+    del.addEventListener('pointerdown', event => { event.preventDefault(); event.stopPropagation(); });
+    del.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      holder.remove();
+      activeCell = null;
+      clearActiveCell();
+      scheduleSave();
+    });
+    holder.appendChild(del);
     holder.appendChild(block);
     enableDrag(holder, grip);
 
@@ -2426,6 +2620,7 @@
     enableToolDrag(win, titlebar, iframe, tool.id);
     edgeGrips.forEach(g => enableToolDrag(win, g, iframe, tool.id));
     enableToolResize(win, resize, iframe, tool.id);
+    enableToolPinch(win, iframe, tool.id);
 
     return win;
   }
@@ -2449,7 +2644,7 @@
       st = { id: e.pointerId, startX: e.clientX, startY: e.clientY, startLeft: left, startTop: top };
     });
     handle.addEventListener('pointermove', (e) => {
-      if (!st || e.pointerId !== st.id) return;
+      if (!st || e.pointerId !== st.id || win.__pinching) return;
       const proposedX = st.startLeft + e.clientX - st.startX;
       const proposedY = st.startTop + e.clientY - st.startY;
       const w = win.offsetWidth;
@@ -2493,7 +2688,7 @@
       st = { id: e.pointerId, startX: e.clientX, startY: e.clientY, startW: w, startH: h };
     });
     handle.addEventListener('pointermove', (e) => {
-      if (!st || e.pointerId !== st.id) return;
+      if (!st || e.pointerId !== st.id || win.__pinching) return;
       const left = parseFloat(win.style.left) || 0;
       const top = parseFloat(win.style.top) || 0;
       const proposedW = st.startW + e.clientX - st.startX;
@@ -2517,6 +2712,123 @@
     handle.addEventListener('pointerup', end);
     handle.addEventListener('pointercancel', end);
   }
+
+
+  function resizeToolAroundCenter(win, toolId, scale, centerX = null, centerY = null) {
+    const r = getWinRect(win);
+    const cx = centerX == null ? r.left + r.width / 2 : centerX;
+    const cy = centerY == null ? r.top + r.height / 2 : centerY;
+    const newW = r.width * scale;
+    const newH = r.height * scale;
+    const nx = cx - (cx - r.left) * (newW / r.width);
+    const ny = cy - (cy - r.top) * (newH / r.height);
+    const fitted = fitToolRect(getToolConfig(toolId), newW, newH, nx, ny);
+    applyToolRect(win, fitted);
+    applyPushCollisions(win);
+  }
+
+  function enableToolPinch(win, iframe, toolId) {
+    const touches = new Map();
+    let pinch = null;
+
+    function disableIframes() {
+      iframe.style.pointerEvents = 'none';
+      document.querySelectorAll('.tool-frame').forEach(f => {
+        if (f !== iframe) f.dataset._priorPe = f.style.pointerEvents || '';
+        if (f !== iframe) f.style.pointerEvents = 'none';
+      });
+    }
+    function restoreIframes() {
+      iframe.style.pointerEvents = '';
+      document.querySelectorAll('.tool-frame').forEach(f => {
+        if (f !== iframe) {
+          f.style.pointerEvents = f.dataset._priorPe || '';
+          delete f.dataset._priorPe;
+        }
+      });
+    }
+    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+    function mid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+    function layerPoint(clientX, clientY) {
+      const rect = document.getElementById('tools-layer').getBoundingClientRect();
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+    function beginIfReady() {
+      if (touches.size < 2 || pinch) return;
+      const [a, b] = [...touches.values()].slice(0, 2);
+      const startDist = Math.max(20, dist(a, b));
+      const startMid = mid(a, b);
+      pinch = { startDist, startMid, startRect: getWinRect(win) };
+      win.__pinching = true;
+      win.classList.add('pinching');
+      disableIframes();
+    }
+    function updatePinch() {
+      if (!pinch || touches.size < 2) return;
+      const [a, b] = [...touches.values()].slice(0, 2);
+      const scale = Math.max(0.45, Math.min(2.25, dist(a, b) / pinch.startDist));
+      const nowMid = mid(a, b);
+      const sr = pinch.startRect;
+      const centerX = nowMid.x;
+      const centerY = nowMid.y;
+      const newW = sr.width * scale;
+      const newH = sr.height * scale;
+      const nx = centerX - (pinch.startMid.x - sr.left) * scale;
+      const ny = centerY - (pinch.startMid.y - sr.top) * scale;
+      const fitted = fitToolRect(getToolConfig(toolId), newW, newH, nx, ny);
+      applyToolRect(win, fitted);
+      applyPushCollisions(win);
+    }
+    function endIfNeeded() {
+      if (touches.size >= 2) return;
+      if (pinch) {
+        pinch = null;
+        win.__pinching = false;
+        win.classList.remove('pinching');
+        restoreIframes();
+        if (toolStates[toolId]) {
+          toolStates[toolId].x = parseFloat(win.style.left) || 0;
+          toolStates[toolId].y = parseFloat(win.style.top) || 0;
+          toolStates[toolId].w = parseFloat(win.style.width) || win.offsetWidth;
+          toolStates[toolId].h = parseFloat(win.style.height) || win.offsetHeight;
+        }
+        scheduleSave();
+      }
+    }
+
+    win.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      const p = layerPoint(e.clientX, e.clientY);
+      touches.set(e.pointerId, p);
+      try { win.setPointerCapture(e.pointerId); } catch (ignored) {}
+      beginIfReady();
+    }, true);
+    win.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return;
+      const p = layerPoint(e.clientX, e.clientY);
+      touches.set(e.pointerId, p);
+      if (pinch) { e.preventDefault(); updatePinch(); }
+    }, true);
+    function pointerEnd(e) {
+      if (touches.has(e.pointerId)) touches.delete(e.pointerId);
+      endIfNeeded();
+    }
+    win.addEventListener('pointerup', pointerEnd, true);
+    win.addEventListener('pointercancel', pointerEnd, true);
+
+    // Desktop fallback: Ctrl/Alt + wheel over a tool embiggens/smallifies it.
+    win.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && !e.altKey) return;
+      e.preventDefault();
+      const layerRect = document.getElementById('tools-layer').getBoundingClientRect();
+      const centerX = e.clientX - layerRect.left;
+      const centerY = e.clientY - layerRect.top;
+      const scale = e.deltaY < 0 ? 1.08 : 0.92;
+      resizeToolAroundCenter(win, toolId, scale, centerX, centerY);
+      scheduleSave();
+    }, { passive: false });
+  }
+
 
   function restoreOpenTools() {
     // Reopen any tools whose state.open is true (drawn from localStorage).
