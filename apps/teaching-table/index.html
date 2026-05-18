@@ -1467,8 +1467,12 @@
     mf.addEventListener('input', scheduleSave);
     mf.addEventListener('keydown', (event) => {
       if (event.key === '/') {
-        event.preventDefault();
-        insertFraction();
+        // Let MathLive handle physical-keyboard slash.
+        // Its native behavior turns the expression immediately before the caret
+        // into the numerator and places the caret in the denominator.
+        // Our old custom insert fired too, creating a nested blank fraction:
+        // 2 / -> \frac{2}{\frac{□}{□}}.
+        return;
       }
       if (event.key === ' ') {
         event.preventDefault();
