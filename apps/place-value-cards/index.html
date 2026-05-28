@@ -465,6 +465,9 @@
       const sortedTiles = [...tiles].sort((a, b) => a.zIndex - b.zIndex);
       const snappedTiles = sortedTiles.filter(t => t.snappedToLine);
 
+      // Left-to-right order of snapped tiles, used to cascade labels diagonally
+      const labelOrder = [...snappedTiles].sort((a, b) => a.x - b.x).map(t => t.id);
+
       sortedTiles.forEach(tile => {
         sum += tile.value;
         const isDecimal = isDecimalValue(tile.value);
@@ -484,14 +487,15 @@
 
         // Place-value name label beneath snapped cards (nomenclature, not instruction)
         if (tile.snappedToLine) {
-          const cardW = (isExpanded ? getExpandedCardWidthForPlaceValue(tile.placeValue)
-                                    : getCardWidthForSnapped(tile.placeValue)) * scale;
+          const stagger = labelOrder.indexOf(tile.id); // 0 = leftmost
+          const STEP_DOWN = 16 * Math.max(scale, 0.6);
+          const STEP_RIGHT = 10 * Math.max(scale, 0.6);
           const label = document.createElement('div');
           label.className = 'pv-label work-pane-tile';
           label.textContent = PLACE_LABELS[tile.placeValue];
-          label.style.left = tile.x + 'px';
-          label.style.top = (tile.y + BLOCK_HEIGHT * scale + 6) + 'px';
-          label.style.width = cardW + 'px';
+          label.style.left = (tile.x + stagger * STEP_RIGHT) + 'px';
+          label.style.top = (tile.y + BLOCK_HEIGHT * scale + 6 + stagger * STEP_DOWN) + 'px';
+          label.style.textAlign = 'left';
           label.style.fontSize = (11 * Math.max(scale, 0.6)) + 'px';
           label.style.color = PALETTE[tile.placeValue];
           workPane.appendChild(label);
