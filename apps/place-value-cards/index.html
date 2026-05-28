@@ -122,6 +122,14 @@
       box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
     }
 
+    /* ── PLACE VALUE LABELS ── */
+    .pv-label {
+      position: absolute; pointer-events: none; z-index: 150;
+      font-family: 'Lexend', sans-serif; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      white-space: nowrap; text-align: center;
+    }
+
     /* ── TRAY (Card Source) ── */
     #bottomDock {
       height: 180px; border-top: 1px solid var(--border);
@@ -229,6 +237,13 @@
       millions: '#FF00FF', hundredThousands: '#6B3FA0', tenThousands: '#FF7F00',
       thousands: '#4CBB17', hundreds: '#FFD700', tens: '#4169E1', ones: '#DC143C',
       tenths: '#64D2FF', hundredths: '#FF9F0A', thousandths: '#64D2FF'
+    };
+
+    const PLACE_LABELS = {
+      millions: 'millions', hundredThousands: 'hundred thousands',
+      tenThousands: 'ten thousands', thousands: 'thousands',
+      hundreds: 'hundreds', tens: 'tens', ones: 'ones',
+      tenths: 'tenths', hundredths: 'hundredths', thousandths: 'thousandths'
     };
 
     function hexToRgba(hex, alpha) {
@@ -435,7 +450,7 @@
 
     function renderWorkPane() {
       const workPane = document.getElementById('workPane');
-      workPane.querySelectorAll('.work-pane-tile, .plus-sign').forEach(el => el.remove());
+      workPane.querySelectorAll('.work-pane-tile, .plus-sign, .pv-label').forEach(el => el.remove());
       
       let sum = 0;
       const scale = getScaleFactor();
@@ -466,6 +481,21 @@
         
         el.addEventListener('pointerdown', (e) => startDrag(e, tile.value, tile.id));
         workPane.appendChild(el);
+
+        // Place-value name label beneath snapped cards (nomenclature, not instruction)
+        if (tile.snappedToLine) {
+          const cardW = (isExpanded ? getExpandedCardWidthForPlaceValue(tile.placeValue)
+                                    : getCardWidthForSnapped(tile.placeValue)) * scale;
+          const label = document.createElement('div');
+          label.className = 'pv-label work-pane-tile';
+          label.textContent = PLACE_LABELS[tile.placeValue];
+          label.style.left = tile.x + 'px';
+          label.style.top = (tile.y + BLOCK_HEIGHT * scale + 6) + 'px';
+          label.style.width = cardW + 'px';
+          label.style.fontSize = (11 * Math.max(scale, 0.6)) + 'px';
+          label.style.color = PALETTE[tile.placeValue];
+          workPane.appendChild(label);
+        }
       });
       
       // Inject Plus Signs if Expanded
