@@ -124,10 +124,16 @@
 
     /* ── PLACE VALUE LABELS ── */
     .pv-label {
-      position: absolute; pointer-events: none; z-index: 150;
-      font-family: 'Lexend', sans-serif; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      white-space: nowrap; text-align: center;
+      position: absolute;
+      pointer-events: none;
+      z-index: 150;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      white-space: nowrap;
+      line-height: 1;
+      text-align: left;
     }
 
     /* ── TRAY (Card Source) ── */
@@ -201,6 +207,7 @@
           <input type="number" id="numberInput" class="num-input" placeholder="Type..." step="any" min="0">
         </div>
         <div style="display:flex; gap:12px;">
+          <button class="btn btn-clear" id="labelsBtn">Labels: On</button>
           <button class="btn btn-clear" id="resetBtn">Clear Desk</button>
           <button class="btn btn-expand" id="expandBtn">Expand Form</button>
         </div>
@@ -271,6 +278,7 @@
     let activeDrawer = 'ones'; 
     let currentTotal = 0;
     let isExpanded = false;
+    let showLabels = true;
     
     let isDragging = false;
     let dragData = null;
@@ -384,7 +392,6 @@
           }
           return { x: centerX + offsetX, y: snapY };
         } else {
-          // Alignment for decimals when stacked: left-aligned to the bead
           const rightEdgeX = centerX + DECIMAL_SPACING + ((position + 1) * scaledBlockSize);
           return { x: rightEdgeX - getCardWidthForSnapped(placeValue, scale), y: snapY };
         }
@@ -399,10 +406,24 @@
           }
           return { x: centerX - offsetX, y: snapY };
         } else {
-          // Alignment for whole numbers when stacked: right-aligned to the bead
           return { x: centerX - DECIMAL_SPACING - getCardWidthForSnapped(placeValue, scale), y: snapY };
         }
       }
+    }
+
+    function getLabelAnchorX(tile, scale) {
+      const decimalPlaces = ['tenths', 'hundredths', 'thousandths'];
+
+      if (isExpanded) {
+        return tile.x + 8 * scale;
+      }
+
+      if (decimalPlaces.includes(tile.placeValue)) {
+        const decimalIndex = decimalPlaces.indexOf(tile.placeValue);
+        return tile.x + decimalIndex * BLOCK_SIZE * scale + 8 * scale;
+      }
+
+      return tile.x + 8 * scale;
     }
 
     function createTileElement(value, showFullDecimal) {
@@ -465,9 +486,6 @@
       const sortedTiles = [...tiles].sort((a, b) => a.zIndex - b.zIndex);
       const snappedTiles = sortedTiles.filter(t => t.snappedToLine);
 
-      // Left-to-right order of snapped tiles, used to cascade labels diagonally
-      const labelOrder = [...snappedTiles].sort((a, b) => a.x - b.x).map(t => t.id);
-
       sortedTiles.forEach(tile => {
         sum += tile.value;
         const isDecimal = isDecimalValue(tile.value);
@@ -485,19 +503,19 @@
         el.addEventListener('pointerdown', (e) => startDrag(e, tile.value, tile.id));
         workPane.appendChild(el);
 
-        // Place-value name label beneath snapped cards (nomenclature, not instruction)
-        if (tile.snappedToLine) {
-          const stagger = labelOrder.indexOf(tile.id); // 0 = leftmost
-          const STEP_DOWN = 16 * Math.max(scale, 0.6);
-          const STEP_RIGHT = 10 * Math.max(scale, 0.6);
+        if (tile.snappedToLine && showLabels) {
           const label = document.createElement('div');
           label.className = 'pv-label work-pane-tile';
           label.textContent = PLACE_LABELS[tile.placeValue];
-          label.style.left = (tile.x + stagger * STEP_RIGHT) + 'px';
-          label.style.top = (tile.y + BLOCK_HEIGHT * scale + 6 + stagger * STEP_DOWN) + 'px';
-          label.style.textAlign = 'left';
-          label.style.fontSize = (11 * Math.max(scale, 0.6)) + 'px';
+
+          label.style.left = getLabelAnchorX(tile, scale) + 'px';
+          label.style.top = (tile.y + BLOCK_HEIGHT * scale + 8) + 'px';
+          label.style.fontSize = (9.5 * Math.max(scale, 0.72)) + 'px';
           label.style.color = PALETTE[tile.placeValue];
+          label.style.transform = 'rotate(48deg)';
+          label.style.transformOrigin = 'top left';
+          label.style.zIndex = 160;
+
           workPane.appendChild(label);
         }
       });
@@ -600,7 +618,6 @@
         
         if (touchingLine) {
           finalX = snapPos.x; finalY = snapPos.y; snappedToLine = true;
-          // Remove existing tile of same place value to prevent stacking duplicates
           tiles = tiles.filter(t => {
             if (t.id === dragData.source) return true;
             return !(t.placeValue === dragData.placeValue && t.snappedToLine);
@@ -657,6 +674,12 @@
         parseAndCreateTiles(numberInput.value);
         numberInput.blur();
       }
+    });
+
+    document.getElementById('labelsBtn').addEventListener('click', () => {
+      showLabels = !showLabels;
+      document.getElementById('labelsBtn').textContent = showLabels ? 'Labels: On' : 'Labels: Off';
+      renderWorkPane();
     });
 
     document.getElementById('expandBtn').addEventListener('click', () => {
