@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trig Explorer — Math Things.</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f4f2;
+    --card: #ffffff;
+    --aluminum: linear-gradient(145deg, #e8e8e6 0%, #d4d4d2 40%, #e0e0de 100%);
+    --aluminum-dark: linear-gradient(145deg, #c8c8c6 0%, #b4b4b2 40%, #c0c0be 100%);
+    --shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-deep: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+    --text: #1a1a1a;
+    --text-dim: #666;
+    --text-dimmer: #999;
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --orange: #ea580c;
+    --gold: #d97706;
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lexend', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  h1 span {
+    color: var(--blue);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-family: 'Lexend', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: var(--aluminum);
+    color: var(--text-dim);
+    box-shadow: var(--shadow);
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--blue);
+    color: white;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── UNIT CIRCLE ── */
+  .circle-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .canvas-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-deep);
+    padding: 16px;
+    width: 100%;
+    position: relative;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  .readout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .readout-card {
+    background: var(--card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+  }
+
+  .readout-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    margin-bottom: 4px;
+  }
+
+  .readout-value {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .readout-value.blue { color: var(--blue); }
+  .readout-value.green { color: var(--green); }
+  .readout-value.orange { color: var(--orange); }
+  .readout-value.gold { color: var(--gold); }
+
+  .readout-sub {
+    font-size: 11px;
+    color: var(--text-dimmer);
+    margin-top: 2px;
+  }
+
+  .angle-card {
+    background: var(--card);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .angle-section { text-align: center; }
+
+  .quadrant-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    background: var(--blue-light);
+    color: var(--blue);
+  }
+
+  /* snap indicator */
+  .snap-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: inline-block;
+    margin-right: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .snap-dot.visible { opacity: 1; }
+
+  /* ── SPECIAL TRIANGLES ── */
+  .triangles-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .tri-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-deep);
+    overflow: hidden;
+  }
+
+  .tri-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .tri-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .tri-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .tri-canvas-wrap {
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .tri-canvas-wrap canvas {
+    cursor: default;
+  }
+
+  .tri-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-top: 1px solid #eee;
+  }
+
+  .tri-val {
+    padding: 12px 16px;
+    border-right: 1px solid #eee;
+    text-align: center;
+  }
+  .tri-val:last-child { border-right: none; }
+
+  .tri-val-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    margin-bottom: 4px;
+  }
+
+  .tri-val-value {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── REFERENCE TABLE ── */
+  .ref-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-deep);
+    overflow: hidden;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .ref-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    background: #fafafa;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+
+  td {
+    padding: 11px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr.special { background: #fffbeb; }
+
+  td.angle-col { font-weight: 700; color: var(--gold); }
+  td.sin-col { color: var(--blue); }
+  td.cos-col { color: var(--green); }
+  td.tan-col { color: var(--orange); }
+
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 11px;
+    color: var(--text-dimmer);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Math Things.</div>
+  <h1>Trig <span>Explorer</span></h1>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPanel('circle')">Unit Circle</button>
+  <button class="tab" onclick="showPanel('triangles')">Special Triangles</button>
+  <button class="tab" onclick="showPanel('reference')">Reference</button>
+</div>
+
+<!-- UNIT CIRCLE PANEL -->
+<div class="panel active" id="panel-circle">
+  <div class="circle-layout">
+    <div class="canvas-card">
+      <canvas id="circleCanvas" width="480" height="480"></canvas>
+    </div>
+
+    <div class="angle-card">
+      <div class="angle-section">
+        <div class="readout-label">Angle</div>
+        <div class="readout-value gold" id="angleDeg">0°</div>
+      </div>
+      <div class="angle-section">
+        <div class="readout-label">Radians</div>
+        <div class="readout-value gold" id="angleRad">0</div>
+      </div>
+      <div class="angle-section">
+        <div class="readout-label">Quadrant</div>
+        <span class="quadrant-badge" id="quadrant">I</span>
+      </div>
+      <div class="angle-section">
+        <span class="snap-dot" id="snapDot"></span>
+        <span style="font-size:11px;color:var(--text-dimmer)" id="snapLabel"></span>
+      </div>
+    </div>
+
+    <div class="readout-grid">
+      <div class="readout-card">
+        <div class="readout-label">sin θ &nbsp;·&nbsp; y</div>
+        <div class="readout-value blue" id="sinVal">0.000</div>
+        <div class="readout-sub" id="sinFrac">0</div>
+      </div>
+      <div class="readout-card">
+        <div class="readout-label">cos θ &nbsp;·&nbsp; x</div>
+        <div class="readout-value green" id="cosVal">1.000</div>
+        <div class="readout-sub" id="cosFrac">1</div>
+      </div>
+      <div class="readout-card">
+        <div class="readout-label">tan θ</div>
+        <div class="readout-value orange" id="tanVal">0.000</div>
+        <div class="readout-sub" id="tanFrac">0</div>
+      </div>
+      <div class="readout-card">
+        <div class="readout-label">Point (x, y)</div>
+        <div class="readout-value" style="color:var(--text-dim);font-size:16px" id="pointVal">(1.000, 0.000)</div>
+        <div class="readout-sub">on unit circle</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SPECIAL TRIANGLES PANEL -->
+<div class="panel" id="panel-triangles">
+  <div class="triangles-layout">
+
+    <!-- 45-45-90 -->
+    <div class="tri-card">
+      <div class="tri-header">
+        <div class="tri-title">45° – 45° – 90°</div>
+        <div class="tri-subtitle">Cut a unit square diagonally</div>
+      </div>
+      <div class="tri-canvas-wrap">
+        <canvas id="tri45Canvas" width="320" height="240"></canvas>
+      </div>
+      <div class="tri-values">
+        <div class="tri-val">
+          <div class="tri-val-label">sin 45°</div>
+          <div class="tri-val-value" style="color:var(--blue)">√2 / 2</div>
+        </div>
+        <div class="tri-val">
+          <div class="tri-val-label">cos 45°</div>
+          <div class="tri-val-value" style="color:var(--green)">√2 / 2</div>
+        </div>
+        <div class="tri-val">
+          <div class="tri-val-label">tan 45°</div>
+          <div class="tri-val-value" style="color:var(--orange)">1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 30-60-90 -->
+    <div class="tri-card">
+      <div class="tri-header">
+        <div class="tri-title">30° – 60° – 90°</div>
+        <div class="tri-subtitle">Cut an equilateral triangle in half</div>
+      </div>
+      <div class="tri-canvas-wrap">
+        <canvas id="tri30Canvas" width="320" height="260"></canvas>
+      </div>
+      <div class="tri-values">
+        <div class="tri-val">
+          <div class="tri-val-label">sin 30°</div>
+          <div class="tri-val-value" style="color:var(--blue)">1 / 2</div>
+        </div>
+        <div class="tri-val">
+          <div class="tri-val-label">cos 30°</div>
+          <div class="tri-val-value" style="color:var(--green)">√3 / 2</div>
+        </div>
+        <div class="tri-val">
+          <div class="tri-val-label">tan 30°</div>
+          <div class="tri-val-value" style="color:var(--orange)">1 / √3</div>
+        </div>
+      </div>
+      <div class="tri-values" style="border-top:1px solid #eee">
+        <div class="tri-val">
+          <div class="tri-val-label">sin 60°</div>
+          <div class="tri-val-value" style="color:var(--blue)">√3 / 2</div>
+        </div>
+        <div class="tri-val">
+          <div class="tri-val-label">cos 60°</div>
+          <div class="tri-val-value" style="color:var(--green)">1 / 2</div>
+        </div>
+        <div class="tri-val">
+          <div class="tri-val-label">tan 60°</div>
+          <div class="tri-val-value" style="color:var(--orange)">√3</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- REFERENCE PANEL -->
+<div class="panel" id="panel-reference">
+  <div class="ref-card">
+    <div class="ref-header">Key Angles — Unit Circle Reference</div>
+    <table>
+      <thead>
+        <tr>
+          <th>θ (deg)</th>
+          <th>θ (rad)</th>
+          <th style="color:var(--blue)">sin θ</th>
+          <th style="color:var(--green)">cos θ</th>
+          <th style="color:var(--orange)">tan θ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="angle-col">0°</td><td>0</td><td class="sin-col">0</td><td class="cos-col">1</td><td class="tan-col">0</td></tr>
+        <tr class="special"><td class="angle-col">30°</td><td>π/6</td><td class="sin-col">1/2</td><td class="cos-col">√3/2</td><td class="tan-col">1/√3</td></tr>
+        <tr class="special"><td class="angle-col">45°</td><td>π/4</td><td class="sin-col">√2/2</td><td class="cos-col">√2/2</td><td class="tan-col">1</td></tr>
+        <tr class="special"><td class="angle-col">60°</td><td>π/3</td><td class="sin-col">√3/2</td><td class="cos-col">1/2</td><td class="tan-col">√3</td></tr>
+        <tr><td class="angle-col">90°</td><td>π/2</td><td class="sin-col">1</td><td class="cos-col">0</td><td class="tan-col">undef</td></tr>
+        <tr><td class="angle-col">120°</td><td>2π/3</td><td class="sin-col">√3/2</td><td class="cos-col">−1/2</td><td class="tan-col">−√3</td></tr>
+        <tr><td class="angle-col">135°</td><td>3π/4</td><td class="sin-col">√2/2</td><td class="cos-col">−√2/2</td><td class="tan-col">−1</td></tr>
+        <tr><td class="angle-col">150°</td><td>5π/6</td><td class="sin-col">1/2</td><td class="cos-col">−√3/2</td><td class="tan-col">−1/√3</td></tr>
+        <tr><td class="angle-col">180°</td><td>π</td><td class="sin-col">0</td><td class="cos-col">−1</td><td class="tan-col">0</td></tr>
+        <tr><td class="angle-col">210°</td><td>7π/6</td><td class="sin-col">−1/2</td><td class="cos-col">−√3/2</td><td class="tan-col">1/√3</td></tr>
+        <tr><td class="angle-col">225°</td><td>5π/4</td><td class="sin-col">−√2/2</td><td class="cos-col">−√2/2</td><td class="tan-col">1</td></tr>
+        <tr><td class="angle-col">240°</td><td>4π/3</td><td class="sin-col">−√3/2</td><td class="cos-col">−1/2</td><td class="tan-col">√3</td></tr>
+        <tr><td class="angle-col">270°</td><td>3π/2</td><td class="sin-col">−1</td><td class="cos-col">0</td><td class="tan-col">undef</td></tr>
+        <tr><td class="angle-col">300°</td><td>5π/3</td><td class="sin-col">−√3/2</td><td class="cos-col">1/2</td><td class="tan-col">−√3</td></tr>
+        <tr><td class="angle-col">315°</td><td>7π/4</td><td class="sin-col">−√2/2</td><td class="cos-col">√2/2</td><td class="tan-col">−1</td></tr>
+        <tr><td class="angle-col">330°</td><td>11π/6</td><td class="sin-col">−1/2</td><td class="cos-col">√3/2</td><td class="tan-col">−1/√3</td></tr>
+        <tr><td class="angle-col">360°</td><td>2π</td><td class="sin-col">0</td><td class="cos-col">1</td><td class="tan-col">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>Math Things. &nbsp;·&nbsp; Trig, in your hands.</footer>
+
+<script>
+// ── TAB SWITCHING ──
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── UNIT CIRCLE ──
+const canvas = document.getElementById('circleCanvas');
+const ctx = canvas.getContext('2d');
+const W = 480, H = 480;
+const CX = W/2, CY = H/2;
+const R = 180;
+
+const SNAP_ANGLES = [0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330,360];
+const SNAP_LABELS = {
+  0:'0°', 30:'π/6', 45:'π/4', 60:'π/3', 90:'π/2',
+  120:'2π/3', 135:'3π/4', 150:'5π/6', 180:'π',
+  210:'7π/6', 225:'5π/4', 240:'4π/3', 270:'3π/2',
+  300:'5π/3', 315:'7π/4', 330:'11π/6', 360:'2π'
+};
+
+const NICE_FRACS = {
+  0: '0', 0.5: '1/2', 0.866: '√3/2', 0.707: '√2/2',
+  1: '1', '-0.5': '−1/2', '-0.866': '−√3/2', '-0.707': '−√2/2', '-1': '−1'
+};
+
+let angle = 0; // degrees
+let dragging = false;
+
+function nearestSnap(deg) {
+  let best = SNAP_ANGLES[0], bestD = 999;
+  for (let a of SNAP_ANGLES) {
+    let d = Math.abs(deg - a);
+    if (d > 180) d = 360 - d;
+    if (d < bestD) { bestD = d; best = a; }
+  }
+  return bestD < 8 ? best : null;
+}
+
+function niceFrac(val) {
+  for (let k in NICE_FRACS) {
+    if (Math.abs(val - parseFloat(k)) < 0.005) return NICE_FRACS[k];
+  }
+  return null;
+}
+
+function radLabel(deg) {
+  const map = {0:'0',30:'π/6',45:'π/4',60:'π/3',90:'π/2',120:'2π/3',135:'3π/4',150:'5π/6',180:'π',210:'7π/6',225:'5π/4',240:'4π/3',270:'3π/2',300:'5π/3',315:'7π/4',330:'11π/6',360:'2π'};
+  return map[deg] || ((deg * Math.PI / 180).toFixed(3) + ' rad');
+}
+
+function drawCircle() {
+  ctx.clearRect(0, 0, W, H);
+
+  const rad = angle * Math.PI / 180;
+  const px = CX + R * Math.cos(rad);
+  const py = CY - R * Math.sin(rad);
+  const sinVal = Math.sin(rad);
+  const cosVal = Math.cos(rad);
+  const tanVal = Math.tan(rad);
+
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Quadrant shading
+  ctx.fillStyle = 'rgba(37,99,235,0.03)';
+  ctx.fillRect(CX, 0, W-CX, CY);
+  ctx.fillStyle = 'rgba(22,163,74,0.03)';
+  ctx.fillRect(0, 0, CX, CY);
+  ctx.fillStyle = 'rgba(220,38,38,0.03)';
+  ctx.fillRect(0, CY, CX, H-CY);
+  ctx.fillStyle = 'rgba(234,88,12,0.03)';
+  ctx.fillRect(CX, CY, W-CX, H-CY);
+
+  // Axes
+  ctx.strokeStyle = '#e0e0de';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(20, CY); ctx.lineTo(W-20, CY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(CX, 20); ctx.lineTo(CX, H-20); ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#bbb';
+  ctx.font = '500 12px Lexend, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('x', W-14, CY-6);
+  ctx.fillText('y', CX+6, 16);
+
+  // Quadrant labels
+  ctx.font = '500 11px Lexend, sans-serif';
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillText('I', CX+R/2, CY-R/2);
+  ctx.fillText('II', CX-R/2, CY-R/2);
+  ctx.fillText('III', CX-R/2, CY+R/2);
+  ctx.fillText('IV', CX+R/2, CY+R/2);
+
+  // Unit circle
+  ctx.strokeStyle = '#d0d0ce';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, Math.PI*2);
+  ctx.stroke();
+
+  // Snap angle dots
+  ctx.fillStyle = 'rgba(217,119,6,0.25)';
+  for (let a of SNAP_ANGLES) {
+    const r2 = a * Math.PI / 180;
+    const sx = CX + R * Math.cos(r2);
+    const sy = CY - R * Math.sin(r2);
+    ctx.beginPath(); ctx.arc(sx, sy, 4, 0, Math.PI*2); ctx.fill();
+  }
+
+  // cos line (x projection)
+  ctx.strokeStyle = 'rgba(22,163,74,0.6)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(px, CY); ctx.stroke();
+
+  // sin line (y projection)
+  ctx.strokeStyle = 'rgba(37,99,235,0.6)';
+  ctx.beginPath(); ctx.moveTo(px, CY); ctx.lineTo(px, py); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Hypotenuse (radius line)
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(px, py); ctx.stroke();
+
+  // Arc for angle
+  ctx.strokeStyle = 'rgba(217,119,6,0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(CX, CY, 36, 0, -rad, rad < 0 ? false : true);
+  if (angle >= 0) ctx.arc(CX, CY, 36, 0, -rad, true);
+  else ctx.arc(CX, CY, 36, 0, -rad, false);
+  ctx.stroke();
+
+  // Right angle box at foot of perpendicular
+  if (Math.abs(sinVal) > 0.05 && Math.abs(cosVal) > 0.05) {
+    const bsize = 10;
+    const sx2 = cosVal > 0 ? 1 : -1;
+    const sy2 = sinVal > 0 ? -1 : 1;
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px - sx2*bsize, py - sy2*bsize, sx2*bsize, sy2*bsize);
+  }
+
+  // Point on circle
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI*2); ctx.fill();
+
+  // Origin dot
+  ctx.fillStyle = '#aaa';
+  ctx.beginPath(); ctx.arc(CX, CY, 4, 0, Math.PI*2); ctx.fill();
+
+  // Labels on axes
+  ctx.fillStyle = '#888';
+  ctx.font = '500 11px Lexend, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('1', CX + R + 10, CY - 6);
+  ctx.fillText('-1', CX - R - 12, CY - 6);
+  ctx.textAlign = 'right';
+  ctx.fillText('1', CX - 6, CY - R + 4);
+  ctx.fillText('-1', CX - 6, CY + R + 4);
+
+  // Update readouts
+  const snap = nearestSnap(angle);
+  const isSnap = snap !== null && Math.abs(angle - snap) < 8;
+
+  document.getElementById('snapDot').classList.toggle('visible', isSnap);
+  document.getElementById('snapLabel').textContent = isSnap ? 'Key angle' : '';
+
+  document.getElementById('angleDeg').textContent = Math.round(angle) + '°';
+  document.getElementById('angleRad').textContent = radLabel(isSnap ? snap : Math.round(angle));
+
+  const q = angle <= 90 ? 'I' : angle <= 180 ? 'II' : angle <= 270 ? 'III' : 'IV';
+  document.getElementById('quadrant').textContent = q;
+
+  document.getElementById('sinVal').textContent = sinVal.toFixed(3);
+  document.getElementById('cosVal').textContent = cosVal.toFixed(3);
+  document.getElementById('tanVal').textContent = Math.abs(tanVal) > 99 ? 'undef' : tanVal.toFixed(3);
+  document.getElementById('pointVal').textContent = `(${cosVal.toFixed(3)}, ${sinVal.toFixed(3)})`;
+
+  document.getElementById('sinFrac').textContent = niceFrac(parseFloat(sinVal.toFixed(3))) || '';
+  document.getElementById('cosFrac').textContent = niceFrac(parseFloat(cosVal.toFixed(3))) || '';
+  document.getElementById('tanFrac').textContent = '';
+}
+
+function getAngleFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const cx = (e.clientX || e.touches[0].clientX) - rect.left;
+  const cy = (e.clientY || e.touches[0].clientY) - rect.top;
+  const dx = cx * scaleX - CX;
+  const dy = -(cy * scaleY - CY);
+  let deg = Math.atan2(dy, dx) * 180 / Math.PI;
+  if (deg < 0) deg += 360;
+  // snap
+  const snap = nearestSnap(deg);
+  if (snap !== null && Math.abs(deg - snap) < 8) deg = snap;
+  return deg;
+}
+
+canvas.addEventListener('mousedown', e => { dragging = true; angle = getAngleFromEvent(e); drawCircle(); });
+canvas.addEventListener('mousemove', e => { if (dragging) { angle = getAngleFromEvent(e); drawCircle(); }});
+canvas.addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); dragging = true; angle = getAngleFromEvent(e); drawCircle(); }, {passive:false});
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (dragging) { angle = getAngleFromEvent(e); drawCircle(); }}, {passive:false});
+canvas.addEventListener('touchend', () => dragging = false);
+
+drawCircle();
+
+// ── 45-45-90 TRIANGLE ──
+function draw45() {
+  const c = document.getElementById('tri45Canvas');
+  const ctx2 = c.getContext('2d');
+  const W2 = 320, H2 = 240;
+  ctx2.clearRect(0, 0, W2, H2);
+  ctx2.fillStyle = '#fff';
+  ctx2.fillRect(0, 0, W2, H2);
+
+  // First show the square lightly
+  const sq = 140;
+  const ox = 60, oy = 40;
+  ctx2.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx2.lineWidth = 1.5;
+  ctx2.setLineDash([4,4]);
+  ctx2.strokeRect(ox, oy, sq, sq);
+  ctx2.setLineDash([]);
+
+  // Square label
+  ctx2.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx2.font = '500 11px Lexend, sans-serif';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('unit square', ox + sq/2, oy + sq + 18);
+
+  // Triangle vertices: right angle at bottom-left
+  const ax = ox, ay = oy + sq;    // bottom-left (right angle)
+  const bx = ox + sq, by = oy + sq; // bottom-right
+  const cx2 = ox, cy2 = oy;          // top-left
+
+  // Triangle fill
+  ctx2.fillStyle = 'rgba(37,99,235,0.08)';
+  ctx2.beginPath(); ctx2.moveTo(ax,ay); ctx2.lineTo(bx,by); ctx2.lineTo(cx2,cy2); ctx2.closePath(); ctx2.fill();
+
+  // Triangle stroke
+  ctx2.strokeStyle = '#1a1a1a';
+  ctx2.lineWidth = 2.5;
+  ctx2.beginPath(); ctx2.moveTo(ax,ay); ctx2.lineTo(bx,by); ctx2.lineTo(cx2,cy2); ctx2.closePath(); ctx2.stroke();
+
+  // Right angle box
+  const bs = 12;
+  ctx2.strokeStyle = '#aaa';
+  ctx2.lineWidth = 1;
+  ctx2.strokeRect(ax, ay - bs, bs, bs);
+
+  // Side labels
+  ctx2.fillStyle = '#1a1a1a';
+  ctx2.font = '600 14px Lexend, sans-serif';
+  ctx2.textAlign = 'center';
+  // bottom: adjacent = 1
+  ctx2.fillStyle = 'rgba(22,163,74,0.9)';
+  ctx2.fillText('1', ax + sq/2, ay + 20);
+  // left: opposite = 1
+  ctx2.save();
+  ctx2.translate(ax - 18, ay - sq/2);
+  ctx2.rotate(-Math.PI/2);
+  ctx2.fillStyle = 'rgba(37,99,235,0.9)';
+  ctx2.fillText('1', 0, 0);
+  ctx2.restore();
+  // hypotenuse
+  ctx2.save();
+  ctx2.translate((ax+bx)/2 + (cx2-bx)/2 + 18, (ay+by)/2 + (cy2-by)/2);
+  ctx2.rotate(-Math.PI/4);
+  ctx2.fillStyle = '#1a1a1a';
+  ctx2.fillText('√2', 0, 0);
+  ctx2.restore();
+
+  // Angle labels
+  ctx2.font = '500 12px Lexend, sans-serif';
+  ctx2.fillStyle = 'rgba(217,119,6,0.9)';
+  ctx2.textAlign = 'left';
+  ctx2.fillText('45°', bx - 44, by - 8);
+  ctx2.textAlign = 'left';
+  ctx2.fillText('45°', cx2 + 8, cy2 + 22);
+  ctx2.fillStyle = '#aaa';
+  ctx2.fillText('90°', ax + 14, ay - 4);
+}
+
+// ── 30-60-90 TRIANGLE ──
+function draw30() {
+  const c = document.getElementById('tri30Canvas');
+  const ctx3 = c.getContext('2d');
+  const W3 = 320, H3 = 260;
+  ctx3.clearRect(0, 0, W3, H3);
+  ctx3.fillStyle = '#fff';
+  ctx3.fillRect(0, 0, W3, H3);
+
+  // Show equilateral triangle lightly
+  const side = 160;
+  const ex = 80, ey = 30;
+  const eqH = side * Math.sqrt(3)/2;
+  const eqAx = ex, eqAy = ey + eqH;
+  const eqBx = ex + side, eqBy = ey + eqH;
+  const eqCx = ex + side/2, eqCy = ey;
+
+  ctx3.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx3.lineWidth = 1.5;
+  ctx3.setLineDash([4,4]);
+  ctx3.beginPath(); ctx3.moveTo(eqAx,eqAy); ctx3.lineTo(eqBx,eqBy); ctx3.lineTo(eqCx,eqCy); ctx3.closePath(); ctx3.stroke();
+  // mirror half
+  ctx3.beginPath(); ctx3.moveTo(eqCx,eqCy); ctx3.lineTo(eqCx,eqAy); ctx3.stroke();
+  ctx3.setLineDash([]);
+
+  ctx3.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx3.font = '500 11px Lexend, sans-serif';
+  ctx3.textAlign = 'center';
+  ctx3.fillText('equilateral triangle, cut in half', W3/2, eqAy + 18);
+
+  // Triangle: right angle at bottom-right of left half
+  const ax3 = eqCx, ay3 = eqAy;  // bottom (right angle)
+  const bx3 = eqAx, by3 = eqAy;  // bottom-left (60°)
+  const cx3 = eqCx, cy3 = eqCy;  // top (30°)
+
+  ctx3.fillStyle = 'rgba(37,99,235,0.08)';
+  ctx3.beginPath(); ctx3.moveTo(ax3,ay3); ctx3.lineTo(bx3,by3); ctx3.lineTo(cx3,cy3); ctx3.closePath(); ctx3.fill();
+
+  ctx3.strokeStyle = '#1a1a1a';
+  ctx3.lineWidth = 2.5;
+  ctx3.beginPath(); ctx3.moveTo(ax3,ay3); ctx3.lineTo(bx3,by3); ctx3.lineTo(cx3,cy3); ctx3.closePath(); ctx3.stroke();
+
+  // Right angle box
+  const bs3 = 12;
+  ctx3.strokeStyle = '#aaa';
+  ctx3.lineWidth = 1;
+  ctx3.strokeRect(ax3 - bs3, ay3 - bs3, bs3, bs3);
+
+  // Side labels
+  ctx3.font = '600 14px Lexend, sans-serif';
+  ctx3.textAlign = 'center';
+  // bottom: adj = √3/2
+  ctx3.fillStyle = 'rgba(22,163,74,0.9)';
+  ctx3.fillText('√3', (ax3+bx3)/2, ay3 + 20);
+  // right side: opp = 1/2 (from 30° angle)
+  ctx3.save();
+  ctx3.translate(ax3 + 16, (ay3+cy3)/2);
+  ctx3.fillStyle = 'rgba(37,99,235,0.9)';
+  ctx3.fillText('1', 0, 0);
+  ctx3.restore();
+  // hypotenuse = 2
+  ctx3.save();
+  ctx3.translate((bx3+cx3)/2 - 18, (by3+cy3)/2);
+  ctx3.fillStyle = '#1a1a1a';
+  ctx3.fillText('2', 0, 0);
+  ctx3.restore();
+
+  // Angle labels
+  ctx3.font = '500 12px Lexend, sans-serif';
+  ctx3.fillStyle = 'rgba(217,119,6,0.9)';
+  ctx3.textAlign = 'left';
+  ctx3.fillText('60°', bx3 + 10, by3 - 8);
+  ctx3.textAlign = 'center';
+  ctx3.fillText('30°', cx3, cy3 + 22);
+  ctx3.fillStyle = '#aaa';
+  ctx3.textAlign = 'right';
+  ctx3.fillText('90°', ax3 - 4, ay3 - 4);
+}
+
+draw45();
+draw30();
+</script>
+</body>
+</html>
