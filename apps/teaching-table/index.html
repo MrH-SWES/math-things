@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Math Things Teaching Table v4</title>
+  <title>Math Things Teaching Table v5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -62,9 +62,10 @@
       font-family: "Lexend", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(ellipse at 50% -10%, rgba(255, 246, 220, 0.55), transparent 50%),
-        radial-gradient(ellipse at 50% 110%, rgba(15, 12, 8, 0.42), transparent 55%),
-        linear-gradient(165deg, #d3c8aa 0%, #c7bb9d 38%, #a89c81 100%);
+        radial-gradient(circle at top left, rgba(255,255,255,0.85), transparent 40%),
+        radial-gradient(rgba(0,0,0,0.055) 1.1px, transparent 1.1px),
+        #F2EFE6;
+      background-size: auto, 28px 28px, auto;
       overflow: hidden;
       letter-spacing: -0.005em;
     }
@@ -77,16 +78,13 @@
     }
     .pad-wrap {
       min-height: 0;
-      background:
-        linear-gradient(180deg, var(--cabinet-up) 0%, var(--cabinet) 50%, var(--cabinet-down) 100%);
-      border: 1px solid var(--cabinet-edge);
+      background: rgba(255, 253, 247, 0.86);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
       border-radius: 24px;
       padding: 10px;
-      box-shadow:
-        inset 0 1px 0 var(--cabinet-rim),
-        inset 0 -1px 0 rgba(0,0,0,0.5),
-        0 22px 44px rgba(15, 12, 8, 0.40),
-        0 2px 6px rgba(15, 12, 8, 0.30);
       overflow: hidden;
       position: relative;
       display: flex;
@@ -105,12 +103,9 @@
     #pad {
       height: 100%;
       overflow: auto;
-      border-radius: 13px;
+      border-radius: 14px;
       border: none;
-      background-color: var(--paper);
-      background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.55), transparent 60%),
-        radial-gradient(ellipse at 50% 110%, rgba(180, 155, 100, 0.18), transparent 55%);
+      background-color: #FFFDF7;
       padding: 18px;
       scroll-padding-bottom: 80px;
     }
@@ -155,19 +150,16 @@
     .side {
       min-height: 0;
       overflow: auto;
-      background:
-        linear-gradient(180deg, var(--cabinet-up) 0%, var(--cabinet) 50%, var(--cabinet-down) 100%);
-      border: 1px solid var(--cabinet-edge);
+      background: rgba(255, 253, 247, 0.86);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
       border-radius: 24px;
-      box-shadow:
-        inset 0 1px 0 var(--cabinet-rim),
-        inset 0 -1px 0 rgba(0,0,0,0.45),
-        0 22px 44px rgba(15, 12, 8, 0.40),
-        0 2px 6px rgba(15, 12, 8, 0.30);
       padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
     }
     .brand {
       display: flex;
@@ -178,17 +170,16 @@
       user-select: none;
     }
     .brand .math-things {
-      font-size: 25px;
+      font-size: 22px;
       font-weight: 900;
       letter-spacing: -0.055em;
-      color: #f0e8d6;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+      color: #1D1D1F;
     }
     .brand .pad-name {
-      font-size: 15px;
-      font-weight: 700;
-      color: rgba(240, 232, 214, 0.55);
-      letter-spacing: -0.025em;
+      font-size: 13px;
+      font-weight: 600;
+      color: #86868B;
+      letter-spacing: -0.02em;
     }
     .tools.paper-modes {
       display: grid;
@@ -197,7 +188,7 @@
     }
     .keys {
       display: grid;
-      gap: 7px;
+      gap: 6px;
       align-content: start;
     }
     .keys.digit-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -205,66 +196,51 @@
     .keys.edit-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .utility {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 7px;
-      margin-top: 4px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 2px;
     }
     button {
-      border: 1px solid var(--metal-edge);
-      background:
-        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 55%, var(--metal-down) 100%),
-        repeating-linear-gradient(90deg, transparent 0, transparent 1px, rgba(255,255,255,0.04) 1px, rgba(255,255,255,0.04) 2px);
-      color: #1d1d1f;
-      border-radius: 11px;
+      border: 1px solid rgba(0,0,0,0.13);
+      background: linear-gradient(180deg, #ffffff 0%, #f0eff0 100%);
+      color: #1D1D1F;
+      border-radius: 10px;
       min-height: 42px;
       height: 42px;
-      font: inherit;
       font-family: inherit;
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 19px;
+      font-weight: 600;
       box-shadow:
-        inset 0 1px 0 var(--metal-hi),
-        inset 0 -1px 0 rgba(0,0,0,0.20),
-        0 2px 0 rgba(0,0,0,0.40),
-        0 4px 8px rgba(0,0,0,0.22);
+        inset 0 1px 0 rgba(255,255,255,0.9),
+        inset 0 -1px 0 rgba(0,0,0,0.07),
+        0 2px 0 rgba(0,0,0,0.16),
+        0 3px 8px rgba(0,0,0,0.07);
       touch-action: manipulation;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       padding: 0 4px;
       display: inline-grid;
       place-items: center;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.42);
     }
     button:active {
-      transform: translateY(2px);
+      transform: translateY(1px);
       box-shadow:
-        inset 0 1px 0 var(--metal-hi),
-        inset 0 -1px 0 rgba(0,0,0,0.20),
-        0 0 0 rgba(0,0,0,0.40),
-        0 1px 3px rgba(0,0,0,0.22);
+        inset 0 1px 0 rgba(255,255,255,0.9),
+        inset 0 -1px 0 rgba(0,0,0,0.07),
+        0 0px 0 rgba(0,0,0,0.16),
+        0 1px 3px rgba(0,0,0,0.07);
     }
-    button.accent { color: var(--accent); }
-    button.danger { color: var(--danger); text-shadow: 0 1px 0 rgba(255,255,255,0.42); }
-    button.small { font-size: 16px; }
     button.is-on {
-      background:
-        linear-gradient(180deg, var(--enamel-cream-up) 0%, var(--enamel-cream) 55%, var(--enamel-cream-dn) 100%);
-      border-color: #6a4f1a;
-      color: #3a2810;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+      background: linear-gradient(180deg, #e8f0ff 0%, #ccdaff 100%);
+      border-color: rgba(46, 88, 148, 0.45);
+      color: #1a3a7a;
       box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.45),
-        inset 0 -1px 0 rgba(0,0,0,0.22),
-        0 2px 0 rgba(50, 38, 14, 0.55),
-        0 4px 9px rgba(50, 38, 14, 0.28);
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        0 2px 0 rgba(20,50,120,0.18),
+        0 3px 8px rgba(46,88,148,0.12);
     }
-    button.is-on:active {
-      transform: translateY(2px);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.45),
-        inset 0 -1px 0 rgba(0,0,0,0.22),
-        0 0 0 rgba(50, 38, 14, 0.55),
-        0 1px 3px rgba(50, 38, 14, 0.28);
+    button.danger {
+      color: #9d3a36 !important;
     }
     .fraction-icon {
       display: inline-grid;
@@ -280,34 +256,16 @@
     }
     .fraction-icon .bar { width: 26px; height: 2.5px; background: currentColor; border-radius: 3px; }
     .frac-key {
-      background:
-        linear-gradient(180deg, var(--enamel-blue-up) 0%, var(--enamel-blue) 55%, var(--enamel-blue-dn) 100%) !important;
-      border-color: #0d2347 !important;
+      background: linear-gradient(180deg, #deeeff 0%, #5a9ef0 55%, #2060c8 100%) !important;
+      border-color: rgba(20, 60, 140, 0.55) !important;
       color: #ffffff !important;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.35) !important;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.42),
-        inset 0 -1px 0 rgba(0,0,0,0.30),
-        0 2px 0 rgba(10, 24, 50, 0.55),
-        0 4px 10px rgba(10, 24, 50, 0.32) !important;
     }
-    .frac-key:active {
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.42),
-        inset 0 -1px 0 rgba(0,0,0,0.30),
-        0 0 0 rgba(10, 24, 50, 0.55),
-        0 1px 3px rgba(10, 24, 50, 0.32) !important;
-    }
-    .glyph {
-      font-size: 22px;
-      font-weight: 800;
-      color: rgba(20, 16, 10, 0.78);
-    }
+
     .util {
-      min-height: 34px;
-      height: 34px;
-      font-size: 14px;
-      border-radius: 9px;
+      min-height: 32px;
+      height: 32px;
+      font-size: 13px;
+      border-radius: 8px;
     }
     .paper-icon {
       display: inline-block;
@@ -362,32 +320,26 @@
     .algorithms {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 7px;
+      gap: 6px;
     }
     .alg-btn {
-      min-height: 58px;
-      height: 58px;
-      padding: 6px 4px 8px;
-      font-size: 18px;
-      line-height: 1;
-      background:
-        linear-gradient(180deg, var(--enamel-rust-up) 0%, var(--enamel-rust) 55%, var(--enamel-rust-dn) 100%) !important;
-      border-color: #4a1a08 !important;
-      color: #ffffff !important;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.4) !important;
+      min-height: 52px;
+      height: 52px;
+      font-size: 22px;
+      background: linear-gradient(180deg, #fff3d6 0%, #ffd97a 55%, #e6b84a 100%) !important;
+      border-color: rgba(140, 100, 0, 0.45) !important;
+      color: #3a2800 !important;
       box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.35),
-        inset 0 -1px 0 rgba(0,0,0,0.30),
-        0 2px 0 rgba(50, 16, 6, 0.65),
-        0 5px 11px rgba(50, 16, 6, 0.36) !important;
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        0 2px 0 rgba(100,70,0,0.28),
+        0 4px 10px rgba(140,100,0,0.14) !important;
     }
     .alg-btn:active {
-      transform: translateY(2px);
+      transform: translateY(1px);
       box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.35),
-        inset 0 -1px 0 rgba(0,0,0,0.30),
-        0 0 0 rgba(50, 16, 6, 0.65),
-        0 1px 3px rgba(50, 16, 6, 0.36) !important;
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        0 0px 0 rgba(100,70,0,0.28),
+        0 1px 3px rgba(140,100,0,0.14) !important;
     }
     .alg-symbol {
       position: relative;
@@ -812,117 +764,7 @@
 
 
 
-    /* ===== v4: Math Things. light-glass reskin + note delete + pinch affordances ===== */
-    body {
-      background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.92), transparent 38%),
-        radial-gradient(rgba(0,0,0,0.04) 1.2px, transparent 1.2px),
-        #F5F5F7;
-      background-size: auto, 30px 30px, auto;
-    }
-    .shell { gap: 12px; }
-    .pad-wrap,
-    .side {
-      background: rgba(245,245,247,0.82);
-      backdrop-filter: blur(34px);
-      -webkit-backdrop-filter: blur(34px);
-      border: 1px solid rgba(255,255,255,0.78);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.09), 0 4px 16px rgba(0,0,0,0.05);
-    }
-    #pad-frame {
-      border: 1px solid rgba(0,0,0,0.065);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.76), 0 1px 5px rgba(0,0,0,0.04);
-      background: rgba(255,255,255,0.62);
-    }
-    #pad {
-      background-color: #fffdf7;
-      border-radius: 14px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.84);
-    }
-    .brand .math-things {
-      color: #1D1D1F;
-      text-shadow: none;
-      letter-spacing: -0.055em;
-      position: relative;
-      display: inline-flex;
-      align-items: baseline;
-      gap: 0.03em;
-    }
-    .brand .math-things::after {
-      content: "";
-      width: 0.24em;
-      height: 0.24em;
-      border-radius: 50%;
-      margin-bottom: 0.08em;
-      background:
-        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.32) 40%, transparent 64%),
-        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.16) 0%, transparent 55%),
-        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
-      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.85), inset -1px -1px 2px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.22);
-    }
-    .brand .pad-name { color: #86868B; text-shadow: none; }
-    #tools-dock {
-      background: rgba(255,255,255,0.66);
-      border: 1px solid rgba(0,0,0,0.075);
-      box-shadow: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.82);
-    }
-    button,
-    .tool-tidy {
-      background: linear-gradient(180deg, #ffffff 0%, #f3f3f5 55%, #dedee3 100%) !important;
-      border-color: rgba(0,0,0,0.14) !important;
-      color: #1D1D1F !important;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.7) !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.08), 0 2px 0 rgba(0,0,0,0.18), 0 6px 14px rgba(0,0,0,0.08) !important;
-    }
-    button.is-on,
-    .tool-btn.active {
-      background: linear-gradient(180deg, #ffffff 0%, #f0f7ff 45%, #d5e8ff 100%) !important;
-      border-color: rgba(0,122,255,0.36) !important;
-      color: #0a56b3 !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -1px 0 rgba(0,122,255,0.15), 0 2px 0 rgba(0,62,130,0.18), 0 9px 18px rgba(0,122,255,0.10) !important;
-    }
-    .frac-key {
-      background: linear-gradient(180deg, #64D2FF 0%, #007AFF 60%, #0055b8 100%) !important;
-      color: #fff !important;
-      border-color: rgba(0,73,160,0.65) !important;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.28) !important;
-    }
-    .alg-btn {
-      background: linear-gradient(180deg, #ffb969 0%, #ff9f0a 55%, #c76f00 100%) !important;
-      border-color: rgba(140,76,0,0.62) !important;
-      color: #fff !important;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.32) !important;
-    }
-    .tool-btn {
-      background: rgba(255,255,255,0.92) !important;
-      border: 1px solid rgba(0,0,0,0.10) !important;
-      border-radius: 14px;
-      color: #1D1D1F !important;
-      text-shadow: none !important;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.86) !important;
-    }
-    .tool-window {
-      border-radius: 20px;
-      border: 1px solid rgba(0,0,0,0.09);
-      background: rgba(255,255,255,0.94);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.86);
-      transition: box-shadow 130ms ease, border-color 130ms ease;
-    }
-    .tool-window.dragging,
-    .tool-window.pinching {
-      border-color: rgba(0,122,255,0.28);
-      box-shadow: 0 24px 62px rgba(0,0,0,0.18), 0 8px 22px rgba(0,122,255,0.08), inset 0 1px 0 rgba(255,255,255,0.86);
-    }
-    .tool-titlebar {
-      background: rgba(245,245,247,0.88);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border-bottom: 1px solid rgba(0,0,0,0.07);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
-    }
-    .tool-title { color: #4d4d52; text-shadow: none; }
-    .tool-close { color: #86868B !important; text-shadow: none !important; }
-    .tool-viewport { background: #fff; }
+    /* ===== v5 additions ===== */
     .note-delete,
     .algo-delete {
       position: absolute;
@@ -957,15 +799,57 @@
     .row.positioned.active,
     .algo-holder.positioned.active .algo-block {
       background: rgba(255,255,255,0.82);
-      border-color: rgba(0,122,255,0.22);
+      border-color: rgba(46,88,148,0.22);
       box-shadow: 0 7px 20px rgba(0,0,0,0.10);
     }
+    .tool-window {
+      border-radius: 20px;
+      border: 1px solid rgba(0,0,0,0.09);
+      background: rgba(255,255,255,0.94);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.86);
+      transition: box-shadow 130ms ease, border-color 130ms ease;
+    }
+    .tool-window.dragging,
+    .tool-window.pinching {
+      border-color: rgba(46,88,148,0.28);
+      box-shadow: 0 24px 62px rgba(0,0,0,0.18), 0 8px 22px rgba(46,88,148,0.08), inset 0 1px 0 rgba(255,255,255,0.86);
+    }
+    .tool-titlebar {
+      background: rgba(245,245,247,0.88);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .tool-title { color: #4d4d52; text-shadow: none; }
+    .tool-close { color: #86868B !important; text-shadow: none !important; }
+    .tool-viewport { background: #fff; }
     .tool-move-edge.n { left: 16px; right: 16px; height: 16px; }
     .tool-move-edge.s { left: 16px; right: 16px; height: 16px; }
     .tool-move-edge.w { top: 16px; bottom: 16px; width: 16px; }
     .tool-move-edge.e { top: 16px; bottom: 16px; width: 16px; }
     .tool-resize { width: 30px; height: 30px; }
-    /* ===== end v4 additions ===== */
+    .brand-dot {
+      display: inline-block;
+      width: 0.22em;
+      height: 0.22em;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e0e0e0 0%, #a0a0a0 50%, #c8c8c8 100%);
+      box-shadow: inset 1px 1px 1px rgba(255,255,255,0.8), inset -1px -1px 1px rgba(0,0,0,0.2);
+      margin-left: 0.04em;
+      vertical-align: 0.06em;
+      flex-shrink: 0;
+    }
+    .digit-cell.active {
+      background: rgba(46, 88, 148, 0.14);
+      box-shadow: inset 0 -0.1em 0 #2e5894;
+      border-radius: 3px;
+    }
+    .algo-block.active {
+      background: rgba(255, 248, 220, 0.55);
+      border-color: rgba(200, 160, 40, 0.4);
+    }
+    /* ===== end v5 additions ===== */
 
     @media (max-width: 760px) {
       .modal-card { padding: 20px; }
@@ -977,116 +861,153 @@
     #tools-dock {
       flex: 0 0 auto;
       display: flex;
-      gap: 6px;
-      padding: 6px;
-      background:
-        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 60%, var(--metal-down) 100%);
-      border: 1px solid var(--metal-edge);
+      gap: 5px;
+      padding: 5px 6px;
+      background: rgba(255, 253, 247, 0.78);
+      border: 1px solid rgba(0,0,0,0.09);
       border-radius: 12px;
-      box-shadow:
-        inset 0 1px 0 var(--metal-hi),
-        inset 0 -1px 0 rgba(0,0,0,0.22),
-        0 2px 6px rgba(0,0,0,0.18);
-      overflow-x: auto;
-      overflow-y: hidden;
-      align-items: stretch;
-      scrollbar-width: thin;
-    }
-    #tools-dock::-webkit-scrollbar { height: 6px; }
-    #tools-dock::-webkit-scrollbar-thumb { background: rgba(20,16,10,0.32); border-radius: 3px; }
-
-    .tool-btn {
-      flex: 0 0 auto;
-      min-width: 78px;
-      padding: 7px 8px 6px;
-      background:
-        linear-gradient(180deg, var(--enamel-cream-up) 0%, var(--enamel-cream) 55%, var(--enamel-cream-dn) 100%);
-      border: 1px solid #6a4f1a;
-      border-radius: 9px;
-      display: flex;
-      flex-direction: column;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.82);
       align-items: center;
-      gap: 2px;
-      cursor: pointer;
-      color: #3a2810;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.32);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.50),
-        inset 0 -1px 0 rgba(0,0,0,0.22),
-        0 2px 0 rgba(40, 28, 8, 0.55),
-        0 5px 10px rgba(40, 28, 8, 0.25);
-      transition: transform 90ms ease, box-shadow 90ms ease;
+      position: relative;
+      z-index: 60;
+    }
+
+    .domain-btn-wrap {
+      position: relative;
+    }
+
+    .domain-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 8px;
       font-family: inherit;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .tool-btn:active {
-      transform: translateY(2px);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.50),
-        inset 0 -1px 0 rgba(0,0,0,0.22),
-        0 0 0 rgba(40, 28, 8, 0.55),
-        0 1px 3px rgba(40, 28, 8, 0.25);
-    }
-    .tool-btn.active {
-      background:
-        linear-gradient(180deg, var(--enamel-forest-up) 0%, var(--enamel-forest) 55%, var(--enamel-forest-dn) 100%);
-      border-color: #122c1a;
-      color: #ffffff;
-      text-shadow: 0 1px 0 rgba(0,0,0,0.4);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.35),
-        inset 0 -1px 0 rgba(0,0,0,0.30),
-        0 2px 0 rgba(10, 22, 14, 0.6),
-        0 5px 10px rgba(10, 22, 14, 0.30);
-    }
-    .tool-btn.active:active {
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.35),
-        inset 0 -1px 0 rgba(0,0,0,0.30),
-        0 0 0 rgba(10, 22, 14, 0.6),
-        0 1px 3px rgba(10, 22, 14, 0.30);
-    }
-    .tool-btn .ti {
-      font-size: 22px;
-      line-height: 1;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      color: #1D1D1F;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      height: 30px;
+      min-height: 30px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.08);
+      transition: background 120ms ease;
+      white-space: nowrap;
     }
-    .tool-btn .tn {
+    .domain-btn:active { transform: translateY(1px); }
+    .domain-btn.open {
+      background: rgba(240,245,255,0.96);
+      border-color: rgba(46,88,148,0.30);
+    }
+    .domain-btn.has-open .domain-dot {
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 0 3px currentColor;
+    }
+    .domain-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .domain-chevron {
+      font-size: 10px;
+      opacity: 0.55;
+      margin-left: 1px;
+    }
+
+    .domain-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      background: rgba(255, 253, 247, 0.98);
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 220px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      z-index: 200;
+    }
+    .domain-panel.open { display: block; }
+
+    .domain-panel-header {
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.01em;
-      line-height: 1.1;
-      text-align: center;
+      color: rgba(29,29,31,0.45);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 6px 8px;
+    }
+
+    .domain-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+    }
+
+    .domain-tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1D1D1F;
+      cursor: pointer;
+      text-align: left;
+      min-height: unset;
+      height: unset;
+      box-shadow: none;
+      transition: background 100ms ease;
       white-space: nowrap;
+      width: 100%;
+    }
+    .domain-tool-btn:hover {
+      background: rgba(46,88,148,0.07);
+      border-color: rgba(46,88,148,0.12);
+    }
+    .domain-tool-btn:active { transform: none; }
+    .domain-tool-btn.active {
+      background: rgba(46,88,148,0.10);
+      border-color: rgba(46,88,148,0.22);
+      color: #1a3a7a;
+    }
+    .domain-tool-icon {
+      font-size: 15px;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .domain-tool-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tool-tidy {
       margin-left: auto;
-      background:
-        linear-gradient(180deg, var(--metal-up) 0%, var(--metal-mid) 55%, var(--metal-down) 100%) !important;
-      border-color: var(--metal-edge) !important;
-      color: #1d1d1f !important;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.42) !important;
-      box-shadow:
-        inset 0 1px 0 var(--metal-hi),
-        inset 0 -1px 0 rgba(0,0,0,0.20),
-        0 2px 0 rgba(0,0,0,0.40),
-        0 4px 8px rgba(0,0,0,0.22) !important;
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.09);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(29,29,31,0.6);
+      cursor: pointer;
+      height: 30px;
+      min-height: 30px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
     }
-    .tool-tidy:active {
-      transform: translateY(2px);
-      box-shadow:
-        inset 0 1px 0 var(--metal-hi),
-        inset 0 -1px 0 rgba(0,0,0,0.20),
-        0 0 0 rgba(0,0,0,0.40),
-        0 1px 3px rgba(0,0,0,0.22) !important;
-    }
-    .tool-tidy .ti {
-      font-size: 24px;
-      font-weight: 700;
-      color: rgba(20, 16, 10, 0.80);
-    }
+    .tool-tidy:active { transform: translateY(1px); }
 
     #tools-layer {
       position: absolute;
@@ -1272,7 +1193,49 @@
 <body>
   <div class="shell">
     <main class="pad-wrap">
-      <div id="tools-dock" aria-label="Math Things tools"></div>
+      <div id="tools-dock" aria-label="Math Things tools">
+        <div class="domain-btn-wrap" data-domain="OA">
+          <button class="domain-btn" data-domain="OA" aria-haspopup="true" aria-expanded="false">
+            <span class="domain-dot" style="background:#2e5894;"></span>
+            OA
+            <span class="domain-chevron">▾</span>
+          </button>
+          <div class="domain-panel" data-domain="OA" role="menu"></div>
+        </div>
+        <div class="domain-btn-wrap" data-domain="NBT">
+          <button class="domain-btn" data-domain="NBT" aria-haspopup="true" aria-expanded="false">
+            <span class="domain-dot" style="background:#e6954a;"></span>
+            NBT
+            <span class="domain-chevron">▾</span>
+          </button>
+          <div class="domain-panel" data-domain="NBT" role="menu"></div>
+        </div>
+        <div class="domain-btn-wrap" data-domain="NF">
+          <button class="domain-btn" data-domain="NF" aria-haspopup="true" aria-expanded="false">
+            <span class="domain-dot" style="background:#c04a8a;"></span>
+            NF
+            <span class="domain-chevron">▾</span>
+          </button>
+          <div class="domain-panel" data-domain="NF" role="menu"></div>
+        </div>
+        <div class="domain-btn-wrap" data-domain="MD">
+          <button class="domain-btn" data-domain="MD" aria-haspopup="true" aria-expanded="false">
+            <span class="domain-dot" style="background:#2d8a4e;"></span>
+            MD
+            <span class="domain-chevron">▾</span>
+          </button>
+          <div class="domain-panel" data-domain="MD" role="menu"></div>
+        </div>
+        <div class="domain-btn-wrap" data-domain="G">
+          <button class="domain-btn" data-domain="G" aria-haspopup="true" aria-expanded="false">
+            <span class="domain-dot" style="background:#7c4ab8;"></span>
+            G
+            <span class="domain-chevron">▾</span>
+          </button>
+          <div class="domain-panel" data-domain="G" role="menu"></div>
+        </div>
+        <button class="tool-tidy" id="tidyBtn" aria-label="tidy windows">⌖ Tidy</button>
+      </div>
       <div id="pad-frame">
         <section id="pad" class="plain" aria-label="math scratch pad">
           <div id="stage">
@@ -1287,25 +1250,29 @@
     <div id="drop-overlay"><div class="label">Drop worksheet image to load</div></div>
 
     <aside class="side" aria-label="Math Things Teaching Table controls">
+
       <div class="brand" aria-label="Math Things Teaching Table">
-        <span class="math-things">Math Things</span>
+        <span class="math-things">Math Things<span class="brand-dot"></span></span>
         <span class="pad-name">Teaching Table</span>
       </div>
 
-      <nav class="tools paper-modes" aria-label="paper">
+      <!-- Zone 1: Paper mode (4 icons) -->
+      <nav class="tools paper-modes" aria-label="paper mode">
         <button id="plainBtn" aria-label="plain paper"><span class="paper-icon"></span></button>
         <button id="linedBtn" aria-label="lined paper"><span class="paper-icon lined"></span></button>
         <button id="gridBtn" aria-label="grid paper"><span class="paper-icon grid"></span></button>
-        <button id="worksheetBtn" aria-label="load worksheet image"><span class="worksheet-icon"></span></button>
+        <button id="worksheetBtn" aria-label="load worksheet"><span class="worksheet-icon"></span></button>
       </nav>
 
-      <nav class="algorithms" aria-label="vertical algorithm templates">
-        <button class="alg-btn" data-alg="add" aria-label="vertical addition"><span class="alg-symbol">+</span></button>
-        <button class="alg-btn" data-alg="sub" aria-label="vertical subtraction"><span class="alg-symbol">−</span></button>
-        <button class="alg-btn" data-alg="mul" aria-label="vertical multiplication"><span class="alg-symbol">×</span></button>
+      <!-- Zone 2: Algorithm launchers (4 big buttons) -->
+      <nav class="algorithms" aria-label="algorithm templates">
+        <button class="alg-btn" data-alg="add" aria-label="addition"><span class="alg-symbol">+</span></button>
+        <button class="alg-btn" data-alg="sub" aria-label="subtraction"><span class="alg-symbol">−</span></button>
+        <button class="alg-btn" data-alg="mul" aria-label="multiplication"><span class="alg-symbol">×</span></button>
         <button class="alg-btn" data-alg="div" aria-label="long division"><span class="alg-symbol alg-symbol-div">⟌</span></button>
       </nav>
 
+      <!-- Zone 3: Number pad (12 keys) -->
       <nav class="keys digit-pad" aria-label="number pad">
         <button data-insert="7">7</button>
         <button data-insert="8">8</button>
@@ -1318,31 +1285,37 @@
         <button data-insert="3">3</button>
         <button data-insert="0">0</button>
         <button data-insert=".">.</button>
-        <button data-cmd="backspace" class="glyph" aria-label="backspace">⌫</button>
+        <button data-cmd="backspace" aria-label="backspace" style="font-size:16px;">⌫</button>
       </nav>
 
+      <!-- Zone 4: Operators + fraction (6 keys, 3x2) -->
       <nav class="keys op-pad" aria-label="operators">
         <button data-insert="+">+</button>
         <button data-insert="-">−</button>
         <button data-latex="\times">×</button>
         <button data-latex="\div">÷</button>
         <button data-insert="=">=</button>
-        <button id="fracBtn" class="accent frac-key" aria-label="insert fraction"><span class="fraction-icon"><span>n</span><span class="bar"></span><span>d</span></span></button>
+        <button id="fracBtn" class="frac-key" aria-label="fraction">
+          <span class="fraction-icon"><span>n</span><span class="bar"></span><span>d</span></span>
+        </button>
       </nav>
 
-      <nav class="keys edit-pad" aria-label="editing">
-        <button data-cmd="newline" class="glyph" aria-label="new line">↵</button>
-        <button data-cmd="advance" class="glyph" aria-label="next">→</button>
-        <button data-cmd="undo" class="glyph" aria-label="undo">↶</button>
+      <!-- Zone 5: Edit / navigation (3 keys) -->
+      <nav class="keys edit-pad" aria-label="edit">
+        <button data-cmd="newline" aria-label="new line" style="font-size:16px;">↵</button>
+        <button data-cmd="advance" aria-label="next" style="font-size:16px;">→</button>
+        <button data-cmd="undo" aria-label="undo" style="font-size:16px;">↶</button>
       </nav>
 
+      <!-- Zone 6: Utilities (small, bottom) -->
       <nav class="utility" aria-label="utilities">
-        <button id="smallTextBtn" class="util" aria-label="smaller math text">A−</button>
-        <button id="bigTextBtn" class="util" aria-label="larger math text">A+</button>
-        <button id="worksheetSmallBtn" class="util" aria-label="smaller worksheet">▣−</button>
-        <button id="worksheetBigBtn" class="util" aria-label="larger worksheet">▣+</button>
-        <button class="danger util" id="clearBtn" aria-label="clear pad"><span class="trash-icon"></span></button>
+        <button id="smallTextBtn" class="util" aria-label="smaller text">A−</button>
+        <button id="bigTextBtn" class="util" aria-label="larger text">A+</button>
+        <button id="worksheetSmallBtn" class="util" aria-label="shrink worksheet">▣−</button>
+        <button id="worksheetBigBtn" class="util" aria-label="grow worksheet">▣+</button>
+        <button class="util danger" id="clearBtn" aria-label="clear pad"><span class="trash-icon"></span></button>
       </nav>
+
     </aside>
   </div>
 
@@ -1381,17 +1354,44 @@
   // NOTE: If you've already customized this list in your live copy (e.g. Ten Frame,
   // Rekenrek), copy your edited TOOLS array over the one below before deploying.
   const TOOLS = [
-    // baseW/baseH = the natural full-size canvas to scale down from inside a small tool body.
-    // minWFrac/minHFrac = minimum bench footprint as a fraction of the available workspace.
-    { id: 'numberline', name: 'Number Line', url: '../number-line/', icon: '━●━', w: 900, h: 220, baseW: 1280, baseH: 300, minW: 520, minH: 118, minWFrac: 0.38, minHFrac: 0.14 },
-    { id: 'timestable', name: 'Times Table', url: '../array-architect/', icon: '⊞', w: 560, h: 560, baseW: 820, baseH: 640, minW: 280, minH: 230, minWFrac: 0.18, minHFrac: 0.24 },
-    { id: 'placevalue', name: 'Place Value', url: '../place-value-cards/', icon: '▥', w: 660, h: 420, baseW: 900, baseH: 560, minW: 300, minH: 220, minWFrac: 0.20, minHFrac: 0.22 },
-    { id: 'base10', name: 'Base 10 Blocks', url: '../place-value-blocks/', icon: '▦', w: 600, h: 480, baseW: 840, baseH: 620, minW: 300, minH: 230, minWFrac: 0.20, minHFrac: 0.24 },
-    { id: 'primealtar', name: 'Prime Altar', url: '../prime-altar/', icon: '◆', w: 720, h: 560, baseW: 960, baseH: 720, minW: 320, minH: 240, minWFrac: 0.22, minHFrac: 0.25 },
-    { id: 'geolab', name: 'Geo Lab', url: '../geo-lab/', icon: '△', w: 600, h: 600, baseW: 760, baseH: 760, minW: 280, minH: 260, minWFrac: 0.20, minHFrac: 0.26 },
-    { id: 'rounding', name: 'Rounding Wave', url: '../rounding-waves/', icon: '∼', w: 720, h: 360, baseW: 960, baseH: 460, minW: 360, minH: 180, minWFrac: 0.26, minHFrac: 0.18 },
-    { id: 'tenframe', name: 'Ten Frame', url: '../ten-frame/', icon: '◫', w: 500, h: 400, baseW: 720, baseH: 520, minW: 260, minH: 210, minWFrac: 0.18, minHFrac: 0.22 },
-    { id: 'rekenrek', name: 'Rekenrek', url: '../rekenrek/', icon: '≡', w: 600, h: 350, baseW: 820, baseH: 420, minW: 340, minH: 170, minWFrac: 0.24, minHFrac: 0.17 },
+    // OA — Operations & Algebraic Thinking
+    { id: 'numberline',      domain: 'OA',  name: 'Number Line',       url: '../number-line/',           icon: '━●━', w: 900,  h: 220, baseW: 1280, baseH: 300,  minW: 520, minH: 118, minWFrac: 0.38, minHFrac: 0.14 },
+    { id: 'numberbond',      domain: 'OA',  name: 'Number Bond',       url: '../number-bond/',           icon: '○',   w: 500,  h: 420, baseW: 700,  baseH: 560,  minW: 280, minH: 230, minWFrac: 0.20, minHFrac: 0.22 },
+    { id: 'tenframe',        domain: 'OA',  name: 'Ten Frame',         url: '../ten-frame/',             icon: '◫',   w: 500,  h: 400, baseW: 720,  baseH: 520,  minW: 260, minH: 210, minWFrac: 0.18, minHFrac: 0.22 },
+    { id: 'rekenrek',        domain: 'OA',  name: 'Rekenrek',          url: '../rekenrek/',              icon: '≡',   w: 600,  h: 350, baseW: 820,  baseH: 420,  minW: 340, minH: 170, minWFrac: 0.24, minHFrac: 0.17 },
+    { id: 'arrayarchitect',  domain: 'OA',  name: 'Array Architect',   url: '../array-architect/',       icon: '⊞',   w: 560,  h: 560, baseW: 820,  baseH: 640,  minW: 280, minH: 230, minWFrac: 0.18, minHFrac: 0.24 },
+    { id: 'arraybuilder',    domain: 'OA',  name: 'Array Builder',     url: '../array-builder/',         icon: '▦',   w: 560,  h: 480, baseW: 800,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.18, minHFrac: 0.22 },
+    { id: 'multmachine',     domain: 'OA',  name: 'Mult Machine',      url: '../multiplication-machine/',icon: '×',   w: 600,  h: 500, baseW: 840,  baseH: 640,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
+    { id: 'divmachine',      domain: 'OA',  name: 'Division Machine',  url: '../division-machine/',      icon: '÷',   w: 600,  h: 500, baseW: 840,  baseH: 640,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
+    { id: 'longdivbuddy',    domain: 'OA',  name: 'Long Division',     url: '../long-division-buddy/',   icon: '⟌',   w: 580,  h: 520, baseW: 820,  baseH: 660,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
+    { id: 'areaexcavator',   domain: 'OA',  name: 'Area Excavator',    url: '../area-excavator/',        icon: '⛏',   w: 620,  h: 520, baseW: 860,  baseH: 660,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
+    { id: 'balancescale',    domain: 'OA',  name: 'Balance Scale',     url: '../balance-scale/',         icon: '⚖',   w: 580,  h: 420, baseW: 820,  baseH: 560,  minW: 300, minH: 220, minWFrac: 0.20, minHFrac: 0.22 },
+    { id: 'primealtar',      domain: 'OA',  name: 'Prime Altar',       url: '../prime-altar/',           icon: '◆',   w: 720,  h: 560, baseW: 960,  baseH: 720,  minW: 320, minH: 240, minWFrac: 0.22, minHFrac: 0.25 },
+    { id: 'walkerellie',     domain: 'OA',  name: 'Walker & Ellie',    url: '../walker-ellie/',          icon: '⊹',   w: 620,  h: 560, baseW: 860,  baseH: 720,  minW: 300, minH: 260, minWFrac: 0.20, minHFrac: 0.25 },
+
+    // NBT — Number & Operations in Base Ten
+    { id: 'placevalue',      domain: 'NBT', name: 'Place Value Cards',  url: '../place-value-cards/',    icon: '▥',   w: 660,  h: 420, baseW: 900,  baseH: 560,  minW: 300, minH: 220, minWFrac: 0.20, minHFrac: 0.22 },
+    { id: 'base10',          domain: 'NBT', name: 'Base 10 Blocks',     url: '../place-value-blocks/',   icon: '▦',   w: 600,  h: 480, baseW: 840,  baseH: 620,  minW: 300, minH: 230, minWFrac: 0.20, minHFrac: 0.24 },
+    { id: 'zoomnumline',     domain: 'NBT', name: 'Zooming Number Line',url: '../zooming-number-line/',  icon: '🔍',  w: 800,  h: 280, baseW: 1100, baseH: 360,  minW: 480, minH: 160, minWFrac: 0.34, minHFrac: 0.16 },
+    { id: 'roundingwave',    domain: 'NBT', name: 'Rounding Waves',     url: '../rounding-waves/',       icon: '∼',   w: 720,  h: 360, baseW: 960,  baseH: 460,  minW: 360, minH: 180, minWFrac: 0.26, minHFrac: 0.18 },
+    { id: 'decimalorder',    domain: 'NBT', name: 'Decimal Order',      url: '../decimal-order/',        icon: '0.1', w: 600,  h: 460, baseW: 840,  baseH: 600,  minW: 300, minH: 230, minWFrac: 0.20, minHFrac: 0.22 },
+
+    // NF — Number & Operations — Fractions
+    { id: 'fractionlab',     domain: 'NF',  name: 'Fraction Lab',       url: '../fraction-lab/',         icon: '½',   w: 680,  h: 520, baseW: 920,  baseH: 660,  minW: 320, minH: 250, minWFrac: 0.22, minHFrac: 0.24 },
+    { id: 'legofractions',   domain: 'NF',  name: 'Lego Fractions',     url: '../lego-fractions/',       icon: '⬛',  w: 640,  h: 480, baseW: 880,  baseH: 620,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.23 },
+
+    // MD — Measurement & Data
+    { id: 'measurebench',    domain: 'MD',  name: 'Measure Bench',      url: '../measure-bench/',        icon: '📏',  w: 700,  h: 380, baseW: 960,  baseH: 500,  minW: 360, minH: 190, minWFrac: 0.26, minHFrac: 0.18 },
+    { id: 'thedial',         domain: 'MD',  name: 'The Dial',           url: '../the-dial/',             icon: '🕐',  w: 480,  h: 480, baseW: 680,  baseH: 680,  minW: 260, minH: 260, minWFrac: 0.18, minHFrac: 0.25 },
+    { id: 'cardinalitytable',domain: 'MD',  name: 'Cardinality',        url: '../cardinality-table/',    icon: '#',   w: 560,  h: 460, baseW: 780,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.19, minHFrac: 0.22 },
+    { id: 'colorsorter',     domain: 'MD',  name: 'Color Sorter',       url: '../color-sorter/',         icon: '🎨',  w: 560,  h: 460, baseW: 780,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.19, minHFrac: 0.22 },
+    { id: 'pairsorter',      domain: 'MD',  name: 'Pair Sorter',        url: '../pair-sorter/',          icon: '⇌',   w: 560,  h: 460, baseW: 780,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.19, minHFrac: 0.22 },
+
+    // G — Geometry
+    { id: 'geolab',          domain: 'G',   name: 'Geo Lab',            url: '../geo-lab/',              icon: '△',   w: 600,  h: 600, baseW: 760,  baseH: 760,  minW: 280, minH: 260, minWFrac: 0.20, minHFrac: 0.26 },
+    { id: 'euclids',         domain: 'G',   name: "Euclid's Playground",url: '../euclids-playground/',   icon: '📐',  w: 640,  h: 560, baseW: 880,  baseH: 720,  minW: 300, minH: 260, minWFrac: 0.20, minHFrac: 0.25 },
+    { id: 'missingrect',     domain: 'G',   name: 'Missing Rectangle',  url: '../missing-side-rectangle/',icon: '□?', w: 560,  h: 480, baseW: 780,  baseH: 620,  minW: 280, minH: 240, minWFrac: 0.19, minHFrac: 0.23 },
+    { id: 'trigexplorer',    domain: 'G',   name: 'Trig Explorer',      url: '../trig-explorer/',        icon: 'sin', w: 680,  h: 520, baseW: 920,  baseH: 660,  minW: 320, minH: 250, minWFrac: 0.22, minHFrac: 0.24 },
   ];
   // =========================
 
@@ -2430,31 +2430,82 @@
     }
   }
 
+  const DOMAIN_META = {
+    OA:  { label: 'OA',  color: '#2e5894', fullName: 'Operations & Algebraic Thinking' },
+    NBT: { label: 'NBT', color: '#e6954a', fullName: 'Number & Operations in Base Ten' },
+    NF:  { label: 'NF',  color: '#c04a8a', fullName: 'Number & Operations — Fractions' },
+    MD:  { label: 'MD',  color: '#2d8a4e', fullName: 'Measurement & Data' },
+    G:   { label: 'G',   color: '#7c4ab8', fullName: 'Geometry' },
+  };
+
   function renderDock() {
-    const dock = document.getElementById('tools-dock');
-    if (!dock) return;
-    dock.innerHTML = '';
-    TOOLS.forEach(tool => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'tool-btn';
-      btn.dataset.toolId = tool.id;
-      btn.setAttribute('aria-label', tool.name);
-      btn.innerHTML = `<span class="ti">${tool.icon}</span><span class="tn">${tool.name}</span>`;
-      btn.addEventListener('click', () => toggleTool(tool.id));
-      dock.appendChild(btn);
+    // Populate each domain panel with its tools
+    Object.keys(DOMAIN_META).forEach(domain => {
+      const panel = document.querySelector(`.domain-panel[data-domain="${domain}"]`);
+      if (!panel) return;
+      const tools = TOOLS.filter(t => t.domain === domain);
+      panel.innerHTML = `
+        <div class="domain-panel-header">${DOMAIN_META[domain].fullName}</div>
+        <div class="domain-panel-grid">
+          ${tools.map(tool => `
+            <button class="domain-tool-btn" data-tool-id="${tool.id}" role="menuitem" aria-label="${tool.name}">
+              <span class="domain-tool-icon">${tool.icon}</span>
+              <span class="domain-tool-name">${tool.name}</span>
+            </button>
+          `).join('')}
+        </div>`;
+      panel.querySelectorAll('.domain-tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleTool(btn.dataset.toolId);
+          closeDomainPanel(domain);
+        });
+      });
     });
 
-    // Tidy button: corral all open windows back into a visible cascade.
-    const tidyBtn = document.createElement('button');
-    tidyBtn.type = 'button';
-    tidyBtn.className = 'tool-btn tool-tidy';
-    tidyBtn.setAttribute('aria-label', 'tidy windows');
-    tidyBtn.innerHTML = `<span class="ti">⌖</span><span class="tn">Tidy</span>`;
-    tidyBtn.addEventListener('click', tidyTools);
-    dock.appendChild(tidyBtn);
+    // Domain button toggle behavior
+    document.querySelectorAll('.domain-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const domain = btn.dataset.domain;
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        closeAllDomainPanels();
+        if (!isOpen) openDomainPanel(domain);
+      });
+    });
+
+    // Tidy button
+    const tidyBtn = document.getElementById('tidyBtn');
+    if (tidyBtn) tidyBtn.addEventListener('click', tidyTools);
+
+    // Close panels when clicking outside
+    document.addEventListener('click', closeAllDomainPanels);
 
     updateDockButtonStates();
+  }
+
+  function openDomainPanel(domain) {
+    const btn = document.querySelector(`.domain-btn[data-domain="${domain}"]`);
+    const panel = document.querySelector(`.domain-panel[data-domain="${domain}"]`);
+    if (!btn || !panel) return;
+    btn.setAttribute('aria-expanded', 'true');
+    btn.classList.add('open');
+    panel.classList.add('open');
+  }
+
+  function closeDomainPanel(domain) {
+    const btn = document.querySelector(`.domain-btn[data-domain="${domain}"]`);
+    const panel = document.querySelector(`.domain-panel[data-domain="${domain}"]`);
+    if (btn) { btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); }
+    if (panel) panel.classList.remove('open');
+  }
+
+  function closeAllDomainPanels() {
+    document.querySelectorAll('.domain-btn').forEach(b => {
+      b.setAttribute('aria-expanded', 'false');
+      b.classList.remove('open');
+    });
+    document.querySelectorAll('.domain-panel').forEach(p => p.classList.remove('open'));
   }
 
   function tidyTools() {
@@ -2489,9 +2540,16 @@
   }
 
   function updateDockButtonStates() {
-    document.querySelectorAll('.tool-btn').forEach(btn => {
+    // Update individual tool buttons inside panels
+    document.querySelectorAll('.domain-tool-btn').forEach(btn => {
       const id = btn.dataset.toolId;
       btn.classList.toggle('active', !!toolStates[id]?.open);
+    });
+    // Show a filled dot on domain button if any tool in that domain is open
+    Object.keys(DOMAIN_META).forEach(domain => {
+      const anyOpen = TOOLS.filter(t => t.domain === domain).some(t => toolStates[t.id]?.open);
+      const btn = document.querySelector(`.domain-btn[data-domain="${domain}"]`);
+      if (btn) btn.classList.toggle('has-open', anyOpen);
     });
   }
 
@@ -2941,6 +2999,39 @@
       setActive(document.querySelector('math-field'));
       saveNow();
     });
+
+  // Physical keyboard → algorithm cell input
+  window.addEventListener('keydown', (e) => {
+    if (!activeCell) return;
+    // Don't intercept if a math-field has focus
+    if (document.activeElement && document.activeElement.tagName === 'MATH-FIELD') return;
+    if (/^[0-9.]$/.test(e.key)) {
+      e.preventDefault();
+      insertIntoCell(e.key);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      backspaceCell();
+    } else if (e.key === 'Tab' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      moveCell(1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      moveCell(-1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      // Move to first cell of next row in the algorithm block
+      const block = activeCell.closest('.algo-block');
+      if (!block) return;
+      const rows = [...block.querySelectorAll('.algo-row, .work-row')];
+      const currentRow = activeCell.closest('.algo-row, .work-row');
+      const currentIdx = rows.indexOf(currentRow);
+      if (currentIdx >= 0 && currentIdx < rows.length - 1) {
+        const nextCells = rows[currentIdx + 1].querySelectorAll('.digit-cell');
+        if (nextCells.length) setActiveCell(nextCells[nextCells.length - 1]);
+      }
+    }
+  });
+
   });
 })();
 </script>
