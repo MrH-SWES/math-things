@@ -6,6 +6,9 @@
   <title>Prime Altar | Math Things.</title>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
+    /* ══════════════════════════════════════════════════════════════
+       1 · TOKENS
+       ══════════════════════════════════════════════════════════════ */
     :root {
       --brand-bg: #F5F5F7;
       --brand-glass: rgba(245,245,247,0.85);
@@ -16,14 +19,16 @@
       --brand-border: rgba(0,0,0,0.05);
       --brand-shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
 
-      /* COLD VAULT THEME */
-      --bg: #1a1b1a;
+      --bg: #161715;
       --u: 44px;
       --spring: cubic-bezier(0.34,1.56,0.64,1);
-      --ease-heavy: cubic-bezier(0.15,0.6,0.3,1.0);
       --solved: #01B069;
 
-      /* Concrete grain (inline SVG, no network) */
+      /* prime energy palette (mirrors the shader ramp) */
+      --pe-violet: #8b3dff;
+      --pe-ember: #ff7a1a;
+      --pe-gold: #ffd469;
+
       --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.55'/></svg>");
     }
 
@@ -35,11 +40,12 @@
       -webkit-font-smoothing:antialiased; touch-action:manipulation;
     }
 
-    /* SCREENS */
     .screen { position:fixed; inset:0; display:flex; flex-direction:column; transition:opacity 0.4s ease; background:var(--bg); }
     .screen.hidden { opacity:0; pointer-events:none; }
 
-    /* BRAND HEADER */
+    /* ══════════════════════════════════════════════════════════════
+       2 · BRAND CHROME
+       ══════════════════════════════════════════════════════════════ */
     .fixed-logo {
       position:absolute; top:14px; left:22px; z-index:200;
       font-weight:900; font-size:1.4rem; color:rgba(255,255,255,0.35); letter-spacing:-0.05em;
@@ -58,8 +64,16 @@
       background:linear-gradient(135deg,#d8d8d8,#a0a0a0,#d0d0d0);
       box-shadow:0 1px 3px rgba(0,0,0,0.2); vertical-align:baseline;
     }
+    .app-footer {
+      text-align:center; padding:16px; font-size:0.62rem; font-weight:700;
+      letter-spacing:1.5px; text-transform:uppercase; color:var(--brand-text-light);
+      background:var(--brand-bg); flex-shrink:0; z-index:10;
+    }
+    .altar-screen-footer { background:#131413; border-top:1px solid #242523; color:#4e504d; }
 
-    /* ═══════════ GRID SCREEN (light) ═══════════ */
+    /* ══════════════════════════════════════════════════════════════
+       3 · GRID SCREEN (light)
+       ══════════════════════════════════════════════════════════════ */
     #grid-screen { background:var(--brand-bg); color:var(--brand-text-main); }
     .grid-screen-header {
       display:flex; align-items:center; justify-content:space-between;
@@ -96,34 +110,25 @@
     .nc.locked .nc-num { color:var(--brand-text-light); }
     .nc-trinkets { position:relative; display:flex; justify-content:center; flex-wrap:wrap; gap:4px; width:100%; margin-top:8px; }
     .nc-t { width:20px; height:24px; font-size:10px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0; position:relative; }
-    /* composite chip: dark machined steel */
-    .nc-t.nc-tc {
+    .nc-t.nc-tc { /* mini metal chunk */
       background:
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 3px),
-        linear-gradient(135deg,#b9bec6,#8e939c 40%,#70757e 65%,#9ba0a9);
-      color:rgba(30,32,38,0.9);
-      border:1px solid rgba(0,0,0,0.2);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -2px 3px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.14);
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 3px),
+        linear-gradient(135deg,#c2c7cf,#959aa3 40%,#767b84 65%,#a2a7b0);
+      color:rgba(28,30,36,0.92);
+      border:1px solid rgba(0,0,0,0.25);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -2px 2px rgba(0,0,0,0.3), inset 2px 0 1px rgba(255,255,255,0.2), inset -2px 0 2px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.18);
     }
-    /* unity chip: glass */
-    .nc-t.nc-tm {
-      background:
-        linear-gradient(160deg, rgba(255,255,255,0.85) 0%, rgba(226,242,250,0.55) 40%, rgba(178,214,232,0.5) 100%);
+    .nc-t.nc-tm { /* mini glass one */
+      background: linear-gradient(160deg, rgba(255,255,255,0.85) 0%, rgba(226,242,250,0.55) 40%, rgba(178,214,232,0.5) 100%);
       border:1px solid rgba(110,160,185,0.55);
       color:rgba(20,45,60,0.75);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -3px 5px rgba(60,120,155,0.18), 0 2px 4px rgba(0,0,0,0.1);
     }
     .nc-overflow { font-size:11px; font-weight:900; color:var(--brand-text-light); align-self:center; }
 
-    /* BRAND FOOTER */
-    .app-footer {
-      text-align:center; padding:16px; font-size:0.62rem; font-weight:700;
-      letter-spacing:1.5px; text-transform:uppercase; color:var(--brand-text-light);
-      background:var(--brand-bg); flex-shrink:0; z-index:10;
-    }
-    .altar-screen-footer { background:#131413; border-top:1px solid #242523; color:#4e504d; }
-
-    /* ═══════════ ALTAR HEADER ═══════════ */
+    /* ══════════════════════════════════════════════════════════════
+       4 · ALTAR HEADER NUMERAL
+       ══════════════════════════════════════════════════════════════ */
     .altar-header {
       position:absolute; top:0; left:0; right:0; z-index:150;
       display:flex; justify-content:center; align-items:center; padding:10px 0;
@@ -148,10 +153,12 @@
     }
     @keyframes celebBloom { 0% { transform:translate(-50%,-50%) scale(0); opacity:1; } 40% { transform:translate(-50%,-50%) scale(2.5); opacity:1; } 100% { transform:translate(-50%,-50%) scale(0.5); opacity:0; } }
 
-    /* ═══════════ THE VAULT (pure CSS room — no WebGL) ═══════════ */
-    /* Layout contract: --ob-base = px from altar bottom where the obelisk stands.
-       --tray-top = px from altar bottom of the altar-table surface.
-       Both are set by layoutRoom(); every overlay derives from them. Nothing is measured back. */
+    /* ══════════════════════════════════════════════════════════════
+       5 · THE VAULT — pure-CSS set. Layout contract: --ob-base (floor
+       line the obelisk stands on) and --tray-top (altar-table surface),
+       both px-from-altar-bottom, set by layoutRoom(). The rotateX floor
+       is a composited 3D layer, so every vault layer is z-stacked by hand.
+       ══════════════════════════════════════════════════════════════ */
     .altar { flex:1; position:relative; overflow:hidden; background:#161715; --ob-base:200px; --tray-top:56px; }
     .vault { position:absolute; inset:0; pointer-events:none; }
 
@@ -165,7 +172,6 @@
       content:''; position:absolute; inset:0; background-image:var(--grain); background-size:220px;
       opacity:0.24; mix-blend-mode:overlay;
     }
-    /* formwork seams on the back wall */
     .vault-wall::after {
       content:''; position:absolute; inset:0;
       background:
@@ -176,8 +182,6 @@
       mask-image:radial-gradient(ellipse 100% 100% at 50% 100%, #000 30%, transparent 85%);
     }
 
-    /* NOTE: the rotateX floor is a composited 3D layer — without explicit z-index it
-       paints over later siblings in Chromium, so every vault layer is stacked by hand. */
     .vault-floor-wrap {
       position:absolute; left:0; right:0; bottom:0; height:calc(var(--ob-base) + 26px);
       overflow:hidden; z-index:1;
@@ -197,7 +201,6 @@
       content:''; position:absolute; inset:0; background-image:var(--grain); background-size:220px;
       opacity:0.32; mix-blend-mode:overlay;
     }
-    /* darkening toward the viewer + horizon haze */
     .vault-floor-wrap::after {
       content:''; position:absolute; inset:0;
       background:linear-gradient(180deg, rgba(22,23,21,0.6) 0%, transparent 30%, transparent 58%, rgba(10,10,9,0.62) 100%);
@@ -207,8 +210,6 @@
       position:absolute; left:0; right:0; bottom:calc(var(--ob-base) + 2px); height:52px; z-index:2;
       background:linear-gradient(180deg, transparent 0%, rgba(8,9,8,0.42) 55%, transparent 100%);
     }
-
-    /* spotlight beam + pool centered on the obelisk */
     .vault-beam {
       position:absolute; left:50%; top:0; bottom:calc(var(--ob-base) - 30px); width:min(64vw, 520px); z-index:2;
       transform:translateX(-50%);
@@ -222,7 +223,6 @@
       background:radial-gradient(ellipse 50% 44% at 50% 50%, rgba(240,242,235,0.2) 0%, rgba(240,242,235,0.07) 45%, transparent 72%);
     }
 
-    /* stone plinth the obelisk stands on */
     .vault-plinth { position:absolute; left:50%; bottom:calc(var(--ob-base) - 21px); width:158px; height:42px; transform:translateX(-50%); z-index:3; }
     .vault-plinth .pl-side {
       position:absolute; left:9px; right:9px; top:15px; height:17px; border-radius:3px;
@@ -233,8 +233,7 @@
     }
     .vault-plinth .pl-top {
       position:absolute; left:0; right:0; top:0; height:30px; border-radius:50%;
-      background:
-        radial-gradient(ellipse 100% 100% at 50% 36%, #5e605a 0%, #4d4f4a 55%, #41423e 100%);
+      background:radial-gradient(ellipse 100% 100% at 50% 36%, #5e605a 0%, #4d4f4a 55%, #41423e 100%);
       box-shadow:inset 0 2px 3px rgba(255,255,255,0.14), inset 0 -3px 5px rgba(0,0,0,0.3);
     }
     .vault-plinth .pl-top::before {
@@ -246,7 +245,6 @@
       z-index:-1;
     }
 
-    /* concrete altar table the factor tray sits on */
     .altar-table { position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:min(88vw, 580px); height:calc(var(--tray-top) + 12px); z-index:4; }
     .altar-table .tb-top {
       position:absolute; left:0; right:0; bottom:calc(var(--tray-top) - 12px); height:12px; border-radius:3px 3px 0 0;
@@ -265,12 +263,14 @@
       background:radial-gradient(ellipse 55% 60% at 50% 100%, rgba(238,240,234,0.09) 0%, transparent 70%);
     }
 
-    /* ═══════════ OBELISK STAGE ═══════════ */
-    /* .seg-zoom is a 0×0 anchor at screen-center-x on the plinth. Everything inside
-       is positioned in unscaled "u" pixels; the anchor scales around its own point. */
+    /* ══════════════════════════════════════════════════════════════
+       6 · OBELISK STAGE — .seg-zoom is a 0×0 anchor at screen-center-x
+       on the plinth; contents are laid out in unscaled u-pixels and the
+       anchor scales around its own point. No measurement, no drift.
+       ══════════════════════════════════════════════════════════════ */
     .seg-zoom { position:absolute; left:50%; bottom:var(--ob-base); width:0; height:0; transform-origin:50% 100%; z-index:110; }
     .seg-stage { position:absolute; left:0; bottom:0; display:flex; align-items:flex-end; }
-    .seg-stage::after { /* contact shadow under the piece(s) */
+    .seg-stage::after {
       content:''; position:absolute; left:50%; bottom:-7px; transform:translateX(-50%);
       width:112%; height:18px; border-radius:50%;
       background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.22) 50%, transparent 75%);
@@ -279,67 +279,92 @@
     .seg-stage > .blk { position:relative; z-index:1; }
     .anim-overlay { position:absolute; left:0; bottom:0; z-index:112; }
 
-    /* ═══════════ MATERIALS ═══════════ */
-    .blk { position:relative; flex-shrink:0; touch-action:none; cursor:grab; border-radius:3px; }
+    /* ══════════════════════════════════════════════════════════════
+       7 · MATERIALS
+       ══════════════════════════════════════════════════════════════ */
+    .blk { position:relative; flex-shrink:0; touch-action:none; cursor:grab; border-radius:4px; }
 
-    /* — Machined steel (composite) — */
+    /* ── 7a · CHUNKY BRUSHED METAL (composite) ─────────────────────
+       Thick machined slab: chamfered bevel frame (.bev child), coarse
+       vertical brushing, heavy shadow, engraved unit grooves. */
     .blk-c, .fs.fc {
       background:
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px),
-        linear-gradient(90deg, #a9aeb6 0%, #d3d7dd 14%, #9298a1 32%, #c3c8cf 52%, #83898f 74%, #b6bbc2 100%);
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 1px, transparent 1px 2px, rgba(0,0,0,0.03) 2px 3px, transparent 3px 4px),
+        linear-gradient(90deg, #5d616a 0%, #c6cad2 9%, #b0b5be 22%, #e0e4ea 38%, #a9aeb7 55%, #c9ced5 70%, #878c95 87%, #51555d 100%);
       box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.42),
-        inset 0 -3px 7px rgba(0,0,0,0.3),
-        inset 2px 0 5px rgba(255,255,255,0.16),
-        inset -2px 0 6px rgba(0,0,0,0.24),
-        0 14px 26px rgba(0,0,0,0.5),
-        0 4px 8px rgba(0,0,0,0.4);
+        inset 0 0 24px rgba(0,0,0,0.12),
+        0 18px 30px rgba(0,0,0,0.55),
+        0 5px 10px rgba(0,0,0,0.45);
+      border-radius:3px;
     }
-    .blk-c::before { /* soft top-light on the face */
-      content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
-      background:radial-gradient(ellipse 130% 60% at 50% 0%, rgba(255,255,255,0.2) 0%, transparent 55%);
+    .blk-c::before { /* broad anisotropic highlight that reads as milled metal */
+      content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:1;
+      background:
+        radial-gradient(ellipse 140% 46% at 50% -4%, rgba(255,255,255,0.30) 0%, transparent 60%),
+        radial-gradient(ellipse 160% 40% at 50% 104%, rgba(0,0,0,0.28) 0%, transparent 62%);
+    }
+    .bev { /* chamfer frame — different light per side sells thickness */
+      position:absolute; inset:0; border-radius:3px; pointer-events:none; z-index:2;
+      border-top:3px solid rgba(255,255,255,0.42);
+      border-left:3px solid rgba(255,255,255,0.17);
+      border-right:3px solid rgba(26,29,34,0.42);
+      border-bottom:4px solid rgba(12,14,17,0.52);
+    }
+    .bev::after { /* inner machined line just inside the chamfer */
+      content:''; position:absolute; inset:0; border-radius:2px;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
     }
 
-    /* — Molten ember (prime) — animated via pseudo opacity/transform only */
+    /* ── 7b · PRIME VESSEL — elemental energy in super-glass ───────
+       The energy itself is a WebGL plasma blitted into .plasma; the CSS
+       here is only the containment vessel: thick glass walls, edge
+       refraction, top specular, cool rim, outer bloom. */
     .blk-p, .fs.fp {
-      background:
-        radial-gradient(circle at 50% 44%, rgba(255,238,176,0.2) 0%, rgba(255,196,90,0.17) 18%, rgba(255,140,40,0.16) 36%, rgba(190,70,16,0.13) 55%, rgba(44,15,6,0.6) 76%, rgba(7,3,2,0.98) 100%),
-        #0a0505;
-      border:1px solid rgba(255,170,90,0.26);
+      background:#05030a;
+      border:1px solid rgba(158,196,238,0.4);
+      border-radius:6px;
+      overflow:hidden;
       box-shadow:
-        inset 0 0 26px rgba(255,180,70,0.16),
-        0 0 22px rgba(255,140,50,0.17),
-        0 0 52px rgba(255,90,20,0.1),
-        0 12px 24px rgba(0,0,0,0.55);
-      overflow:hidden; border-radius:4px;
+        inset 0 0 0 2px rgba(198,224,252,0.14),
+        inset 0 0 0 4px rgba(96,138,188,0.1),
+        inset 0 0 18px rgba(139,61,255,0.14),
+        0 0 18px rgba(139,61,255,0.3),
+        0 0 44px rgba(139,61,255,0.16),
+        0 0 80px rgba(255,122,26,0.1),
+        0 14px 28px rgba(0,0,0,0.62);
     }
-    .blk-p::before, .fs.fp::before { /* molten bloom */
-      content:''; position:absolute; inset:2px; border-radius:2px; pointer-events:none; z-index:1;
+    .blk-p .plasma { position:absolute; inset:3px; width:calc(100% - 6px); height:calc(100% - 6px); border-radius:4px; display:block; z-index:1; }
+    .blk-p::before { /* glass optics above the energy */
+      content:''; position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:6px;
       background:
-        radial-gradient(circle at 50% 46%, rgba(255,246,198,0.5) 0%, rgba(255,214,112,0.4) 14%, rgba(255,160,50,0.34) 30%, rgba(234,92,16,0.24) 50%, rgba(92,22,8,0.08) 70%, transparent 84%),
-        radial-gradient(circle at 34% 30%, rgba(255,218,120,0.2) 0%, transparent 36%),
-        radial-gradient(circle at 66% 66%, rgba(255,140,38,0.18) 0%, transparent 34%);
-      mix-blend-mode:screen;
-      animation:emberBloom 1.9s ease-in-out infinite alternate;
+        linear-gradient(113deg, transparent 6%, rgba(255,255,255,0.34) 11%, rgba(255,255,255,0.05) 20%, transparent 27%),
+        linear-gradient(113deg, transparent 62%, rgba(255,255,255,0.12) 68%, transparent 75%),
+        linear-gradient(180deg, rgba(255,255,255,0.26) 0%, transparent 9%),
+        linear-gradient(0deg, rgba(122,158,214,0.22) 0%, transparent 10%),
+        radial-gradient(130% 100% at 50% 0%, transparent 76%, rgba(146,192,255,0.13) 100%);
+      box-shadow:
+        inset 1px 0 0 rgba(255,255,255,0.30),
+        inset -1px 0 0 rgba(150,180,230,0.26),
+        inset 0 -1px 0 rgba(150,180,230,0.2);
     }
-    .blk-p::after, .fs.fp::after { /* drifting heat */
-      content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:2;
+    .blk-p::after { /* unit ribs cast in the glass */
+      content:''; position:absolute; inset:0; z-index:4; pointer-events:none; border-radius:6px;
+      background:repeating-linear-gradient(180deg,
+        transparent 0 calc(var(--u) - 2px),
+        rgba(6,4,14,0.5) calc(var(--u) - 2px) calc(var(--u) - 1px),
+        rgba(190,215,255,0.13) calc(var(--u) - 1px) var(--u));
+      background-position:0 100%;
+    }
+    /* fallback when WebGL is unavailable: CSS ember core */
+    .no-plasma .blk-p, .no-plasma .fs.fp {
       background:
-        radial-gradient(circle at 42% 60%, rgba(255,168,58,0.18) 0%, transparent 40%),
-        radial-gradient(circle at 62% 32%, rgba(255,212,118,0.14) 0%, transparent 34%);
-      mix-blend-mode:screen;
-      animation:emberDrift 2.7s ease-in-out infinite alternate;
+        radial-gradient(circle at 50% 44%, rgba(255,238,176,0.22) 0%, rgba(214,120,255,0.18) 20%, rgba(255,140,40,0.17) 38%, rgba(120,40,190,0.16) 58%, rgba(24,8,40,0.7) 78%, rgba(5,3,10,0.98) 100%),
+        #05030a;
     }
-    @keyframes emberBloom {
-      from { opacity:0.55; transform:scale(0.965) translateY(1.5px); filter:blur(2px); }
-      to   { opacity:1;    transform:scale(1.045) translateY(-1.5px); filter:blur(0.5px); }
-    }
-    @keyframes emberDrift {
-      from { opacity:0.4; transform:translate(-2px,2px) scale(1.02); }
-      to   { opacity:0.95; transform:translate(2px,-2px) scale(1.06); }
-    }
+    .no-plasma .blk-p .plasma { display:none; }
 
-    /* — Glass (unity "1") — tall-room reflection shared across a stack via --reflect-y */
+    /* ── 7c · GLASS UNITY CUBE ("1") ───────────────────────────────
+       Stacked cubes share one tall reflection via --reflect-y. */
     .glass-cube {
       position:relative; overflow:hidden; border-radius:4px; isolation:isolate;
       background-image:
@@ -370,98 +395,101 @@
       box-shadow:inset 0 1px 0 rgba(255,255,255,0.75);
     }
 
-    /* — MIRROR (prime trinket) — a silvered mirror in a machined bezel.
-       The numeral casts a reflection in the glass. */
+    /* ── 7d · THE MIRROR (prime trinket) ───────────────────────────
+       A real mirror: machined frame, silvered face that reflects the
+       vault itself (wall / spotlight / floor horizon), the numeral's
+       reflection, star glints, and a travelling sheen. */
     .mirror-trinket {
       position:relative; border-radius:5px; overflow:hidden; flex-shrink:0;
       display:flex; align-items:center; justify-content:center;
-      background:
-        linear-gradient(118deg, #eef3f8 0%, #c3ccd8 15%, #98a2b2 30%, #e8eef6 46%, #a8b2c0 62%, #f0f5fa 80%, #aeb7c3 100%);
-      border:1px solid rgba(12,14,18,0.85);
+      background:linear-gradient(135deg, #d5d9df 0%, #8d929b 30%, #62666e 52%, #9ba0a8 74%, #dfe3e9 100%);
+      border:1px solid rgba(10,12,15,0.9);
       box-shadow:
-        inset 0 0 0 2px rgba(216,223,232,0.95),
-        inset 0 0 0 3px rgba(84,92,104,0.65),
-        inset 0 8px 12px rgba(255,255,255,0.4),
-        inset 0 -8px 14px rgba(58,78,108,0.3),
-        0 6px 14px rgba(0,0,0,0.5);
+        inset 0 1px 0 rgba(255,255,255,0.5),
+        0 8px 16px rgba(0,0,0,0.55),
+        0 2px 4px rgba(0,0,0,0.4);
     }
-    .mirror-trinket::before { /* fixed diagonal glare band */
-      content:''; position:absolute; inset:3px; border-radius:3px; pointer-events:none; z-index:1;
-      background:linear-gradient(118deg, transparent 12%, rgba(255,255,255,0.65) 24%, rgba(255,255,255,0.1) 34%, transparent 44%, transparent 60%, rgba(255,255,255,0.35) 70%, transparent 80%);
+    .m-face { /* the silvered glass, inset in the frame — reflects the room */
+      position:absolute; inset:3px; border-radius:3px; overflow:hidden; z-index:1;
+      background:
+        /* convex vignette */
+        radial-gradient(130% 130% at 50% 44%, transparent 58%, rgba(30,42,60,0.34) 100%),
+        /* spotlight cone, mirrored */
+        linear-gradient(192deg, transparent 22%, rgba(255,255,255,0.55) 38%, rgba(255,255,255,0.16) 52%, transparent 64%),
+        /* diagonal specular pair */
+        linear-gradient(118deg, transparent 14%, rgba(255,255,255,0.92) 23%, rgba(255,255,255,0.25) 33%, transparent 43%, transparent 58%, rgba(255,255,255,0.6) 67%, transparent 76%),
+        /* the room, silvered: pale wall, hot horizon flash, cool floor */
+        linear-gradient(180deg, #b3bfce 0%, #c9d5e2 40%, #f2f8fd 56%, #8b9cae 60%, #a4b2c1 76%, #8e9dab 100%);
+      box-shadow:
+        inset 0 1px 2px rgba(0,0,0,0.4),
+        inset 0 0 0 1px rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(255,255,255,0.2);
     }
-    .mirror-trinket::after { /* travelling sheen */
-      content:''; position:absolute; top:-70%; bottom:-70%; left:0; width:34%; pointer-events:none; z-index:2;
-      background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.06) 70%, transparent 100%);
-      transform:rotate(16deg) translateX(-230%);
+    .m-face::before { /* star glint, upper-left */
+      content:''; position:absolute; top:12%; left:14%; width:22%; height:22%;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.25) 18%, transparent 40%),
+        linear-gradient(0deg, transparent 46%, rgba(255,255,255,0.85) 50%, transparent 54%),
+        linear-gradient(90deg, transparent 46%, rgba(255,255,255,0.85) 50%, transparent 54%);
+    }
+    .m-face::after { /* travelling sheen */
+      content:''; position:absolute; top:-70%; bottom:-70%; left:0; width:34%; pointer-events:none;
+      background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.08) 70%, transparent 100%);
+      transform:rotate(16deg) translateX(-240%);
       animation:mirrorSweep 5.2s ease-in-out infinite;
     }
     @keyframes mirrorSweep {
-      0%, 58%  { transform:rotate(16deg) translateX(-230%); }
-      82%,100% { transform:rotate(16deg) translateX(500%); }
+      0%, 58%  { transform:rotate(16deg) translateX(-240%); }
+      82%,100% { transform:rotate(16deg) translateX(520%); }
     }
     .mt-num {
       position:relative; z-index:3; font-weight:900; letter-spacing:-0.04em;
-      color:#20242c; text-shadow:0 1px 0 rgba(255,255,255,0.6);
+      color:#161a21; text-shadow:0 1px 0 rgba(255,255,255,0.55), 0 0 6px rgba(255,255,255,0.2);
       transform:translateY(-14%);
     }
     .mt-refl {
-      position:absolute; z-index:1; left:0; right:0; text-align:center; top:50%;
-      font-weight:900; letter-spacing:-0.04em; color:#2c3340; opacity:0.28;
+      position:absolute; z-index:2; left:0; right:0; text-align:center; top:50%;
+      font-weight:900; letter-spacing:-0.04em; color:#10141b; opacity:0.3;
       transform:translateY(4%) scaleY(-1) skewX(-8deg);
       -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,0.9), transparent 78%);
       mask-image:linear-gradient(to top, rgba(0,0,0,0.9), transparent 78%);
       pointer-events:none;
     }
-    .mirror-trinket .mt-num, .mirror-trinket .mt-refl { font-size:0.44em; }
+    .mirror-trinket .mt-num, .mirror-trinket .mt-refl { font-size:0.42em; }
 
-    /* NUMERALS on blocks */
-    .n-stamp, .n-mirror { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-weight:900; letter-spacing:-1px; z-index:3; }
+    /* ── 7e · NUMERALS ─────────────────────────────────────────────── */
+    .n-stamp, .n-mirror { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-weight:900; letter-spacing:-1px; z-index:5; }
     .blk-pillar .n-stamp, .blk-pillar .n-glow, .blk-pillar .n-mirror {
       line-height:0.88; transform:translate(-50%, calc(-50% - 0.08em));
     }
-    .n-stamp { color:rgba(34,36,42,0.9); text-shadow:0 1px 0 rgba(255,255,255,0.35), 0 -1px 1px rgba(0,0,0,0.22); }
+    .n-stamp { color:rgba(30,33,39,0.92); text-shadow:0 1px 0 rgba(255,255,255,0.4), 0 -1px 1px rgba(0,0,0,0.25); }
     .n-mirror { color:rgba(8,10,14,0.9); text-shadow:0 1px 0 rgba(255,255,255,0.55); }
     .n-glow {
-      position:absolute; top:50%; left:50%; font-weight:900; letter-spacing:-1px; z-index:3; color:#fff;
+      position:absolute; top:50%; left:50%; font-weight:900; letter-spacing:-1px; z-index:5; color:#fff;
       transform:translate(-50%,-50%);
       text-shadow:
         0 0 2px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.9),
-        0 0 16px rgba(255,228,162,0.72), 0 0 28px rgba(255,178,84,0.48),
-        0 0 48px rgba(255,120,32,0.3), 0 0 72px rgba(140,40,10,0.18);
+        0 0 18px rgba(255,222,150,0.7), 0 0 30px rgba(214,130,255,0.5),
+        0 0 52px rgba(139,61,255,0.35), 0 0 80px rgba(80,20,140,0.2);
     }
 
-    /* engraved unit divisions on staged pieces — a 12-pillar is visibly 12 units */
-    .seg-stage .blk::after, .anim-overlay .blk.blk-c::after, .anim-overlay .blk.blk-m::after {
-      content:''; position:absolute; inset:0; pointer-events:none; z-index:2; border-radius:inherit;
+    /* engraved unit grooves on staged metal / glass pieces */
+    .seg-stage .blk-c .grooves, .anim-overlay .blk-c .grooves,
+    .seg-stage .glass-cube .grooves, .anim-overlay .glass-cube .grooves {
+      position:absolute; inset:0; pointer-events:none; z-index:3; border-radius:inherit;
       background:repeating-linear-gradient(180deg,
         transparent 0 calc(var(--u) - 2px),
-        rgba(0,0,0,0.22) calc(var(--u) - 2px) calc(var(--u) - 1px),
-        rgba(255,255,255,0.10) calc(var(--u) - 1px) var(--u));
+        rgba(0,0,0,0.26) calc(var(--u) - 2px) calc(var(--u) - 1px),
+        rgba(255,255,255,0.12) calc(var(--u) - 1px) var(--u));
       background-position:0 100%;
     }
-    .seg-stage .blk-p::after { /* prime pieces keep their heat layer — seams ride on top of it */
-      background:
-        repeating-linear-gradient(180deg,
-          transparent 0 calc(var(--u) - 2px),
-          rgba(0,0,0,0.3) calc(var(--u) - 2px) calc(var(--u) - 1px),
-          rgba(255,214,140,0.08) calc(var(--u) - 1px) var(--u)),
-        radial-gradient(circle at 42% 60%, rgba(255,168,58,0.18) 0%, transparent 40%),
-        radial-gradient(circle at 62% 32%, rgba(255,212,118,0.14) 0%, transparent 34%);
-      background-position:0 100%, 0 0, 0 0;
-      mix-blend-mode:normal;
-      animation:none;
-      opacity:1;
-    }
 
-    /* anim-overlay pieces: same materials, but loops off (cheap during physics) */
-    .lite::before, .lite::after { animation:none !important; }
-
-    /* build-mode reflection ghosts (a mirror's copy, before it solidifies) */
+    /* anim-overlay pieces: loops off during physics */
+    .lite .m-face::after { animation:none; }
+    /* build-mode reflection ghosts (a mirror's copy before it solidifies) */
     .anim-overlay .blk { transition:opacity 0.35s ease, filter 0.35s ease; }
     .blk.reflection { opacity:0.42; filter:grayscale(1) brightness(2.05) contrast(0.85) drop-shadow(0 0 8px rgba(170,205,255,0.45)); }
-    .mirror-flash { /* sheen that sweeps the base when a mirror activates */
-      position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:6; border-radius:inherit;
-    }
+    .mirror-flash { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:6; border-radius:inherit; }
     .mirror-flash::before {
       content:''; position:absolute; top:-40%; bottom:-40%; left:-60%; width:55%;
       background:linear-gradient(100deg, transparent, rgba(235,244,255,0.85) 50%, transparent);
@@ -470,7 +498,9 @@
     }
     @keyframes mflash { to { left:130%; } }
 
-    /* ═══════════ HINGES (bead door-hinge) ═══════════ */
+    /* ══════════════════════════════════════════════════════════════
+       8 · HINGES + HINTS
+       ══════════════════════════════════════════════════════════════ */
     .hz {
       position:absolute; left:-14px; width:28px; height:28px;
       transform:translate(0,-50%) scale(var(--hzs,1)); transform-origin:50% 50%;
@@ -504,7 +534,9 @@
     }
     @keyframes pulseHint { 0% { opacity:0.3; } 100% { opacity:1; } }
 
-    /* ═══════════ FACTOR TRAY (on the altar table) ═══════════ */
+    /* ══════════════════════════════════════════════════════════════
+       9 · FACTOR TRAY · DEX · LEDGER · BUILD BITS
+       ══════════════════════════════════════════════════════════════ */
     .f-tray {
       position:absolute; bottom:calc(var(--tray-top) - 1px); left:50%; transform:translateX(-50%);
       width:min(86vw, 560px); padding:4px 8px; display:flex; gap:6px; flex-wrap:wrap;
@@ -517,15 +549,9 @@
     }
     .fs.empty { display:none; }
     .fs.fc { border-radius:3px; }
-    .fs.fc > div { position:relative; z-index:2; color:rgba(34,36,42,0.9); font-weight:900; text-shadow:0 1px 0 rgba(255,255,255,0.35); }
-    .fs.fp { border-radius:4px; }
-    .fs.fp > div {
-      position:relative; z-index:3; color:#fff; font-weight:900;
-      text-shadow:0 0 2px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.85), 0 0 18px rgba(255,200,110,0.6);
-    }
+    .fs.fc > div { position:relative; z-index:2; color:rgba(30,33,39,0.92); font-weight:900; text-shadow:0 1px 0 rgba(255,255,255,0.4); }
     .fs.glass-cube > .n-mirror { position:relative; top:auto; left:auto; transform:none; }
 
-    /* ═══════════ PRIME DEX ═══════════ */
     .dex-container {
       flex-shrink:0; background:#141513; border-top:1px solid #262724;
       position:relative; height:72px; display:flex; flex-direction:column;
@@ -555,7 +581,6 @@
       100% { filter:brightness(1); transform:translateY(0) scale(1); }
     }
 
-    /* ═══════════ BUILD SCREEN ═══════════ */
     .build-ledger {
       display:flex; align-items:center; justify-content:center; gap:5px; padding:5px 8px; min-height:30px;
       flex-shrink:0; flex-wrap:wrap; background:#141513; border-top:1px solid #262724; z-index:20;
@@ -573,7 +598,6 @@
       box-shadow:0 0 8px rgba(255,50,40,0.6), 0 0 20px rgba(255,50,40,0.28);
       pointer-events:none; z-index:115;
     }
-
     .bundo-zone { position:absolute; left:-4px; right:-4px; height:28px; z-index:25; cursor:pointer; display:flex; align-items:center; transform:translateY(-50%); touch-action:none; }
     .bundo-mark {
       width:44%; height:2px; margin:0 auto; border-radius:1px; opacity:0.55; transition:opacity 0.15s, box-shadow 0.12s, background 0.12s;
@@ -582,24 +606,24 @@
     }
     .bundo-zone:hover .bundo-mark { opacity:0.95; }
     .bundo-zone:active .bundo-mark { opacity:1; background:linear-gradient(90deg, transparent, rgba(200,210,220,0.45) 35%, rgba(100,110,120,0.35) 50%, rgba(200,210,220,0.4) 65%, transparent); box-shadow:0 0 6px rgba(255,255,255,0.15); }
-
     .drag-ghost {
       position:fixed; z-index:9500; pointer-events:none;
       width:44px; height:44px; font-size:44px;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,0.6));
     }
 
-    /* ═══════════ CEREMONY / FX ═══════════ */
+    /* ══════════════════════════════════════════════════════════════
+       10 · FX
+       ══════════════════════════════════════════════════════════════ */
     .fade-overlay { position:fixed; inset:0; background:#161715; opacity:0; pointer-events:none; z-index:8000; transition:opacity 0.4s ease; }
     .fade-overlay.fading { opacity:1; }
     .affirm-flash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:9999; transition:opacity 0.3s; }
     .affirm-flash.show { opacity:0.1; }
-    .shatter-piece { position:absolute; pointer-events:none; z-index:8500; border-radius:1px; }
+    .shatter-piece { position:fixed; pointer-events:none; z-index:8500; border-radius:1px; }
     .shatter-piece.shard { background:linear-gradient(135deg,rgba(210,225,235,0.92),rgba(150,170,185,0.7)); border:1px solid rgba(255,255,255,0.35); }
-    .shatter-piece.spark { border-radius:50%; background:radial-gradient(circle,#fff 0%,rgba(255,200,80,0.9) 40%,rgba(255,100,20,0.6) 70%,transparent 100%); box-shadow:0 0 4px rgba(255,160,40,0.8),0 0 8px rgba(255,80,20,0.4); }
-    .shatter-piece.ember { border-radius:50%; background:rgba(255,100,40,0.9); box-shadow:0 0 3px rgba(255,60,20,0.6); }
+    .shatter-piece.spark { border-radius:50%; background:radial-gradient(circle,#fff 0%,rgba(214,150,255,0.9) 40%,rgba(139,61,255,0.6) 70%,transparent 100%); box-shadow:0 0 4px rgba(200,140,255,0.8),0 0 8px rgba(139,61,255,0.4); }
+    .shatter-piece.ember { border-radius:50%; background:rgba(255,122,40,0.9); box-shadow:0 0 3px rgba(255,80,20,0.6); }
     @keyframes shatterFly { 0% { opacity:1; transform:translate(0,0) rotate(0deg); } 100% { opacity:0; transform:var(--tx) rotate(var(--rot)); } }
-
     .twin-clone { position:fixed; z-index:9000; pointer-events:none; transform-origin:center center; border-radius:5px; }
     .twin-clone .cl-layer { position:absolute; inset:0; border-radius:inherit; }
     .twin-clone .cl-num {
@@ -608,8 +632,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .mirror-trinket::after, .blk-p::before, .blk-p::after, .fs.fp::before, .fs.fp::after,
-      .altar-numeral.solved, .hz.nudge::after, .drag-hint-bar { animation:none !important; }
+      .m-face::after, .altar-numeral.solved, .hz.nudge::after, .drag-hint-bar { animation:none !important; }
     }
   </style>
 </head>
@@ -642,11 +665,11 @@
         <button class="gmt-btn" id="gmt-build" aria-label="Build mode"><svg viewBox="0 0 32 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="gmtPmir" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4f8fc"/><stop offset="30%" stop-color="#aeb8c6"/><stop offset="55%" stop-color="#eef3f9"/><stop offset="100%" stop-color="#8c96a4"/></linearGradient>
-            <radialGradient id="gmtPglow" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="rgba(255,240,200,0.9)"/><stop offset="55%" stop-color="rgba(255,140,40,0.35)"/><stop offset="100%" stop-color="rgba(40,20,10,0.5)"/></radialGradient>
+            <radialGradient id="gmtPglow" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="rgba(238,220,255,0.9)"/><stop offset="55%" stop-color="rgba(160,90,255,0.35)"/><stop offset="100%" stop-color="rgba(24,10,40,0.5)"/></radialGradient>
           </defs>
           <g transform="translate(14,1)">
-            <rect x="3" y="16" width="10" height="9" rx="0.8" fill="#1a1010" stroke="rgba(255,160,80,0.35)" stroke-width="0.6"/>
-            <rect x="3" y="16" width="10" height="9" rx="0.8" fill="url(#gmtPglow)" opacity="0.5"/>
+            <rect x="3" y="16" width="10" height="9" rx="0.8" fill="#120a1c" stroke="rgba(170,120,255,0.4)" stroke-width="0.6"/>
+            <rect x="3" y="16" width="10" height="9" rx="0.8" fill="url(#gmtPglow)" opacity="0.55"/>
             <g transform="translate(8,16) rotate(-60)">
               <rect x="-5" y="-11" width="10" height="11" rx="0.8" fill="url(#gmtPmir)" stroke="rgba(40,44,52,0.7)" stroke-width="0.7"/>
               <rect x="-4" y="-10" width="3.5" height="9" rx="0.5" fill="rgba(255,255,255,0.55)"/>
@@ -729,9 +752,13 @@
 
 <script>
 'use strict';
-// ════════════════════════════════════════
-// UTILS
-// ════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════
+   PRIME ALTAR v3 — from scratch, self-contained.
+   Modules: UTILS · MOTION · PLASMA · STATE · LAYOUT · MATERIALS ·
+   NAV · GRID · DEX · CEREMONY · FACTOR · BUILD · FX · INIT
+   ════════════════════════════════════════════════════════════════ */
+
+// ── UTILS ────────────────────────────────────────────────────────
 const $id = id => document.getElementById(id);
 const isPrime = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
 const allFactors = n => { const f = [1]; for (let i = 2; i <= n; i++) if (n % i === 0) f.push(i); return f; };
@@ -742,9 +769,7 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ════════════════════════════════════════
-// MOTION — tiny rAF tween engine (the only physics dependency)
-// ════════════════════════════════════════
+// ── MOTION — rAF tween engine, the only physics dependency ──────
 const EASES = {
   linear: t => t,
   p2out: t => 1 - (1 - t) * (1 - t),
@@ -761,7 +786,6 @@ const EASES = {
   },
   elasticout: t => { const c4 = (2 * Math.PI) / 3; return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1; },
 };
-
 function tween(opts) {
   const dur = Math.max(1, (opts.dur ?? 600) * (REDUCED ? 0.45 : 1));
   const delay = (opts.delay ?? 0) * (REDUCED ? 0.45 : 1);
@@ -786,21 +810,186 @@ function tween(opts) {
 }
 const after = (ms, fn) => setTimeout(fn, REDUCED ? ms * 0.45 : ms);
 
-// ════════════════════════════════════════
-// STATE + PERSISTENCE
-// ════════════════════════════════════════
+// ── PLASMA — the elemental energy inside every prime ────────────
+// One offscreen WebGL quad renders domain-warped plasma each frame;
+// every visible prime block owns a small 2D canvas that blits from it,
+// so the energy rides inside CSS transforms with zero alignment work.
+const PLASMA = (() => {
+  const W = 176, H = 416;
+  let glc = null, gl = null, uTime = null, uSurge = null, ok = false;
+  let targets = [];           // {cv, ctx, flip, shift, screen}
+  let running = false, surge = 0, t0 = performance.now(), instCount = 0;
+
+  const FRAG = `
+precision mediump float;
+uniform float uTime;
+uniform float uSurge;
+float hash(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f*f*(3.0-2.0*f);
+  float a = hash(i), b = hash(i+vec2(1.0,0.0)), c = hash(i+vec2(0.0,1.0)), d = hash(i+vec2(1.0,1.0));
+  return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for(int i=0;i<5;i++){ v += a*noise(p); p = p*2.03 + vec2(17.3, 9.1); a *= 0.55; }
+  return v;
+}
+void main(){
+  vec2 uv = gl_FragCoord.xy / vec2(${W}.0, ${H}.0);
+  float t = uTime*0.11;
+  vec2 p = vec2(uv.x*2.0, uv.y*4.2 - uTime*0.16);
+  vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, 1.3) - t*0.6));
+  vec2 r = vec2(fbm(p + 2.4*q + vec2(1.7, 9.2) + t*0.35), fbm(p + 2.4*q + vec2(8.3, 2.8) - t*0.25));
+  float f = fbm(p + 2.6*r);
+  float cx = smoothstep(0.66, 0.1, abs(uv.x-0.5));
+  float e = f*0.68 + cx*0.34 + uSurge*0.38;
+  float ridge = 1.0 - abs(2.0*fbm(p*1.7 + r*1.4) - 1.0);
+  vec3 deep   = vec3(0.012, 0.004, 0.045);
+  vec3 violet = vec3(0.38, 0.09, 0.92);
+  vec3 magenta= vec3(0.82, 0.15, 0.62);
+  vec3 ember  = vec3(1.00, 0.42, 0.08);
+  vec3 gold   = vec3(1.00, 0.84, 0.38);
+  vec3 white  = vec3(1.00, 0.98, 0.93);
+  vec3 col = mix(deep, violet, smoothstep(0.3, 0.6, e));
+  col = mix(col, magenta, smoothstep(0.52, 0.7, e));
+  col = mix(col, ember, smoothstep(0.62, 0.82, e));
+  col = mix(col, gold, smoothstep(0.76, 0.94, e));
+  col = mix(col, white, smoothstep(0.9, 1.06, e));
+  col += violet * pow(ridge, 8.0) * (0.4 + uSurge*0.6);
+  col += gold * pow(ridge, 18.0) * 0.9;
+  float edge = smoothstep(0.0, 0.16, uv.x) * smoothstep(1.0, 0.84, uv.x);
+  col *= mix(0.34, 1.0, edge);
+  col *= 0.92 + 0.08*sin(uTime*1.7 + uv.y*6.0);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+  const VERT = 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }';
+
+  function init() {
+    try {
+      glc = document.createElement('canvas');
+      glc.width = W; glc.height = H;
+      gl = glc.getContext('webgl', { preserveDrawingBuffer: true, antialias: false, depth: false });
+      if (!gl) return false;
+      const sh = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src); gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+        return s;
+      };
+      const prog = gl.createProgram();
+      gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'a');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      uTime = gl.getUniformLocation(prog, 'uTime');
+      uSurge = gl.getUniformLocation(prog, 'uSurge');
+      gl.viewport(0, 0, W, H);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function frame() {
+    if (!running) return;
+    targets = targets.filter(t => t.cv.isConnected);
+    if (targets.length === 0 || document.hidden) { running = false; return; }
+    const now = performance.now();
+    const t = ((now - t0) / 1000) * (REDUCED ? 0.12 : 1);
+    surge = Math.max(0, surge - 0.016);
+    gl.uniform1f(uTime, t);
+    gl.uniform1f(uSurge, surge);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    for (const tg of targets) {
+      if (tg.screen && tg.screen.classList.contains('hidden')) continue;
+      const w = tg.cv.width, h = tg.cv.height;
+      if (!w || !h) continue;
+      const c = tg.ctx;
+      c.save();
+      if (tg.flip) { c.translate(w, 0); c.scale(-1, 1); }
+      /* vertical source window gives each block its own slice of the field */
+      const sh2 = Math.max(64, H - tg.shift);
+      c.drawImage(glc, 0, tg.shift, W, sh2, 0, 0, w, h);
+      c.restore();
+    }
+    requestAnimationFrame(frame);
+  }
+  function start() {
+    if (!ok || running) return;
+    running = true;
+    requestAnimationFrame(frame);
+  }
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) start(); });
+
+  return {
+    boot() {
+      ok = init();
+      if (!ok) document.body.classList.add('no-plasma');
+      return ok;
+    },
+    available() { return ok; },
+    /** Give a prime block its energy. wPx/hPx are unscaled CSS px. */
+    attach(el, wPx, hPx) {
+      if (!ok) return null;
+      const cv = document.createElement('canvas');
+      cv.className = 'plasma';
+      cv.width = Math.max(16, Math.min(224, Math.round(wPx - 6)));
+      cv.height = Math.max(16, Math.min(520, Math.round(hPx - 6)));
+      el.appendChild(cv);
+      const n = parseInt(el.dataset.units || '0', 10) || 0;
+      instCount++;
+      targets.push({
+        cv, ctx: cv.getContext('2d'),
+        flip: instCount % 2 === 1,
+        shift: (n * 53 + instCount * 71) % Math.max(1, (H >> 1)),
+        screen: null,
+      });
+      const tg = targets[targets.length - 1];
+      queueMicrotask(() => { tg.screen = cv.closest('.screen'); });
+      start();
+      return cv;
+    },
+    surge(v) { surge = Math.max(surge, v); },
+    wake() { start(); },
+  };
+})();
+
+// ── STATE — progress store + session, with persistence ──────────
 const S = {
+  /* progress (persisted) */
   primeDex: new Set(), maxLevel: 1,
-  fDone: new Set([1]), fNum: null, fDisc: new Set(), fDiscMap: {},
-  segs: [], unitH: 44, unitW: 44, folding: false,
-  foldDir: -1, segSize: 0,
-  handleTimer: null, hingeIdleTimer: null, handleIndex: 0, handleInverted: false,
-  gridMode: 'factor', bDone: new Set([1]), bNum: null, bStack: [], bProduct: 0, bAnimating: false,
+  fDone: new Set([1]), fDiscMap: {},
+  bDone: new Set([1]),
+  /* factor session */
+  fNum: null, fDisc: new Set(), segs: [], segSize: 0,
+  foldDir: -1, handleIndex: 0, handleInverted: false,
+  fMode: 'idle',   /* idle | growing | folding | unspooling | settling */
+  handleTimer: null, hingeIdleTimer: null,
+  /* build session */
+  gridMode: 'factor', bNum: null, bStack: [], bProduct: 0,
+  bMode: 'idle',   /* idle | animating */
+  /* camera */
+  unitH: 44, unitW: 44,
   fZoom: 1, bZoom: 1, currentZoom: { fa: 1, ba: 1 },
   trayIdentityReady: true,
   _deferredRoomCelebration: null,
   _settleTw: null,
 };
+/* interaction guards derive from the mode strings */
+Object.defineProperty(S, 'folding', {
+  get() { return S.fMode === 'folding' || S.fMode === 'unspooling' || S.fMode === 'growing'; },
+});
+Object.defineProperty(S, 'bAnimating', {
+  get() { return S.bMode !== 'idle'; },
+});
 
 const SAVE_KEY = 'math-things-prime-altar-v2';
 function saveState() {
@@ -831,26 +1020,22 @@ function resetProgress() {
   renderGrid(); buildDex('grid-vp');
 }
 
-// ════════════════════════════════════════
-// ROOM LAYOUT — one deterministic source of truth
-// ════════════════════════════════════════
+// ── LAYOUT — one deterministic source of truth ───────────────────
 function layoutRoom(roomId) {
   const altar = $id(roomId);
   if (!altar) return;
   const h = altar.clientHeight || 400;
-  const obBase = Math.round(clamp(h * 0.32, 110, 300));
+  const obBase = Math.round(clamp(h * 0.32, 110, 280));
   const trayTop = Math.round(clamp(h * 0.1, 44, 84));
   altar.style.setProperty('--ob-base', obBase + 'px');
   altar.style.setProperty('--tray-top', trayTop + 'px');
 }
 function obeliskBase(roomId) {
-  const altar = $id(roomId);
-  return parseFloat(getComputedStyle(altar).getPropertyValue('--ob-base')) || 200;
+  return parseFloat(getComputedStyle($id(roomId)).getPropertyValue('--ob-base')) || 200;
 }
 function availHeight(roomId) {
-  const altar = $id(roomId);
-  const headroom = 88; /* keep the tip clear of the header numeral */
-  return Math.max(80, (altar.clientHeight || 400) - obeliskBase(roomId) - headroom);
+  const headroom = 88;
+  return Math.max(80, ($id(roomId).clientHeight || 400) - obeliskBase(roomId) - headroom);
 }
 function setZoomImmediate(roomId, z) {
   S.currentZoom[roomId] = z;
@@ -872,9 +1057,17 @@ function syncCSSUnit() {
   S.unitH = u; S.unitW = u;
 }
 
-// ════════════════════════════════════════
-// BLOCK + TRINKET FACTORIES
-// ════════════════════════════════════════
+// ── MATERIALS — block + trinket factories ────────────────────────
+function addNumeral(el, kind, text, fontPx) {
+  const num = document.createElement('div');
+  num.className = kind;
+  num.textContent = text;
+  num.style.fontSize = fontPx + 'px';
+  el.appendChild(num);
+  return num;
+}
+
+/** A staged piece of n units: glass 1 / prime vessel / metal chunk. */
 function makeBlock(units, w, h, forceComposite = false, omitNumeral = false) {
   const isGlass = units === 1 && !forceComposite;
   const p = !forceComposite && !isGlass && isPrime(units);
@@ -883,16 +1076,26 @@ function makeBlock(units, w, h, forceComposite = false, omitNumeral = false) {
   el.style.width = 'var(--u)';
   el.style.height = `calc(var(--u) * ${units})`;
   el.dataset.units = units;
+  if (p) {
+    PLASMA.attach(el, w, h);
+  } else {
+    const bev = document.createElement('div');
+    bev.className = isGlass ? 'grooves' : 'bev';
+    el.appendChild(bev);
+    if (!isGlass) {
+      const gr = document.createElement('div');
+      gr.className = 'grooves';
+      el.appendChild(gr);
+    }
+  }
   if (omitNumeral) return el;
-  const num = document.createElement('div');
-  if (isGlass) { num.className = 'n-mirror'; num.textContent = '1'; num.style.fontSize = Math.min(w * 0.55, h * 0.4, 34) + 'px'; }
-  else if (p)  { num.className = 'n-glow';   num.textContent = units; num.style.fontSize = Math.min(w * 0.6, h * 0.45, 38) + 'px'; }
-  else         { num.className = 'n-stamp';  num.textContent = units; num.style.fontSize = Math.min(w * 0.55, h * 0.4, 34) + 'px'; }
-  el.appendChild(num);
+  if (isGlass) addNumeral(el, 'n-mirror', '1', Math.min(w * 0.55, h * 0.4, 34));
+  else if (p)  addNumeral(el, 'n-glow', units, Math.min(w * 0.6, h * 0.45, 38));
+  else         addNumeral(el, 'n-stamp', units, Math.min(w * 0.55, h * 0.4, 34));
   return el;
 }
 
-/* anim-overlay piece: real material, loops disabled */
+/** Physics-overlay piece: same materials, CSS loops off. */
 function makeAnimBlock(units, w, h, matClass, withNumeral = true) {
   const cls = matClass || (units === 1 ? 'blk-m glass-cube' : isPrime(units) ? 'blk-p' : 'blk-c');
   const el = document.createElement('div');
@@ -900,54 +1103,62 @@ function makeAnimBlock(units, w, h, matClass, withNumeral = true) {
   el.style.width = 'var(--u)';
   el.style.height = `calc(var(--u) * ${units})`;
   el.dataset.units = units;
+  if (cls.includes('blk-p')) {
+    PLASMA.attach(el, w, h);
+  } else {
+    const bev = document.createElement('div');
+    bev.className = cls.includes('glass-cube') ? 'grooves' : 'bev';
+    el.appendChild(bev);
+    if (cls.includes('blk-c')) {
+      const gr = document.createElement('div');
+      gr.className = 'grooves';
+      el.appendChild(gr);
+    }
+  }
   if (withNumeral) {
-    const num = document.createElement('div');
-    if (cls.includes('glass-cube')) { num.className = 'n-mirror'; num.textContent = '1'; num.style.fontSize = Math.min(w * 0.55, h * 0.4, 34) + 'px'; }
-    else if (cls.includes('blk-p')) { num.className = 'n-glow'; num.textContent = units; num.style.fontSize = Math.min(w * 0.6, h * 0.45, 38) + 'px'; }
-    else { num.className = 'n-stamp'; num.textContent = units; num.style.fontSize = Math.min(w * 0.55, h * 0.4, 34) + 'px'; }
-    el.appendChild(num);
+    if (cls.includes('glass-cube')) addNumeral(el, 'n-mirror', '1', Math.min(w * 0.55, h * 0.4, 34));
+    else if (cls.includes('blk-p')) addNumeral(el, 'n-glow', units, Math.min(w * 0.6, h * 0.45, 38));
+    else addNumeral(el, 'n-stamp', units, Math.min(w * 0.55, h * 0.4, 34));
   }
   return el;
 }
 
-/** A prime, captured: a numbered mirror in a machined bezel. sizePx sets tile + type scale. */
+/** A captured prime: a real mirror in a machined frame. */
 function makeMirror(p, sizePx) {
   const m = document.createElement('div');
   m.className = 'mirror-trinket';
   if (sizePx) { m.style.width = sizePx + 'px'; m.style.height = sizePx + 'px'; m.style.fontSize = sizePx + 'px'; }
+  const face = document.createElement('div'); face.className = 'm-face';
   const n = document.createElement('span'); n.className = 'mt-num'; n.textContent = p;
   const r = document.createElement('span'); r.className = 'mt-refl'; r.textContent = p;
-  m.append(n, r);
+  m.append(face, r, n);
   return m;
 }
 
-/** Vertical stack of glass "1" cells share one tall reflection (see .glass-cube background-size). */
+/** Vertical stack of glass "1" cells share one tall reflection. */
 function applyGlassReflectY(el, indexInStack, stackTotal) {
   if (!el || !el.classList.contains('glass-cube')) return;
   if (!stackTotal || stackTotal <= 1) el.style.setProperty('--reflect-y', '52%');
   else el.style.setProperty('--reflect-y', `${100 - (indexInStack / (stackTotal - 1)) * 100}%`);
 }
 
-// ════════════════════════════════════════
-// IDLE HINTS
-// ════════════════════════════════════════
+// ── IDLE HINTS ───────────────────────────────────────────────────
 const OBELISK_IDLE_HINT_MS = 3000;
 function clearObeliskIdleHints() {
   clearTimeout(S.handleTimer); S.handleTimer = null;
   clearTimeout(S.hingeIdleTimer); S.hingeIdleTimer = null;
 }
 function scheduleObeliskIdleHints() {
-  if (!S.fNum || S.folding) return;
+  if (!S.fNum || S.fMode !== 'idle') return;
   const stage = $id('fo');
   if (!stage) return;
-  const isSolved = S.fDone.has(S.fNum);
   const numSegs = S.segs.length;
   clearObeliskIdleHints();
-  if (isSolved) return;
+  if (S.fDone.has(S.fNum)) return;
   if (numSegs > 1) {
     S.handleTimer = setTimeout(() => {
       S.handleTimer = null;
-      if (S.folding || S.segs.length <= 1 || S.fDone.has(S.fNum)) return;
+      if (S.fMode !== 'idle' || S.segs.length <= 1 || S.fDone.has(S.fNum)) return;
       const blocks = $id('fo').querySelectorAll('.blk');
       const el = blocks[S.handleIndex];
       if (el && !el.querySelector('.drag-hint-bar')) {
@@ -960,7 +1171,7 @@ function scheduleObeliskIdleHints() {
   } else if (numSegs === 1 && stage.querySelector('.hz')) {
     S.hingeIdleTimer = setTimeout(() => {
       S.hingeIdleTimer = null;
-      if (S.folding || S.segs.length !== 1 || S.fDone.has(S.fNum)) return;
+      if (S.fMode !== 'idle' || S.segs.length !== 1 || S.fDone.has(S.fNum)) return;
       $id('fo')?.querySelectorAll('.hz').forEach(z => z.classList.add('nudge'));
     }, OBELISK_IDLE_HINT_MS);
   }
@@ -974,9 +1185,7 @@ function bindAltarIdleHintReset(el) {
   }, true);
 }
 
-// ════════════════════════════════════════
-// CELEBRATIONS
-// ════════════════════════════════════════
+// ── CELEBRATIONS ─────────────────────────────────────────────────
 function showAffirm() {
   const e = $id('affirm');
   e.classList.add('show'); haptic([20, 25, 20, 25, 40]);
@@ -988,6 +1197,7 @@ function runAltarRoomSolvedVision(opts) {
   if (!numEl) return;
   after(300, () => {
     showAffirm();
+    PLASMA.surge(1.0);
     if (opts.wasAlreadySolved) numEl.classList.remove('solved');
     numEl.classList.add('celebrate');
     haptic([20, 25, 20, 25, 40]);
@@ -1003,7 +1213,6 @@ function flushDeferredRoomCelebration() {
   S._deferredRoomCelebration = null;
   if (typeof fn === 'function') fn();
 }
-/* heavy thud when pieces land */
 function thud(roomId) {
   const zoomEl = roomId === 'fa' ? $id('fz') : $id('bz');
   if (!zoomEl) return;
@@ -1014,9 +1223,7 @@ function thud(roomId) {
   }, done: () => { zoomEl.style.transform = `scale(${S.currentZoom[roomId]})`; } });
 }
 
-// ════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════
+// ── NAV ──────────────────────────────────────────────────────────
 function goToAltar(n) {
   const overlay = $id('fade-overlay');
   overlay.classList.add('fading');
@@ -1026,6 +1233,7 @@ function goToAltar(n) {
     $id('altar-screen').classList.remove('hidden');
     layoutRoom('fa');
     enterAltar(n);
+    PLASMA.wake();
     overlay.classList.remove('fading');
   }, 400);
 }
@@ -1038,6 +1246,7 @@ function goToBuild(n) {
     $id('build-screen').classList.remove('hidden');
     layoutRoom('ba');
     enterBuild(n);
+    PLASMA.wake();
     overlay.classList.remove('fading');
   }, 400);
 }
@@ -1070,9 +1279,7 @@ $id('reset-btn').addEventListener('click', () => {
   if (window.confirm('Reset all Prime Altar progress?')) resetProgress();
 });
 
-// ════════════════════════════════════════
-// GRID SCREEN
-// ════════════════════════════════════════
+// ── GRID SCREEN ──────────────────────────────────────────────────
 function makeGridChip(f) {
   if (f !== 1 && isPrime(f)) {
     const t = makeMirror(f);
@@ -1127,9 +1334,7 @@ function renderGrid() {
   }
 }
 
-// ════════════════════════════════════════
-// PRIME DEX
-// ════════════════════════════════════════
+// ── PRIME DEX ────────────────────────────────────────────────────
 function buildDex(vpId = 'altar-dex-vp') {
   const vp = $id(vpId);
   if (!vp) return;
@@ -1172,9 +1377,7 @@ function scrollDexToSlot(n, vpId, cb) {
   setTimeout(() => { cb && cb(); }, 500);
 }
 
-// ════════════════════════════════════════
-// THE TWIN CEREMONY — an ignited prime cools into a mirror and drops to the dex
-// ════════════════════════════════════════
+// ── THE TWIN CEREMONY — raw energy cools into a mirror ───────────
 function launchTrinketDrop(primeN, segCount, onDone) {
   const inBuild = S.gridMode === 'build' && !$id('build-screen').classList.contains('hidden');
   const vpId = inBuild ? 'build-dex-vp' : 'altar-dex-vp';
@@ -1189,15 +1392,9 @@ function launchTrinketDrop(primeN, segCount, onDone) {
   else srcEl = segEls[segCount / 2 - 1];
   if (!srcEl) { onDone && onDone(); return; }
 
-  // 1. Ignition
-  if (!srcEl.classList.contains('blk-p')) {
-    srcEl.classList.remove('blk-c', 'blk-m', 'glass-cube');
-    srcEl.classList.add('blk-p');
-    const oldStamp = srcEl.querySelector('.n-stamp, .n-mirror');
-    if (oldStamp) oldStamp.className = 'n-glow';
-  }
+  PLASMA.surge(1.0);
+  haptic([10, 20, 40]);
 
-  // 2. The twin emerges — ember shell around a mirror core
   const srcRect = srcEl.getBoundingClientRect();
   const srcW = srcRect.width, srcH = srcRect.height;
   const srcCX = srcRect.left + srcW / 2, srcCY = srcRect.top + srcH / 2;
@@ -1206,9 +1403,11 @@ function launchTrinketDrop(primeN, segCount, onDone) {
   const clone = document.createElement('div');
   clone.className = 'twin-clone';
   clone.style.cssText = `width:${srcW}px;height:${srcH}px;left:${srcRect.left}px;top:${srcRect.top}px;`;
-  const emberLayer = document.createElement('div');
-  emberLayer.className = 'cl-layer blk-p lite';
-  emberLayer.style.borderRadius = '5px';
+  const energyLayer = document.createElement('div');
+  energyLayer.className = 'cl-layer blk-p lite';
+  energyLayer.style.borderRadius = '5px';
+  energyLayer.dataset.units = primeN;
+  PLASMA.attach(energyLayer, srcW, srcH);
   const mirrorLayer = makeMirror(primeN, Math.max(srcW, 36));
   mirrorLayer.classList.add('cl-layer');
   mirrorLayer.style.width = '100%'; mirrorLayer.style.height = '100%';
@@ -1218,8 +1417,8 @@ function launchTrinketDrop(primeN, segCount, onDone) {
   numEl.textContent = primeN;
   numEl.style.fontSize = Math.min(srcW * 0.6, srcH * 0.45, 38) + 'px';
   numEl.style.color = '#fff';
-  numEl.style.textShadow = '0 0 2px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.9), 0 0 18px rgba(255,200,110,0.6)';
-  clone.append(emberLayer, mirrorLayer, numEl);
+  numEl.style.textShadow = '0 0 2px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.9), 0 0 18px rgba(214,150,255,0.6)';
+  clone.append(energyLayer, mirrorLayer, numEl);
   document.body.appendChild(clone);
 
   vp.querySelectorAll('.dex-slot[data-n]').forEach(sl => {
@@ -1227,18 +1426,16 @@ function launchTrinketDrop(primeN, segCount, onDone) {
   });
   scrollDexToSlot(primeN, vpId, null);
 
-  // 3. Compression + cooling (ember → silvered glass)
   const compressDur = 620;
   const scaleX = tw / srcW, scaleY = th / srcH;
   tween({ dur: compressDur, ease: 'p2inout',
     update: e => {
       clone.style.transform = `scaleX(${lerp(1, scaleX, e)}) scaleY(${lerp(1, scaleY, e)})`;
-      emberLayer.style.opacity = String(1 - e);
+      energyLayer.style.opacity = String(1 - e);
       mirrorLayer.style.opacity = String(e);
       numEl.style.opacity = String(1 - e);
     },
     done: () => {
-      // 4. The float down to its socket
       after(140, () => {
         const slot = vp.querySelector(`.dex-slot[data-n="${primeN}"]`);
         const container = vp.closest('.dex-container');
@@ -1256,7 +1453,6 @@ function launchTrinketDrop(primeN, segCount, onDone) {
             clone.style.transform = `translate(${dx * e}px, ${dy * e}px) scaleX(${scaleX}) scaleY(${scaleY})`;
           },
           done: () => {
-            // 5. Registration
             haptic([15, 10, 40]);
             clone.remove();
             S.primeDex.add(primeN);
@@ -1274,17 +1470,16 @@ function launchTrinketDrop(primeN, segCount, onDone) {
     } });
 }
 
-// ════════════════════════════════════════
-// FACTOR ALTAR
-// ════════════════════════════════════════
+// ── FACTOR ALTAR ─────────────────────────────────────────────────
 function enterAltar(n) {
   syncCSSUnit();
   layoutRoom('fa');
   S.fNum = n; S.segSize = 0; S.handleIndex = 0; S.handleInverted = false;
   S.fDisc = S.fDiscMap[n] ? new Set(S.fDiscMap[n]) : new Set([1, n]);
-  S.trayIdentityReady = n === 1; /* primes: defer identity chip until after the grow reveal */
+  S.trayIdentityReady = n === 1;
   S._deferredRoomCelebration = null;
   S._settleTw?.cancel();
+  S.fMode = 'growing';
   const numEl = $id('altar-numeral');
   numEl.textContent = n;
   numEl.classList.remove('solved', 'celebrate');
@@ -1297,13 +1492,13 @@ function enterAltar(n) {
 
   bindAltarIdleHintReset($id('altar-screen'));
   const avail = availHeight('fa');
-  const neededHeight = n * S.unitH;
-  S.fZoom = Math.min(1, avail / neededHeight);
+  S.fZoom = Math.min(1, avail / (n * S.unitH));
   S.segs = [{ units: n }];
   buildDex('altar-dex-vp');
   renderFT();
 
   growFromUnits(n, () => {
+    S.fMode = 'idle';
     if (isPrime(n)) {
       const isNew = !S.primeDex.has(n);
       if (isNew) {
@@ -1357,9 +1552,10 @@ function growFromUnits(n, onComplete) {
       update: e => { blk.style.transform = `scale(${e})`; },
       done: i === n - 1 ? () => {
         const isP = isPrime(n);
+        if (isP) PLASMA.surge(0.9);
         const flash = document.createElement('div');
-        flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${n * uH}px; z-index:100; opacity:0; border-radius:4px; pointer-events:none;` +
-          (isP ? 'background:#FF8C00; box-shadow:0 0 60px 20px rgba(255,215,0,0.8);'
+        flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${n * uH}px; z-index:100; opacity:0; border-radius:5px; pointer-events:none;` +
+          (isP ? 'background:linear-gradient(180deg,#c489ff,#ff9040); box-shadow:0 0 60px 20px rgba(190,110,255,0.8);'
                : 'background:#ffffff; box-shadow:0 0 50px 20px rgba(255,255,255,0.9);');
         stage.appendChild(flash);
         haptic([40, 60]);
@@ -1370,7 +1566,7 @@ function growFromUnits(n, onComplete) {
   });
 }
 
-/* zoom that keeps the whole fold sweep in frame */
+/* camera fits */
 function calcSweepZoom(numPieces, segUnits) {
   const altarW = $id('fa').clientWidth;
   const avail = availHeight('fa');
@@ -1378,14 +1574,13 @@ function calcSweepZoom(numPieces, segUnits) {
   const zoomH = avail / (segUnits * S.unitH);
   return Math.min(zoomW, zoomH, S.fZoom);
 }
-/* camera-settle zoom once the array has landed */
 function postFoldZoom(numSegs, segUnits) {
   if (numSegs <= 1) return S.fZoom;
   const altarW = $id('fa').clientWidth;
   const avail = availHeight('fa');
   return Math.min((altarW * 0.72) / (numSegs * S.unitW), (avail * 0.92) / (segUnits * S.unitH), 1.5);
 }
-/* which side the accordion lands on (verified analytically — no DOM measuring) */
+/* which side the accordion lands on — analytic, no DOM measuring */
 function foldLandsLeft(numPieces) {
   const falls = numPieces - 1;
   return (falls % 2 === 1) ? (S.foldDir < 0) : (S.foldDir > 0);
@@ -1408,7 +1603,6 @@ function renderSegs(opts = {}) {
   const canonicalZoom = numSegs === 1 ? S.fZoom : postFoldZoom(numSegs, S.segs[0].units);
   stage.style.setProperty('--hzs', String(clamp(0.9 / canonicalZoom, 1, 2.6)));
 
-  const isSolved = S.fDone.has(S.fNum);
   const glassCount = S.segs.filter(s => s.units === 1).length;
 
   S.segs.forEach((seg, i) => {
@@ -1433,14 +1627,13 @@ function renderSegs(opts = {}) {
     } else if (i === S.handleIndex) {
       el.addEventListener('pointerdown', e => {
         el.querySelector('.drag-hint-bar')?.remove();
-        if (!S.folding) { e.preventDefault(); haptic(12); beginUnspool(); }
+        if (S.fMode === 'idle') { e.preventDefault(); haptic(12); beginUnspool(); }
       });
     }
     stage.appendChild(el);
   });
 
   if (opts.fromMargin != null) {
-    /* piece(s) start where the physics left them, then the camera settles them home */
     stage.style.marginLeft = opts.fromMargin + 'px';
     const fromZoom = opts.fromZoom ?? S.currentZoom.fa;
     S._settleTw?.cancel();
@@ -1456,9 +1649,7 @@ function renderSegs(opts = {}) {
   scheduleObeliskIdleHints();
 }
 
-// ════════════════════════════════════════
-// FOLD PHYSICS — nested hinge tree, accordion cascade
-// ════════════════════════════════════════
+// ── FOLD PHYSICS — nested hinge tree, accordion cascade ──────────
 function buildNestTree(numPieces, segH, uW, foldDir, startFolded) {
   const hinges = [];
   const pieceUnits = S.segSize || S.fNum;
@@ -1489,10 +1680,10 @@ function buildNestTree(numPieces, segH, uW, foldDir, startFolded) {
 }
 
 function doFold(f, swipeSide, clickedZone) {
-  if (S.folding || S.segs.length !== 1) return;
+  if (S.fMode !== 'idle' || S.segs.length !== 1) return;
   const totalUnits = S.segs[0].units;
   if (totalUnits % f !== 0) return;
-  S.folding = true; haptic(50);
+  S.fMode = 'folding'; haptic(50);
   clearObeliskIdleHints();
   if (clickedZone) clickedZone.style.display = 'none';
 
@@ -1548,9 +1739,8 @@ function finishFold(f, numPieces, overlay, sweepZoom) {
   const landsLeft = foldLandsLeft(numPieces);
   S.handleIndex = landsLeft ? 0 : numPieces - 1;
   S.handleInverted = (numPieces - 1) % 2 === 1;
-  S.folding = false;
+  S.fMode = 'idle';
 
-  /* analytic landing: accordion spans cols 0..n-1 (right) or -(n-1)..0 (left) from the root */
   const landedMargin = landsLeft ? (-uW / 2 - (numPieces - 1) * uW) : (-uW / 2);
   renderSegs({ fromMargin: landedMargin, fromZoom: sweepZoom });
   overlay.remove();
@@ -1578,15 +1768,13 @@ function finishFold(f, numPieces, overlay, sweepZoom) {
   } else buildDex('altar-dex-vp');
 }
 
-// ════════════════════════════════════════
-// UNSPOOL — grab the free end, roll the accordion back into the monolith
-// ════════════════════════════════════════
+// ── UNSPOOL — grab the free end, roll the accordion back up ──────
 let US = null;
 
 function beginUnspool() {
-  if (S.folding || S.segs.length <= 1) return;
+  if (S.fMode !== 'idle' || S.segs.length <= 1) return;
   clearObeliskIdleHints();
-  S.folding = true;
+  S.fMode = 'unspooling';
   S._settleTw?.cancel();
   const stage = $id('fo');
   const uW = S.unitW, numSegs = S.segs.length, segH = S.segs[0].units * S.unitH;
@@ -1600,8 +1788,7 @@ function beginUnspool() {
   const overlay = document.createElement('div');
   overlay.className = 'anim-overlay';
   overlay.style.marginLeft = rootMargin + 'px';
-  const zoomEl = $id('fz');
-  zoomEl.appendChild(overlay);
+  $id('fz').appendChild(overlay);
 
   const { root, hinges } = buildNestTree(numSegs, segH, uW, S.foldDir, true);
   overlay.appendChild(root);
@@ -1632,7 +1819,6 @@ function beginUnspool() {
       const hProg = clamp((progress - US.starts[i]) / US.windowSize, 0, 1);
       hw.style.transform = `rotate(${rot * (1 - hProg)}deg)`;
     });
-    /* fit-aware zoom: keep the rising tower in frame the whole way */
     const raisedH = US.segH * (1 + (US.numSegs - 1) * progress);
     const zFit = clamp(US.avail / raisedH, S.fZoom, US.startZoom);
     setZoomImmediate('fa', zFit);
@@ -1669,7 +1855,7 @@ function cancelUS(onMove, onUp) {
     done: () => {
       US?.overlay?.remove();
       $id('fo').style.visibility = 'visible';
-      S.folding = false; US = null;
+      S.fMode = 'idle'; US = null;
       scheduleObeliskIdleHints();
     } });
   document.removeEventListener('pointermove', onMove);
@@ -1690,7 +1876,7 @@ function completeUS(onMove, onUp) {
       const fromZoom = S.currentZoom.fa;
       US?.overlay?.remove();
       S.segs = [{ units: S.fNum }];
-      S.folding = false; US = null;
+      S.fMode = 'idle'; US = null;
       renderSegs({ fromMargin: rootMargin, fromZoom, settleDelay: 80 });
       thud('fa');
     } });
@@ -1720,9 +1906,7 @@ function checkLvl() {
   S.maxLevel++;
 }
 
-// ════════════════════════════════════════
-// FACTOR TRAY (on the altar table)
-// ════════════════════════════════════════
+// ── FACTOR TRAY ──────────────────────────────────────────────────
 function renderFT() {
   const tray = $id('ft');
   tray.innerHTML = '';
@@ -1763,6 +1947,7 @@ function renderFT() {
       const s = document.createElement('div');
       s.className = 'fs fc';
       s.dataset.f = f;
+      const bev = document.createElement('div'); bev.className = 'bev'; s.appendChild(bev);
       const txt = document.createElement('div'); txt.textContent = f;
       txt.style.fontSize = Math.round(tts * 0.42) + 'px';
       s.appendChild(txt);
@@ -1771,13 +1956,11 @@ function renderFT() {
   });
 }
 
-// ════════════════════════════════════════
-// BUILD ALTAR
-// ════════════════════════════════════════
+// ── BUILD ALTAR ──────────────────────────────────────────────────
 function enterBuild(n) {
   syncCSSUnit();
   layoutRoom('ba');
-  S.bNum = n; S.bStack = []; S.bProduct = 0; S.bAnimating = false;
+  S.bNum = n; S.bStack = []; S.bProduct = 0; S.bMode = 'idle';
   const numEl = $id('build-numeral');
   numEl.textContent = n;
   numEl.classList.remove('solved', 'celebrate');
@@ -1854,7 +2037,7 @@ function renderBuildTray() {
         s.classList.add('last');
         s.style.touchAction = 'none';
         s.addEventListener('pointerdown', e => {
-          if (S.bAnimating) return;
+          if (S.bMode !== 'idle') return;
           e.preventDefault();
           s.setPointerCapture(e.pointerId);
           const startY = e.clientY; let removed = false;
@@ -1897,7 +2080,7 @@ function setupBuildDexDrag() {
     trinket.style.touchAction = 'none';
     trinket.style.cursor = 'grab';
     trinket.addEventListener('pointerdown', e => {
-      if (S.bAnimating) return;
+      if (S.bMode !== 'idle') return;
       e.preventDefault(); e.stopPropagation();
       trinket.setPointerCapture(e.pointerId);
       startBuildDrag(e, n, trinket);
@@ -1931,66 +2114,42 @@ function startBuildDrag(e, p, sourceEl) {
   sourceEl.addEventListener('pointercancel', onUp);
 }
 
-function triggerShatter(rectElement, contactY) {
-  haptic([60, 30, 60, 20, 80]);
-  const rect = rectElement.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = contactY != null ? contactY : rect.top;
-  const spawn = (cls, w, h, spread, dur) => {
-    const piece = document.createElement('div');
-    piece.className = 'shatter-piece ' + cls;
-    const dx = (Math.random() - 0.5) * spread * 2;
-    const dy = -(Math.random() * spread * 0.6) + (Math.random() - 0.5) * spread * 0.8;
-    piece.style.cssText = `width:${w}px;height:${h}px;left:${cx + ((Math.random() - 0.5) * rect.width * 0.4)}px;top:${cy + ((Math.random() - 0.5) * 12)}px;--tx:translate(${dx}px,${dy}px);--rot:${(Math.random() - 0.5) * 720}deg;animation:shatterFly ${dur}s ease-out forwards;position:fixed;`;
-    document.body.appendChild(piece);
-    setTimeout(() => piece.remove(), dur * 1000 + 50);
-  };
-  for (let i = 0; i < 8; i++) spawn('shard', Math.random() * 8 + 3, Math.random() * 12 + 4, 250, 0.5 + Math.random() * 0.3);
-  for (let i = 0; i < 12; i++) spawn('spark', Math.random() * 5 + 2, Math.random() * 5 + 2, 300, 0.4 + Math.random() * 0.4);
-  for (let i = 0; i < 18; i++) spawn('ember', Math.random() * 3 + 1, Math.random() * 3 + 1, 350, 0.3 + Math.random() * 0.5);
-  const flash = document.createElement('div');
-  flash.style.cssText = `position:fixed;left:${cx - 40}px;top:${cy - 40}px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.9) 0%,rgba(255,200,80,0.6) 30%,rgba(255,100,20,0.3) 60%,transparent 80%);pointer-events:none;z-index:8600;opacity:1;transition:all 0.3s ease-out;`;
-  document.body.appendChild(flash);
-  requestAnimationFrame(() => { flash.style.transform = 'scale(3)'; flash.style.opacity = '0'; });
-  setTimeout(() => flash.remove(), 350);
-}
-
 function placeBuildPrime(p) {
-  if (S.bAnimating) return;
+  if (S.bMode !== 'idle') return;
   const n = S.bNum, prevProduct = S.bProduct, newProduct = prevProduct === 0 ? p : prevProduct * p;
   S.bStack.push({ p, prevProduct });
   S.bProduct = newProduct;
-  S.bAnimating = true;
+  S.bMode = 'animating';
   renderBuildTray(); renderBuildLedger();
 
   if (prevProduct === 0) {
     if (newProduct > n) {
       animateBuildFirstPrimeOvershoot(p, n, () => {
-        S.bStack.pop(); S.bProduct = 0; S.bAnimating = false;
+        S.bStack.pop(); S.bProduct = 0; S.bMode = 'idle';
         renderBuildTray(); renderBuildStage(); renderBuildLedger();
       });
     } else {
       animateBuildFirstPrime(p, n, () => {
-        S.bAnimating = false;
+        S.bMode = 'idle';
         renderBuildTray(); renderBuildStage(); renderBuildLedger();
         if (newProduct === n) checkBuildSolved();
       });
     }
   } else if (newProduct > n) {
     animateBuildOvershoot(prevProduct, p, newProduct, n, () => {
-      S.bStack.pop(); S.bProduct = prevProduct; S.bAnimating = false;
+      S.bStack.pop(); S.bProduct = prevProduct; S.bMode = 'idle';
       renderBuildTray(); renderBuildStage(); renderBuildLedger();
     });
   } else {
     animateBuildHinge(prevProduct, p, newProduct, n, () => {
-      S.bAnimating = false;
+      S.bMode = 'idle';
       renderBuildTray(); renderBuildStage(); renderBuildLedger();
       if (newProduct === n) checkBuildSolved();
     });
   }
 }
 
-/* First mirror: count out p glass units, flash-fuse into the prime monolith. */
+/* First mirror: count out p glass units, flash-fuse into the prime vessel. */
 function animateBuildFirstPrime(p, target, onComplete) {
   const stage = $id('bo');
   const uH = S.unitH, uW = S.unitW;
@@ -2016,8 +2175,9 @@ function animateBuildFirstPrime(p, target, onComplete) {
     tween({ delay: i * 160, dur: 480, ease: 'backout',
       update: e => { blk.style.transform = `scale(${e})`; },
       done: i === p - 1 ? () => {
+        PLASMA.surge(0.9);
         const flash = document.createElement('div');
-        flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${p * uH}px; z-index:100; opacity:0; border-radius:4px; pointer-events:none; background:#FF8C00; box-shadow:0 0 60px 20px rgba(255,215,0,0.8);`;
+        flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${p * uH}px; z-index:100; opacity:0; border-radius:5px; pointer-events:none; background:linear-gradient(180deg,#c489ff,#ff9040); box-shadow:0 0 60px 20px rgba(190,110,255,0.8);`;
         stage.appendChild(flash);
         haptic([40, 60]);
         tween({ dur: 320, ease: 'p2inout',
@@ -2027,7 +2187,7 @@ function animateBuildFirstPrime(p, target, onComplete) {
   });
 }
 
-/* First mirror too tall: units stack until one hits the ceiling — shatter, revert. */
+/* First mirror too tall: units stack until one strikes the limit — shatter, revert. */
 function animateBuildFirstPrimeOvershoot(p, target, onRevert) {
   const stage = $id('bo');
   const uH = S.unitH, uW = S.unitW;
@@ -2036,7 +2196,7 @@ function animateBuildFirstPrimeOvershoot(p, target, onRevert) {
   stage.style.marginLeft = `${-uW / 2}px`;
   stage.style.visibility = 'visible';
 
-  const hitIndex = target; /* 0-based cube index that pierces the ceiling */
+  const hitIndex = target;
   const blocks = [];
   for (let i = 0; i <= Math.min(hitIndex, p - 1); i++) {
     const blk = makeBlock(1, uW, uH, false, false);
@@ -2065,7 +2225,7 @@ function animateBuildFirstPrimeOvershoot(p, target, onRevert) {
 }
 
 /* Mirror multiplication: the stack sees itself p-1 more times.
-   Ghost reflections hinge up out of the stack, solidify, fuse. */
+   Ghost reflections hinge out of the stack, solidify, fuse. */
 function animateBuildHinge(prevH, p, finalH, target, cb) {
   const stage = $id('bo');
   const uH = S.unitH, uW = S.unitW, segH = prevH * uH;
@@ -2081,7 +2241,6 @@ function animateBuildHinge(prevH, p, finalH, target, cb) {
   base.style.position = 'absolute'; base.style.bottom = '0'; base.style.left = '0'; base.style.zIndex = '10';
   overlay.appendChild(base);
 
-  /* the mirror activates: a sheen sweeps the existing stack */
   const mf = document.createElement('div');
   mf.className = 'mirror-flash';
   base.appendChild(mf);
@@ -2110,6 +2269,7 @@ function animateBuildHinge(prevH, p, finalH, target, cb) {
 
   const allLandedTime = leadIn + copies * (phaseDur + pause) + 320;
   after(allLandedTime, () => {
+    PLASMA.surge(0.8);
     const totalH = finalH * uH;
     const flash = document.createElement('div');
     flash.style.cssText = `position:absolute; bottom:0; left:0; width:${uW}px; height:${totalH}px; z-index:100; opacity:0; border-radius:4px; pointer-events:none; background:#ffffff; box-shadow:0 0 50px 20px rgba(255,255,255,0.9);`;
@@ -2127,7 +2287,7 @@ function animateBuildHinge(prevH, p, finalH, target, cb) {
   });
 }
 
-/* Multiplication overshoot: a reflection can't fit under the ceiling — partial hinge, shatter. */
+/* Multiplication overshoot: a reflection can't fit under the limit — partial hinge, shatter. */
 function animateBuildOvershoot(prevH, p, finalH, target, cb) {
   const stage = $id('bo');
   const uH = S.unitH, uW = S.unitW, segH = prevH * uH, ceilPx = target * uH;
@@ -2162,7 +2322,6 @@ function animateBuildOvershoot(prevH, p, finalH, target, cb) {
     arms.push(hw);
   }
 
-  /* find the reflection that strikes the ceiling */
   let collisionArm = -1, collisionAngle = 0;
   for (let i = 0; i < copies; i++) {
     const pivotY = (i + 1) * segH;
@@ -2191,7 +2350,7 @@ function animateBuildOvershoot(prevH, p, finalH, target, cb) {
           arms.forEach(a => { a.style.display = 'none'; });
           const ceilEl = $id('bceil');
           const contactY = ceilEl ? ceilEl.getBoundingClientRect().top : undefined;
-          triggerShatter(overlay.getBoundingClientRect ? base : overlay, contactY);
+          triggerShatter(base, contactY);
           after(400, () => { overlay.remove(); stage.style.visibility = 'visible'; cb && cb(); });
         });
       } });
@@ -2199,14 +2358,14 @@ function animateBuildOvershoot(prevH, p, finalH, target, cb) {
 }
 
 function undoBuild() {
-  if (S.bAnimating || S.bStack.length === 0) return;
+  if (S.bMode !== 'idle' || S.bStack.length === 0) return;
   const entry = S.bStack[S.bStack.length - 1], p = entry.p, prevProduct = entry.prevProduct;
   if (prevProduct === 0) {
     S.bStack.pop(); S.bProduct = 0; haptic(20);
     renderBuildTray(); renderBuildStage(); renderBuildLedger();
     return;
   }
-  S.bAnimating = true; haptic(20);
+  S.bMode = 'animating'; haptic(20);
   const stage = $id('bo');
   const uW = S.unitW, segH = prevProduct * S.unitH;
   stage.style.visibility = 'hidden';
@@ -2246,7 +2405,7 @@ function undoBuild() {
     overlay.remove();
     S.bStack.pop(); S.bProduct = prevProduct;
     stage.style.visibility = 'visible';
-    S.bAnimating = false;
+    S.bMode = 'idle';
     renderBuildTray(); renderBuildStage(); renderBuildLedger();
   });
 }
@@ -2260,15 +2419,39 @@ function checkBuildSolved() {
   numEl.onclick = () => goToGrid();
   after(300, () => {
     showAffirm();
+    PLASMA.surge(1.0);
     numEl.classList.add('celebrate');
     haptic([20, 25, 20, 25, 40]);
     after(1100, () => { numEl.classList.remove('celebrate'); numEl.classList.add('solved'); });
   });
 }
 
-// ════════════════════════════════════════
-// RESIZE
-// ════════════════════════════════════════
+// ── FX ───────────────────────────────────────────────────────────
+function triggerShatter(rectElement, contactY) {
+  haptic([60, 30, 60, 20, 80]);
+  const rect = rectElement.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = contactY != null ? contactY : rect.top;
+  const spawn = (cls, w, h, spread, dur) => {
+    const piece = document.createElement('div');
+    piece.className = 'shatter-piece ' + cls;
+    const dx = (Math.random() - 0.5) * spread * 2;
+    const dy = -(Math.random() * spread * 0.6) + (Math.random() - 0.5) * spread * 0.8;
+    piece.style.cssText = `width:${w}px;height:${h}px;left:${cx + ((Math.random() - 0.5) * rect.width * 0.4)}px;top:${cy + ((Math.random() - 0.5) * 12)}px;--tx:translate(${dx}px,${dy}px);--rot:${(Math.random() - 0.5) * 720}deg;animation:shatterFly ${dur}s ease-out forwards;`;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), dur * 1000 + 50);
+  };
+  for (let i = 0; i < 8; i++) spawn('shard', Math.random() * 8 + 3, Math.random() * 12 + 4, 250, 0.5 + Math.random() * 0.3);
+  for (let i = 0; i < 12; i++) spawn('spark', Math.random() * 5 + 2, Math.random() * 5 + 2, 300, 0.4 + Math.random() * 0.4);
+  for (let i = 0; i < 18; i++) spawn('ember', Math.random() * 3 + 1, Math.random() * 3 + 1, 350, 0.3 + Math.random() * 0.5);
+  const flash = document.createElement('div');
+  flash.style.cssText = `position:fixed;left:${cx - 40}px;top:${cy - 40}px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.9) 0%,rgba(214,150,255,0.6) 30%,rgba(139,61,255,0.3) 60%,transparent 80%);pointer-events:none;z-index:8600;opacity:1;transition:all 0.3s ease-out;`;
+  document.body.appendChild(flash);
+  requestAnimationFrame(() => { flash.style.transform = 'scale(3)'; flash.style.opacity = '0'; });
+  setTimeout(() => flash.remove(), 350);
+}
+
+// ── RESIZE ───────────────────────────────────────────────────────
 let _resizeTO = null;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTO);
@@ -2277,23 +2460,22 @@ window.addEventListener('resize', () => {
     if (!$id('altar-screen').classList.contains('hidden') && S.fNum) {
       const avail = availHeight('fa');
       S.fZoom = Math.min(1, avail / (S.fNum * S.unitH));
-      if (!S.folding) renderSegs();
+      if (S.fMode === 'idle') renderSegs();
       renderFT();
     }
     if (!$id('build-screen').classList.contains('hidden') && S.bNum) {
       const avail = availHeight('ba');
       S.bZoom = Math.min(1, avail / (S.bNum * S.unitH));
-      if (!S.bAnimating) { setZoomImmediate('ba', S.bZoom); renderBuildStage(); }
+      if (S.bMode === 'idle') { setZoomImmediate('ba', S.bZoom); renderBuildStage(); }
       positionBuildCeiling();
       renderBuildTray();
     }
   }, 120);
 });
 
-// ════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════
+// ── INIT ─────────────────────────────────────────────────────────
 window.S = S; /* debug/testing handle */
+PLASMA.boot();
 loadState();
 S.fDone.add(1);
 buildDex('altar-dex-vp');
