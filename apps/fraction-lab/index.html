@@ -314,58 +314,6 @@
             text-align: center; line-height: 20px; font-weight: bold; font-size: 12px; margin-right: 5px; 
         }
 
-        /* --- EQUIVALENT FRACTIONS CHART --- */
-        .eq-instructions {
-            font-size: 0.95rem; color: var(--text-muted); text-align: center;
-            max-width: 650px; line-height: 1.45;
-        }
-        .eq-chart {
-            border-collapse: separate; border-spacing: 5px 2px; margin: 0 auto;
-            transition: all 0.2s ease;
-        }
-        .eq-chart th, .eq-chart td {
-            width: 50px; height: 44px; text-align: center;
-            font-family: 'Fredoka', sans-serif; font-size: 15px;
-            transition: all 0.2s ease;
-        }
-        .eq-col-header {
-            background: #eceff1; color: var(--text-muted); font-weight: 700;
-            border-radius: 7px;
-        }
-        .eq-row-header {
-            background: #eceff1; color: var(--text-muted); font-weight: 700;
-            border-radius: 7px; cursor: pointer;
-        }
-        .eq-data-row { cursor: pointer; }
-        .eq-data-row:hover .eq-row-header { background: #cfd8dc; color: var(--text-main); }
-        .eq-cell {
-            background: white; color: var(--text-muted);
-            border: 1px solid #f0f0f0; border-radius: 7px;
-        }
-        .eq-data-row:hover .eq-cell { border-color: #cfd8dc; color: var(--text-main); }
-        .eq-row-header.eq-num-selected { background: var(--c-green); color: white; }
-        .eq-row-header.eq-den-selected { background: var(--c-blue); color: white; }
-        .eq-num-cell {
-            background: var(--c-green-light); color: var(--c-green); font-weight: 800;
-            border: 2px solid var(--c-green);
-        }
-        .eq-den-cell {
-            background: var(--c-blue-light); color: var(--c-blue); font-weight: 800;
-            border: 2px solid var(--c-blue);
-        }
-        .eq-chart.locked { border-spacing: 5px 0; }
-        .eq-chart.locked .eq-data-row:not(.eq-selected-row) { display: none; }
-        .eq-chart.locked .eq-data-row { cursor: default; }
-        .eq-chart.locked .eq-data-row:hover .eq-cell { color: inherit; }
-        .eq-chart.locked .eq-num-cell {
-            border-radius: 8px 8px 1px 1px;
-            border-bottom: 3px solid var(--text-main);
-        }
-        .eq-chart.locked .eq-den-cell {
-            border-radius: 1px 1px 8px 8px;
-            border-top: 0;
-        }
-
         /* --- SIMPLIFY TAB --- */
         .simp-mode-row { display: flex; gap: 10px; margin-bottom: 20px; }
         .simp-input-area { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
@@ -522,7 +470,6 @@
     <div class="main-nav">
         <button class="nav-tab active" onclick="switchTab('tab-fractions')">Fraction Lab</button>
         <button class="nav-tab" onclick="switchTab('tab-lcd')">LCD Finder</button>
-        <button class="nav-tab" onclick="switchTab('tab-equivalents')">Equivalent Fractions</button>
         <button class="nav-tab" onclick="switchTab('tab-simplify')">Simplify</button>
         <button class="nav-tab" onclick="switchTab('tab-bars')">Fraction Bars</button>
     </div>
@@ -618,22 +565,6 @@
                 <p style="margin-top:8px;"><span class="step-num">2</span> <strong>If not:</strong> List the multiples of each until you find a match. (e.g. 4 and 6 → 4, 8, 12... vs 6, 12... Match at 12).</p>
                 <p style="margin-top:8px;"><span class="step-num">3</span> <strong>Shortcut:</strong> If they share no factors, just multiply them. (e.g. 3 and 5 → 15).</p>
             </div>
-        </div>
-    </div>
-
-    <!-- ==================== EQUIVALENT FRACTIONS TAB ==================== -->
-    <div id="tab-equivalents" class="tool-section">
-        <div class="dashboard" style="gap:14px;">
-            <div id="eq-narration" style="font-family:'Fredoka',sans-serif; font-size:1.1rem; color:var(--text-main); min-height:30px; text-align:center;">
-                Pick the numerator row, then pick the denominator row.
-            </div>
-            <div class="eq-instructions">
-                After the second row is chosen, the chart locks to those two rows. Read each column as a fraction: both numerator and denominator are multiplied by the same number.
-            </div>
-            <button class="btn btn-outline" onclick="eq_reset()">Choose New Rows</button>
-        </div>
-        <div class="chart-container">
-            <table class="eq-chart" id="eq-table"></table>
         </div>
     </div>
 
@@ -758,7 +689,7 @@
         document.querySelectorAll('.tool-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        const tabMap = {'tab-fractions':0, 'tab-lcd':1, 'tab-equivalents':2, 'tab-simplify':3, 'tab-bars':4};
+        const tabMap = {'tab-fractions':0, 'tab-lcd':1, 'tab-simplify':2, 'tab-bars':3};
         document.querySelectorAll('.nav-tab')[tabMap[tabId]].classList.add('active');
     }
 
@@ -1180,104 +1111,6 @@
     }
 
     // =====================================================
-    // EQUIVALENT FRACTIONS
-    // =====================================================
-    const EQ_SIZE = 12;
-    let eq_numRow = null, eq_denRow = null, eq_locked = false;
-
-    function eq_init() {
-        const table = document.getElementById('eq-table');
-        table.innerHTML = '';
-        table.classList.remove('locked');
-
-        const thead = document.createElement('thead');
-        const hRow = document.createElement('tr');
-        const corner = document.createElement('th');
-        corner.textContent = '×';
-        corner.style.cssText = 'background:transparent; color:var(--text-muted);';
-        hRow.appendChild(corner);
-
-        for(let c = 1; c <= EQ_SIZE; c++) {
-            const th = document.createElement('th');
-            th.className = 'eq-col-header';
-            th.textContent = '×' + c;
-            hRow.appendChild(th);
-        }
-        thead.appendChild(hRow);
-        table.appendChild(thead);
-
-        const tbody = document.createElement('tbody');
-        tbody.id = 'eq-body';
-        for(let r = 1; r <= EQ_SIZE; r++) {
-            const row = document.createElement('tr');
-            row.className = 'eq-data-row';
-            row.id = 'eq-row-' + r;
-            row.onclick = () => eq_selectRow(r);
-
-            const label = document.createElement('th');
-            label.className = 'eq-row-header';
-            label.textContent = r;
-            row.appendChild(label);
-
-            for(let c = 1; c <= EQ_SIZE; c++) {
-                const td = document.createElement('td');
-                td.className = 'eq-cell';
-                td.id = `eq-cell-${r}-${c}`;
-                td.textContent = r * c;
-                row.appendChild(td);
-            }
-            tbody.appendChild(row);
-        }
-        table.appendChild(tbody);
-    }
-
-    function eq_selectRow(num) {
-        if(eq_locked) return;
-        const narr = document.getElementById('eq-narration');
-
-        if(eq_numRow === null) {
-            eq_numRow = num;
-            const row = document.getElementById('eq-row-' + num);
-            row.classList.add('eq-selected-row');
-            row.querySelector('.eq-row-header').classList.add('eq-num-selected');
-            row.querySelectorAll('.eq-cell').forEach(cell => cell.classList.add('eq-num-cell'));
-            narr.innerHTML = `<span style="color:var(--c-green); font-weight:700">${num}</span> is the numerator row. Now pick a denominator row.`;
-            return;
-        }
-
-        if(num === eq_numRow) {
-            narr.innerHTML = `<span style="color:var(--c-green); font-weight:700">${eq_numRow}</span> is already the numerator. Pick a different row for the denominator.`;
-            return;
-        }
-
-        eq_denRow = num;
-        eq_locked = true;
-
-        const numRow = document.getElementById('eq-row-' + eq_numRow);
-        const denRow = document.getElementById('eq-row-' + eq_denRow);
-        denRow.classList.add('eq-selected-row');
-        denRow.querySelector('.eq-row-header').classList.add('eq-den-selected');
-        denRow.querySelectorAll('.eq-cell').forEach(cell => cell.classList.add('eq-den-cell'));
-
-        // Put the chosen numerator directly above the chosen denominator so
-        // every column reads naturally as a stacked fraction.
-        const body = document.getElementById('eq-body');
-        body.appendChild(numRow);
-        body.appendChild(denRow);
-        document.getElementById('eq-table').classList.add('locked');
-
-        narr.innerHTML = `Locked on <span style="color:var(--c-green); font-weight:800">${eq_numRow}</span>/<span style="color:var(--c-blue); font-weight:800">${eq_denRow}</span>. Across the row: ${eq_numRow}/${eq_denRow}, ${eq_numRow * 2}/${eq_denRow * 2}, ${eq_numRow * 3}/${eq_denRow * 3}… all equivalent.`;
-    }
-
-    function eq_reset() {
-        eq_numRow = null;
-        eq_denRow = null;
-        eq_locked = false;
-        document.getElementById('eq-narration').innerText = 'Pick the numerator row, then pick the denominator row.';
-        eq_init();
-    }
-
-    // =====================================================
     // SIMPLIFY TAB
     // =====================================================
     let simp_mode = 'simplify';
@@ -1601,7 +1434,6 @@
         
         updateLab();
         lcd_init();
-        eq_init();
         simp_update();
         fb_addBar(1);
     })();
