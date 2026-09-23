@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Things. | Equivalent Fractions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #4CAF50;
+      --green-light: #e8f5e9;
+      --blue: #2196F3;
+      --blue-light: #e3f2fd;
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --text: #37474f;
+      --muted: #78909c;
+      --border: #cfd8dc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      width: 100%;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      padding: 14px 18px;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.45rem;
+      letter-spacing: 0.2px;
+    }
+
+    .home-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .home-link:hover { color: var(--text); }
+
+    main {
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+    }
+
+    .dashboard {
+      background: var(--surface);
+      border: 1px solid white;
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    #narration {
+      min-height: 30px;
+      text-align: center;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.08rem;
+    }
+
+    .instructions {
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    button {
+      padding: 9px 20px;
+      border: 2px solid var(--border);
+      border-radius: 30px;
+      background: white;
+      color: var(--muted);
+      font-family: 'Fredoka', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: var(--muted);
+      color: var(--text);
+    }
+
+    .chart-shell {
+      width: 100%;
+      overflow: auto;
+      padding: 8px 0 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 5px 2px;
+      margin: 0 auto;
+      transition: all 0.2s ease;
+    }
+
+    th, td {
+      min-width: 48px;
+      width: 48px;
+      height: 43px;
+      text-align: center;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 15px;
+      transition: all 0.16s ease;
+    }
+
+    .col-header,
+    .row-header {
+      background: #eceff1;
+      color: var(--muted);
+      font-weight: 700;
+      border-radius: 7px;
+    }
+
+    .row-header {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+    }
+
+    .data-row { cursor: pointer; }
+
+    .data-row:hover .row-header {
+      background: #cfd8dc;
+      color: var(--text);
+    }
+
+    .cell {
+      background: white;
+      color: var(--muted);
+      border: 1px solid #f0f0f0;
+      border-radius: 7px;
+    }
+
+    .data-row:hover .cell {
+      border-color: #cfd8dc;
+      color: var(--text);
+    }
+
+    .row-header.num-selected {
+      background: var(--green);
+      color: white;
+    }
+
+    .row-header.den-selected {
+      background: var(--blue);
+      color: white;
+    }
+
+    .num-cell {
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 800;
+      border: 2px solid var(--green);
+    }
+
+    .den-cell {
+      background: var(--blue-light);
+      color: var(--blue);
+      font-weight: 800;
+      border: 2px solid var(--blue);
+    }
+
+    table.locked { border-spacing: 5px 0; }
+    table.locked .data-row:not(.selected-row) { display: none; }
+    table.locked .data-row { cursor: default; }
+    table.locked .data-row:hover .cell { color: inherit; }
+
+    table.locked .num-cell {
+      border-radius: 8px 8px 1px 1px;
+      border-bottom: 3px solid var(--text);
+    }
+
+    table.locked .den-cell {
+      border-radius: 1px 1px 8px 8px;
+      border-top: 0;
+    }
+
+    @media (max-width: 700px) {
+      main { padding-left: 10px; padding-right: 10px; }
+      .dashboard { padding: 16px 12px; }
+      th, td { min-width: 44px; width: 44px; height: 41px; font-size: 14px; }
+      .header-inner { align-items: flex-start; }
+      h1 { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Equivalent Fractions</h1>
+      <a class="home-link" href="../../">← Math Things</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="dashboard">
+      <div id="narration">Pick the numerator row, then pick the denominator row.</div>
+      <div class="instructions">
+        Pick two rows. Once both are chosen, the table locks so every column reads as an equivalent fraction: numerator and denominator are multiplied by the same number.
+      </div>
+      <button type="button" id="reset-btn">Choose New Rows</button>
+    </section>
+
+    <div class="chart-shell" aria-label="Equivalent fractions multiplication table">
+      <table id="eq-table"></table>
+    </div>
+  </main>
+
+  <script>
+    const SIZE = 16;
+    let numeratorRow = null;
+    let denominatorRow = null;
+    let locked = false;
+
+    function initTable() {
+      const table = document.getElementById('eq-table');
+      table.innerHTML = '';
+      table.classList.remove('locked');
+
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      const corner = document.createElement('th');
+      corner.textContent = '×';
+      corner.style.cssText = 'background:transparent;color:var(--muted);';
+      headerRow.appendChild(corner);
+
+      for (let c = 1; c <= SIZE; c++) {
+        const th = document.createElement('th');
+        th.className = 'col-header';
+        th.textContent = '×' + c;
+        headerRow.appendChild(th);
+      }
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      tbody.id = 'eq-body';
+
+      for (let r = 1; r <= SIZE; r++) {
+        const row = document.createElement('tr');
+        row.className = 'data-row';
+        row.id = 'eq-row-' + r;
+        row.addEventListener('click', () => selectRow(r));
+
+        const label = document.createElement('th');
+        label.className = 'row-header';
+        label.scope = 'row';
+        label.textContent = r;
+        row.appendChild(label);
+
+        for (let c = 1; c <= SIZE; c++) {
+          const td = document.createElement('td');
+          td.className = 'cell';
+          td.textContent = r * c;
+          row.appendChild(td);
+        }
+
+        tbody.appendChild(row);
+      }
+
+      table.appendChild(tbody);
+    }
+
+    function selectRow(value) {
+      if (locked) return;
+
+      const narration = document.getElementById('narration');
+
+      if (numeratorRow === null) {
+        numeratorRow = value;
+        const row = document.getElementById('eq-row-' + value);
+        row.classList.add('selected-row');
+        row.querySelector('.row-header').classList.add('num-selected');
+        row.querySelectorAll('.cell').forEach(cell => cell.classList.add('num-cell'));
+        narration.innerHTML = '<span style="color:var(--green);font-weight:700">' + value + '</span> is the numerator row. Now pick a denominator row.';
+        return;
+      }
+
+      if (value === numeratorRow) {
+        narration.innerHTML = '<span style="color:var(--green);font-weight:700">' + numeratorRow + '</span> is already the numerator. Pick a different row for the denominator.';
+        return;
+      }
+
+      denominatorRow = value;
+      locked = true;
+
+      const numRow = document.getElementById('eq-row-' + numeratorRow);
+      const denRow = document.getElementById('eq-row-' + denominatorRow);
+
+      denRow.classList.add('selected-row');
+      denRow.querySelector('.row-header').classList.add('den-selected');
+      denRow.querySelectorAll('.cell').forEach(cell => cell.classList.add('den-cell'));
+
+      const body = document.getElementById('eq-body');
+      body.appendChild(numRow);
+      body.appendChild(denRow);
+      document.getElementById('eq-table').classList.add('locked');
+
+      narration.innerHTML =
+        'Locked on <span style="color:var(--green);font-weight:800">' + numeratorRow +
+        '</span>/<span style="color:var(--blue);font-weight:800">' + denominatorRow +
+        '</span>. Across the row: ' +
+        numeratorRow + '/' + denominatorRow + ', ' +
+        (numeratorRow * 2) + '/' + (denominatorRow * 2) + ', ' +
+        (numeratorRow * 3) + '/' + (denominatorRow * 3) +
+        '… all equivalent.';
+    }
+
+    function reset() {
+      numeratorRow = null;
+      denominatorRow = null;
+      locked = false;
+      document.getElementById('narration').textContent =
+        'Pick the numerator row, then pick the denominator row.';
+      initTable();
+    }
+
+    document.getElementById('reset-btn').addEventListener('click', reset);
+    initTable();
+  </script>
+</body>
+</html>
