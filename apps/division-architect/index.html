@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Things. | Division Architect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --brand-red: #DC143C;
+      --sky-blue-fill: rgba(135, 206, 235, 0.28);
+      --sky-blue-edge: rgba(65, 150, 225, 0.72);
+      --gold: #D7A93B;
+      --cell: 34;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: #F0ECE1;
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+    }
+
+    .environment { position: fixed; inset: 0; overflow: hidden; }
+    .wall {
+      position: absolute; inset: 0;
+      background-color: #F2EFE9;
+      background-image: radial-gradient(circle at -10% 20%, rgba(255,255,255,1) 0%, rgba(242,239,233,0) 60%);
+    }
+    .window {
+      position: absolute; top: 10%; left: 8%; width: 14vw; height: 45vh;
+      background: linear-gradient(to bottom, var(--sky-blue-fill), rgba(255,255,255,0.6));
+      box-shadow: 0 0 60px rgba(255,255,255,0.8), inset 4px 4px 10px rgba(0,0,0,0.05);
+      border-radius: 2px; border: 1px solid rgba(255,255,255,0.5);
+      display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; padding: 6px;
+    }
+    .window span { background: rgba(255,255,255,0.3); backdrop-filter: blur(8px); box-shadow: inset 2px 2px 5px rgba(255,255,255,0.8); }
+    .floor {
+      position: absolute; top: 45%; left: -50%; right: -50%; height: 200%;
+      background-color: #E8D8C0;
+      background-image: repeating-linear-gradient(180deg, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 6px);
+      transform-origin: top center; transform: rotateX(75deg);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 10%);
+    }
+
+    header {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
+      background: rgba(245,245,247,0.85);
+      backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+      padding: 0 32px; z-index: 50;
+    }
+    .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; display: flex; align-items: baseline; }
+    .logo-bead {
+      display: inline-block; width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%;
+      background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #efefef, #a8a8a8 52%, #e0e0e0);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+    }
+    .page-title { font-weight: 300; font-size: 15px; color: var(--text-gray); letter-spacing: 0.5px; }
+
+    .table-scene {
+      position: fixed; inset: 0; padding: 84px 28px 28px;
+      display: flex; align-items: center; justify-content: center; z-index: 2;
+    }
+    .drafting-table {
+      position: relative;
+      width: min(1180px, calc(100vw - 56px));
+      height: min(760px, calc(100vh - 112px));
+      min-height: 420px;
+      background: var(--surface);
+      border-radius: 14px;
+      box-shadow: 0 1px 0 #fff inset, 0 -1px 2px rgba(0,0,0,0.03) inset, 15px 20px 40px rgba(0,0,0,0.12), 4px 8px 16px rgba(0,0,0,0.06);
+      padding: 22px 24px 20px;
+      display: grid;
+      grid-template-columns: 106px 1fr;
+      grid-template-rows: 56px 1fr;
+      gap: 12px 16px;
+    }
+    .drafting-table::before,
+    .drafting-table::after {
+      content: ''; position: absolute; width: 44px; height: 44px; bottom: -18px; border-radius: 6px; z-index: -1;
+      background: linear-gradient(135deg, #4a4a4c, #242426); box-shadow: 18px 14px 26px rgba(0,0,0,0.18);
+    }
+    .drafting-table::before { left: 76px; }
+    .drafting-table::after { right: 76px; }
+
+    .quantity-control {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: center; gap: 11px;
+    }
+    .quantity-label {
+      font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; color: rgba(0,0,0,.25);
+    }
+    .quantity-input {
+      width: 112px; height: 42px; border: 0; outline: 0; border-radius: 9px;
+      font: 800 22px 'Lexend', sans-serif; text-align: center; color: var(--text-main);
+      background: #f0f0f2;
+      box-shadow: inset 3px 3px 6px rgba(0,0,0,.10), inset -2px -2px 4px rgba(255,255,255,.95), 0 1px 0 #fff;
+      appearance: textfield;
+    }
+    .quantity-input::-webkit-outer-spin-button, .quantity-input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+
+    .rail-zone {
+      grid-column: 1; grid-row: 2;
+      position: relative; display: flex; align-items: stretch; justify-content: center;
+      padding: 28px 0 24px;
+      user-select: none;
+    }
+    .rail {
+      position: relative; width: 9px; height: 100%; border-radius: 6px;
+      background: #e4e4e8;
+      box-shadow: inset 3px 3px 5px rgba(0,0,0,.11), inset -1px -1px 2px rgba(255,255,255,1), 0 1px 0 rgba(255,255,255,.8);
+    }
+    .rail-ticks { position: absolute; inset: 0; pointer-events: none; }
+    .rail-tick {
+      position: absolute; left: 13px; width: 12px; height: 1px; background: rgba(0,0,0,.18);
+      transform: translateY(-50%);
+    }
+    .rail-tick.major { width: 20px; background: rgba(0,0,0,.30); }
+    .rail-label {
+      position: absolute; left: 38px; transform: translateY(-50%);
+      font-size: 10px; font-weight: 700; color: rgba(0,0,0,.26);
+      white-space: nowrap;
+    }
+    .rail-label.active { color: var(--brand-red); font-weight: 900; }
+    .handle {
+      position: absolute; left: 50%; width: 52px; height: 24px;
+      transform: translate(-50%, -50%);
+      border-radius: 3px 6px 6px 3px;
+      cursor: grab; touch-action: none;
+      background-color: var(--brand-red);
+      background-image:
+        radial-gradient(circle at 14% 22%, rgba(0,0,0,.55) 1px, transparent 1.7px),
+        radial-gradient(circle at 78% 72%, rgba(0,0,0,.4) 1px, transparent 1.7px),
+        linear-gradient(135deg, rgba(255,255,255,.42), transparent 42%, rgba(0,0,0,.2));
+      border: 1px solid #a00;
+      box-shadow: inset 1px 1px 1px rgba(255,255,255,.55), inset -1px -1px 2px rgba(0,0,0,.35), 4px 6px 12px rgba(0,0,0,.18);
+      z-index: 5;
+    }
+    .handle:active { cursor: grabbing; }
+    .handle::after {
+      content: ''; position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
+      border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 8px solid var(--brand-red);
+      filter: drop-shadow(2px 2px 1px rgba(0,0,0,.15));
+    }
+    .handle-number {
+      position: absolute; left: -39px; top: 50%; transform: translateY(-50%);
+      min-width: 32px; text-align: right; color: var(--brand-red); font-size: 12px; font-weight: 900;
+    }
+
+    .workspace-shell {
+      grid-column: 2; grid-row: 2; position: relative; min-width: 0; min-height: 0;
+      border: 1px solid rgba(0,0,0,.055); border-radius: 7px; overflow: hidden;
+      background:
+        linear-gradient(rgba(0,0,0,.014) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,.014) 1px, transparent 1px),
+        #fff;
+      background-size: 34px 34px;
+      box-shadow: inset 0 1px 5px rgba(0,0,0,.025);
+    }
+    #world { width: 100%; height: 100%; display: block; cursor: default; }
+
+    .axis-line { stroke: rgba(0,0,0,.12); stroke-width: 1.15; vector-effect: non-scaling-stroke; }
+    .axis-tick { stroke: rgba(0,0,0,.17); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .axis-text {
+      font-family: 'Lexend', sans-serif; font-size: 10px; font-weight: 700;
+      fill: rgba(0,0,0,.28); dominant-baseline: middle; text-anchor: middle;
+    }
+    .axis-text.active { fill: var(--brand-red); font-weight: 900; }
+    .active-marker { fill: var(--brand-red); filter: drop-shadow(1px 2px 2px rgba(0,0,0,.14)); }
+
+    .bead-position {
+      transition: transform 420ms cubic-bezier(.22,1,.36,1);
+      transform-box: view-box;
+      will-change: transform;
+    }
+    .bead-inner { transform-box: fill-box; transform-origin: center; }
+    .bead-circle { filter: url(#beadShadow); }
+    .bead-shine { pointer-events: none; }
+    .restless { animation: restless 560ms ease-in-out infinite alternate; }
+    @keyframes restless {
+      0%   { transform: translate(-1.4px, 0px) rotate(-1deg); }
+      37%  { transform: translate(1.6px, -2.1px) rotate(1.4deg); }
+      71%  { transform: translate(-0.7px, 1.4px) rotate(-.8deg); }
+      100% { transform: translate(1.1px, -0.7px) rotate(.7deg); }
+    }
+
+    .harmony-glow {
+      opacity: 0;
+      transition: opacity 500ms ease;
+      pointer-events: none;
+    }
+    .harmony-glow.on { opacity: .92; }
+    .harmony-glow.square { opacity: 1; }
+
+    .corner-readout {
+      position: absolute; right: 14px; bottom: 11px;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      color: rgba(0,0,0,.18); user-select: none; pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    @media (max-width: 760px) {
+      header { height: 54px; padding: 0 16px; }
+      .logo { font-size: 1.25rem; }
+      .page-title { font-size: 12px; }
+      .table-scene { padding: 66px 8px 10px; }
+      .drafting-table {
+        width: 100%; height: 100%; min-height: 0; border-radius: 10px;
+        padding: 12px 10px 10px;
+        grid-template-columns: 70px 1fr; grid-template-rows: 48px 1fr;
+        gap: 8px;
+      }
+      .rail-label { left: 28px; font-size: 9px; }
+      .handle { width: 42px; height: 22px; }
+      .handle-number { left: -29px; font-size: 10px; }
+      .quantity-input { height: 38px; width: 92px; font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="environment" aria-hidden="true">
+    <div class="wall"></div>
+    <div class="window"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="floor"></div>
+  </div>
+
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <div class="page-title">Division Architect</div>
+    <div></div>
+  </header>
+
+  <main class="table-scene">
+    <section class="drafting-table" aria-label="Division Architect">
+      <div class="quantity-control">
+        <label class="quantity-label" for="quantity">Quantity</label>
+        <input id="quantity" class="quantity-input" type="number" min="1" max="256" value="16" inputmode="numeric" aria-label="Starting quantity, 1 through 256">
+      </div>
+
+      <div class="rail-zone" id="railZone" aria-label="Number of equal rows">
+        <div class="rail" id="rail">
+          <div class="rail-ticks" id="railTicks"></div>
+          <div class="handle" id="handle" role="slider" tabindex="0" aria-valuemin="1" aria-valuemax="16" aria-valuenow="1" aria-label="Equal rows">
+            <span class="handle-number" id="handleNumber">1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workspace-shell">
+        <svg id="world" viewBox="-90 -80 700 420" preserveAspectRatio="xMidYMid meet" aria-label="A quantity of beads rearranged into equal rows">
+          <defs>
+            <radialGradient id="beadFill" cx="34%" cy="28%" r="80%" fx="31%" fy="24%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="28%" stop-color="#f4f4f5"/>
+              <stop offset="54%" stop-color="#c7c8cc"/>
+              <stop offset="78%" stop-color="#a6a7ac"/>
+              <stop offset="100%" stop-color="#e6e7e9"/>
+            </radialGradient>
+            <radialGradient id="harmonyLight" cx="50%" cy="45%" r="68%">
+              <stop offset="0%" stop-color="#fffef7" stop-opacity=".95"/>
+              <stop offset="55%" stop-color="#fffdf2" stop-opacity=".38"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="squareLight" cx="50%" cy="45%" r="70%">
+              <stop offset="0%" stop-color="#ffe8a3" stop-opacity=".74"/>
+              <stop offset="48%" stop-color="#f7cf67" stop-opacity=".28"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="beadShadow" x="-60%" y="-60%" width="220%" height="240%">
+              <feDropShadow dx="0" dy="2.8" stdDeviation="2.1" flood-color="#000000" flood-opacity=".25"/>
+            </filter>
+            <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="12"/>
+            </filter>
+          </defs>
+
+          <g id="glowLayer"></g>
+          <g id="axisLayer"></g>
+          <g id="beadLayer"></g>
+        </svg>
+        <div class="corner-readout" id="cornerReadout"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var MAX_QUANTITY = 256;
+      var CELL = 34;
+      var state = { n: 16, rows: 1, dragging: false };
+      var beadNodes = [];
+      var currentView = { x: -90, y: -80, w: 700, h: 420 };
+      var viewAnimation = 0;
+
+      var svg = document.getElementById('world');
+      var beadLayer = document.getElementById('beadLayer');
+      var axisLayer = document.getElementById('axisLayer');
+      var glowLayer = document.getElementById('glowLayer');
+      var quantityInput = document.getElementById('quantity');
+      var rail = document.getElementById('rail');
+      var railTicks = document.getElementById('railTicks');
+      var handle = document.getElementById('handle');
+      var handleNumber = document.getElementById('handleNumber');
+      var cornerReadout = document.getElementById('cornerReadout');
+
+      function ns(tag, attrs) {
+        var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        if (attrs) Object.keys(attrs).forEach(function (key) { el.setAttribute(key, attrs[key]); });
+        return el;
+      }
+
+      function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+      function makeBead(i) {
+        var pos = ns('g', { 'class': 'bead-position' });
+        var inner = ns('g', { 'class': 'bead-inner' });
+        var c = ns('circle', { cx: 0, cy: 0, r: 12.2, fill: 'url(#beadFill)', 'class': 'bead-circle' });
+        var shine = ns('ellipse', { cx: -3.6, cy: -4.3, rx: 4.1, ry: 2.8, fill: 'rgba(255,255,255,.78)', transform: 'rotate(-28 -3.6 -4.3)', 'class': 'bead-shine' });
+        inner.appendChild(c);
+        inner.appendChild(shine);
+        pos.appendChild(inner);
+        beadLayer.appendChild(pos);
+        return { pos: pos, inner: inner, index: i };
+      }
+
+      function rebuildBeads() {
+        beadLayer.innerHTML = '';
+        beadNodes = [];
+        for (var i = 0; i < state.n; i++) beadNodes.push(makeBead(i));
+      }
+
+      function smartStep(max) {
+        if (max <= 20) return 1;
+        if (max <= 50) return 5;
+        if (max <= 100) return 10;
+        if (max <= 180) return 20;
+        return 25;
+      }
+
+      function addAxisText(x, y, value, active) {
+        var t = ns('text', { x: x, y: y, 'class': 'axis-text' + (active ? ' active' : '') });
+        t.textContent = String(value);
+        axisLayer.appendChild(t);
+      }
+
+      function drawAxes(q, remainder, cols) {
+        axisLayer.innerHTML = '';
+        var width = Math.max(1, cols) * CELL;
+        var height = Math.max(1, state.rows) * CELL;
+
+        axisLayer.appendChild(ns('line', { x1: 0, y1: -20, x2: width, y2: -20, 'class': 'axis-line' }));
+        axisLayer.appendChild(ns('line', { x1: -20, y1: 0, x2: -20, y2: height, 'class': 'axis-line' }));
+
+        var xStep = smartStep(cols);
+        for (var x = 1; x <= cols; x++) {
+          var isActiveX = x === q;
+          if (x === 1 || x === cols || x % xStep === 0 || isActiveX) {
+            var xx = (x - 0.5) * CELL;
+            axisLayer.appendChild(ns('line', { x1: xx, y1: -23, x2: xx, y2: -17, 'class': 'axis-tick' }));
+            addAxisText(xx, -35, x, isActiveX);
+          }
+        }
+
+        var yStep = smartStep(state.rows);
+        for (var y = 1; y <= state.rows; y++) {
+          var isActiveY = y === state.rows;
+          if (y === 1 || y === state.rows || y % yStep === 0 || isActiveY) {
+            var yy = (y - 0.5) * CELL;
+            axisLayer.appendChild(ns('line', { x1: -23, y1: yy, x2: -17, y2: yy, 'class': 'axis-tick' }));
+            var t = ns('text', { x: -38, y: yy, 'class': 'axis-text' + (isActiveY ? ' active' : ''), 'text-anchor': 'end' });
+            t.textContent = String(y);
+            axisLayer.appendChild(t);
+          }
+        }
+
+        if (q >= 1) {
+          var markerX = q * CELL;
+          axisLayer.appendChild(ns('path', {
+            d: 'M ' + (markerX - 6) + ' -52 L ' + (markerX + 6) + ' -52 L ' + markerX + ' -42 Z',
+            'class': 'active-marker'
+          }));
+        }
+
+        var markerY = state.rows * CELL;
+        axisLayer.appendChild(ns('path', {
+          d: 'M -52 ' + (markerY - 6) + ' L -52 ' + (markerY + 6) + ' L -42 ' + markerY + ' Z',
+          'class': 'active-marker'
+        }));
+
+        if (remainder > 0) {
+          var remX = (q + 0.5) * CELL;
+          axisLayer.appendChild(ns('line', { x1: remX, y1: -14, x2: remX, y2: Math.min(remainder, state.rows) * CELL, stroke: 'rgba(0,0,0,.035)', 'stroke-width': 1 }));
+        }
+      }
+
+      function drawGlow(q, remainder) {
+        glowLayer.innerHTML = '';
+        if (remainder !== 0 || q < 1) return;
+
+        var square = q === state.rows;
+        var padX = CELL * 1.35;
+        var padY = CELL * 1.35;
+        var rect = ns('rect', {
+          x: -padX,
+          y: -padY,
+          width: q * CELL + padX * 2,
+          height: state.rows * CELL + padY * 2,
+          rx: CELL * 1.4,
+          fill: square ? 'url(#squareLight)' : 'url(#harmonyLight)',
+          filter: 'url(#softBlur)',
+          'class': 'harmony-glow on' + (square ? ' square' : '')
+        });
+        glowLayer.appendChild(rect);
+      }
+
+      function layoutBeads() {
+        var q = Math.floor(state.n / state.rows);
+        var remainder = state.n % state.rows;
+        var cols = q + (remainder ? 1 : 0);
+
+        beadNodes.forEach(function (node, i) {
+          var row = i % state.rows;
+          var col = Math.floor(i / state.rows);
+          var x = col * CELL + CELL / 2;
+          var y = row * CELL + CELL / 2;
+          node.pos.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+          var isRemainder = remainder > 0 && col === q && row < remainder;
+          node.inner.setAttribute('class', 'bead-inner' + (isRemainder ? ' restless' : ''));
+          node.inner.style.animationDelay = isRemainder ? ((row % 5) * -90) + 'ms' : '0ms';
+        });
+
+        drawAxes(q, remainder, cols);
+        drawGlow(q, remainder);
+        cornerReadout.textContent = remainder === 0 ? '' : remainder + ' left out';
+        fitCamera(cols, state.rows);
+      }
+
+      function fitCamera(cols, rows) {
+        var contentW = Math.max(1, cols) * CELL;
+        var contentH = Math.max(1, rows) * CELL;
+        var padL = 92, padR = 66, padT = 80, padB = 66;
+        var wantedW = Math.max(320, contentW + padL + padR);
+        var wantedH = Math.max(260, contentH + padT + padB);
+        var rect = svg.getBoundingClientRect();
+        var aspect = rect.width > 0 && rect.height > 0 ? rect.width / rect.height : 1.6;
+
+        var w = wantedW;
+        var h = wantedH;
+        if (w / h < aspect) w = h * aspect;
+        else h = w / aspect;
+
+        var cx = contentW / 2 + (padR - padL) / 2;
+        var cy = contentH / 2 + (padB - padT) / 2;
+        animateView({ x: cx - w / 2, y: cy - h / 2, w: w, h: h });
+      }
+
+      function animateView(target) {
+        if (viewAnimation) cancelAnimationFrame(viewAnimation);
+        var start = Object.assign({}, currentView);
+        var started = performance.now();
+        var duration = 460;
+
+        function frame(now) {
+          var t = clamp((now - started) / duration, 0, 1);
+          var e = 1 - Math.pow(1 - t, 3);
+          currentView = {
+            x: start.x + (target.x - start.x) * e,
+            y: start.y + (target.y - start.y) * e,
+            w: start.w + (target.w - start.w) * e,
+            h: start.h + (target.h - start.h) * e
+          };
+          svg.setAttribute('viewBox', currentView.x + ' ' + currentView.y + ' ' + currentView.w + ' ' + currentView.h);
+          if (t < 1) viewAnimation = requestAnimationFrame(frame);
+        }
+        viewAnimation = requestAnimationFrame(frame);
+      }
+
+      function railMajorStep() {
+        if (state.n <= 16) return 1;
+        if (state.n <= 40) return 5;
+        if (state.n <= 100) return 10;
+        return 25;
+      }
+
+      function renderRail() {
+        railTicks.innerHTML = '';
+        var step = railMajorStep();
+        var count = state.n;
+        var tickEvery = count <= 40 ? 1 : count <= 100 ? 2 : 4;
+
+        for (var v = 1; v <= count; v++) {
+          if (v !== 1 && v !== count && v % tickEvery !== 0 && v !== state.rows) continue;
+          var p = count === 1 ? 0 : (v - 1) / (count - 1);
+          var tick = document.createElement('div');
+          var major = v === 1 || v === count || v % step === 0 || v === state.rows;
+          tick.className = 'rail-tick' + (major ? ' major' : '');
+          tick.style.top = (p * 100) + '%';
+          railTicks.appendChild(tick);
+
+          if (major) {
+            var label = document.createElement('div');
+            label.className = 'rail-label' + (v === state.rows ? ' active' : '');
+            label.style.top = (p * 100) + '%';
+            label.textContent = String(v);
+            railTicks.appendChild(label);
+          }
+        }
+
+        var hp = state.n === 1 ? 0 : (state.rows - 1) / (state.n - 1);
+        handle.style.top = (hp * 100) + '%';
+        handleNumber.textContent = String(state.rows);
+        handle.setAttribute('aria-valuemax', String(state.n));
+        handle.setAttribute('aria-valuenow', String(state.rows));
+      }
+
+      function setRows(value) {
+        var next = clamp(Math.round(value), 1, state.n);
+        if (next === state.rows) return;
+        state.rows = next;
+        renderRail();
+        layoutBeads();
+      }
+
+      function rowsFromPointer(clientY) {
+        var rect = rail.getBoundingClientRect();
+        var p = clamp((clientY - rect.top) / rect.height, 0, 1);
+        return 1 + Math.round(p * (state.n - 1));
+      }
+
+      handle.addEventListener('pointerdown', function (e) {
+        state.dragging = true;
+        handle.setPointerCapture(e.pointerId);
+        setRows(rowsFromPointer(e.clientY));
+        e.preventDefault();
+      });
+      handle.addEventListener('pointermove', function (e) {
+        if (!state.dragging) return;
+        setRows(rowsFromPointer(e.clientY));
+        e.preventDefault();
+      });
+      handle.addEventListener('pointerup', function (e) {
+        state.dragging = false;
+        if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+      });
+      handle.addEventListener('pointercancel', function () { state.dragging = false; });
+
+      rail.addEventListener('pointerdown', function (e) {
+        setRows(rowsFromPointer(e.clientY));
+      });
+
+      handle.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { setRows(state.rows + 1); e.preventDefault(); }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { setRows(state.rows - 1); e.preventDefault(); }
+        if (e.key === 'Home') { setRows(1); e.preventDefault(); }
+        if (e.key === 'End') { setRows(state.n); e.preventDefault(); }
+      });
+
+      function applyQuantity() {
+        var value = parseInt(quantityInput.value, 10);
+        if (!Number.isFinite(value)) value = state.n;
+        value = clamp(value, 1, MAX_QUANTITY);
+        quantityInput.value = String(value);
+        state.n = value;
+        state.rows = 1;
+        rebuildBeads();
+        renderRail();
+        layoutBeads();
+      }
+
+      quantityInput.addEventListener('change', applyQuantity);
+      quantityInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { quantityInput.blur(); applyQuantity(); }
+      });
+
+      window.addEventListener('resize', function () {
+        var q = Math.floor(state.n / state.rows);
+        var r = state.n % state.rows;
+        fitCamera(q + (r ? 1 : 0), state.rows);
+      });
+
+      rebuildBeads();
+      renderRail();
+      layoutBeads();
+    })();
+  </script>
+</body>
+</html>
