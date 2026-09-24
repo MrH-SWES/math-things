@@ -96,9 +96,6 @@
       grid-column: 1 / -1;
       display: flex; align-items: center; justify-content: center; gap: 11px;
     }
-    .quantity-label {
-      font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; color: rgba(0,0,0,.25);
-    }
     .quantity-input {
       width: 112px; height: 42px; border: 0; outline: 0; border-radius: 9px;
       font: 800 22px 'Lexend', sans-serif; text-align: center; color: var(--text-main);
@@ -151,12 +148,10 @@
     .active-marker { fill: var(--brand-red); filter: drop-shadow(1px 2px 2px rgba(0,0,0,.14)); }
 
     .bead-position {
-      transition: transform 420ms cubic-bezier(.22,1,.36,1);
+      transition: transform 330ms cubic-bezier(.22,1,.36,1);
       transform-box: view-box;
-      will-change: transform;
     }
     .bead-inner { transform-box: fill-box; transform-origin: center; }
-    .bead-circle { filter: url(#beadShadow); }
     .bead-shine { pointer-events: none; }
     .restless { animation: restless 560ms ease-in-out infinite alternate; }
     @keyframes restless {
@@ -164,6 +159,21 @@
       37%  { transform: translate(1.6px, -2.1px) rotate(1.4deg); }
       71%  { transform: translate(-0.7px, 1.4px) rotate(-.8deg); }
       100% { transform: translate(1.1px, -0.7px) rotate(.7deg); }
+    }
+    .bead-born { animation: beadBorn 260ms cubic-bezier(.34,1.56,.64,1) both; }
+    .bead-leaving { animation: beadLeaving 170ms ease-in both; }
+    @keyframes beadBorn {
+      from { transform: scale(.25); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes beadLeaving {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(.25); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bead-position, .harmony-glow { transition: none !important; }
+      .restless, .bead-born, .bead-leaving { animation: none !important; }
     }
 
     .harmony-glow {
@@ -174,12 +184,6 @@
     .harmony-glow.on { opacity: .92; }
     .harmony-glow.square { opacity: 1; }
 
-    .corner-readout {
-      position: absolute; right: 14px; bottom: 11px;
-      font-size: 10px; font-weight: 700; letter-spacing: .08em;
-      color: rgba(0,0,0,.18); user-select: none; pointer-events: none;
-      transition: opacity .2s ease;
-    }
 
     @media (max-width: 760px) {
       header { height: 54px; padding: 0 16px; }
@@ -212,7 +216,6 @@
   <main class="table-scene">
     <section class="drafting-table" aria-label="Division Architect">
       <div class="quantity-control">
-        <label class="quantity-label" for="quantity">Quantity</label>
         <input id="quantity" class="quantity-input" type="number" min="1" max="256" value="16" inputmode="numeric" aria-label="Starting quantity, 1 through 256">
       </div>
 
@@ -236,15 +239,14 @@
               <stop offset="48%" stop-color="#f7cf67" stop-opacity=".28"/>
               <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
             </radialGradient>
-            <filter id="beadShadow" x="-60%" y="-60%" width="220%" height="240%">
-              <feDropShadow dx="0" dy="2.8" stdDeviation="2.1" flood-color="#000000" flood-opacity=".25"/>
-            </filter>
             <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="12"/>
             </filter>
           </defs>
 
-          <g id="glowLayer"></g>
+          <g id="glowLayer">
+            <rect id="harmonyGlow" class="harmony-glow" x="0" y="0" width="0" height="0" rx="0" fill="url(#harmonyLight)" filter="url(#softBlur)"></rect>
+          </g>
           <g id="axisLayer"></g>
           <g id="rowHandle" class="axis-handle" role="slider" tabindex="0" aria-valuemin="1" aria-valuemax="16" aria-valuenow="1" aria-label="Equal rows">
             <rect class="handle-body" x="-108" y="-10" width="42" height="20" rx="3"></rect>
@@ -253,7 +255,6 @@
           </g>
           <g id="beadLayer"></g>
         </svg>
-        <div class="corner-readout" id="cornerReadout"></div>
       </div>
     </section>
   </main>
@@ -268,14 +269,15 @@
       var beadNodes = [];
       var currentView = { x: -90, y: -80, w: 700, h: 420 };
       var viewAnimation = 0;
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       var svg = document.getElementById('world');
       var beadLayer = document.getElementById('beadLayer');
       var axisLayer = document.getElementById('axisLayer');
       var glowLayer = document.getElementById('glowLayer');
+      var harmonyGlow = document.getElementById('harmonyGlow');
       var quantityInput = document.getElementById('quantity');
       var handle = document.getElementById('rowHandle');
-      var cornerReadout = document.getElementById('cornerReadout');
 
       function ns(tag, attrs) {
         var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -288,8 +290,10 @@
       function makeBead(i) {
         var pos = ns('g', { 'class': 'bead-position' });
         var inner = ns('g', { 'class': 'bead-inner' });
+        var contact = ns('ellipse', { cx: 1.2, cy: 4.7, rx: 10.3, ry: 6.2, fill: 'rgba(0,0,0,.14)' });
         var c = ns('circle', { cx: 0, cy: 0, r: 12.2, fill: 'url(#beadFill)', 'class': 'bead-circle' });
         var shine = ns('ellipse', { cx: -3.6, cy: -4.3, rx: 4.1, ry: 2.8, fill: 'rgba(255,255,255,.78)', transform: 'rotate(-28 -3.6 -4.3)', 'class': 'bead-shine' });
+        inner.appendChild(contact);
         inner.appendChild(c);
         inner.appendChild(shine);
         pos.appendChild(inner);
@@ -297,10 +301,33 @@
         return { pos: pos, inner: inner, index: i };
       }
 
-      function rebuildBeads() {
-        beadLayer.innerHTML = '';
-        beadNodes = [];
-        for (var i = 0; i < state.n; i++) beadNodes.push(makeBead(i));
+      function syncBeads(targetCount, animateChange) {
+        while (beadNodes.length < targetCount) {
+          var born = makeBead(beadNodes.length);
+          beadNodes.push(born);
+          if (animateChange && !reduceMotion) {
+            born.inner.classList.add('bead-born');
+            born.inner.addEventListener('animationend', function onBorn(e) {
+              e.currentTarget.classList.remove('bead-born');
+              e.currentTarget.removeEventListener('animationend', onBorn);
+            });
+          }
+        }
+
+        if (beadNodes.length > targetCount) {
+          var leaving = beadNodes.splice(targetCount);
+          leaving.forEach(function (node) {
+            if (!animateChange || reduceMotion) {
+              node.pos.remove();
+              return;
+            }
+            node.inner.classList.remove('restless');
+            node.inner.classList.add('bead-leaving');
+            setTimeout(function () { node.pos.remove(); }, 180);
+          });
+        }
+
+        beadNodes.forEach(function (node, index) { node.index = index; });
       }
 
       function smartStep(max) {
@@ -326,10 +353,10 @@
         axisLayer.appendChild(ns('line', { x1: 0, y1: -20, x2: width, y2: -20, 'class': 'axis-line' }));
         axisLayer.appendChild(ns('line', { x1: -20, y1: 0, x2: -20, y2: height, 'class': 'axis-line' }));
 
-        var xStep = smartStep(cols);
-        for (var x = 1; x <= cols; x++) {
+        var xStep = smartStep(q);
+        for (var x = 1; x <= q; x++) {
           var isActiveX = x === q;
-          if (x === 1 || x === cols || x % xStep === 0 || isActiveX) {
+          if (x === 1 || x === q || x % xStep === 0 || isActiveX) {
             var xx = (x - 0.5) * CELL;
             axisLayer.appendChild(ns('line', { x1: xx, y1: -23, x2: xx, y2: -17, 'class': 'axis-tick' }));
             addAxisText(xx, -35, x, isActiveX);
@@ -363,26 +390,31 @@
       }
 
       function drawGlow(q, remainder) {
-        glowLayer.innerHTML = '';
-        if (remainder !== 0 || q < 1) return;
+        if (remainder !== 0 || q < 1) {
+          harmonyGlow.classList.remove('on', 'square');
+          return;
+        }
 
         var square = q === state.rows;
         var padX = CELL * 1.35;
         var padY = CELL * 1.35;
-        var rect = ns('rect', {
-          x: -padX,
-          y: -padY,
-          width: q * CELL + padX * 2,
-          height: state.rows * CELL + padY * 2,
-          rx: CELL * 1.4,
-          fill: square ? 'url(#squareLight)' : 'url(#harmonyLight)',
-          filter: 'url(#softBlur)',
-          'class': 'harmony-glow on' + (square ? ' square' : '')
-        });
-        glowLayer.appendChild(rect);
+        harmonyGlow.setAttribute('x', -padX);
+        harmonyGlow.setAttribute('y', -padY);
+        harmonyGlow.setAttribute('width', q * CELL + padX * 2);
+        harmonyGlow.setAttribute('height', state.rows * CELL + padY * 2);
+        harmonyGlow.setAttribute('rx', CELL * 1.4);
+        harmonyGlow.setAttribute('fill', square ? 'url(#squareLight)' : 'url(#harmonyLight)');
+        harmonyGlow.classList.toggle('square', square);
+
+        if (!harmonyGlow.classList.contains('on')) {
+          requestAnimationFrame(function () { harmonyGlow.classList.add('on'); });
+        }
       }
 
-      function layoutBeads() {
+      function layoutBeads(options) {
+        options = options || {};
+        var shouldFitCamera = options.camera !== false;
+        var cascade = options.cascade !== false && !reduceMotion;
         var q = Math.floor(state.n / state.rows);
         var remainder = state.n % state.rows;
         var cols = q + (remainder ? 1 : 0);
@@ -392,17 +424,23 @@
           var col = Math.floor(i / state.rows);
           var x = col * CELL + CELL / 2;
           var y = row * CELL + CELL / 2;
+
+          // A short stagger makes redistribution read as dealing into rows
+          // rather than all counters teleporting at once.
+          var delay = cascade ? Math.min(130, row * 11 + (col % 5) * 5) : 0;
+          node.pos.style.transitionDelay = delay + 'ms';
           node.pos.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+
           var isRemainder = remainder > 0 && col === q && row < remainder;
-          node.inner.setAttribute('class', 'bead-inner' + (isRemainder ? ' restless' : ''));
-          node.inner.style.animationDelay = isRemainder ? ((row % 5) * -90) + 'ms' : '0ms';
+          node.inner.classList.toggle('restless', isRemainder && !reduceMotion);
+          if (isRemainder) node.inner.style.animationDelay = ((row % 5) * -90) + 'ms';
+          else node.inner.style.animationDelay = '0ms';
         });
 
         drawAxes(q, remainder, cols);
         renderHandle();
         drawGlow(q, remainder);
-        cornerReadout.textContent = remainder === 0 ? '' : remainder + ' left out';
-        fitCamera(cols, state.rows);
+        if (shouldFitCamera) fitCamera(cols, state.rows);
       }
 
       function fitCamera(cols, rows) {
@@ -426,6 +464,11 @@
 
       function animateView(target) {
         if (viewAnimation) cancelAnimationFrame(viewAnimation);
+        if (reduceMotion) {
+          currentView = target;
+          svg.setAttribute('viewBox', target.x + ' ' + target.y + ' ' + target.w + ' ' + target.h);
+          return;
+        }
         var start = Object.assign({}, currentView);
         var started = performance.now();
         var duration = 460;
@@ -450,21 +493,20 @@
         handle.setAttribute('transform', 'translate(0 ' + y + ')');
         handle.setAttribute('aria-valuemax', String(state.n));
         handle.setAttribute('aria-valuenow', String(state.rows));
+        handle.setAttribute('aria-valuetext', state.rows + (state.rows === 1 ? ' equal row' : ' equal rows'));
       }
 
-      function clientToWorld(clientX, clientY) {
-        var point = svg.createSVGPoint();
-        point.x = clientX;
-        point.y = clientY;
-        var ctm = svg.getScreenCTM();
-        return ctm ? point.matrixTransform(ctm.inverse()) : { x: 0, y: 0 };
-      }
-
-      function setRows(value) {
+      function setRows(value, options) {
         var next = clamp(Math.round(value), 1, state.n);
         if (next === state.rows) return;
         state.rows = next;
-        layoutBeads();
+        layoutBeads(options);
+      }
+
+      function reframeCurrent() {
+        var q = Math.floor(state.n / state.rows);
+        var r = state.n % state.rows;
+        fitCamera(q + (r ? 1 : 0), state.rows);
       }
 
       handle.addEventListener('pointerdown', function (e) {
@@ -477,27 +519,32 @@
       handle.addEventListener('pointermove', function (e) {
         if (!state.dragging) return;
 
-        // Deliberately decouple the drag from the zooming SVG coordinate system.
-        // A row change requires a meaningful physical finger movement, and
-        // multiple-row jumps only happen when the user actually drags farther.
-        var PIXELS_PER_ROW = 38;
+        // Camera stays frozen for the whole gesture. One row requires a
+        // deliberate finger move slightly larger than the rendered row spacing.
+        var ctm = svg.getScreenCTM();
+        var renderedRow = ctm ? Math.abs(ctm.d) * CELL : 38;
+        var pixelsPerRow = Math.max(36, renderedRow * 1.08);
         var deltaY = e.clientY - state.dragStartY;
         var steps = deltaY >= 0
-          ? Math.floor(deltaY / PIXELS_PER_ROW)
-          : Math.ceil(deltaY / PIXELS_PER_ROW);
+          ? Math.floor(deltaY / pixelsPerRow)
+          : Math.ceil(deltaY / pixelsPerRow);
 
-        setRows(state.dragStartRows + steps);
+        setRows(state.dragStartRows + steps, { camera: false, cascade: true });
         e.preventDefault();
       });
       handle.addEventListener('pointerup', function (e) {
         state.dragging = false;
         if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+        reframeCurrent();
       });
-      handle.addEventListener('pointercancel', function () { state.dragging = false; });
+      handle.addEventListener('pointercancel', function () {
+        state.dragging = false;
+        reframeCurrent();
+      });
 
       handle.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { setRows(state.rows + 1); e.preventDefault(); }
-        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { setRows(state.rows - 1); e.preventDefault(); }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { setRows(state.rows + 1); e.preventDefault(); }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { setRows(state.rows - 1); e.preventDefault(); }
         if (e.key === 'Home') { setRows(1); e.preventDefault(); }
         if (e.key === 'End') { setRows(state.n); e.preventDefault(); }
       });
@@ -507,25 +554,26 @@
         if (!Number.isFinite(value)) value = state.n;
         value = clamp(value, 1, MAX_QUANTITY);
         quantityInput.value = String(value);
+        if (value === state.n) return;
+
         state.n = value;
         state.rows = 1;
-        rebuildBeads();
-        layoutBeads();
+        syncBeads(value, true);
+        layoutBeads({ camera: true, cascade: true });
       }
 
       quantityInput.addEventListener('change', applyQuantity);
       quantityInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') { quantityInput.blur(); applyQuantity(); }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          quantityInput.blur();
+        }
       });
 
-      window.addEventListener('resize', function () {
-        var q = Math.floor(state.n / state.rows);
-        var r = state.n % state.rows;
-        fitCamera(q + (r ? 1 : 0), state.rows);
-      });
+      window.addEventListener('resize', reframeCurrent);
 
-      rebuildBeads();
-      layoutBeads();
+      syncBeads(state.n, false);
+      layoutBeads({ camera: true, cascade: false });
     })();
   </script>
 </body>
