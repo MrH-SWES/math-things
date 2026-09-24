@@ -247,9 +247,9 @@
           <g id="glowLayer"></g>
           <g id="axisLayer"></g>
           <g id="rowHandle" class="axis-handle" role="slider" tabindex="0" aria-valuemin="1" aria-valuemax="16" aria-valuenow="1" aria-label="Equal rows">
-            <rect class="handle-body" x="-72" y="-10" width="40" height="20" rx="3"></rect>
-            <path class="handle-tip" d="M -32 -7 L -20 0 L -32 7 Z"></path>
-            <rect x="-86" y="-20" width="70" height="40" fill="transparent"></rect>
+            <rect class="handle-body" x="-108" y="-10" width="42" height="20" rx="3"></rect>
+            <path class="handle-tip" d="M -66 -7 L -52 0 L -66 7 Z"></path>
+            <rect x="-122" y="-22" width="78" height="44" fill="transparent"></rect>
           </g>
           <g id="beadLayer"></g>
         </svg>
@@ -264,7 +264,7 @@
 
       var MAX_QUANTITY = 256;
       var CELL = 34;
-      var state = { n: 16, rows: 1, dragging: false };
+      var state = { n: 16, rows: 1, dragging: false, dragStartY: 0, dragStartRows: 1 };
       var beadNodes = [];
       var currentView = { x: -90, y: -80, w: 700, h: 420 };
       var viewAnimation = 0;
@@ -460,11 +460,6 @@
         return ctm ? point.matrixTransform(ctm.inverse()) : { x: 0, y: 0 };
       }
 
-      function rowsFromPointer(clientY) {
-        var p = clientToWorld(0, clientY);
-        return clamp(Math.round((p.y - CELL / 2) / CELL) + 1, 1, state.n);
-      }
-
       function setRows(value) {
         var next = clamp(Math.round(value), 1, state.n);
         if (next === state.rows) return;
@@ -474,13 +469,24 @@
 
       handle.addEventListener('pointerdown', function (e) {
         state.dragging = true;
+        state.dragStartY = e.clientY;
+        state.dragStartRows = state.rows;
         handle.setPointerCapture(e.pointerId);
-        setRows(rowsFromPointer(e.clientY));
         e.preventDefault();
       });
       handle.addEventListener('pointermove', function (e) {
         if (!state.dragging) return;
-        setRows(rowsFromPointer(e.clientY));
+
+        // Deliberately decouple the drag from the zooming SVG coordinate system.
+        // A row change requires a meaningful physical finger movement, and
+        // multiple-row jumps only happen when the user actually drags farther.
+        var PIXELS_PER_ROW = 38;
+        var deltaY = e.clientY - state.dragStartY;
+        var steps = deltaY >= 0
+          ? Math.floor(deltaY / PIXELS_PER_ROW)
+          : Math.ceil(deltaY / PIXELS_PER_ROW);
+
+        setRows(state.dragStartRows + steps);
         e.preventDefault();
       });
       handle.addEventListener('pointerup', function (e) {
