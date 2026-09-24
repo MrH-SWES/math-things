@@ -124,6 +124,79 @@
       -webkit-overflow-scrolling: touch;
     }
 
+    .fraction-stage {
+      width: max-content;
+      min-width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 8px;
+      margin: 0 auto;
+    }
+
+    .unit-step {
+      display: none;
+      align-items: center;
+      align-self: flex-end;
+      margin-bottom: 2px;
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    .unit-step.visible {
+      display: flex;
+    }
+
+    .unit-card {
+      min-width: 58px;
+      text-align: center;
+      padding: 5px 7px 6px;
+      border-radius: 10px;
+      background: #fff8e1;
+      border: 2px solid #ffca28;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+
+    .unit-label {
+      margin-bottom: 2px;
+      color: #8d6e63;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .unit-num,
+    .unit-den {
+      min-height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .unit-bar {
+      height: 3px;
+      margin: 1px 2px;
+      border-radius: 3px;
+      background: var(--text);
+    }
+
+    .unit-operation {
+      min-width: 42px;
+      margin-left: 5px;
+      padding-right: 7px;
+      border-right: 2px dashed #cfd8dc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+
     table {
       border-collapse: separate;
       border-spacing: 5px 2px;
@@ -240,7 +313,18 @@
     </section>
 
     <div class="chart-shell" aria-label="Equivalent fractions multiplication table">
-      <table id="eq-table"></table>
+      <div class="fraction-stage">
+        <div id="unit-step" class="unit-step" aria-live="polite">
+          <div class="unit-card">
+            <div class="unit-label">denominator → 1</div>
+            <div id="unit-num" class="unit-num"></div>
+            <div class="unit-bar"></div>
+            <div class="unit-den">1</div>
+          </div>
+          <div id="unit-operation" class="unit-operation"></div>
+        </div>
+        <table id="eq-table"></table>
+      </div>
     </div>
   </main>
 
@@ -300,6 +384,44 @@
       table.appendChild(tbody);
     }
 
+    function gcd(a, b) {
+      while (b) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a;
+    }
+
+    function formatUnitValue(num, den) {
+      const value = num / den;
+      if (Number.isInteger(value)) return String(value);
+
+      const divisor = gcd(num, den);
+      let reducedDen = den / divisor;
+      while (reducedDen % 2 === 0) reducedDen /= 2;
+      while (reducedDen % 5 === 0) reducedDen /= 5;
+
+      if (reducedDen === 1) {
+        return String(Number(value.toFixed(6)));
+      }
+
+      return value.toFixed(3).replace(/0+$/, '').replace(/\.$/, '') + '…';
+    }
+
+    function showUnitStep() {
+      const unitStep = document.getElementById('unit-step');
+      document.getElementById('unit-num').textContent =
+        formatUnitValue(numeratorRow, denominatorRow);
+      document.getElementById('unit-operation').textContent =
+        '÷ ' + denominatorRow;
+      unitStep.classList.add('visible');
+    }
+
+    function hideUnitStep() {
+      document.getElementById('unit-step').classList.remove('visible');
+    }
+
     function selectRow(value) {
       if (locked) return;
 
@@ -334,6 +456,7 @@
       body.appendChild(numRow);
       body.appendChild(denRow);
       document.getElementById('eq-table').classList.add('locked');
+      showUnitStep();
 
       narration.innerHTML =
         'Locked on <span style="color:var(--green);font-weight:800">' + numeratorRow +
@@ -349,6 +472,7 @@
       numeratorRow = null;
       denominatorRow = null;
       locked = false;
+      hideUnitStep();
       document.getElementById('narration').textContent =
         'Pick the numerator row, then pick the denominator row.';
       initTable();
