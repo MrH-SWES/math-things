@@ -66,8 +66,22 @@
     }
     .page-title { font-weight: 300; font-size: 15px; color: var(--text-gray); letter-spacing: 0.5px; }
 
+    footer {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      z-index: 40;
+      padding: 10px 16px 12px;
+      text-align: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: rgba(29,29,31,.28);
+      pointer-events: none;
+      user-select: none;
+    }
+
     .table-scene {
-      position: fixed; inset: 0; padding: 84px 28px 28px;
+      position: fixed; inset: 0; padding: 84px 28px 46px;
       display: flex; align-items: center; justify-content: center; z-index: 2;
     }
     .drafting-table {
@@ -189,7 +203,7 @@
       header { height: 54px; padding: 0 16px; }
       .logo { font-size: 1.25rem; }
       .page-title { font-size: 12px; }
-      .table-scene { padding: 66px 8px 10px; }
+      .table-scene { padding: 66px 8px 38px; }
       .drafting-table {
         width: 100%; height: 100%; min-height: 0; border-radius: 10px;
         padding: 12px 10px 10px;
@@ -258,6 +272,8 @@
       </div>
     </section>
   </main>
+
+  <footer>Math Things. | Math, in your hands.</footer>
 
   <script>
     (function () {
