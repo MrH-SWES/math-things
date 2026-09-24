@@ -617,13 +617,10 @@
             
             zoomLevelName.textContent = zoom.name;
             
-            let min = currentValue - (visibleRange / 2);
-            let max = currentValue + (visibleRange / 2);
-            
-            if (min < 0) {
-                min = 0;
-                max = visibleRange;
-            }
+            // Anchor the visible window to the enclosing place-value interval.
+            // Example: 1844 at Ones displays 1840 to 1850.
+            let min = Math.floor(currentValue / visibleRange) * visibleRange;
+            let max = min + visibleRange;
             
             const dotPosition = ((currentValue - min) / visibleRange) * 100;
             
