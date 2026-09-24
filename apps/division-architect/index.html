@@ -280,10 +280,11 @@
       'use strict';
 
       var MAX_QUANTITY = 256;
+      var CANONICAL_CELLS = 16;
       var CELL = 34;
       var state = { n: 16, rows: 1, dragging: false, dragStartY: 0, dragStartRows: 1 };
       var beadNodes = [];
-      var currentView = { x: -90, y: -80, w: 700, h: 420 };
+      var currentView = null;
       var viewAnimation = 0;
       var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -460,11 +461,16 @@
       }
 
       function fitCamera(cols, rows) {
-        var contentW = Math.max(1, cols) * CELL;
-        var contentH = Math.max(1, rows) * CELL;
+        // The canonical 16 x 16 field defines 100% scale. Anything that fits
+        // inside it keeps exactly the same camera. We only zoom out when an
+        // array actually exceeds that field in either direction.
+        var cameraCols = Math.max(CANONICAL_CELLS, cols);
+        var cameraRows = Math.max(CANONICAL_CELLS, rows);
+        var contentW = cameraCols * CELL;
+        var contentH = cameraRows * CELL;
         var padL = 92, padR = 66, padT = 80, padB = 66;
-        var wantedW = Math.max(320, contentW + padL + padR);
-        var wantedH = Math.max(260, contentH + padT + padB);
+        var wantedW = contentW + padL + padR;
+        var wantedH = contentH + padT + padB;
         var rect = svg.getBoundingClientRect();
         var aspect = rect.width > 0 && rect.height > 0 ? rect.width / rect.height : 1.6;
 
@@ -473,6 +479,8 @@
         if (w / h < aspect) w = h * aspect;
         else h = w / aspect;
 
+        // Center the fixed 16 x 16 field, not the momentary array. That keeps
+        // both scale and framing still while the shape changes within 16 x 16.
         var cx = contentW / 2 + (padR - padL) / 2;
         var cy = contentH / 2 + (padB - padT) / 2;
         animateView({ x: cx - w / 2, y: cy - h / 2, w: w, h: h });
@@ -480,6 +488,11 @@
 
       function animateView(target) {
         if (viewAnimation) cancelAnimationFrame(viewAnimation);
+        if (!currentView) {
+          currentView = target;
+          svg.setAttribute('viewBox', target.x + ' ' + target.y + ' ' + target.w + ' ' + target.h);
+          return;
+        }
         if (reduceMotion) {
           currentView = target;
           svg.setAttribute('viewBox', target.x + ' ' + target.y + ' ' + target.w + ' ' + target.h);
