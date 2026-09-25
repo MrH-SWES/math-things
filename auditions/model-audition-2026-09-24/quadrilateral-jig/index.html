@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Math Things. | Quadrilateral Jig</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#222426;--muted:#73777b;--paper:#f3f0e9;--paper-hi:#fbfaf6;
+  --steel-dark:#656b70;--steel:#aeb4b9;--steel-hi:#f3f5f6;
+  --enamel:#315f72;--enamel-dark:#173946;--enamel-hi:#5f91a3;
+  --brass:#c4933f;--brass-dark:#765018;--copper:#ba6548;--violet:#6d5d87;
+  --shadow:rgba(44,35,23,.22);--spring:cubic-bezier(.34,1.56,.64,1);
+  --settle:cubic-bezier(.22,.78,.26,1);
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{font-family:Lexend,system-ui,sans-serif;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased;user-select:none}
+button{font:inherit;color:inherit}
+.shell{height:100%;display:grid;grid-template-rows:58px minmax(0,1fr) 124px 28px;background:
+  radial-gradient(circle at 50% 10%,rgba(255,255,255,.92),transparent 45%),
+  linear-gradient(180deg,#f7f5ef 0%,#e8e3d9 100%)}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 clamp(16px,3vw,34px);border-bottom:1px solid rgba(58,48,34,.11);background:rgba(250,249,245,.78);backdrop-filter:blur(18px);z-index:4}
+.brand{font-weight:800;font-size:clamp(17px,2vw,22px);letter-spacing:-.045em}.brand-dot{display:inline-block;width:.25em;height:.25em;margin-left:.05em;border-radius:50%;vertical-align:.08em;background:linear-gradient(145deg,#fff,#8d9499);box-shadow:inset 1px 1px 1px #fff,inset -1px -1px 2px #596066,0 2px 4px #999}
+.title{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.04em}.header-tools{justify-self:end;display:flex;gap:8px}
+.icon-button{width:46px;height:46px;display:grid;place-items:center;border:1px solid rgba(62,59,53,.18);border-radius:50%;background:linear-gradient(#fff,#e5e3dd);box-shadow:inset 0 1px 0 #fff,0 2px 5px rgba(50,43,33,.12);cursor:pointer;transition:transform .16s,box-shadow .16s}
+.icon-button:active{transform:translateY(1px);box-shadow:inset 0 2px 3px rgba(0,0,0,.13)}.icon-button:focus-visible,.jig:focus-visible{outline:4px solid rgba(49,95,114,.28);outline-offset:3px}
+.icon-button svg{width:23px;height:23px}.icon-button[aria-pressed="true"]{color:#fff;background:linear-gradient(145deg,var(--enamel-hi),var(--enamel-dark));border-color:var(--enamel-dark)}
+.stage-wrap{position:relative;min-height:0;display:grid;place-items:center;padding:10px 16px 4px}
+.bench{position:relative;width:min(960px,96vw);height:min(620px,100%);min-height:300px;overflow:hidden;border-radius:24px;background:
+  linear-gradient(90deg,rgba(112,82,44,.038) 1px,transparent 1px) 0 0/14px 100%,
+  linear-gradient(180deg,rgba(255,255,255,.74),rgba(255,255,255,.1)),
+  #dcc8a6;border:1px solid rgba(83,59,31,.23);box-shadow:inset 0 2px 2px rgba(255,255,255,.72),inset 0 -5px 9px rgba(91,60,28,.12),0 18px 34px rgba(61,48,31,.16)}
+.bench:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 10%,rgba(255,255,255,.22) 34%,transparent 48%);mix-blend-mode:screen}
+#board{position:absolute;inset:0;width:100%;height:100%;touch-action:none;overflow:visible}
+.grid line{stroke:rgba(73,61,42,.075);stroke-width:1}.shape-fill{fill:rgba(49,95,114,.10);stroke:none;transition:fill .24s}
+.extension{stroke:var(--brass);stroke-width:3;stroke-dasharray:7 8;opacity:0;transition:opacity .24s}.show-parallel .extension{opacity:.45}
+.beam-shadow{stroke:rgba(48,39,28,.28);stroke-width:26;stroke-linecap:round;transform:translateY(7px);filter:blur(3px)}
+.beam{stroke:var(--enamel-dark);stroke-width:24;stroke-linecap:round}.beam-gloss{stroke:var(--enamel-hi);stroke-width:18;stroke-linecap:round;opacity:.92}.beam-shine{stroke:rgba(255,255,255,.42);stroke-width:4;stroke-linecap:round;transform:translateY(-5px)}
+.side-mark{fill:none;stroke:#f8e6b5;stroke-width:4;stroke-linecap:round;opacity:0;transition:opacity .2s}.show-equal .side-mark{opacity:1}
+.parallel-mark{fill:none;stroke:#f8e6b5;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .2s}.show-parallel .parallel-mark{opacity:1}
+.corner-square{fill:none;stroke:#f4e9d5;stroke-width:4;stroke-linejoin:round;opacity:0;transition:opacity .22s}.show-right .corner-square{opacity:1}
+.joint{cursor:grab;touch-action:none;outline:none}.joint:active{cursor:grabbing}.joint-hit{fill:transparent}.joint-ring{fill:url(#steel);stroke:#62686d;stroke-width:2;filter:url(#jointShadow);transition:stroke-width .15s}.joint-cap{fill:#7e858a;stroke:#f4f6f6;stroke-width:2;pointer-events:none}.joint:focus .joint-ring,.joint.keyboard .joint-ring{stroke:var(--brass);stroke-width:5}
+.ghost-path{fill:none;stroke:rgba(49,95,114,.24);stroke-width:4;stroke-dasharray:4 9;opacity:0;pointer-events:none}.resisting .ghost-path{animation:resist .28s ease-out}@keyframes resist{0%{opacity:.8}100%{opacity:0}}
+.property-stack{position:absolute;right:18px;top:18px;display:flex;flex-direction:column;gap:7px;opacity:0;transform:translateX(12px);pointer-events:none;transition:opacity .22s,transform .3s var(--settle)}.property-stack.visible{opacity:1;transform:none}
+.property{min-width:142px;padding:9px 13px 9px 36px;border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.015em;color:#8a8b87;background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(211,211,207,.82));border:1px solid rgba(62,60,55,.15);box-shadow:0 3px 7px rgba(57,48,36,.12);position:relative;transition:color .25s,transform .3s var(--spring),background .25s}
+.property:before{content:"";position:absolute;left:13px;top:50%;width:12px;height:12px;border-radius:50%;transform:translateY(-50%);background:#babbb7;box-shadow:inset 0 1px 2px rgba(0,0,0,.24)}.property.on{color:#fff;background:linear-gradient(145deg,var(--enamel-hi),var(--enamel-dark));transform:translateX(-4px)}.property.on:before{background:#f3d386;box-shadow:0 0 0 3px rgba(243,211,134,.16),inset 0 1px 1px #fff}
+.jig-tray{display:flex;justify-content:center;align-items:center;padding:10px 14px 14px}.tray{height:100px;display:flex;align-items:center;gap:clamp(9px,2vw,20px);padding:11px 16px;border-radius:22px;background:linear-gradient(160deg,#70777c,#30363a);border:1px solid #1e2326;box-shadow:inset 0 2px 1px rgba(255,255,255,.2),inset 0 -4px 7px rgba(0,0,0,.34),0 10px 20px rgba(38,34,29,.22)}
+.jig{position:relative;width:clamp(72px,10vw,104px);height:72px;border:1px solid #73797d;border-radius:14px;background:linear-gradient(145deg,#f2f3f2 0%,#aeb3b5 38%,#777e82 68%,#d9dcdb 100%);box-shadow:inset 1px 1px 1px rgba(255,255,255,.82),inset -2px -2px 4px rgba(0,0,0,.25),0 5px 7px rgba(0,0,0,.34);cursor:pointer;transition:transform .2s var(--spring),filter .2s}
+.jig:before{content:"";position:absolute;inset:5px;border-radius:10px;border:1px solid rgba(37,42,44,.34);box-shadow:inset 0 1px 2px rgba(255,255,255,.5)}.jig svg{position:absolute;inset:0;margin:auto;width:48px;height:48px;overflow:visible}.jig path,.jig line,.jig polyline,.jig rect{fill:none;stroke:#444b4e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.jig.latched{transform:translateY(5px);filter:saturate(1.2);background:linear-gradient(145deg,#e2c16b,#bd8430 45%,#73501c 76%,#dab35b);border-color:#694716;box-shadow:inset 2px 3px 5px rgba(63,39,10,.36),0 1px 2px rgba(0,0,0,.4)}.jig.latched path,.jig.latched line,.jig.latched polyline,.jig.latched rect{stroke:#fff2c9}.jig.inherited:not(.latched){background:linear-gradient(145deg,#ddd4b5,#9c8b59 55%,#61583f)}
+.jig .lamp{position:absolute;right:8px;top:8px;width:9px;height:9px;border-radius:50%;background:#4b5051;box-shadow:inset 0 1px 2px #222}.jig.latched .lamp,.jig.inherited .lamp{background:#ffe193;box-shadow:0 0 8px #ffcf58,inset 0 1px 1px #fff}
+.reset{width:58px;height:58px;margin-left:4px;background:linear-gradient(145deg,#d9dcdd,#80878b)}.reset svg{width:30px;height:30px}.reset:active{transform:translateY(4px)}
+footer{display:grid;place-items:center;font-size:9px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:rgba(34,36,38,.42)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:680px){.shell{grid-template-rows:52px minmax(0,1fr) 108px 22px}.title{display:none}.bench{width:calc(100vw - 16px);border-radius:17px}.stage-wrap{padding:7px 8px 2px}.property-stack{right:9px;top:9px}.property{min-width:116px;font-size:10px;padding:7px 10px 7px 30px}.tray{height:90px;padding:9px 10px;gap:8px}.jig{width:68px;height:66px}.jig svg{width:42px;height:42px}.reset{width:50px;height:50px}.brand{font-size:17px}header{padding:0 13px}.icon-button{width:42px;height:42px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="brand">Math Things<span class="brand-dot"></span></div>
+  <div class="title">Quadrilateral Jig</div>
+  <div class="header-tools">
+    <button class="icon-button" id="recordToggle" type="button" aria-label="Show shape names" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="6" r="2.1" fill="currentColor"/><circle cx="12" cy="12" r="2.1" fill="currentColor"/><circle cx="16" cy="18" r="2.1" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+<main class="stage-wrap">
+  <section class="bench" id="bench" aria-label="Articulated quadrilateral work surface">
+    <svg id="board" viewBox="0 0 900 520" role="group" aria-label="Four hinged beams forming a quadrilateral. Drag the round joints.">
+      <defs>
+        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".22" stop-color="#cfd4d7"/><stop offset=".55" stop-color="#767e83"/><stop offset=".78" stop-color="#e5e8e8"/><stop offset="1" stop-color="#6a7175"/></linearGradient>
+        <filter id="jointShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="2" dy="6" stdDeviation="4" flood-color="#382e20" flood-opacity=".35"/></filter>
+      </defs>
+      <g class="grid" aria-hidden="true" id="grid"></g>
+      <path class="ghost-path" id="ghostPath" d=""/>
+      <g id="shapeGroup">
+        <line class="extension" id="ext0"/><line class="extension" id="ext1"/><line class="extension" id="ext2"/><line class="extension" id="ext3"/>
+        <polygon class="shape-fill" id="shapeFill" points=""/>
+        <g id="beams"></g>
+        <g id="marks"></g>
+        <g id="joints"></g>
+      </g>
+    </svg>
+    <aside class="property-stack" id="properties" aria-live="polite" aria-label="Shape classification record">
+      <div class="property on" data-property="quadrilateral">Quadrilateral</div>
+      <div class="property" data-property="parallelogram">Parallelogram</div>
+      <div class="property" data-property="rectangle">Rectangle</div>
+      <div class="property" data-property="rhombus">Rhombus</div>
+      <div class="property" data-property="square">Square</div>
+    </aside>
+    <div class="sr-only" id="status" aria-live="polite"></div>
+  </section>
+</main>
+<nav class="jig-tray" aria-label="Constraint jigs">
+  <div class="tray">
+    <button class="jig" id="parallelJig" type="button" aria-label="Add opposite sides parallel jig" aria-pressed="false">
+      <span class="lamp" aria-hidden="true"></span>
+      <svg viewBox="0 0 56 56" aria-hidden="true"><line x1="10" y1="19" x2="46" y2="19"/><line x1="10" y1="37" x2="46" y2="37"/><polyline points="25,13 31,19 25,25"/><polyline points="25,31 31,37 25,43"/></svg>
+    </button>
+    <button class="jig" id="equalJig" type="button" aria-label="Add four equal sides jig" aria-pressed="false">
+      <span class="lamp" aria-hidden="true"></span>
+      <svg viewBox="0 0 56 56" aria-hidden="true"><path d="M28 7L49 28 28 49 7 28Z"/><line x1="16" y1="15" x2="21" y2="20"/><line x1="35" y1="20" x2="40" y2="15"/><line x1="16" y1="41" x2="21" y2="36"/><line x1="35" y1="36" x2="40" y2="41"/></svg>
+    </button>
+    <button class="jig" id="rightJig" type="button" aria-label="Add four right angles jig" aria-pressed="false">
+      <span class="lamp" aria-hidden="true"></span>
+      <svg viewBox="0 0 56 56" aria-hidden="true"><path d="M9 9V47H47V9Z"/><path d="M9 21H21V9M35 9V21H47M47 35H35V47M21 47V35H9"/></svg>
+    </button>
+    <button class="jig reset" id="resetJigs" type="button" aria-label="Remove all jigs">
+      <svg viewBox="0 0 56 56" aria-hidden="true"><path d="M15 19A17 17 0 1 1 13 33"/><polyline points="8,12 15,19 23,12"/></svg>
+    </button>
+  </div>
+</nav>
+<footer>Math Things. &nbsp;|&nbsp; Math, in your hands.</footer>
+</div>
+<script>
+(() => {
+'use strict';
+const W=900,H=520,M=66,STEP=8;
+const initial=[{x:230,y:145},{x:650,y:120},{x:710,y:385},{x:185,y:405}];
+const state={points:initial.map(p=>({...p})),jigs:{parallel:false,equal:false,right:false},record:false,dragging:-1};
+const $=id=>document.getElementById(id);
+const board=$('board'),bench=$('bench'),grid=$('grid'),shapeGroup=$('shapeGroup'),beams=$('beams'),marks=$('marks'),joints=$('joints'),shapeFill=$('shapeFill'),ghostPath=$('ghostPath'),status=$('status');
+const jigButtons={parallel:$('parallelJig'),equal:$('equalJig'),right:$('rightJig')};
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y}),sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mul=(a,s)=>({x:a.x*s,y:a.y*s});
+const len=a=>Math.hypot(a.x,a.y),dot=(a,b)=>a.x*b.x+a.y*b.y,mid=(a,b)=>mul(add(a,b),.5),perp=a=>({x:-a.y,y:a.x});
+const unit=(a,fallback={x:1,y:0})=>{const n=len(a);return n<.0001?fallback:mul(a,1/n)};
+const clampPoint=p=>({x:Math.max(M,Math.min(W-M,p.x)),y:Math.max(M,Math.min(H-M,p.y))});
+const centroid=pts=>mul(pts.reduce((s,p)=>add(s,p),{x:0,y:0}),1/pts.length);
+const family=()=>state.jigs.equal&&state.jigs.right?'square':state.jigs.equal?'rhombus':state.jigs.right?'rectangle':state.jigs.parallel?'parallelogram':'quadrilateral';
+const derivedParallel=()=>state.jigs.parallel||state.jigs.equal||state.jigs.right;
+const svgEl=(name,attrs={})=>{const el=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el};
+function makeGrid(){for(let x=50;x<W;x+=50)grid.appendChild(svgEl('line',{x1:x,y1:0,x2:x,y2:H}));for(let y=50;y<H;y+=50)grid.appendChild(svgEl('line',{x1:0,y1:y,x2:W,y2:y}))}
+function makeShape(){
+  for(let i=0;i<4;i++){
+    const g=svgEl('g');
+    ['beam-shadow','beam','beam-gloss','beam-shine'].forEach(c=>g.appendChild(svgEl('line',{class:c,'data-side':i})));
+    beams.appendChild(g);
+    const sm=svgEl('path',{class:'side-mark','data-side-mark':i});marks.appendChild(sm);
+    const pm=svgEl('path',{class:'parallel-mark','data-parallel-mark':i});marks.appendChild(pm);
+    const cs=svgEl('path',{class:'corner-square','data-corner':i});marks.appendChild(cs);
+    const j=svgEl('g',{class:'joint',tabindex:'0',role:'button','aria-label':`Corner ${i+1}. Use arrow keys to move.`,'data-joint':i});
+    j.appendChild(svgEl('circle',{class:'joint-hit',r:34}));j.appendChild(svgEl('circle',{class:'joint-ring',r:19}));j.appendChild(svgEl('circle',{class:'joint-cap',r:7}));joints.appendChild(j);
+  }
+}
+function clampAll(points){
+  const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x)),minY=Math.min(...points.map(p=>p.y)),maxY=Math.max(...points.map(p=>p.y));
+  let dx=0,dy=0;if(minX<M)dx=M-minX;if(maxX>W-M)dx=W-M-maxX;if(minY<M)dy=M-minY;if(maxY>H-M)dy=H-M-maxY;
+  return points.map(p=>({x:p.x+dx,y:p.y+dy}));
+}
+function projectTo(nextFamily){
+  const p=state.points,c=centroid(p);
+  if(nextFamily==='parallelogram'){
+    let u=mul(add(sub(p[1],p[0]),sub(p[2],p[3])),.25),v=mul(add(sub(p[3],p[0]),sub(p[2],p[1])),.25);
+    if(len(u)<55)u={x:170,y:0};if(len(v)<55)v={x:0,y:105};
+    state.points=clampAll([sub(sub(c,u),v),add(sub(c,v),u),add(add(c,u),v),add(sub(c,u),v)]);
+  }else if(nextFamily==='rhombus'){
+    let d1=mul(sub(p[2],p[0]),.5),d2=mul(sub(p[3],p[1]),.5);if(len(d1)<70)d1={x:190,y:0};
+    const e=unit(perp(d1)),sign=dot(d2,e)<0?-1:1;d2=mul(e,Math.max(70,len(d2))*sign);
+    state.points=clampAll([sub(c,d1),sub(c,d2),add(c,d1),add(c,d2)]);
+  }else if(nextFamily==='rectangle'){
+    let u=mul(add(sub(p[1],p[0]),sub(p[2],p[3])),.25),v=mul(add(sub(p[3],p[0]),sub(p[2],p[1])),.25);if(len(u)<70)u={x:180,y:0};
+    const e=unit(perp(u)),sign=dot(v,e)<0?-1:1;v=mul(e,Math.max(65,len(v))*sign);
+    state.points=clampAll([sub(sub(c,u),v),add(sub(c,v),u),add(add(c,u),v),add(sub(c,u),v)]);
+  }else if(nextFamily==='square'){
+    let d=mul(sub(p[2],p[0]),.5);if(len(d)<85)d={x:180,y:120};const q=perp(d);
+    state.points=clampAll([sub(c,d),sub(c,q),add(c,d),add(c,q)]);
+  }
+}
+function moveFree(i,target){const p=state.points.map(v=>({...v}));p[i]=clampPoint(target);return p}
+function moveParallelogram(i,target){const p=state.points.map(v=>({...v})),opp=(i+2)%4,a=(i+1)%4,b=(i+3)%4;p[i]=target;p[opp]=sub(add(p[a],p[b]),target);return clampAll(p)}
+function moveRhombus(i,target){const p=state.points,opp=(i+2)%4,c=mid(target,p[opp]),d=mul(sub(p[opp],target),.5);let q=mul(sub(p[(i+3)%4],p[(i+1)%4]),.5);const e=unit(perp(d)),sign=dot(q,e)<0?-1:1;q=mul(e,Math.max(55,len(q))*sign);const out=[];out[i]=target;out[opp]=p[opp];out[(i+1)%4]=sub(c,q);out[(i+3)%4]=add(c,q);return clampAll(out)}
+function moveRectangle(i,target){const p=state.points,opp=(i+2)%4,c=mid(target,p[opp]);let axis=unit(sub(p[(i+1)%4],p[i])),normal=perp(axis);const diagonal=mul(sub(p[opp],target),.5);let u=mul(axis,dot(diagonal,axis)),v=mul(normal,dot(diagonal,normal));if(len(u)<42)u=mul(unit(u,axis),42);if(len(v)<42)v=mul(unit(v,normal),42);const sign=i%2===0?1:-1;const out=[];if(sign===1){out[i]=sub(sub(c,u),v);out[(i+1)%4]=add(sub(c,v),u);out[opp]=add(add(c,u),v);out[(i+3)%4]=add(sub(c,u),v)}else{out[i]=add(sub(c,v),u);out[(i+1)%4]=add(add(c,u),v);out[opp]=add(sub(c,u),v);out[(i+3)%4]=sub(sub(c,u),v)}return clampAll(out)}
+function moveSquare(i,target){const p=state.points,opp=(i+2)%4,c=mid(target,p[opp]),d=mul(sub(p[opp],target),.5),q=perp(d),out=[];out[i]=target;out[opp]=p[opp];out[(i+1)%4]=sub(c,q);out[(i+3)%4]=add(c,q);return clampAll(out)}
+function movePoint(i,target){target=clampPoint(target);const f=family();const ghost=state.points.map(p=>({...p}));ghost[i]=target;ghostPath.setAttribute('d',`M${ghost.map(p=>`${p.x},${p.y}`).join(' L')} Z`);bench.classList.remove('resisting');void bench.offsetWidth;if(f!=='quadrilateral')bench.classList.add('resisting');
+  state.points=f==='quadrilateral'?moveFree(i,target):f==='parallelogram'?moveParallelogram(i,target):f==='rhombus'?moveRhombus(i,target):f==='rectangle'?moveRectangle(i,target):moveSquare(i,target);render();
+}
+function lineAttrs(el,a,b){el.setAttribute('x1',a.x);el.setAttribute('y1',a.y);el.setAttribute('x2',b.x);el.setAttribute('y2',b.y)}
+function markPath(a,b,count=1){const d=sub(b,a),e=unit(d),n=perp(e),m=mid(a,b),pieces=[];for(let k=0;k<count;k++){const offset=(k-(count-1)/2)*10,q=add(m,mul(e,offset));pieces.push(`M${q.x+n.x*8},${q.y+n.y*8} L${q.x-n.x*8},${q.y-n.y*8}`)}return pieces.join(' ')}
+function parallelPath(a,b,count){const e=unit(sub(b,a)),n=perp(e),m=mid(a,b),pieces=[];for(let k=0;k<count;k++){const q=add(m,mul(e,(k-(count-1)/2)*18)),back=sub(q,mul(e,7));pieces.push(`M${back.x+n.x*7},${back.y+n.y*7} L${q.x},${q.y} L${back.x-n.x*7},${back.y-n.y*7}`)}return pieces.join(' ')}
+function cornerPath(prev,p,next){const a=unit(sub(prev,p)),b=unit(sub(next,p)),r=31,A=add(p,mul(a,r)),B=add(A,mul(b,r)),C=add(p,mul(b,r));return `M${A.x},${A.y} L${B.x},${B.y} L${C.x},${C.y}`}
+function render(){
+  const p=state.points,f=family(),par=derivedParallel();shapeGroup.classList.toggle('show-parallel',par);shapeGroup.classList.toggle('show-equal',state.jigs.equal);shapeGroup.classList.toggle('show-right',state.jigs.right);
+  shapeFill.setAttribute('points',p.map(v=>`${v.x},${v.y}`).join(' '));
+  for(let i=0;i<4;i++){
+    const a=p[i],b=p[(i+1)%4];document.querySelectorAll(`[data-side="${i}"]`).forEach(el=>lineAttrs(el,a,b));
+    const e=unit(sub(b,a)),extA=sub(a,mul(e,34)),extB=add(b,mul(e,34));lineAttrs($(`ext${i}`),extA,extB);
+    marks.querySelector(`[data-side-mark="${i}"]`).setAttribute('d',markPath(a,b,1));marks.querySelector(`[data-parallel-mark="${i}"]`).setAttribute('d',parallelPath(a,b,i%2===0?1:2));marks.querySelector(`[data-corner="${i}"]`).setAttribute('d',cornerPath(p[(i+3)%4],a,b));
+    const j=joints.querySelector(`[data-joint="${i}"]`);j.setAttribute('transform',`translate(${a.x} ${a.y})`);j.setAttribute('aria-label',`Corner ${i+1}. ${Math.round(a.x)}, ${Math.round(a.y)}. Use arrow keys to move.`);
+  }
+  Object.entries(jigButtons).forEach(([key,btn])=>{const latched=state.jigs[key],inherited=key==='parallel'&&!latched&&par;btn.classList.toggle('latched',latched);btn.classList.toggle('inherited',inherited);btn.setAttribute('aria-pressed',String(latched||inherited))});
+  const on={quadrilateral:true,parallelogram:par,rectangle:state.jigs.right,rhombus:state.jigs.equal,square:f==='square'};document.querySelectorAll('.property').forEach(el=>el.classList.toggle('on',on[el.dataset.property]));
+  $('properties').classList.toggle('visible',state.record);$('recordToggle').setAttribute('aria-pressed',String(state.record));
+  status.textContent=`${f}. ${par?'Opposite sides parallel. ':''}${state.jigs.equal?'Four equal sides. ':''}${state.jigs.right?'Four right angles. ':''}`;
+}
+function addJig(key){if(state.jigs[key])return;state.jigs[key]=true;projectTo(family());render();if(navigator.vibrate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)navigator.vibrate(20)}
+function pointerToSvg(e){const pt=board.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(board.getScreenCTM().inverse())}
+function setupJoint(j,i){j.addEventListener('pointerdown',e=>{state.dragging=i;j.setPointerCapture(e.pointerId);j.classList.add('keyboard');const move=ev=>movePoint(i,pointerToSvg(ev));const up=ev=>{j.removeEventListener('pointermove',move);j.classList.remove('keyboard');state.dragging=-1;try{j.releasePointerCapture(ev.pointerId)}catch(_){}};j.addEventListener('pointermove',move);j.addEventListener('pointerup',up,{once:true});j.addEventListener('pointercancel',up,{once:true});e.preventDefault()});j.addEventListener('keydown',e=>{const amount=e.shiftKey?2:STEP,delta={ArrowLeft:{x:-amount,y:0},ArrowRight:{x:amount,y:0},ArrowUp:{x:0,y:-amount},ArrowDown:{x:0,y:amount}}[e.key];if(delta){movePoint(i,add(state.points[i],delta));e.preventDefault()}})}
+makeGrid();makeShape();joints.querySelectorAll('.joint').forEach((j,i)=>setupJoint(j,i));
+Object.entries(jigButtons).forEach(([key,btn])=>btn.addEventListener('click',()=>addJig(key)));
+$('resetJigs').addEventListener('click',()=>{state.jigs={parallel:false,equal:false,right:false};state.points=initial.map(p=>({...p}));render();status.textContent='All jigs removed.'});
+$('recordToggle').addEventListener('click',()=>{state.record=!state.record;render()});
+document.addEventListener('keydown',e=>{if(e.target.closest('.joint'))return;if(e.key==='1')addJig('parallel');if(e.key==='2')addJig('equal');if(e.key==='3')addJig('right');if(e.key.toLowerCase()==='r')$('resetJigs').click();if(e.key.toLowerCase()==='n')$('recordToggle').click()});
+window.__quadrilateralJig={state,family,addJig,reset:()=>$('resetJigs').click(),movePoint,getSnapshot:()=>({family:family(),points:state.points.map(p=>({...p})),jigs:{...state.jigs},derivedParallel:derivedParallel()})};
+render();
+})();
+</script>
+</body>
+</html>
