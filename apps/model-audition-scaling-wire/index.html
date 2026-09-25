@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Scaling Wire · Math Things.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Non-blocking font load: the object still draws (system sans) if the classroom network is down. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;900&display=swap" media="print" onload="this.media='all'" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+    body{
+      font-family:'Lexend',system-ui,sans-serif;color:#1D1D1F;
+      background:radial-gradient(130% 95% at 50% 0%,#FDFCFA 0%,#F4F2EE 52%,#E8E5DF 100%);
+      user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+      -webkit-font-smoothing:antialiased;
+    }
+    #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+    #top{position:fixed;top:0;left:0;right:0;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;pointer-events:none;z-index:3}
+    #top>*{pointer-events:auto}
+    .brand{height:26px;width:auto;display:block}
+
+    .tool{width:52px;height:52px;border-radius:50%;border:1px solid rgba(0,0,0,.08);
+      background:linear-gradient(180deg,#FFFFFF,#ECECEF);color:#3A3A3F;cursor:pointer;display:grid;place-items:center;
+      box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.06),inset 0 1px 0 #fff;touch-action:manipulation;
+      transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s}
+    .tool:active{transform:scale(.94)}
+    .tool[aria-pressed="true"]{background:linear-gradient(180deg,#3A3A3F,#1D1D1F);color:#fff;border-color:#1D1D1F}
+
+    :focus{outline:none}
+    :focus-visible{outline:3px solid #1D1D1F;outline-offset:3px;box-shadow:0 0 0 7px rgba(255,255,255,.85)}
+
+    /* Record: the optional symbolic shadow of the object (teacher toggle). */
+    #record{position:fixed;top:74px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:.32em;
+      font-size:clamp(28px,3.4vw,46px);font-weight:600;color:#1D1D1F;pointer-events:none;z-index:2;white-space:nowrap;
+      opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s}
+    body.notation #record{opacity:1;visibility:visible}
+    #record .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1;font-size:.72em;min-width:1.3em;font-variant-numeric:tabular-nums;transition:opacity .15s}
+    #record .frac .n{padding:0 .14em .09em}
+    #record .frac .dn{align-self:stretch;text-align:center;border-top:.08em solid currentColor;padding:.09em .14em 0}
+    #record .whole{min-width:.8em;text-align:center;font-variant-numeric:tabular-nums;transition:opacity .15s}
+    #record .pending{opacity:.36}
+    #record .op,#record .rel{font-weight:400;color:#3A3A3F}
+    #record .rel{min-width:.75em;text-align:center}
+    .glyph{display:inline-block;width:.3em;height:1em;margin-top:.26em;border-radius:.06em .06em 0 0;position:relative;
+      background:linear-gradient(90deg,#8E0C27 0,#C8123A 8%,#EE3A5C 24%,#DC143C 42%,#B80F32 76%,#7A0A22 100%);
+      box-shadow:.05em .06em .12em rgba(60,10,20,.25)}
+    .glyph::before{content:"";position:absolute;left:50%;top:-.19em;width:.38em;height:.38em;margin-left:-.19em;border-radius:50%;
+      background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.95),rgba(255,255,255,.3) 40%,transparent 65%),
+                 linear-gradient(135deg,#efefef,#d0d0d0 25%,#a8a8a8 50%,#c0c0c0 75%,#e0e0e0);
+      box-shadow:0 .03em .06em rgba(0,0,0,.25)}
+
+    /* Invisible focus/ARIA proxy that rides on top of the drawn carriage + product post. */
+    #carriage{position:fixed;left:0;top:0;width:10px;height:10px;border-radius:16px;pointer-events:none;z-index:2}
+
+    #parts{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:6px;
+      padding:6px;border-radius:20px;background:rgba(255,255,255,.55);max-width:calc(100vw - 24px);z-index:3;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 3px rgba(0,0,0,.06)}
+    .part{width:58px;height:52px;border-radius:14px;border:1px solid rgba(0,0,0,.07);
+      background:linear-gradient(180deg,#FFFFFF,#EDEDF0);color:#48484D;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+      font:600 12px 'Lexend',system-ui,sans-serif;touch-action:manipulation;
+      box-shadow:0 1px 2px rgba(0,0,0,.08),inset 0 1px 0 #fff;
+      transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s}
+    .part:active{transform:scale(.95)}
+    .part[aria-checked="true"]{background:linear-gradient(180deg,#3A3A3F,#1D1D1F);color:#F5F5F7;border-color:#1D1D1F;
+      box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
+    .part svg{display:block}
+
+    footer{position:fixed;bottom:0;left:0;right:0;height:26px;display:flex;align-items:center;justify-content:center;
+      font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#A1A1A6;pointer-events:none;z-index:1}
+    .fb{display:inline-block;width:3px;height:3px;border-radius:50%;background:#A1A1A6;margin:0 6px}
+    .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+    @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+  </style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="swAlu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBFBFC"/><stop offset=".55" stop-color="#D2D2D6"/><stop offset="1" stop-color="#A4A4AA"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<header id="top">
+  <svg class="brand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" role="img" aria-label="math things.">
+    <text x="0" y="30" font-family="Lexend, sans-serif" font-weight="900" font-size="28" fill="#1e293b">math</text>
+    <text x="88" y="30" font-family="Lexend, sans-serif" font-weight="300" font-size="28" fill="#1e293b">things.</text>
+  </svg>
+  <button id="notation" class="tool" type="button" aria-pressed="false" aria-label="Show notation">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true" focusable="false">
+      <rect x="8.5" y="2" width="9" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+      <rect x="4" y="11.9" width="18" height="2.2" rx="1.1" fill="currentColor"/>
+      <rect x="8.5" y="16" width="9" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  </button>
+</header>
+
+<div id="record" aria-hidden="true"></div>
+
+<div id="carriage" role="slider" tabindex="0" aria-label="Product post on the factor rail"
+     aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="3" aria-describedby="desc"></div>
+<p id="desc" class="sr">A taut wire runs from a pin at 0 through the top of a fixed post standing at 1 on the factor rail.
+  A second post rides the rail; its top stays on the wire, so its height is the factor times the height of the fixed post.
+  Arrow keys move one mark, Page Up and Page Down move one whole, Home and End go to 0 and 3.</p>
+
+<div id="parts" role="radiogroup" aria-label="Rail partition"></div>
+<div id="live" class="sr" aria-live="polite"></div>
+
+<footer>Math Things <span class="fb"></span> | Math, in your hands <span class="fb"></span></footer>
+
+<script>
+(() => {
+'use strict';
+
+// ==CORE-START==
+// Pure mathematics and layout. No DOM access here: tests/core.test.mjs evaluates this block in Node.
+const F_MAX = 3;                                   // the factor rail runs 0 … 3
+const PARTITIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12];  // parts per whole on the rail
+const ORDINALS = { 2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['fourth', 'fourths'], 5: ['fifth', 'fifths'],
+  6: ['sixth', 'sixths'], 8: ['eighth', 'eighths'], 10: ['tenth', 'tenths'], 12: ['twelfth', 'twelfths'] };
+const PART_NAMES = { 1: 'wholes', 2: 'halves', 3: 'thirds', 4: 'fourths', 5: 'fifths', 6: 'sixths', 8: 'eighths', 10: 'tenths', 12: 'twelfths' };
+
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a || 1; }
+function reduce(p, q) { if (p === 0) return { p: 0, q: 1 }; const g = gcd(p, q); return { p: p / g, q: q / g }; }
+// Tick index of an exact point p/q on a rail cut into d parts per whole, or null if no mark sits there.
+function seatIn(seat, d) { const n = seat.p * d; return n % seat.q === 0 ? n / seat.q : null; }
+function clampK(k, d) { return Math.max(0, Math.min(F_MAX * d, k)); }
+function nearestTick(f, d) { return clampK(Math.round(f * d), d); }
+function relation(f, eps = 1e-9) { return f < 1 - eps ? '<' : f > 1 + eps ? '>' : '='; }
+// Detent: inside radius r of a mark the carriage lags toward it (quadratic), outside it tracks exactly.
+// Continuous and monotonic, so the product still scales continuously; it just feels notched.
+function magnet(x, d, r) {
+  const t = Math.round(x * d) / d, dl = x - t, a = Math.abs(dl);
+  if (r <= 0 || a >= r) return x;
+  return t + Math.sign(dl) * r * (a / r) * (a / r);
+}
+// Next mark in direction dir (±1) from an exact point; an off-rail point steps to its neighbouring mark.
+function stepFrom(v, d, dir) {
+  const n = v.p * d;
+  const k = n % v.q === 0 ? n / v.q + dir : (dir > 0 ? Math.ceil(n / v.q) : Math.floor(n / v.q));
+  return clampK(k, d);
+}
+// Marks (rail ticks and post seams) while the rail is re-cut from dOld to dNew, at eased progress e.
+// Marks both partitions share never move or fade: equivalent fractions keep their physical point.
+function marksFor(dOld, dNew, e) {
+  const out = [];
+  for (let k = 0; k <= F_MAX * dNew; k++) {
+    const shared = (k * dOld) % dNew === 0;
+    out.push({ k, d: dNew, v: k / dNew, major: k % dNew === 0, alpha: shared ? 1 : e, grow: !shared });
+  }
+  if (dOld !== dNew) {
+    for (let k = 0; k <= F_MAX * dOld; k++) {
+      if ((k * dNew) % dOld !== 0) out.push({ k, d: dOld, v: k / dOld, major: false, alpha: 1 - e, grow: true, leaving: true });
+    }
+  }
+  return out;
+}
+function labelStep(spacing, minPx, d) { for (let m = 1; m <= d; m++) if (d % m === 0 && spacing * m >= minPx) return m; return d; }
+function spoken(p, q) { if (q === 1) return String(p); const o = ORDINALS[q]; return p + ' ' + (p === 1 ? o[0] : o[1]); }
+function nameText(p, q) { return q === 1 ? String(p) : p + '/' + q; }
+// Screen layout in CSS px. top/bottom are the heights reserved for chrome.
+function computeLayout(W, H, bottom, top) {
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const mL = 64, mR = 64;
+  const U = clamp((W - mL - mR) / F_MAX, 60, 560);                 // px per whole on the rail
+  const x0 = mL + Math.max(0, (W - mL - mR - U * F_MAX) / 2);        // origin pin
+  const w = clamp(U * 0.075, 18, 34);                                // post width
+  const beadR = w / 2 + 2;                                           // bead covers the post's top edge
+  const pinR = clamp(U * 0.055, 15, 24);
+  const railH = clamp(U * 0.06, 18, 28);
+  const cw = w + 10;                                                 // carriage width
+  const mw = cw + 6;                                                 // fixed mount width
+  const ns = clamp(U * 0.07, 18, 32);                                // whole-number numerals
+  const fs = clamp(U * 0.042, 13, 19);                               // fraction labels
+  const labelsH = 14 + ns * 1.05 + 2.1 * fs * 0.9 + 8;
+  const y0 = H - bottom - labelsH - railH - 6;                       // baseline = rail top
+  const topLimit = top + 10 + beadR;
+  const G = Math.max(24, (y0 - topLimit) / F_MAX);                   // height of the fixed given post
+  return { U, x0, y0, G, w, beadR, pinR, railH, cw, mw, ns, fs, labelsH, top, bottom };
+}
+// Factor of the closest point on the wire (the line through the pin and the given post's top).
+function wireFactorAt(x, y, L) { return ((x - L.x0) * L.U + (L.y0 - y) * L.G) / (L.U * L.U + L.G * L.G); }
+const Core = { F_MAX, PARTITIONS, PART_NAMES, gcd, reduce, seatIn, clampK, nearestTick, relation, magnet, stepFrom,
+  marksFor, labelStep, spoken, nameText, computeLayout, wireFactorAt };
+// ==CORE-END==
+
+// ═══════ ENVIRONMENT ═══════
+const FONT = "Lexend, system-ui, sans-serif";
+const ENAMEL = '#DC143C';                          // Math Things "ones" red, as enameled cast iron
+const rmq = matchMedia('(prefers-reduced-motion: reduce)');
+let reduceMotion = rmq.matches;
+if (rmq.addEventListener) rmq.addEventListener('change', e => { reduceMotion = e.matches; });
+
+const cv = document.getElementById('stage');
+const ctx = cv.getContext('2d');
+const carriageEl = document.getElementById('carriage');
+const partsEl = document.getElementById('parts');
+const recordEl = document.getElementById('record');
+const notationBtn = document.getElementById('notation');
+const liveEl = document.getElementById('live');
+
+let W = 0, H = 0, DPR = 1, L = null;
+
+// ═══════ STATE ═══════
+// f is what is drawn. At rest the carriage has an exact seat p/q (lowest terms); it keeps that seat through
+// repartitioning, so a point that has no mark on the new rail stays put and reads as off the marks.
+const S = {
+  d: 4, f: 1, v: 0, target: 1, omega: 20,
+  seat: { p: 1, q: 1 }, pending: null, offGrid: false,
+  drag: null, notation: false,
+  trans: { from: 4, to: 4, t0: 0, dur: 0 },
+  nudge: 0, nudgeV: 0, nudgeTarget: 0,
+  intro: true,
+};
+if (reduceMotion) { S.f = S.target = 0.75; S.seat = { p: 3, q: 4 }; S.intro = false; }
+
+const X = v => L.x0 + v * L.U;
+const pxEps = () => 0.5 / L.U;
+
+// ═══════ DRAW HELPERS ═══════
+function rrPath(x, y, w, h, r) {
+  const [tl, tr, br, bl] = Array.isArray(r) ? r : [r, r, r, r];
+  ctx.moveTo(x + tl, y);
+  ctx.lineTo(x + w - tr, y); ctx.arcTo(x + w, y, x + w, y + tr, tr);
+  ctx.lineTo(x + w, y + h - br); ctx.arcTo(x + w, y + h, x + w - br, y + h, br);
+  ctx.lineTo(x + bl, y + h); ctx.arcTo(x, y + h, x, y + h - bl, bl);
+  ctx.lineTo(x, y + tl); ctx.arcTo(x, y, x + tl, y, tl);
+  ctx.closePath();
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); rrPath(x, y, w, h, r); }
+
+// Brushed-metal grain, generated once from a seeded PRNG so every run looks identical.
+const brush = (() => {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 48;
+  const g = c.getContext('2d'); let s = 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 260; i++) {
+    const y = Math.floor(rnd() * 48), x = rnd() * 512, len = 30 + rnd() * 200;
+    g.fillStyle = rnd() < 0.5 ? `rgba(255,255,255,${0.05 + rnd() * 0.12})` : `rgba(0,0,0,${0.03 + rnd() * 0.07})`;
+    g.fillRect(x, y, len, 1); if (x + len > 512) g.fillRect(x - 512, y, len, 1);
+  }
+  return c;
+})();
+let brushPattern = null;
+
+function bead(x, y, r) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = r * 0.55; ctx.shadowOffsetY = r * 0.22;
+  const g = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+  g.addColorStop(0, '#efefef'); g.addColorStop(0.25, '#d0d0d0'); g.addColorStop(0.5, '#a8a8a8');
+  g.addColorStop(0.75, '#c0c0c0'); g.addColorStop(1, '#e0e0e0');
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+  const hl = ctx.createRadialGradient(x - r * 0.34, y - r * 0.44, 0, x - r * 0.34, y - r * 0.44, r * 1.05);
+  hl.addColorStop(0, 'rgba(255,255,255,.92)'); hl.addColorStop(0.4, 'rgba(255,255,255,.3)'); hl.addColorStop(0.65, 'rgba(255,255,255,0)');
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = hl; ctx.fill();
+  const sh = ctx.createRadialGradient(x + r * 0.34, y + r * 0.44, 0, x + r * 0.34, y + r * 0.44, r * 0.9);
+  sh.addColorStop(0, 'rgba(0,0,0,.15)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.stroke();
+}
+
+function drawRail(marks) {
+  const xa = L.x0 - L.pinR - 16, xb = X(F_MAX) + 36, y = L.y0, h = L.railH;
+  ctx.save();
+  ctx.shadowColor = 'rgba(40,30,20,.20)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#F8F8F9'); g.addColorStop(0.18, '#E4E4E7'); g.addColorStop(0.6, '#CDCDD2'); g.addColorStop(1, '#A6A6AC');
+  rr(xa, y, xb - xa, h, 6); ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+  ctx.save();
+  rr(xa, y, xb - xa, h, 6); ctx.clip();
+  if (!brushPattern) brushPattern = ctx.createPattern(brush, 'repeat');
+  ctx.globalAlpha = 0.6; ctx.fillStyle = brushPattern; ctx.fillRect(xa, y, xb - xa, h); ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fillRect(xa, y, xb - xa, 1.2);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(xa, y + h - 1.5, xb - xa, 1.5);
+  // Engraved graduations: a dark cut with a lit lower-right lip.
+  for (const m of marks) {
+    const a = m.grow ? m.alpha : 1;
+    if (a <= 0.01) continue;
+    const x = X(m.v), wd = m.major ? 2 : 1.5;
+    const th = m.major ? h - 5 : h * 0.5 * a;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(28,28,32,.8)'; ctx.fillRect(x - wd / 2, y + 2, wd, th);
+    ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(x + wd / 2, y + 2, 1, th);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawMount(x) {
+  const mw = L.mw, h = L.railH + 6, y = L.y0, left = x - mw / 2;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#5A5A60'); g.addColorStop(0.5, '#3A3A40'); g.addColorStop(1, '#26262B');
+  rr(left, y, mw, h, [2, 2, 7, 7]); ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(left + 2, y, mw - 4, 1);
+  for (const s of [-1, 1]) {                       // two bolt heads: this post does not slide
+    const bx = x + s * mw * 0.32, by = y + h / 2, r = Math.max(2.6, L.railH * 0.12);
+    const bg = ctx.createRadialGradient(bx - r * 0.4, by - r * 0.4, 0, bx, by, r);
+    bg.addColorStop(0, '#F2F2F4'); bg.addColorStop(1, '#8C8C92');
+    ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fillStyle = bg; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 0.8; ctx.stroke();
+  }
+}
+
+function drawPost(x, h, marks) {
+  if (h < 0.5) return;
+  const w = L.w, left = x - w / 2, top = L.y0 - h, r = Math.min(w * 0.22, h / 2);
+  ctx.save();
+  ctx.shadowColor = 'rgba(60,10,20,.24)'; ctx.shadowBlur = 16; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 7;
+  rr(left, top, w, h, [r, r, 0, 0]); ctx.fillStyle = ENAMEL; ctx.fill();
+  ctx.restore();
+  ctx.save();
+  rr(left, top, w, h, [r, r, 0, 0]); ctx.clip();
+  const g = ctx.createLinearGradient(left, 0, left + w, 0);
+  g.addColorStop(0, '#8E0C27'); g.addColorStop(0.07, '#C8123A'); g.addColorStop(0.22, '#EE3A5C');
+  g.addColorStop(0.4, '#DC143C'); g.addColorStop(0.75, '#B80F32'); g.addColorStop(1, '#7A0A22');
+  ctx.fillStyle = g; ctx.fillRect(left, top, w, h);
+  const sg = ctx.createLinearGradient(left + w * 0.15, 0, left + w * 0.35, 0);
+  sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,.34)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sg; ctx.fillRect(left, top, w, h);
+  // Recessed seams every 1/d of the given post; whole-given seams are cut deeper.
+  for (const m of marks) {
+    if (m.v <= 0) continue;
+    const ys = L.y0 - m.v * L.G;
+    if (ys <= top + 0.75) continue;
+    const a = m.grow ? m.alpha : 1;
+    if (a <= 0.01) continue;
+    const gw = m.major ? 2.6 : 1.5;
+    ctx.globalAlpha = a;
+    const sh = ctx.createLinearGradient(0, ys - 5, 0, ys);
+    sh.addColorStop(0, 'rgba(60,0,15,0)'); sh.addColorStop(1, 'rgba(60,0,15,.24)');
+    ctx.fillStyle = sh; ctx.fillRect(left, ys - 5, w, 5);
+    ctx.fillStyle = m.major ? 'rgba(55,0,14,.8)' : 'rgba(70,0,18,.58)'; ctx.fillRect(left, ys - gw / 2, w, gw);
+    ctx.fillStyle = 'rgba(255,225,230,.42)'; ctx.fillRect(left, ys + gw / 2, w, 1);
+  }
+  ctx.globalAlpha = 1;
+  const bg = ctx.createLinearGradient(0, L.y0 - 10, 0, L.y0);
+  bg.addColorStop(0, 'rgba(40,0,10,0)'); bg.addColorStop(1, 'rgba(40,0,10,.3)');
+  ctx.fillStyle = bg; ctx.fillRect(left, L.y0 - 10, w, 10);
+  ctx.restore();
+  rr(left + 0.5, top + 0.5, w - 1, h - 0.5, [r, r, 0, 0]);
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(90,5,25,.45)'; ctx.stroke();
+}
+
+function drawCarriage(x) {
+  const cw = L.cw, h = L.railH + 8, left = x - cw / 2, y = L.y0, slit = 8;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.26)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#FBFBFC'); g.addColorStop(0.35, '#DADADE'); g.addColorStop(0.8, '#B9B9BF'); g.addColorStop(1, '#9A9AA0');
+  ctx.beginPath(); rrPath(left, y, cw, h, [3, 3, 8, 8]); ctx.rect(x - slit / 2, y + 2, slit, L.railH - 3);
+  ctx.fillStyle = g; ctx.fill('evenodd');
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); rrPath(left, y, cw, h, [3, 3, 8, 8]); ctx.clip();
+  for (let kx = left + 4; kx < x - slit / 2 - 2; kx += 3) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(kx, y + 4, 1, h - 8); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(kx + 1, y + 4, 1, h - 8); }
+  for (let kx = x + slit / 2 + 2; kx < left + cw - 5; kx += 3) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(kx, y + 4, 1, h - 8); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(kx + 1, y + 4, 1, h - 8); }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.strokeRect(x - slit / 2 + 0.5, y + 2.5, slit - 1, L.railH - 4);
+  ctx.fillStyle = '#1D1D1F'; ctx.fillRect(x - 0.75, y + 2, 1.5, L.railH - 3);   // index hairline
+  rr(left + 0.5, y + 0.5, cw - 1, h - 1, [3, 3, 8, 8]); ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.stroke();
+}
+
+function drawWire() {
+  const len = Math.hypot(L.U, L.G), ux = L.U / len, uy = -L.G / len;
+  let t = (W + 40 - L.x0) / ux;
+  t = Math.min(t, (L.y0 + 40) / -uy);
+  const x2 = L.x0 + ux * t, y2 = L.y0 + uy * t;
+  // The wire runs on off-stage; it fades out as it enters the top chrome band instead of crossing the controls.
+  const yA = L.top + 44, yB = L.top - 4;
+  const tA = (yA - L.y0) / uy, tB = (yB - L.y0) / uy;
+  const fade = (rgb, a) => {
+    const g = ctx.createLinearGradient(L.x0 + ux * tA, yA, L.x0 + ux * tB, yB);
+    g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`);
+    return g;
+  };
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.shadowColor = 'rgba(30,25,20,.24)'; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 6;
+  ctx.beginPath(); ctx.moveTo(L.x0, L.y0); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = fade('59,62,69', 1); ctx.lineWidth = 2.8; ctx.stroke();
+  ctx.restore();
+  const ox = uy * 0.7, oy = -ux * 0.7;           // lit upper-left side of the cable
+  ctx.beginPath(); ctx.moveTo(L.x0 + ox, L.y0 + oy); ctx.lineTo(x2 + ox, y2 + oy);
+  ctx.strokeStyle = fade('255,255,255', 0.55); ctx.lineWidth = 0.9; ctx.stroke();
+}
+
+function drawPin() {
+bead(L.x0, L.y0, L.pinR);
+  ctx.beginPath(); ctx.arc(L.x0, L.y0, L.pinR * 0.52, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0,0,0,.09)'; ctx.lineWidth = 1; ctx.stroke();
+}
+
+function drawFrac(x, top, num, den, fs, color, weight, alpha) {
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${fs}px ${FONT}`;
+  const bw = Math.max(ctx.measureText(String(num)).width, ctx.measureText(String(den)).width) + fs * 0.3;
+  ctx.fillText(String(num), x, top + fs * 0.86);
+  ctx.fillRect(x - bw / 2, top + fs * 1.04, bw, Math.max(1, fs * 0.08));
+  ctx.fillText(String(den), x, top + fs * 2.02);
+  ctx.globalAlpha = 1;
+  return bw;
+}
+
+// What the carriage is called at rest, for the emphasised rail label (notation layer only).
+function emphasis() {
+  if (!S.notation || S.drag || S.pending || !S.seat) return null;
+  if (S.offGrid) return { v: S.seat.p / S.seat.q, p: S.seat.p, q: S.seat.q, off: true, major: false };
+  if (S.d === 1) return null;
+  const k = seatIn(S.seat, S.d);
+  return { v: k / S.d, p: k, q: S.d, off: false, major: k % S.d === 0 };
+}
+
+function drawLabels(e) {
+  const rowTop = L.y0 + L.railH + 14, ns = L.ns, fs = L.fs;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#2A2A2E'; ctx.font = `600 ${ns}px ${FONT}`;
+  for (let i = 0; i <= F_MAX; i++) ctx.fillText(String(i), X(i), rowTop + ns * 0.86);
+  if (!S.notation) return;
+  const minorTop = rowTop + ns * 0.43 - 1.05 * fs, majorTop = rowTop + ns * 1.05, fsM = fs * 0.9;
+  const em = emphasis(), minGap = fs * 1.6;
+  const set = (d, alpha) => {
+    if (d === 1 || alpha <= 0.01) return;
+    const m = labelStep(L.U / d, fs * 1.9, d);
+    for (let k = 0; k <= F_MAX * d; k++) {
+      if (k % m) continue;
+      if (em && Math.abs(X(k / d) - X(em.v)) < minGap) continue;
+      if (k % d === 0) drawFrac(X(k / d), majorTop, k, d, fsM, '#6E6E73', 500, alpha);
+      else drawFrac(X(k / d), minorTop, k, d, fs, '#6E6E73', 500, alpha);
+    }
+  };
+  // During a re-cut the old names fade out and the new names fade in, so a shared point shows 2/3 becoming 4/6.
+  if (e < 1) { set(S.trans.from, 1 - e); set(S.trans.to, e); } else set(S.d, 1);
+  if (!em) return;
+  const x = X(em.v);
+  if (em.major) { drawFrac(x, majorTop, em.p, em.q, fsM * 1.08, '#1D1D1F', 700, 1); return; }
+  const bw = drawFrac(x, minorTop, em.p, em.q, fs * 1.08, '#1D1D1F', 700, 1);
+  if (em.off) {                                     // not a mark on this rail: a dashed tag around its name
+    ctx.save(); ctx.setLineDash([3, 3]); ctx.lineWidth = 1.25; ctx.strokeStyle = 'rgba(29,29,31,.6)';
+    rr(x - bw / 2 - 5, minorTop - 4, bw + 10, fs * 2.25 + 8, 6); ctx.stroke(); ctx.restore();
+  }
+}
+
+// ═══════ RECORD (symbolic shadow) ═══════
+let recordKey = '';
+function recordName() {
+  if (S.seat && !S.pending && !S.drag) {
+    if (S.offGrid) return { p: S.seat.p, q: S.seat.q, pending: false };
+    const k = seatIn(S.seat, S.d); return { p: k, q: S.d, pending: false };
+  }
+  let k, d;
+  if (S.pending && !S.drag) { k = S.pending.k; d = S.pending.d; }
+  else { d = S.d; k = nearestTick(S.target, d); }
+  return { p: k, q: d, pending: Math.abs(S.f - k / d) * L.U > 1 };
+}
+function updateRecord() {
+  if (!L) return;
+  const n = recordName(), rel = relation(S.f, pxEps());
+  const key = [n.p, n.q, n.pending, rel].join('|');
+  if (key === recordKey) return;
+  recordKey = key;
+  const cls = n.pending ? ' pending' : '';
+  const fac = n.q === 1 ? `<span class="whole${cls}">${n.p}</span>`
+    : `<span class="frac${cls}"><span class="n">${n.p}</span><span class="dn">${n.q}</span></span>`;
+  const relHtml = rel === '<' ? '&lt;' : rel === '>' ? '&gt;' : '=';
+  recordEl.innerHTML = `${fac}<span class="op">×</span><span class="glyph"></span><span class="rel">${relHtml}</span><span class="glyph"></span>`;
+}
+
+// ═══════ ACCESSIBILITY ═══════
+function restingName() {
+  if (!S.seat) return null;
+  if (S.offGrid) return { p: S.seat.p, q: S.seat.q };
+  return { p: seatIn(S.seat, S.d), q: S.d };
+}
+function relWords(f) {
+  const r = relation(f, pxEps());
+  return r === '<' ? 'shorter than the given post' : r === '=' ? 'the same as the given post' : 'taller than the given post';
+}
+function seatSentence() {
+  const n = restingName();
+  return `Factor ${spoken(n.p, n.q)}. Product post ${relWords(S.f)}.`;
+}
+function partitionSentence() {
+  let s = `Rail in ${PART_NAMES[S.d]}.`;
+  if (S.seat && !S.pending && !S.drag) {
+    if (!S.offGrid) { s += ` Factor ${spoken(seatIn(S.seat, S.d), S.d)}.`; }
+    else {
+      const lo = Math.floor(S.seat.p * S.d / S.seat.q);
+      s += ` Factor ${spoken(S.seat.p, S.seat.q)} is between ${spoken(lo, S.d)} and ${spoken(lo + 1, S.d)}.`;
+    }
+  }
+  return s;
+}
+let liveFlip = false;
+function announce(text) { liveFlip = !liveFlip; liveEl.textContent = text + (liveFlip ? '' : ''); }
+function updateAria() {
+  carriageEl.setAttribute('aria-valuenow', String(Math.round(S.f * 1000) / 1000));
+  if (S.seat && !S.pending && !S.drag) carriageEl.setAttribute('aria-valuetext', seatSentence());
+  else { const k = nearestTick(S.drag ? S.target : S.f, S.d); carriageEl.setAttribute('aria-valuetext', `Near ${spoken(k, S.d)}. Product post ${relWords(S.f)}.`); }
+}
+function haptic(ms) { if (!reduceMotion && navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) { try { navigator.vibrate(ms); } catch (_) {} } }
+
+// ═══════ RENDER / ANIMATION ═══════
+function transProgress(now) {
+  const tr = S.trans;
+  if (!tr.dur) return 1;
+  const e = Math.min(1, (now - tr.t0) / tr.dur);
+  return 1 - Math.pow(1 - e, 3);
+}
+function render() {
+  if (!L) return;
+  const now = performance.now();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const e = transProgress(now);
+  const marks = e >= 1 ? marksFor(S.d, S.d, 1) : marksFor(S.trans.from, S.trans.to, e);
+  const xf = X(S.f), hf = S.f * L.G, x1 = X(1) + S.nudge;
+  const congruent = Math.abs(X(S.f) - X(1)) < 0.3 && Math.abs(S.nudge) < 0.05;
+  drawRail(marks);
+  drawMount(x1);
+  if (!congruent) drawPost(x1, L.G, marks);       // exactly covered when the factor is 1
+  drawPost(xf, hf, marks);
+  drawCarriage(xf);
+  drawWire();
+  if (!congruent) bead(x1, L.y0 - L.G, L.beadR);
+  bead(xf, L.y0 - hf, L.beadR);
+  drawPin();
+  drawLabels(e);
+  // Keep the focus proxy wrapped around the carriage and product post.
+  const hw = Math.max(L.cw / 2, L.beadR) + 8, top = L.y0 - hf - L.beadR - 6, bottom = L.y0 + L.railH + 12;
+  carriageEl.style.width = (hw * 2) + 'px';
+  carriageEl.style.height = (bottom - top) + 'px';
+  carriageEl.style.transform = `translate(${xf - hw}px, ${top}px)`;
+  updateRecord();
+}
+
+let raf = 0, lastT = 0;
+function kick() { if (!raf) { lastT = performance.now(); raf = requestAnimationFrame(frame); } }
+function frame(t) {
+  raf = 0;
+  const dt = Math.min(0.05, Math.max(0, (t - lastT) / 1000)); lastT = t;
+  let busy = false;
+  if (S.drag && S.omega < 45 && Math.abs(S.target - S.f) < 0.01) S.omega = 45;
+  if (reduceMotion) { S.f = S.target; S.v = 0; S.nudge = S.nudgeTarget = 0; }
+  else {
+    const steps = Math.max(1, Math.ceil(dt * 240)), h = dt / steps;
+    for (let i = 0; i < steps; i++) {       // critically damped: heavy, no overshoot
+      const a = S.omega * S.omega * (S.target - S.f) - 2 * S.omega * S.v;
+      S.v += a * h; S.f += S.v * h;
+      const an = 900 * (S.nudgeTarget - S.nudge) - 60 * S.nudgeV;
+      S.nudgeV += an * h; S.nudge += S.nudgeV * h;
+    }
+  }
+  if (Math.abs(S.target - S.f) < 1e-4 && Math.abs(S.v) < 1e-3) {
+    S.f = S.target; S.v = 0;
+    if (!S.drag && S.pending) settle();
+  } else busy = true;
+  if (Math.abs(S.nudgeTarget - S.nudge) < 0.02 && Math.abs(S.nudgeV) < 0.05) { S.nudge = S.nudgeTarget; S.nudgeV = 0; } else busy = true;
+  if (S.trans.dur && t - S.trans.t0 < S.trans.dur) busy = true;
+  else if (S.trans.dur) S.trans.dur = 0;
+  render();
+  updateAria();
+  if (busy) raf = requestAnimationFrame(frame);
+}
+
+function settle() {
+  const { k, d } = S.pending;
+  S.pending = null;
+  S.seat = reduce(k, d);
+  S.offGrid = seatIn(S.seat, S.d) === null;
+  const wasIntro = S.intro;
+  S.intro = false;
+  recordKey = '';
+  if (!wasIntro) { haptic(S.seat.p === S.seat.q ? 14 : 7); announce(seatSentence()); }
+}
+
+// ═══════ ACTIONS ═══════
+function goToTick(k) {
+  S.intro = false;
+  S.seat = null; S.offGrid = false;
+  S.pending = { k, d: S.d };
+  S.target = k / S.d; S.omega = 22;
+  kick();
+}
+function currentExact() {
+  if (S.pending) return reduce(S.pending.k, S.pending.d);
+  if (S.seat) return S.seat;
+  return reduce(nearestTick(S.f, S.d), S.d);
+}
+function setPartition(dNew) {
+  if (dNew === S.d || !PARTITIONS.includes(dNew)) return;
+  S.trans = { from: S.d, to: dNew, t0: performance.now(), dur: reduceMotion ? 0 : 460 };
+  S.d = dNew;
+  if (S.seat) S.offGrid = seatIn(S.seat, dNew) === null;
+  recordKey = '';
+  syncParts();
+  announce(partitionSentence());
+  kick();
+}
+function setNotation(on) {
+  S.notation = !!on;
+  document.body.classList.toggle('notation', S.notation);
+  notationBtn.setAttribute('aria-pressed', String(S.notation));
+  notationBtn.setAttribute('aria-label', S.notation ? 'Hide notation' : 'Show notation');
+  recordKey = '';
+  kick();
+}
+
+// ═══════ POINTER ═══════
+function localPt(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function hitTest(x, y) {
+  const xf = X(S.f), hf = S.f * L.G, x1 = X(1);
+  if (Math.hypot(x - xf, y - (L.y0 - hf)) < L.beadR + 14) return 'bead';
+  const hw = Math.max(L.w / 2, L.cw / 2, 22) + 6;
+  if (Math.abs(x - xf) < hw && y > L.y0 - hf - 4 && y < L.y0 + L.railH + 14) return 'product';
+  if (Math.abs(x - x1) < L.w / 2 + 8 && y > L.y0 - L.G - L.beadR && y < L.y0) return 'given';
+  if (x > L.x0 - 14 && x < X(F_MAX) + 24 && y > L.y0 - 16 && y < L.y0 + L.railH + 14 + L.ns * 1.1) return 'rail';
+  return null;
+}
+function dragMove(p) {
+  const dg = S.drag;
+  if (dg.mode === 'given') {
+    S.nudgeTarget = reduceMotion ? 0 : 2.5 * Math.tanh((p.x - dg.x0) / 40);
+    kick(); return;
+  }
+  let raw = (dg.mode === 'wire' ? wireFactorAt(p.x, p.y, L) : (p.x - L.x0) / L.U) - dg.offset;
+  raw = Math.max(0, Math.min(F_MAX, raw));
+  const r = Math.min(12 / L.U, 0.35 / S.d);
+  S.target = magnet(raw, S.d, r);
+  kick();
+}
+cv.addEventListener('pointerdown', e => {
+  if (S.drag || !L) return;
+  const p = localPt(e), hit = hitTest(p.x, p.y);
+  if (!hit) return;
+  e.preventDefault();
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  S.intro = false;
+  if (hit === 'given') { S.drag = { id: e.pointerId, mode: 'given', x0: p.x }; return; }
+  const grab = hit === 'bead' ? wireFactorAt(p.x, p.y, L) : (p.x - L.x0) / L.U;
+  S.drag = { id: e.pointerId, mode: hit === 'bead' ? 'wire' : 'x', offset: hit === 'rail' ? 0 : grab - S.f };
+  S.seat = null; S.pending = null; S.offGrid = false;
+  S.omega = hit === 'rail' ? 24 : 45;
+  cv.style.cursor = 'grabbing';
+  try { carriageEl.focus({ preventScroll: true, focusVisible: false }); } catch (_) { carriageEl.focus(); }
+  dragMove(p);
+});
+cv.addEventListener('pointermove', e => {
+  if (!L) return;
+  const p = localPt(e);
+  if (S.drag) { if (e.pointerId === S.drag.id) dragMove(p); return; }
+  if (e.pointerType === 'mouse') {
+    const hit = hitTest(p.x, p.y);
+    cv.style.cursor = hit === 'bead' || hit === 'product' ? 'grab' : hit === 'rail' ? 'pointer' : 'default';
+  }
+});
+function endDrag(e) {
+  if (!S.drag || e.pointerId !== S.drag.id) return;
+  const dg = S.drag;
+  S.drag = null;
+  cv.style.cursor = e.pointerType === 'mouse' ? 'grab' : 'default';
+  if (dg.mode === 'given') { S.nudgeTarget = 0; kick(); return; }
+  const k = nearestTick(S.target, S.d);
+  S.pending = { k, d: S.d };
+  S.target = k / S.d; S.omega = 16;           // heavy settle into the nearest notch
+  kick();
+}
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+cv.addEventListener('lostpointercapture', endDrag);
+
+// ═══════ KEYBOARD ═══════
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.ctrlKey || e.metaKey || S.drag || !L) return;
+  if (partsEl.contains(e.target)) return;
+  const v = currentExact(), n = v.p * S.d / v.q;
+  let k = null;
+  switch (e.key) {
+    case 'ArrowRight': case 'ArrowUp': k = stepFrom(v, S.d, 1); break;
+    case 'ArrowLeft': case 'ArrowDown': k = stepFrom(v, S.d, -1); break;
+    case 'PageUp': k = clampK(Math.floor(n + 1e-9) + S.d, S.d); break;
+    case 'PageDown': k = clampK(Math.ceil(n - 1e-9) - S.d, S.d); break;
+    case 'Home': k = 0; break;
+    case 'End': k = F_MAX * S.d; break;
+    default: return;
+  }
+  e.preventDefault();
+  goToTick(k);
+});
+
+// ═══════ PARTITION KEYS (wordless: each key shows one whole cut into d parts) ═══════
+function keyFace(d) {
+  let lines = '';
+  for (let i = 1; i < d; i++) { const x = 0.5 + 39 * i / d; lines += `<line x1="${x.toFixed(2)}" y1="1.2" x2="${x.toFixed(2)}" y2="8.8" stroke="#2C2C30" stroke-width="1.2"/>`; }
+  return `<svg width="40" height="10" viewBox="0 0 40 10" aria-hidden="true" focusable="false"><rect x=".5" y=".5" width="39" height="9" rx="4.5" fill="url(#swAlu)" stroke="rgba(0,0,0,.28)"/>${lines}</svg><span aria-hidden="true">${d}</span>`;
+}
+const partButtons = PARTITIONS.map(d => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'part';
+  b.setAttribute('role', 'radio'); b.setAttribute('aria-label', PART_NAMES[d]);
+  b.dataset.d = String(d);
+  b.innerHTML = keyFace(d);
+  b.addEventListener('click', () => setPartition(d));
+  partsEl.appendChild(b);
+  return b;
+});
+function syncParts() {
+  partButtons.forEach(b => {
+    const on = Number(b.dataset.d) === S.d;
+    b.setAttribute('aria-checked', String(on));
+    b.tabIndex = on ? 0 : -1;
+  });
+}
+partsEl.addEventListener('keydown', e => {
+  const i = PARTITIONS.indexOf(S.d);
+  let j = null;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % PARTITIONS.length;
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + PARTITIONS.length) % PARTITIONS.length;
+  else if (e.key === 'Home') j = 0;
+  else if (e.key === 'End') j = PARTITIONS.length - 1;
+  if (j === null) return;
+  e.preventDefault();
+  setPartition(PARTITIONS[j]);
+  partButtons[j].focus();
+});
+notationBtn.addEventListener('click', () => setNotation(!S.notation));
+
+// ═══════ LAYOUT ═══════
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  brushPattern = null;
+  const bottom = H - partsEl.getBoundingClientRect().top + 8;
+  L = computeLayout(W, H, bottom, 68);
+  render(); updateAria();
+}
+window.addEventListener('resize', resize);
+syncParts();
+resize();
+if (document.fonts) {
+  document.fonts.load(`600 20px Lexend`).then(() => kick(), () => {});
+  document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', () => kick());
+}
+
+// Entrance: the product post starts congruent with the given post and glides out along the wire to 3/4.
+if (S.intro) {
+  setTimeout(() => {
+    if (!S.intro || S.drag) return;
+    S.seat = null; S.pending = { k: 3, d: 4 }; S.target = 0.75; S.omega = 6.5;
+    kick();
+  }, 600);
+}
+
+// Read-only hook for the smoke tests and for teachers inspecting state in devtools.
+function isIdle() { return !raf && !S.drag && !S.pending && !S.intro && !S.trans.dur; }
+window.ScalingWire = Object.freeze({
+  version: '1.0.0',
+  core: Core,
+  state: () => ({
+    d: S.d, f: S.f, target: S.target, seat: S.seat ? { p: S.seat.p, q: S.seat.q } : null, offGrid: S.offGrid,
+    dragging: !!S.drag, notation: S.notation, relation: relation(S.f, pxEps()), idle: isIdle(),
+    name: (() => { const n = restingName(); return n && !S.pending && !S.drag ? nameText(n.p, n.q) : null; })(),
+    record: recordEl.textContent, reduceMotion,
+  }),
+  geometry: () => ({ ...L, W, H, xf: X(S.f), yTop: L.y0 - S.f * L.G, x1: X(1), givenTop: L.y0 - L.G,
+    productHeight: S.f * L.G, givenHeight: L.G, carriageRect: carriageEl.getBoundingClientRect().toJSON() }),
+});
+})();
+</script>
+</body>
+</html>
