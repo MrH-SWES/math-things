@@ -109,15 +109,24 @@
       padding: 18px;
       scroll-padding-bottom: 80px;
     }
+    #pad {
+      --paper-line-size: 48px;
+      --paper-grid-size: 24px;
+    }
     #pad.lined {
-      background-image: linear-gradient(to bottom, transparent 0, transparent 47px, var(--line) 48px);
-      background-size: 100% 48px;
+      background-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--paper-line-size) - 1px),
+        var(--line) var(--paper-line-size)
+      );
+      background-size: 100% var(--paper-line-size);
     }
     #pad.grid {
       background-image:
         linear-gradient(to right, var(--grid) 1px, transparent 1px),
         linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
-      background-size: 24px 24px;
+      background-size: var(--paper-grid-size) var(--paper-grid-size);
     }
     .row {
       min-height: calc(var(--math-size) * 1.28);
@@ -1311,8 +1320,8 @@
       <nav class="utility" aria-label="utilities">
         <button id="smallTextBtn" class="util" aria-label="smaller text">A−</button>
         <button id="bigTextBtn" class="util" aria-label="larger text">A+</button>
-        <button id="worksheetSmallBtn" class="util" aria-label="shrink worksheet">▣−</button>
-        <button id="worksheetBigBtn" class="util" aria-label="grow worksheet">▣+</button>
+        <button id="worksheetSmallBtn" class="util" aria-label="zoom background out">▣−</button>
+        <button id="worksheetBigBtn" class="util" aria-label="zoom background in">▣+</button>
         <button class="util danger" id="clearBtn" aria-label="clear pad"><span class="trash-icon"></span></button>
       </nav>
 
@@ -1511,6 +1520,8 @@
   let currentMode = 'plain';
   let worksheetDataUrl = null;
   let worksheetScale = Number(localStorage.getItem('math-things-worksheet-scale') || '1');
+  let backgroundScale = Number(localStorage.getItem('math-things-background-scale') || '1');
+  let suppressStageClickUntil = 0;
   let pollTimer = null;
   let activeSessionId = null;
 
@@ -1941,6 +1952,7 @@
       mathSize,
       worksheet: worksheetDataUrl,
       worksheetScale,
+      backgroundScale,
       tools: toolStates,
     }));
   }
@@ -1963,10 +1975,17 @@
   }
 
   function applyWorksheetScale() {
-    worksheetScale = Math.max(0.55, Math.min(2.4, worksheetScale));
+    worksheetScale = Math.max(0.55, Math.min(3.0, worksheetScale));
     worksheetImg.style.width = (worksheetScale * 100) + '%';
     localStorage.setItem('math-things-worksheet-scale', String(worksheetScale));
     updateStageMinHeight();
+  }
+
+  function applyBackgroundScale() {
+    backgroundScale = Math.max(0.5, Math.min(3.0, backgroundScale));
+    pad.style.setProperty('--paper-line-size', (48 * backgroundScale) + 'px');
+    pad.style.setProperty('--paper-grid-size', (24 * backgroundScale) + 'px');
+    localStorage.setItem('math-things-background-scale', String(backgroundScale));
   }
 
   function scalePositionedAnnotations(ratio) {
@@ -1982,10 +2001,35 @@
 
   function changeWorksheetScale(delta) {
     const old = worksheetScale;
-    worksheetScale = Math.max(0.55, Math.min(2.4, worksheetScale + delta));
+    worksheetScale = Math.max(0.55, Math.min(3.0, worksheetScale + delta));
     const ratio = worksheetScale / old;
     if (currentMode === 'worksheet') scalePositionedAnnotations(ratio);
     applyWorksheetScale();
+    scheduleSave();
+  }
+
+  function changeCurrentBackgroundScale(delta) {
+    if (currentMode === 'worksheet') {
+      changeWorksheetScale(delta);
+      return;
+    }
+    backgroundScale = Math.max(0.5, Math.min(3.0, backgroundScale + delta));
+    applyBackgroundScale();
+    scheduleSave();
+  }
+
+  function setCurrentBackgroundScaleFromRatio(startScale, ratio) {
+    if (!Number.isFinite(ratio) || ratio <= 0) return;
+    if (currentMode === 'worksheet') {
+      const old = worksheetScale;
+      worksheetScale = Math.max(0.55, Math.min(3.0, startScale * ratio));
+      const annotationRatio = worksheetScale / old;
+      scalePositionedAnnotations(annotationRatio);
+      applyWorksheetScale();
+    } else {
+      backgroundScale = Math.max(0.5, Math.min(3.0, startScale * ratio));
+      applyBackgroundScale();
+    }
     scheduleSave();
   }
 
@@ -1996,8 +2040,10 @@
       const data = JSON.parse(raw);
       if (typeof data.mathSize === 'number') mathSize = data.mathSize;
       if (typeof data.worksheetScale === 'number') worksheetScale = data.worksheetScale;
+      if (typeof data.backgroundScale === 'number') backgroundScale = data.backgroundScale;
       applyMathSize();
       applyWorksheetScale();
+      applyBackgroundScale();
 
       // Clear stage but preserve the worksheet img element.
       [...stage.children].forEach(el => { if (el !== worksheetImg) el.remove(); });
@@ -2170,6 +2216,7 @@
 
   // Stage click → create positioned row in worksheet mode.
   stage.addEventListener('click', (e) => {
+    if (Date.now() < suppressStageClickUntil) return;
     if (currentMode !== 'worksheet') return;
     if (e.target !== stage && e.target !== worksheetImg) return;
     const rect = stage.getBoundingClientRect();
@@ -2382,35 +2429,12 @@
   function fitToolRect(tool, width, height, x, y) {
     const b = getLayerBounds();
     const min = getMinToolSize(tool);
-    let w = Math.max(min.w, Number(width) || min.w);
-    let h = Math.max(min.h, Number(height) || min.h);
-    let nx = Number(x) || 0;
-    let ny = Number(y) || 0;
-
-    // When a tool is pushed past any bench edge, treat the over-push as
-    // "smallify pressure." This makes shoving a tool into a corner compress
-    // it to its minimum bench footprint instead of merely clamping position.
-    const pressureLeft = Math.max(0, -nx);
-    const pressureTop = Math.max(0, -ny);
-    const pressureRight = Math.max(0, nx + w - b.width);
-    const pressureBottom = Math.max(0, ny + h - b.height);
-    const pressure = Math.max(pressureLeft, pressureTop, pressureRight, pressureBottom);
-    if (pressure > 0) {
-      const pressureTravel = Math.max(180, Math.min(420, Math.max(w, h) * 0.45));
-      const scale = Math.max(min.w / w, min.h / h, 1 - pressure / pressureTravel);
-      w = Math.max(min.w, Math.floor(w * scale));
-      h = Math.max(min.h, Math.floor(h * scale));
-    }
-
-    // Final clamp: never let the object leave the visible bench.
-    w = Math.min(w, Math.max(min.w, b.width));
-    h = Math.min(h, Math.max(min.h, b.height));
-    if (pressureLeft > 0) nx = 0;
-    if (pressureTop > 0) ny = 0;
-    if (pressureRight > 0) nx = b.width - w;
-    if (pressureBottom > 0) ny = b.height - h;
-    nx = Math.max(0, Math.min(Math.max(0, b.width - w), nx));
-    ny = Math.max(0, Math.min(Math.max(0, b.height - h), ny));
+    const maxW = Math.max(min.w, b.width);
+    const maxH = Math.max(min.h, b.height);
+    const w = Math.min(maxW, Math.max(min.w, Number(width) || min.w));
+    const h = Math.min(maxH, Math.max(min.h, Number(height) || min.h));
+    const nx = Math.max(0, Math.min(Math.max(0, b.width - w), Number(x) || 0));
+    const ny = Math.max(0, Math.min(Math.max(0, b.height - h), Number(y) || 0));
     return { x: nx, y: ny, w, h };
   }
 
@@ -2476,53 +2500,84 @@
     return { dx, dy };
   }
 
-  // Push collision: when the moved window overlaps another, shove the other
-  // along the axis of least overlap. Cascade if the push causes new overlaps.
-  // Each window is visited at most once per resolution pass to avoid loops.
+  // Collision settling is deliberately post-gesture. While a window is being
+  // dragged/resized it follows the hand exactly; on release, neighbors slide to
+  // the nearest available side without changing size.
+  const TOOL_GAP = 8;
+
+  function rectFromFit(fit) {
+    return { left: fit.x, top: fit.y, width: fit.w, height: fit.h };
+  }
+
+  function overlapArea(a, b) {
+    const o = getRectOverlap(a, b);
+    return o ? o.dx * o.dy : 0;
+  }
+
+  function chooseCollisionPlacement(anchor, other, allWindows, movedWin) {
+    const oth = getWinRect(other);
+    const tool = getToolConfig(other);
+    const candidates = [
+      { x: anchor.left + anchor.width + TOOL_GAP, y: oth.top },
+      { x: anchor.left - oth.width - TOOL_GAP, y: oth.top },
+      { x: oth.left, y: anchor.top + anchor.height + TOOL_GAP },
+      { x: oth.left, y: anchor.top - oth.height - TOOL_GAP },
+    ];
+
+    let best = null;
+    let bestScore = Infinity;
+
+    for (const candidate of candidates) {
+      const fit = fitToolRect(tool, oth.width, oth.height, candidate.x, candidate.y);
+      const rect = rectFromFit(fit);
+      if (getRectOverlap(anchor, rect)) continue;
+
+      const travel = Math.hypot(rect.left - oth.left, rect.top - oth.top);
+      let collisionPenalty = 0;
+
+      for (const win of allWindows) {
+        if (win === other) continue;
+        const area = overlapArea(rect, getWinRect(win));
+        if (!area) continue;
+        collisionPenalty += area * (win === movedWin ? 100000 : 20);
+      }
+
+      const score = travel + collisionPenalty;
+      if (score < bestScore) {
+        best = fit;
+        bestScore = score;
+      }
+    }
+
+    return best;
+  }
+
   function applyPushCollisions(movedWin) {
     const allWindows = [...document.querySelectorAll('.tool-window')];
     if (allWindows.length < 2) return;
-    const visited = new Set([movedWin]);
+
     const queue = [movedWin];
+    const moveCounts = new Map();
     let safety = 0;
 
-    while (queue.length > 0 && safety++ < 60) {
-      const current = queue.shift();
-      const cur = getWinRect(current);
+    while (queue.length && safety++ < 80) {
+      const anchorWin = queue.shift();
+      const anchor = getWinRect(anchorWin);
 
       for (const other of allWindows) {
-        if (visited.has(other)) continue;
-        const oth = getWinRect(other);
-        const overlap = getRectOverlap(cur, oth);
-        if (!overlap) continue;
+        if (other === anchorWin || other === movedWin) continue;
+        if (!getRectOverlap(anchor, getWinRect(other))) continue;
 
-        let nx = oth.left, ny = oth.top;
-        if (overlap.dx <= overlap.dy) {
-          // Horizontal push
-          const cCx = cur.left + cur.width / 2;
-          const oCx = oth.left + oth.width / 2;
-          if (oCx >= cCx) {
-            nx = cur.left + cur.width + 2;
-          } else {
-            nx = cur.left - oth.width - 2;
-          }
-        } else {
-          // Vertical push
-          const cCy = cur.top + cur.height / 2;
-          const oCy = oth.top + oth.height / 2;
-          if (oCy >= cCy) {
-            ny = cur.top + cur.height + 2;
-          } else {
-            ny = cur.top - oth.height - 2;
-          }
-        }
+        const next = chooseCollisionPlacement(anchor, other, allWindows, movedWin);
+        if (!next) continue;
 
-        const tool = getToolConfig(other);
-        const fitted = fitToolRect(tool, oth.width, oth.height, nx, ny);
-        applyToolRect(other, fitted);
+        const before = getWinRect(other);
+        if (Math.abs(next.x - before.left) < 0.5 && Math.abs(next.y - before.top) < 0.5) continue;
 
-        visited.add(other);
-        queue.push(other);
+        applyToolRect(other, next);
+        const count = (moveCounts.get(other) || 0) + 1;
+        moveCounts.set(other, count);
+        if (count < 5) queue.push(other);
       }
     }
   }
@@ -2841,7 +2896,6 @@
       const h = win.offsetHeight;
       const fitted = fitToolRect(getToolConfig(toolId), w, h, proposedX, proposedY);
       applyToolRect(win, fitted);
-      applyPushCollisions(win);
     });
     function end(e) {
       if (!st || e.pointerId !== st.id) return;
@@ -2859,6 +2913,7 @@
         toolStates[toolId].w = parseFloat(win.style.width) || win.offsetWidth;
         toolStates[toolId].h = parseFloat(win.style.height) || win.offsetHeight;
       }
+      applyPushCollisions(win);
       st = null;
       scheduleSave();
     }
@@ -2914,7 +2969,6 @@
     const ny = cy - (cy - r.top) * (newH / r.height);
     const fitted = fitToolRect(getToolConfig(toolId), newW, newH, nx, ny);
     applyToolRect(win, fitted);
-    applyPushCollisions(win);
   }
 
   function enableToolPinch(win, iframe, toolId) {
@@ -2967,7 +3021,6 @@
       const ny = centerY - (pinch.startMid.y - sr.top) * scale;
       const fitted = fitToolRect(getToolConfig(toolId), newW, newH, nx, ny);
       applyToolRect(win, fitted);
-      applyPushCollisions(win);
     }
     function endIfNeeded() {
       if (touches.size >= 2) return;
@@ -2982,6 +3035,7 @@
           toolStates[toolId].w = parseFloat(win.style.width) || win.offsetWidth;
           toolStates[toolId].h = parseFloat(win.style.height) || win.offsetHeight;
         }
+        applyPushCollisions(win);
         scheduleSave();
       }
     }
@@ -3015,7 +3069,11 @@
       const centerY = e.clientY - layerRect.top;
       const scale = e.deltaY < 0 ? 1.08 : 0.92;
       resizeToolAroundCenter(win, toolId, scale, centerX, centerY);
-      scheduleSave();
+      clearTimeout(win.__collisionTimer);
+      win.__collisionTimer = setTimeout(() => {
+        applyPushCollisions(win);
+        scheduleSave();
+      }, 140);
     }, { passive: false });
   }
 
@@ -3047,11 +3105,61 @@
   });
 
   pad.addEventListener('wheel', (e) => {
-    if (currentMode !== 'worksheet') return;
     if (!(e.ctrlKey || e.metaKey || e.altKey)) return;
     e.preventDefault();
-    changeWorksheetScale(e.deltaY > 0 ? -0.08 : 0.08);
+    changeCurrentBackgroundScale(e.deltaY > 0 ? -0.08 : 0.08);
   }, { passive: false });
+
+  // Two-finger pinch on the paper itself zooms whichever background is active:
+  // worksheet image, lined paper, or grid paper. Tool windows have their own
+  // pinch handling and do not bubble through this surface.
+  const backgroundTouches = new Map();
+  let backgroundPinch = null;
+
+  function backgroundPoint(e) {
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function backgroundDistance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  pad.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    const bareBackground = e.target === pad || e.target === stage || e.target === worksheetImg;
+    if (!bareBackground) return;
+    backgroundTouches.set(e.pointerId, backgroundPoint(e));
+    try { pad.setPointerCapture(e.pointerId); } catch (ignored) {}
+    if (backgroundTouches.size === 2 && !backgroundPinch) {
+      const [a, b] = [...backgroundTouches.values()];
+      backgroundPinch = {
+        distance: Math.max(20, backgroundDistance(a, b)),
+        scale: currentMode === 'worksheet' ? worksheetScale : backgroundScale,
+      };
+    }
+  });
+
+  pad.addEventListener('pointermove', (e) => {
+    if (!backgroundTouches.has(e.pointerId)) return;
+    backgroundTouches.set(e.pointerId, backgroundPoint(e));
+    if (!backgroundPinch || backgroundTouches.size < 2) return;
+    e.preventDefault();
+    const [a, b] = [...backgroundTouches.values()].slice(0, 2);
+    const ratio = backgroundDistance(a, b) / backgroundPinch.distance;
+    setCurrentBackgroundScaleFromRatio(backgroundPinch.scale, ratio);
+  });
+
+  function endBackgroundPointer(e) {
+    backgroundTouches.delete(e.pointerId);
+    if (backgroundPinch && backgroundTouches.size < 2) {
+      backgroundPinch = null;
+      suppressStageClickUntil = Date.now() + 300;
+      scheduleSave();
+    }
+  }
+
+  pad.addEventListener('pointerup', endBackgroundPointer);
+  pad.addEventListener('pointercancel', endBackgroundPointer);
 
   // ===== end Tools dock and floating tool windows =====
 
@@ -3060,6 +3168,7 @@
 
   afterMathliveReady(async () => {
     applyMathSize();
+    applyBackgroundScale();
     if (!load()) { makeRow(''); setMode('plain'); }
     setActive(document.querySelector('math-field'));
     await refreshToolsFromAppMenu();
@@ -3109,8 +3218,8 @@
     });
     document.getElementById('smallTextBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeMathSize(-4); });
     document.getElementById('bigTextBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeMathSize(4); });
-    document.getElementById('worksheetSmallBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeWorksheetScale(-0.1); });
-    document.getElementById('worksheetBigBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeWorksheetScale(0.1); });
+    document.getElementById('worksheetSmallBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeCurrentBackgroundScale(-0.1); });
+    document.getElementById('worksheetBigBtn').addEventListener('pointerdown', event => { event.preventDefault(); changeCurrentBackgroundScale(0.1); });
     document.querySelectorAll('[data-alg]').forEach(button => {
       button.addEventListener('pointerdown', event => { event.preventDefault(); makeAlgoBlock(button.dataset.alg); });
     });
@@ -3120,7 +3229,9 @@
       [...stage.children].forEach(el => { if (el !== worksheetImg) el.remove(); });
       worksheetDataUrl = null;
       worksheetScale = 1;
+      backgroundScale = 1;
       applyWorksheetScale();
+      applyBackgroundScale();
       worksheetImg.src = '';
       worksheetImg.classList.add('hidden');
       setMode('plain');
