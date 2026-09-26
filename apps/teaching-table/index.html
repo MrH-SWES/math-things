@@ -1353,7 +1353,7 @@
   // Add or remove rows freely; nothing else needs to change.
   // NOTE: If you've already customized this list in your live copy (e.g. Ten Frame,
   // Rekenrek), copy your edited TOOLS array over the one below before deploying.
-  const TOOLS = [
+  const TOOL_OVERRIDES = [
     // OA — Operations & Algebraic Thinking
     { id: 'numberline',      domain: 'OA',  name: 'Number Line',       url: '../number-line/',           icon: '━●━', w: 900,  h: 220, baseW: 1280, baseH: 300,  minW: 520, minH: 118, minWFrac: 0.38, minHFrac: 0.14 },
     { id: 'numberbond',      domain: 'OA',  name: 'Number Bond',       url: '../number-bond/',           icon: '○',   w: 500,  h: 420, baseW: 700,  baseH: 560,  minW: 280, minH: 230, minWFrac: 0.20, minHFrac: 0.22 },
@@ -1393,6 +1393,103 @@
     { id: 'missingrect',     domain: 'G',   name: 'Missing Rectangle',  url: '../missing-side-rectangle/',icon: '□?', w: 560,  h: 480, baseW: 780,  baseH: 620,  minW: 280, minH: 240, minWFrac: 0.19, minHFrac: 0.23 },
     { id: 'trigexplorer',    domain: 'G',   name: 'Trig Explorer',      url: '../trig-explorer/',        icon: 'sin', w: 680,  h: 520, baseW: 920,  baseH: 660,  minW: 320, minH: 250, minWFrac: 0.22, minHFrac: 0.24 },
   ];
+
+  let TOOLS = TOOL_OVERRIDES.map(tool => ({ ...tool }));
+
+  const LIVE_CATEGORY_META = {
+    CORE:        { label: 'Core',      color: '#dc143c', fullName: 'Core Manipulatives' },
+    CONCEPT:     { label: 'Concept',   color: '#6b3fa0', fullName: 'Concept Machines' },
+    BRIDGE:      { label: 'Bridge',    color: '#e6954a', fullName: 'Bridges' },
+    ALGORITHM:   { label: 'Algorithm', color: '#2e5894', fullName: 'Algorithm Machines' },
+    EXPLORATION: { label: 'Explore',   color: '#2d8a4e', fullName: 'Exploration' },
+  };
+
+  function normalizedToolPath(url) {
+    try {
+      return new URL(url, window.location.href).pathname.replace(/\/+$/, '/');
+    } catch (ignored) {
+      return String(url || '');
+    }
+  }
+
+  function categoryKey(label) {
+    const value = String(label || '').trim().toLowerCase();
+    if (value.startsWith('core')) return 'CORE';
+    if (value.startsWith('concept')) return 'CONCEPT';
+    if (value.startsWith('bridge')) return 'BRIDGE';
+    if (value.startsWith('algorithm')) return 'ALGORITHM';
+    return 'EXPLORATION';
+  }
+
+  function guessToolIcon(name) {
+    const n = String(name || '').toLowerCase();
+    if (n.includes('division')) return '÷';
+    if (n.includes('multiplication')) return '×';
+    if (n.includes('fraction')) return '½';
+    if (n.includes('number line')) return '━●━';
+    if (n.includes('number bond')) return '○';
+    if (n.includes('array')) return '▦';
+    if (n.includes('place value') || n.includes('ten frame')) return '▥';
+    if (n.includes('measure')) return '📏';
+    if (n.includes('geo') || n.includes('euclid') || n.includes('rectangle')) return '△';
+    if (n.includes('dial')) return '◷';
+    if (n.includes('balance')) return '⚖';
+    if (n.includes('prime')) return '◆';
+    return '◇';
+  }
+
+  async function refreshToolsFromAppMenu() {
+    try {
+      const response = await fetch('../../index.html', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`app menu returned ${response.status}`);
+      const html = await response.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const overrideByPath = new Map(
+        TOOL_OVERRIDES.map(tool => [normalizedToolPath(tool.url), tool])
+      );
+      const live = [];
+
+      doc.querySelectorAll('.app-card').forEach(card => {
+        const rawHref = card.getAttribute('href');
+        if (!rawHref) return;
+
+        const absolute = new URL(rawHref, new URL('../../', window.location.href));
+        const parts = absolute.pathname.split('/').filter(Boolean);
+        const slug = parts[parts.length - 1] || '';
+        if (!slug || slug === 'teaching-table') return;
+
+        const name = card.querySelector('.app-name')?.textContent?.trim() || slug;
+        const family = card.querySelector('.app-family')?.textContent?.trim() || 'Exploration';
+        const domain = categoryKey(family);
+        const override = overrideByPath.get(absolute.pathname.replace(/\/+$/, '/'));
+        const id = override?.id || slug.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+
+        live.push({
+          id,
+          domain,
+          name,
+          url: absolute.href,
+          icon: override?.icon || guessToolIcon(name),
+          w: override?.w || 620,
+          h: override?.h || 480,
+          baseW: override?.baseW || 900,
+          baseH: override?.baseH || 650,
+          minW: override?.minW || 300,
+          minH: override?.minH || 220,
+          minWFrac: override?.minWFrac || 0.20,
+          minHFrac: override?.minHFrac || 0.22,
+        });
+      });
+
+      if (live.length) {
+        TOOLS = live;
+        DOMAIN_META = { ...LIVE_CATEGORY_META };
+      }
+    } catch (error) {
+      console.warn('Teaching Table could not refresh the live Math Things app list; using bundled fallback.', error);
+    }
+  }
+
   // =========================
 
   const pad = document.getElementById('pad');
@@ -2430,7 +2527,7 @@
     }
   }
 
-  const DOMAIN_META = {
+  let DOMAIN_META = {
     OA:  { label: 'OA',  color: '#2e5894', fullName: 'Operations & Algebraic Thinking' },
     NBT: { label: 'NBT', color: '#e6954a', fullName: 'Number & Operations in Base Ten' },
     NF:  { label: 'NF',  color: '#c04a8a', fullName: 'Number & Operations — Fractions' },
@@ -2438,7 +2535,38 @@
     G:   { label: 'G',   color: '#7c4ab8', fullName: 'Geometry' },
   };
 
+  function buildDomainDock() {
+    const dock = document.getElementById('tools-dock');
+    if (!dock) return;
+    dock.querySelectorAll('.domain-btn-wrap').forEach(el => el.remove());
+    let tidyBtn = document.getElementById('tidyBtn');
+    if (!tidyBtn) {
+      tidyBtn = document.createElement('button');
+      tidyBtn.className = 'tool-tidy';
+      tidyBtn.id = 'tidyBtn';
+      tidyBtn.setAttribute('aria-label', 'tidy windows');
+      tidyBtn.textContent = '⌖ Tidy';
+      dock.appendChild(tidyBtn);
+    }
+
+    Object.entries(DOMAIN_META).forEach(([domain, meta]) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'domain-btn-wrap';
+      wrap.dataset.domain = domain;
+      wrap.innerHTML = `
+        <button class="domain-btn" data-domain="${domain}" aria-haspopup="true" aria-expanded="false">
+          <span class="domain-dot" style="background:${meta.color};"></span>
+          ${meta.label}
+          <span class="domain-chevron">▾</span>
+        </button>
+        <div class="domain-panel" data-domain="${domain}" role="menu"></div>
+      `;
+      dock.insertBefore(wrap, tidyBtn);
+    });
+  }
+
   function renderDock() {
+    buildDomainDock();
     // Populate each domain panel with its tools
     Object.keys(DOMAIN_META).forEach(domain => {
       const panel = document.querySelector(`.domain-panel[data-domain="${domain}"]`);
@@ -2930,10 +3058,11 @@
 
   // ===== end Teaching Table additions =====
 
-  afterMathliveReady(() => {
+  afterMathliveReady(async () => {
     applyMathSize();
     if (!load()) { makeRow(''); setMode('plain'); }
     setActive(document.querySelector('math-field'));
+    await refreshToolsFromAppMenu();
     renderDock();
     restoreOpenTools();
 
