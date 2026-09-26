@@ -266,5 +266,6 @@ objSlider.addEventListener('pointerdown',e=>{objSlider.setPointerCapture(e.point
 document.addEventListener('keydown',e=>{if(e.key==='a'||e.key==='A'){state.active='A';render()}if((e.key==='b'||e.key==='B')&&state.objectCount>=2){state.active='B';render()}if((e.key==='c'||e.key==='C')&&state.objectCount>=3){state.active='C';render()}if(e.key==='t'||e.key==='T'){state.top=!state.top;render()}if(e.key==='r'||e.key==='R'){const o=state.objects[state.active];o.left=0;o.right=RESET_WIDTH;render()}});
 window.addEventListener('resize',render);snapAllToMode();render();
 </script>
+  <script src="../../math-things-home.js"></script>
 </body>
 </html>
