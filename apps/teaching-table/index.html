@@ -390,7 +390,7 @@
     .algo-block.active { border-color: rgba(215, 182, 81, .62); }
     .algo-row {
       display: grid;
-      grid-template-columns: 1.1em repeat(5, 1.05em);
+      grid-template-columns: 1.1em repeat(var(--algo-cols, 5), 1.05em);
       gap: .12em;
       align-items: center;
       justify-content: end;
@@ -429,22 +429,22 @@
     .longdiv-block { min-width: 10em; }
     .longdiv-quotient {
       display: grid;
-      grid-template-columns: 2.5em repeat(5, 1.05em);
+      grid-template-columns: 2.5em repeat(var(--algo-cols, 5), 1.05em);
       gap: .12em;
       margin-left: .35em;
       margin-bottom: .08em;
     }
     .longdiv-main {
       display: grid;
-      grid-template-columns: 2.4em repeat(5, 1.05em);
+      grid-template-columns: 2.4em repeat(var(--algo-cols, 5), 1.05em);
       gap: .12em;
       align-items: stretch;
     }
     .divisor-cells { display: grid; grid-template-columns: repeat(2, 1.05em); gap: .12em; align-items: center; }
     .dividend-cells {
-      grid-column: 2 / span 5;
+      grid-column: 2 / -1;
       display: grid;
-      grid-template-columns: repeat(5, 1.05em);
+      grid-template-columns: repeat(var(--algo-cols, 5), 1.05em);
       gap: .12em;
       border-top: .075em solid currentColor;
       border-left: .075em solid currentColor;
@@ -453,7 +453,7 @@
     }
     .work-row {
       display: grid;
-      grid-template-columns: 2.5em repeat(5, 1.05em);
+      grid-template-columns: 2.5em repeat(var(--algo-cols, 5), 1.05em);
       gap: .12em;
       min-height: 1.25em;
       margin-left: .35em;
@@ -775,7 +775,8 @@
 
     /* ===== v5 additions ===== */
     .note-delete,
-    .algo-delete {
+    .algo-delete,
+    .algo-expand {
       position: absolute;
       z-index: 45;
       width: 24px;
@@ -798,10 +799,19 @@
     }
     .note-delete { right: -10px; top: -10px; }
     .algo-delete { right: -10px; top: -10px; }
+    .algo-expand {
+      right: -10px;
+      bottom: -10px;
+      color: #2e5894 !important;
+      border-color: rgba(46,88,148,0.24) !important;
+      font-size: 18px;
+    }
     .row:hover .note-delete,
     .row.active .note-delete,
     .algo-holder:hover .algo-delete,
-    .algo-holder.active .algo-delete {
+    .algo-holder.active .algo-delete,
+    .algo-holder:hover .algo-expand,
+    .algo-holder.active .algo-expand {
       opacity: 1;
       transform: scale(1);
     }
@@ -1758,8 +1768,14 @@
   }
 
   function writeRowDigits(row, value) {
-    const cells = cellsForRow(row);
-    const clean = String(value || '').replace(/[^0-9]/g, '').slice(-cells.length);
+    let cells = cellsForRow(row);
+    const digits = String(value || '').replace(/[^0-9]/g, '');
+    if (digits.length > cells.length) {
+      const block = row.closest('.algo-block');
+      if (block) expandAlgoBlock(block, digits.length - cells.length);
+      cells = cellsForRow(row);
+    }
+    const clean = digits.slice(-cells.length);
     row.dataset.entryValue = clean;
     cells.forEach(c => { c.textContent = ''; });
     let cellIndex = cells.length - 1;
@@ -1829,43 +1845,92 @@
     return true;
   }
 
+  const DEFAULT_ALGO_COLUMNS = 5;
+  const MAX_ALGO_COLUMNS = 14;
+
   function makeCells(n) {
     return Array.from({ length: n }, () => '<span class="digit-cell" tabindex="0"></span>').join('');
   }
 
-  function makeAlgoBlock(type) {
+  function wireDigitCell(cell) {
+    cell.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      setActiveCell(cell);
+    });
+  }
+
+  function algorithmColumnCount(block) {
+    const value = Number(block?.dataset.columns);
+    return Number.isFinite(value) && value > 0 ? value : DEFAULT_ALGO_COLUMNS;
+  }
+
+  function addColumnToRow(row) {
+    const cell = document.createElement('span');
+    cell.className = 'digit-cell';
+    cell.tabIndex = 0;
+    const first = row.querySelector('.digit-cell');
+    if (first) row.insertBefore(cell, first);
+    else row.appendChild(cell);
+    wireDigitCell(cell);
+  }
+
+  function expandAlgoBlock(block, amount = 1) {
+    if (!block) return false;
+    const current = algorithmColumnCount(block);
+    const target = Math.min(MAX_ALGO_COLUMNS, current + Math.max(1, amount));
+    if (target <= current) return false;
+
+    for (let i = current; i < target; i += 1) {
+      if (block.dataset.alg === 'div') {
+        addColumnToRow(block.querySelector('.longdiv-quotient'));
+        addColumnToRow(block.querySelector('.dividend-cells'));
+        block.querySelectorAll('.work-row').forEach(addColumnToRow);
+      } else {
+        block.querySelectorAll('.algo-row').forEach(addColumnToRow);
+      }
+    }
+
+    block.dataset.columns = String(target);
+    block.style.setProperty('--algo-cols', String(target));
+    assignRightToLeftOrders(block, { type: block.dataset.alg });
+    updateStageMinHeight();
+    return true;
+  }
+
+  function makeAlgoBlock(type, columns = DEFAULT_ALGO_COLUMNS) {
+    const columnCount = Math.max(DEFAULT_ALGO_COLUMNS, Math.min(MAX_ALGO_COLUMNS, Number(columns) || DEFAULT_ALGO_COLUMNS));
     const block = document.createElement('div');
     block.className = 'algo-block ' + type + (type === 'div' ? ' longdiv-block' : '');
     block.dataset.alg = type;
+    block.dataset.columns = String(columnCount);
+    block.style.setProperty('--algo-cols', String(columnCount));
     if (type === 'add' || type === 'sub') {
       const op = type === 'add' ? '+' : '−';
       const carryClass = type === 'sub' ? 'algo-row carry borrow' : 'algo-row carry';
       block.innerHTML = `
-        <div class="${carryClass}"><span class="opcell"></span>${makeCells(5)}</div>
-        <div class="algo-row operand"><span class="opcell"></span>${makeCells(5)}</div>
-        <div class="algo-row operand"><span class="opcell">${op}</span>${makeCells(5)}</div>
-        <div class="algo-row answer"><span class="opcell"></span>${makeCells(5)}</div>`;
+        <div class="${carryClass}"><span class="opcell"></span>${makeCells(columnCount)}</div>
+        <div class="algo-row operand"><span class="opcell"></span>${makeCells(columnCount)}</div>
+        <div class="algo-row operand"><span class="opcell">${op}</span>${makeCells(columnCount)}</div>
+        <div class="algo-row answer"><span class="opcell"></span>${makeCells(columnCount)}</div>`;
     } else if (type === 'mul') {
       block.innerHTML = `
-        <div class="algo-row carry"><span class="opcell"></span>${makeCells(5)}</div>
-        <div class="algo-row operand"><span class="opcell"></span>${makeCells(5)}</div>
-        <div class="algo-row operand"><span class="opcell">×</span>${makeCells(5)}</div>
-        <div class="algo-row partial"><span class="opcell"></span>${makeCells(5)}</div>
-        <div class="algo-row partial"><span class="opcell"></span>${makeCells(5)}</div>
-        <div class="algo-row answer"><span class="opcell"></span>${makeCells(5)}</div>`;
+        <div class="algo-row carry"><span class="opcell"></span>${makeCells(columnCount)}</div>
+        <div class="algo-row operand"><span class="opcell"></span>${makeCells(columnCount)}</div>
+        <div class="algo-row operand"><span class="opcell">×</span>${makeCells(columnCount)}</div>
+        <div class="algo-row partial"><span class="opcell"></span>${makeCells(columnCount)}</div>
+        <div class="algo-row partial"><span class="opcell"></span>${makeCells(columnCount)}</div>
+        <div class="algo-row answer"><span class="opcell"></span>${makeCells(columnCount)}</div>`;
     } else if (type === 'div') {
       block.innerHTML = `
-        <div class="longdiv-quotient"><span></span>${makeCells(5)}</div>
-        <div class="longdiv-main"><div class="divisor-cells">${makeCells(2)}</div><div class="dividend-cells">${makeCells(5)}</div></div>
-        <div class="work-row"><span></span>${makeCells(5)}</div>
-        <div class="work-row"><span></span>${makeCells(5)}</div>
-        <div class="work-row"><span></span>${makeCells(5)}</div>
-        <div class="work-row"><span></span>${makeCells(5)}</div>`;
+        <div class="longdiv-quotient"><span></span>${makeCells(columnCount)}</div>
+        <div class="longdiv-main"><div class="divisor-cells">${makeCells(2)}</div><div class="dividend-cells">${makeCells(columnCount)}</div></div>
+        <div class="work-row"><span></span>${makeCells(columnCount)}</div>
+        <div class="work-row"><span></span>${makeCells(columnCount)}</div>
+        <div class="work-row"><span></span>${makeCells(columnCount)}</div>
+        <div class="work-row"><span></span>${makeCells(columnCount)}</div>`;
     }
     assignRightToLeftOrders(block, { type });
-    block.querySelectorAll('.digit-cell').forEach(cell => {
-      cell.addEventListener('pointerdown', event => { event.preventDefault(); setActiveCell(cell); });
-    });
+    block.querySelectorAll('.digit-cell').forEach(wireDigitCell);
     const holder = document.createElement('div');
     holder.className = 'algo-holder';
 
@@ -1888,6 +1953,19 @@
       scheduleSave();
     });
     holder.appendChild(del);
+
+    const expand = document.createElement('button');
+    expand.type = 'button';
+    expand.className = 'algo-expand';
+    expand.setAttribute('aria-label', 'add place-value column');
+    expand.textContent = '+';
+    expand.addEventListener('pointerdown', event => { event.preventDefault(); event.stopPropagation(); });
+    expand.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (expandAlgoBlock(block)) scheduleSave();
+    });
+    holder.appendChild(expand);
     holder.appendChild(block);
     enableDrag(holder, grip);
 
@@ -1939,6 +2017,7 @@
           return {
             kind: 'alg',
             type: b?.dataset.alg || 'add',
+            columns: algorithmColumnCount(b),
             values: [...b.querySelectorAll('.digit-cell')].map(c => c.textContent || ''),
             positioned, x, y,
           };
@@ -2071,7 +2150,7 @@
           if (item.positioned) positionRow(mf.closest('.row'), item.x || 0, item.y || 0);
         }
         if (item.kind === 'alg') {
-          makeAlgoBlock(item.type || 'add');
+          makeAlgoBlock(item.type || 'add', item.columns || DEFAULT_ALGO_COLUMNS);
           const holder = stage.lastElementChild;
           const block = holder?.querySelector('.algo-block');
           const cells = block ? [...block.querySelectorAll('.digit-cell')] : [];
