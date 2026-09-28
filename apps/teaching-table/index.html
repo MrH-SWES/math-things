@@ -1207,6 +1207,152 @@
       .alg-btn { height: 42px; min-height: 42px; font-size: 15px; }
       .fraction-icon { width: 23px; height: 23px; }
     }
+  
+    /* ===== quick declutter pass ===== */
+    :root { --side-width: clamp(168px, 17vw, 225px); }
+
+    .shell {
+      gap: 6px;
+      padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
+    }
+
+    .pad-wrap {
+      padding: 6px;
+      gap: 5px;
+      border-radius: 18px;
+      background: rgba(255,253,247,.62);
+      box-shadow: 0 5px 18px rgba(0,0,0,.055);
+    }
+
+    #pad-frame {
+      border-radius: 12px;
+      border-color: rgba(0,0,0,.18);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
+    }
+
+    .side {
+      padding: 7px;
+      gap: 5px;
+      border-radius: 18px;
+      background: rgba(255,253,247,.72);
+      box-shadow: 0 5px 18px rgba(0,0,0,.055);
+    }
+
+    .brand { padding: 2px 2px 5px; }
+    .brand .math-things { font-size: 19px; }
+    .brand .pad-name { font-size: 11px; }
+
+    .tools.paper-modes,
+    .algorithms,
+    .keys,
+    .utility { gap: 4px; }
+
+    button {
+      min-height: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 16px;
+      border-color: rgba(0,0,0,.11);
+      background: rgba(255,255,255,.82);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 1px 2px rgba(0,0,0,.08);
+    }
+
+    .alg-btn {
+      min-height: 42px;
+      height: 42px;
+      background: linear-gradient(180deg, #fff8e8, #f4d784) !important;
+      border-color: rgba(140,100,0,.24) !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 1px 3px rgba(100,70,0,.12) !important;
+    }
+    .alg-symbol { font-size: 24px; padding-bottom: 7px; }
+    .alg-symbol-div { font-size: 28px; }
+
+    #tools-dock {
+      padding: 3px 4px;
+      gap: 3px;
+      border-radius: 9px;
+      background: rgba(255,253,247,.42);
+      border-color: rgba(0,0,0,.06);
+      box-shadow: none;
+    }
+    .domain-btn,
+    .tool-tidy {
+      min-height: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: rgba(255,255,255,.58) !important;
+      box-shadow: none !important;
+      border-color: rgba(0,0,0,.08) !important;
+      color: rgba(29,29,31,.70) !important;
+    }
+
+    .algo-block {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .algo-holder.positioned .algo-block {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .digit-cell {
+      background: transparent;
+      box-shadow: none;
+    }
+    .algo-block.active,
+    .algo-holder.positioned.active .algo-block {
+      background: rgba(255,255,255,.76);
+      border-color: rgba(46,88,148,.16);
+      box-shadow: 0 4px 12px rgba(0,0,0,.07);
+    }
+
+    .tool-window {
+      border-color: rgba(0,0,0,.05);
+      box-shadow: 0 8px 24px rgba(0,0,0,.10);
+    }
+    .tool-titlebar {
+      background: rgba(255,255,255,.28);
+      border-bottom-color: rgba(0,0,0,.035);
+      box-shadow: none;
+      opacity: .32;
+      transition: opacity 120ms ease, background-color 120ms ease;
+    }
+    .tool-title,
+    .tool-grip,
+    .tool-close {
+      opacity: .52;
+      transition: opacity 120ms ease;
+    }
+    .tool-window:hover .tool-titlebar,
+    .tool-window:focus-within .tool-titlebar,
+    .tool-window.dragging .tool-titlebar,
+    .tool-window.pinching .tool-titlebar {
+      opacity: 1;
+      background: rgba(245,245,247,.88);
+    }
+    .tool-window:hover .tool-title,
+    .tool-window:hover .tool-grip,
+    .tool-window:hover .tool-close,
+    .tool-window:focus-within .tool-title,
+    .tool-window:focus-within .tool-grip,
+    .tool-window:focus-within .tool-close,
+    .tool-window.dragging .tool-title,
+    .tool-window.dragging .tool-grip,
+    .tool-window.dragging .tool-close,
+    .tool-window.pinching .tool-title,
+    .tool-window.pinching .tool-grip,
+    .tool-window.pinching .tool-close {
+      opacity: 1;
+    }
+
+    @media (max-width: 760px) {
+      :root { --side-width: 142px; }
+      button { min-height: 34px; height: 34px; font-size: 15px; }
+      .alg-btn { min-height: 38px; height: 38px; }
+    }
+    /* ===== end quick declutter pass ===== */
+
   </style>
 </head>
 <body>
