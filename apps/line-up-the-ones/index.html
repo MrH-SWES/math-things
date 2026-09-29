@@ -71,7 +71,7 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
 <aside class="panel" id="panel" aria-label="Teacher support controls">
   <h2>Supports</h2>
   <div class="presets"><button class="preset" data-pre="full">FULL</button><button class="preset" data-pre="light">LIGHT</button><button class="preset" data-pre="none">NONE</button></div>
-  <div class="row"><span class="label">Ones rail</span><button class="sw" data-k="rail" role="switch" aria-checked="true"></button></div>
+  <div class="row"><span class="label">Anchor rail</span><button class="sw" data-k="rail" role="switch" aria-checked="true"></button></div>
   <div class="row"><span class="label">Place colors</span><button class="sw" data-k="colors" role="switch" aria-checked="true"></button></div>
   <div class="row"><span class="label">Column guides</span><button class="sw" data-k="guides" role="switch" aria-checked="false"></button></div>
   <div class="row"><span class="label">Mark ones</span><button class="sw" data-k="marks" role="switch" aria-checked="true"></button></div>
@@ -101,7 +101,10 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
   function positionScaffold(){
     guides.innerHTML="";
     for(var i=0;i<5;i++){var slot=ANCHOR-i;if(slot<0)continue;var g=document.createElement("div");g.className="guide";g.style.left=center(slot)+"px";guides.appendChild(g)}
-    rail.style.left=center(ANCHOR)+"px";pulse.style.left=center(ANCHOR)+"px"
+    var anchorEdge=(ANCHOR+1)*cell();
+    var gap=Math.min(10,cell()*.14);
+    rail.style.left=(anchorEdge+gap)+"px";
+    pulse.style.left=(anchorEdge+gap)+"px"
   }
   function startSlot(n,row){
     if(row===0)return ANCHOR;
