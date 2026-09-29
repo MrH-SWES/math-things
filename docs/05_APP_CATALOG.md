@@ -15,6 +15,7 @@ Use `harness/APP_AUDIT_TEMPLATE.md` to conduct each audit.
 | Number Bond | `apps/number-bond/` | Needs audit | TBD | TBD | TBD |
 | Place Value Blocks | `apps/place-value-blocks/` | Needs audit | TBD | TBD | TBD |
 | Place Value Cards | `apps/place-value-cards/` | Needs audit | TBD | TBD | TBD |
+| Line Up the Ones | `apps/line-up-the-ones/` | New build | Rigid multi-digit numeral strips sharing a ones anchor | Slide each numeral horizontally until the ones align | Teacher-toggleable rail, place colors, column guides, ones markers, and magnet |
 | Number Line | `apps/number-line/` | Needs audit | TBD | TBD | TBD |
 | Zooming Number Line | `apps/zooming-number-line/` | Needs audit | TBD | TBD | TBD |
 | Fraction Lab | `apps/fraction-lab/` | Needs audit | TBD | TBD | TBD |
