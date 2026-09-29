@@ -33,7 +33,7 @@ main{width:min(1040px,calc(100vw - 28px));margin:auto;padding:6px 0 78px}
 .board.colors-on .digit[data-p="hundreds"]{color:#302d23;text-shadow:0 1px rgba(255,255,255,.25)}
 .stud{position:absolute;left:50%;bottom:-10px;width:12px;height:12px;border-radius:50%;transform:translateX(-50%) scale(.2);opacity:0;background:radial-gradient(circle at 35% 28%,#fff,#cfd3d5 30%,#7d8387 68%,#4e5356);border:1px solid rgba(0,0,0,.35);box-shadow:0 2px 3px rgba(0,0,0,.18);transition:.18s var(--spring)}
 .board.marks-on .stud{opacity:1;transform:translateX(-50%) scale(1)}
-.pin{position:absolute;right:-7px;top:50%;width:14px;height:14px;transform:translateY(-50%);border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#bfc4c7 40%,#5e6468 78%);border:1px solid rgba(0,0,0,.35);box-shadow:0 2px 4px rgba(0,0,0,.18)}
+
 .wrong{animation:wobble .38s ease}@keyframes wobble{25%{transform:translateY(-50%) translateX(-8px)}55%{transform:translateY(-50%) translateX(7px)}80%{transform:translateY(-50%) translateX(-3px)}}
 .board.ok .pulse{z-index:8;width:calc(var(--cell)*.8);right:auto;border-radius:999px;background:radial-gradient(ellipse,rgba(220,20,60,.24),rgba(220,20,60,.06) 50%,transparent 72%);animation:flash .72s ease both}@keyframes flash{0%{opacity:0;transform:translateX(-50%) scale(.3,.1)}40%{opacity:1;transform:translateX(-50%) scale(1,1)}100%{opacity:0;transform:translateX(-50%) scale(.9,1.05)}}
 .controls{height:94px;display:grid;place-items:center}.check{width:68px;height:68px;border-radius:50%;display:grid;place-items:center}.check svg{width:30px}
@@ -119,8 +119,7 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     var el=document.createElement("div");el.className="strip"+(row===0?" anchor":"");el.dataset.row=row;el.dataset.n=n;
     el.setAttribute("aria-label",row===0?n+", reference number":n+", movable number");
     String(n).split("").forEach(function(ch,i,a){el.appendChild(digit(ch,i,a.length))});
-    if(row===0){var p=document.createElement("span");p.className="pin";p.setAttribute("aria-hidden","true");el.appendChild(p)}
-    else{el.tabIndex=0;drag(el);el.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();move(el,clamp(n,state.slots[row]+(e.key==="ArrowLeft"?-1:1)),true)})}
+    if(row!==0){el.tabIndex=0;drag(el);el.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();move(el,clamp(n,state.slots[row]+(e.key==="ArrowLeft"?-1:1)),true)})}
     return el
   }
   function setLeft(el,slot,animate){
@@ -130,7 +129,14 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
   function move(el,slot,animate){var r=Number(el.dataset.row);state.slots[r]=clamp(el.dataset.n,slot);setLeft(el,state.slots[r],animate)}
   function render(){
     state.locked=false;board.classList.remove("ok");var nums=sets[state.set];state.slots=nums.map(startSlot);lanes.innerHTML="";
-    nums.forEach(function(n,i){var lane=document.createElement("div");lane.className="lane"+(i===0?" anchor-lane":"");var el=strip(n,i);lane.appendChild(el);lanes.appendChild(lane);requestAnimationFrame(function(){setLeft(el,state.slots[i],false)})});
+    nums.forEach(function(n,i){
+      var lane=document.createElement("div");
+      lane.className="lane"+(i===0?" anchor-lane":"");
+      var el=strip(n,i);
+      lane.appendChild(el);
+      lanes.appendChild(lane);
+      setLeft(el,state.slots[i],false);
+    });
     requestAnimationFrame(positionScaffold)
   }
   function drag(el){
