@@ -31,8 +31,8 @@ main{width:min(1040px,calc(100vw - 28px));margin:auto;padding:6px 0 78px}
 .digit:first-child{border-radius:13px 0 0 13px}.digit:last-child{border-right:1px solid #aaa59a;border-radius:0 13px 13px 0}.digit:only-child{border-radius:13px}
 .board.colors-on .digit{color:#fff;border-color:rgba(0,0,0,.23);background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.08) 30%,rgba(0,0,0,.14)),var(--pc);text-shadow:0 1px 1px rgba(0,0,0,.22)}
 .board.colors-on .digit[data-p="hundreds"]{color:#302d23;text-shadow:0 1px rgba(255,255,255,.25)}
-.stud{position:absolute;left:50%;bottom:-10px;width:12px;height:12px;border-radius:50%;transform:translateX(-50%) scale(.2);opacity:0;background:radial-gradient(circle at 35% 28%,#fff,#cfd3d5 30%,#7d8387 68%,#4e5356);border:1px solid rgba(0,0,0,.35);box-shadow:0 2px 3px rgba(0,0,0,.18);transition:.18s var(--spring)}
-.board.marks-on .stud{opacity:1;transform:translateX(-50%) scale(1)}
+.stud{position:absolute;left:50%;bottom:-8px;width:28px;height:4px;border-radius:999px;transform:translateX(-50%) scaleX(.35);opacity:0;background:#3f4144;box-shadow:0 1px 1px rgba(255,255,255,.5);transition:.18s var(--spring)}
+.board.marks-on .stud{opacity:.9;transform:translateX(-50%) scaleX(1)}
 
 .wrong{animation:wobble .38s ease}@keyframes wobble{25%{transform:translateY(-50%) translateX(-8px)}55%{transform:translateY(-50%) translateX(7px)}80%{transform:translateY(-50%) translateX(-3px)}}
 .board.ok .pulse{z-index:8;width:calc(var(--cell)*.8);right:auto;border-radius:999px;background:radial-gradient(ellipse,rgba(220,20,60,.24),rgba(220,20,60,.06) 50%,transparent 72%);animation:flash .72s ease both}@keyframes flash{0%{opacity:0;transform:translateX(-50%) scale(.3,.1)}40%{opacity:1;transform:translateX(-50%) scale(1,1)}100%{opacity:0;transform:translateX(-50%) scale(.9,1.05)}}
@@ -93,7 +93,7 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
       rail=document.getElementById("rail"),pulse=document.getElementById("pulse"),panel=document.getElementById("panel"),
       gear=document.getElementById("gear"),check=document.getElementById("check"),next=document.getElementById("next");
   var state={set:Math.floor(Math.random()*sets.length),slots:[],locked:false,s:{rail:true,colors:true,guides:false,marks:true,magnet:true}};
-  function cell(){return parseFloat(getComputedStyle(board).getPropertyValue("--cell"))}
+  function cell(){var d=board.querySelector(".digit");return d?d.getBoundingClientRect().width:board.getBoundingClientRect().width/COLS}
   function center(slot){return slot*cell()+cell()/2}
   function leftFor(n,slot){return (slot-(String(n).length-1))*cell()}
   function minSlot(n){return String(n).length-1}
