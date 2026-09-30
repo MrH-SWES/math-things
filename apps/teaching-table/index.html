@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>  <style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>  <style>
     :root {
       --paper: #f7efdc;
       --ink: #1d1d1f;
@@ -1411,8 +1412,8 @@
       </div>
     </main>
 
-    <input type="file" id="worksheetFile" accept="image/*" style="display:none" />
-    <div id="drop-overlay"><div class="label">Drop worksheet image to load</div></div>
+    <input type="file" id="worksheetFile" accept="image/*,application/pdf,.pdf" style="display:none" />
+    <div id="drop-overlay"><div class="label">Drop worksheet image or PDF to load</div></div>
 
     <aside class="side" aria-label="Math Things Teaching Table controls">
 
@@ -1487,7 +1488,7 @@
   <div id="worksheet-modal" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-card">
       <h2 class="modal-title">Send a worksheet</h2>
-      <p class="modal-sub">Scan with your phone, then pick or take a photo</p>
+      <p class="modal-sub">Scan with your phone for a photo, or pick an image/PDF below</p>
       <div class="qr-frame placeholder" id="qr-frame">Phone scan not configured yet. See deployment notes.</div>
       <p class="modal-url" id="modal-url"></p>
       <p class="modal-status" id="modal-status">Waiting for phone…</p>
@@ -2431,8 +2432,51 @@
     worksheetFileInput.click();
   }
 
-  function handleImageFile(file) {
-    if (!file || !file.type || !file.type.startsWith('image/')) return false;
+  async function renderPdfWorksheet(file) {
+    if (!window.pdfjsLib) throw new Error('PDF renderer failed to load.');
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    const page = await pdf.getPage(1);
+    const baseViewport = page.getViewport({ scale: 1 });
+
+    // Teaching Table currently has a single worksheet background surface.
+    // Render page 1 crisply, then reuse the existing image-background path.
+    const targetWidth = 1600;
+    const renderScale = Math.max(1, Math.min(2.5, targetWidth / baseViewport.width));
+    const viewport = page.getViewport({ scale: renderScale });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas.toDataURL('image/jpeg', 0.94);
+  }
+
+  async function handleWorksheetFile(file) {
+    if (!file) return false;
+
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+    if (isPdf) {
+      try {
+        const dataUrl = await renderPdfWorksheet(file);
+        loadWorksheetImage(dataUrl);
+        return true;
+      } catch (err) {
+        console.error('Could not load PDF worksheet:', err);
+        alert('Teaching Table could not open that PDF.');
+        return false;
+      }
+    }
+
+    if (!file.type || !file.type.startsWith('image/')) return false;
     const reader = new FileReader();
     reader.onload = (ev) => loadWorksheetImage(ev.target.result);
     reader.readAsDataURL(file);
@@ -2457,10 +2501,10 @@
   // File input change.
   worksheetFileInput.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
-    handleImageFile(file);
+    handleWorksheetFile(file);
   });
 
-  // Drag-and-drop image anywhere on window.
+  // Drag-and-drop worksheet image or PDF anywhere on window.
   let dragCounter = 0;
   window.addEventListener('dragenter', (e) => {
     if (!e.dataTransfer || !e.dataTransfer.types) return;
@@ -2483,7 +2527,7 @@
     dragCounter = 0;
     dropOverlay.classList.remove('show');
     const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    handleImageFile(file);
+    handleWorksheetFile(file);
   });
 
   // Paste image from clipboard.
@@ -2493,7 +2537,7 @@
     for (const item of items) {
       if (item.type && item.type.startsWith('image/')) {
         const file = item.getAsFile();
-        if (handleImageFile(file)) { e.preventDefault(); return; }
+        if (handleWorksheetFile(file)) { e.preventDefault(); return; }
       }
     }
   });
