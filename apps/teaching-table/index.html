@@ -6,9 +6,9 @@
   <title>Math Things Teaching Table v5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">\n  <link rel="stylesheet" href="./curriculum.css">
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>  <style>
     :root {
       --paper: #f7efdc;
@@ -1400,7 +1400,7 @@
           </button>
           <div class="domain-panel" data-domain="G" role="menu"></div>
         </div>
-        <button class="tool-tidy" id="tidyBtn" aria-label="tidy windows">⌖ Tidy</button>
+        <button id="curriculumBtn" class="tool-tidy" aria-label="open curriculum">▤ Curriculum</button>\n        <button class="tool-tidy" id="tidyBtn" aria-label="tidy windows">⌖ Tidy</button>
       </div>
       <div id="pad-frame">
         <section id="pad" class="plain" aria-label="math scratch pad">
@@ -1413,6 +1413,24 @@
     </main>
 
     <input type="file" id="worksheetFile" accept="image/*,application/pdf,.pdf" style="display:none" />
+    <input type="file" id="curriculumFile" accept=".epub,application/epub+zip" style="display:none" />
+
+    <section id="curriculum-drawer" aria-hidden="true" aria-label="Curriculum browser">
+      <div class="curriculum-head">
+        <div class="curriculum-head-copy">
+          <div class="curriculum-kicker">Curriculum</div>
+          <div id="curriculum-book-title">No book loaded</div>
+          <div id="curriculum-book-meta"></div>
+        </div>
+        <button type="button" id="curriculum-close" aria-label="close curriculum">×</button>
+      </div>
+      <div class="curriculum-controls">
+        <button type="button" id="curriculum-pick">Open an EPUB from this device</button>
+        <input id="curriculum-search" type="search" placeholder="Find a lesson or session…" disabled />
+        <div id="curriculum-status">Your EPUB stays on this device.</div>
+      </div>
+      <div id="curriculum-toc"></div>
+    </section>
     <div id="drop-overlay"><div class="label">Drop worksheet image or PDF to load</div></div>
 
     <aside class="side" aria-label="Math Things Teaching Table controls">
@@ -3544,6 +3562,6 @@
   });
 })();
 </script>
-  <script src="../../math-things-home.js"></script>
+  <script src="./curriculum.js"></script>\n  <script src="../../math-things-home.js"></script>
 </body>
 </html>
