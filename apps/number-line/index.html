@@ -163,15 +163,31 @@
 
         /* ── RUNNING TOTAL DISPLAY ── */
         .board-total-display {
+            font-family: inherit;
             font-size: 5rem;
             font-weight: 900;
             color: var(--text-main);
             letter-spacing: -0.04em;
             line-height: 1;
             text-align: center;
-            user-select: none;
             text-shadow: 0 4px 12px rgba(0,0,0,0.05);
             flex-shrink: 0;
+            width: min(92vw, 620px);
+            border: 0;
+            outline: 0;
+            background: transparent;
+            padding: 0;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .board-total-display:not([readonly]) {
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        .board-total-display[readonly] { cursor: default; }
+        .board-total-display:focus-visible {
+            text-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 0 0.45em rgba(0,122,255,0.12);
         }
         .anim-total-pop { animation: totalPop 0.3s var(--spring); }
 
@@ -860,7 +876,8 @@
     </header>
 
     <div class="workspace">
-        <div id="boardTotal" class="board-total-display">0</div>
+        <input id="boardTotal" class="board-total-display" type="text" inputmode="numeric"
+               pattern="[0-9]*" value="0" aria-label="Quantity" autocomplete="off" spellcheck="false">
         <div class="tray-scroller" id="scrollContainer">
             <div class="tray-wrapper">
                 <!-- Y-axis area: shown only in Grid mode -->
@@ -946,18 +963,57 @@
         function updateRunningTotal() {
             let newText;
             if (mode === 'grid') {
-                // In Grid mode: quantity = x (column count), rows = y; show x × y = total
+                // In Grid mode the field becomes a read-only multiplication record.
                 newText = quantity === 0 ? '0' : `${quantity} × ${rows} = ${quantity * rows}`;
+                totalDisplay.readOnly = true;
+                totalDisplay.setAttribute('aria-label', 'Array total');
             } else {
                 newText = String(quantity);
+                totalDisplay.readOnly = false;
+                totalDisplay.setAttribute('aria-label', 'Quantity. Type a number to jump there.');
             }
-            if (totalDisplay.innerText !== newText) {
-                totalDisplay.innerText = newText;
+            if (totalDisplay.value !== newText) {
+                totalDisplay.value = newText;
                 totalDisplay.classList.remove('anim-total-pop');
                 void totalDisplay.offsetWidth; // force reflow
                 totalDisplay.classList.add('anim-total-pop');
             }
         }
+
+        // ── DIRECT QUANTITY ENTRY ──
+        // The large numeral is also the fastest way to jump the bead to a value.
+        // Typing updates the line immediately; dragging the bead keeps this field in sync.
+        totalDisplay.addEventListener('focus', () => {
+            if (mode === 'line') totalDisplay.select();
+        });
+
+        totalDisplay.addEventListener('input', () => {
+            if (mode !== 'line') return;
+            const digitsOnly = totalDisplay.value.replace(/\D/g, '');
+            if (digitsOnly !== totalDisplay.value) totalDisplay.value = digitsOnly;
+            if (digitsOnly === '') return;
+
+            const nextQuantity = Math.max(0, Math.min(MAX_CAPACITY, Number(digitsOnly)));
+            if (nextQuantity !== quantity) {
+                quantity = nextQuantity;
+                renderBlocks();
+                ensureBeadVisible();
+            } else if (Number(digitsOnly) !== nextQuantity) {
+                // Reflect the clamp when someone types beyond the line's capacity.
+                totalDisplay.value = String(nextQuantity);
+            }
+        });
+
+        totalDisplay.addEventListener('blur', () => {
+            if (mode === 'line' && totalDisplay.value === '') updateRunningTotal();
+        });
+
+        totalDisplay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                totalDisplay.blur();
+            }
+        });
 
         // ── HAPTICS (optional, safe) ──
         // Very short pulses on browsers that support it; silent otherwise.
