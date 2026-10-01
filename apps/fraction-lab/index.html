@@ -268,6 +268,57 @@
         .nl-text-small { font-family: 'Fredoka', sans-serif; font-size: 14px; fill: var(--text-muted); font-weight: 500; }
         .nl-text-large { font-family: 'Fredoka', sans-serif; font-size: 24px; font-weight: bold; fill: var(--text-main); }
 
+        /* --- UNIT FRACTIONS EXPLORER --- */
+        .unit-hero {
+            display: flex; align-items: center; justify-content: center; gap: 28px;
+            flex-wrap: wrap; width: 100%;
+        }
+        .unit-big-frac {
+            width: 110px; display: flex; flex-direction: column; align-items: center;
+            font-family: 'Fredoka', sans-serif; color: var(--c-green);
+        }
+        .unit-big-frac span { font-size: 3.2rem; font-weight: 700; line-height: 1; }
+        .unit-big-frac .frac-bar { width: 88px; background: var(--text-main); }
+        .unit-language { max-width: 440px; display: flex; flex-direction: column; gap: 5px; }
+        .unit-language strong {
+            font-family: 'Fredoka', sans-serif; font-size: 1.7rem; color: var(--text-main);
+        }
+        .unit-language span { color: var(--text-muted); font-size: 1rem; line-height: 1.45; }
+        .unit-denominator-control {
+            display: flex; align-items: center; justify-content: center; gap: 14px;
+            width: 100%; max-width: 620px;
+        }
+        .unit-denominator-control input[type="range"] { flex: 1; min-width: 180px; accent-color: var(--c-green); }
+        .unit-step-btn {
+            width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--border);
+            background: white; color: var(--text-main); font-family: 'Fredoka', sans-serif;
+            font-size: 1.5rem; font-weight: 700; cursor: pointer;
+        }
+        .unit-step-btn:hover { border-color: var(--c-green); color: var(--c-green); }
+        .rep-switcher {
+            display: flex; gap: 8px; padding: 6px; background: #eceff1;
+            border-radius: 999px; flex-wrap: wrap; justify-content: center;
+        }
+        .rep-btn {
+            border: none; background: transparent; color: var(--text-muted);
+            padding: 9px 16px; border-radius: 999px; cursor: pointer;
+            font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 0.95rem;
+        }
+        .rep-btn.active {
+            background: white; color: var(--c-green);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        }
+        .unit-vis-card { width: 100%; min-height: 360px; justify-content: center; }
+        #unit-vis {
+            width: 100%; min-height: 250px; display: flex; align-items: center;
+            justify-content: center; overflow-x: auto; padding: 10px;
+        }
+        #unit-vis svg { width: min(100%, 680px); height: auto; max-height: 310px; }
+        .unit-caption {
+            margin-top: 12px; text-align: center; color: var(--text-muted);
+            font-size: 1rem; line-height: 1.45;
+        }
+
         /* --- LCD CHART --- */
         .chart-container { overflow-x: auto; max-width: 100%; padding: 10px; }
         .mult-chart { border-collapse: separate; border-spacing: 3px; margin: 0 auto; }
@@ -469,6 +520,7 @@
 
     <div class="main-nav">
         <button class="nav-tab active" onclick="switchTab('tab-fractions')">Fraction Lab</button>
+        <button class="nav-tab" onclick="switchTab('tab-unit')">Unit Fractions</button>
         <button class="nav-tab" onclick="switchTab('tab-lcd')">LCD Finder</button>
         <button class="nav-tab" onclick="switchTab('tab-simplify')">Simplify</button>
         <button class="nav-tab" onclick="switchTab('tab-bars')">Fraction Bars</button>
@@ -529,6 +581,43 @@
                 <div class="vis-label">Number Line</div>
                 <div id="vis-line" style="width:100%; overflow-x:auto; padding-bottom:10px;"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- ==================== UNIT FRACTIONS TAB ==================== -->
+    <div id="tab-unit" class="tool-section">
+        <div class="dashboard">
+            <div class="unit-hero">
+                <div class="unit-big-frac" aria-label="unit fraction">
+                    <span>1</span>
+                    <div class="frac-bar"></div>
+                    <span id="unit-den-display">4</span>
+                </div>
+                <div class="unit-language">
+                    <strong id="unit-name">one fourth</strong>
+                    <span id="unit-sentence">One of 4 equal parts of one whole.</span>
+                </div>
+            </div>
+
+            <div class="unit-denominator-control">
+                <button class="unit-step-btn" type="button" onclick="unit_adjust(-1)" aria-label="smaller denominator">−</button>
+                <input id="unit-den" type="range" min="2" max="12" value="4" step="1"
+                       oninput="unit_setDen(this.value)" aria-label="denominator">
+                <button class="unit-step-btn" type="button" onclick="unit_adjust(1)" aria-label="larger denominator">+</button>
+            </div>
+
+            <div class="rep-switcher" role="group" aria-label="fraction representation">
+                <button class="rep-btn active" type="button" data-unit-rep="circle" onclick="unit_setRep('circle')">Circle</button>
+                <button class="rep-btn" type="button" data-unit-rep="bar" onclick="unit_setRep('bar')">Bar</button>
+                <button class="rep-btn" type="button" data-unit-rep="line" onclick="unit_setRep('line')">Number Line</button>
+                <button class="rep-btn" type="button" data-unit-rep="set" onclick="unit_setRep('set')">Set</button>
+            </div>
+        </div>
+
+        <div class="vis-card unit-vis-card">
+            <div class="vis-label" id="unit-vis-label">Circle Model</div>
+            <div id="unit-vis"></div>
+            <div id="unit-caption" class="unit-caption"></div>
         </div>
     </div>
 
@@ -689,7 +778,7 @@
         document.querySelectorAll('.tool-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        const tabMap = {'tab-fractions':0, 'tab-lcd':1, 'tab-simplify':2, 'tab-bars':3};
+        const tabMap = {'tab-fractions':0, 'tab-unit':1, 'tab-lcd':2, 'tab-simplify':3, 'tab-bars':4};
         document.querySelectorAll('.nav-tab')[tabMap[tabId]].classList.add('active');
     }
 
@@ -1010,6 +1099,214 @@
         path.setAttribute("d", `M ${x1} ${y-10} Q ${mid} ${y-10-h} ${x2} ${y-10}`);
         path.setAttribute("fill", "none"); path.setAttribute("stroke", color); path.setAttribute("stroke-width", 4);
         return path;
+    }
+
+    // =====================================================
+    // UNIT FRACTIONS EXPLORER
+    // =====================================================
+    let unitState = { d: 4, representation: 'circle' };
+
+    const unitNames = {
+        2: 'one half', 3: 'one third', 4: 'one fourth', 5: 'one fifth',
+        6: 'one sixth', 7: 'one seventh', 8: 'one eighth', 9: 'one ninth',
+        10: 'one tenth', 11: 'one eleventh', 12: 'one twelfth'
+    };
+
+    function unit_init() {
+        unit_setDen(unitState.d);
+        unit_setRep(unitState.representation);
+    }
+
+    function unit_adjust(delta) {
+        unit_setDen(unitState.d + delta);
+    }
+
+    function unit_setDen(value) {
+        const d = Math.max(2, Math.min(12, parseInt(value) || 2));
+        unitState.d = d;
+        document.getElementById('unit-den').value = d;
+        document.getElementById('unit-den-display').textContent = d;
+        document.getElementById('unit-name').textContent = unitNames[d] || `one ${d}th`;
+        document.getElementById('unit-sentence').textContent = `One of ${d} equal parts of one whole.`;
+        unit_render();
+    }
+
+    function unit_setRep(rep) {
+        unitState.representation = rep;
+        document.querySelectorAll('[data-unit-rep]').forEach(btn => {
+            const active = btn.dataset.unitRep === rep;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        unit_render();
+    }
+
+    function unit_render() {
+        const container = document.getElementById('unit-vis');
+        const label = document.getElementById('unit-vis-label');
+        const caption = document.getElementById('unit-caption');
+        if(!container || !label || !caption) return;
+        const d = unitState.d;
+
+        if(unitState.representation === 'circle') {
+            label.textContent = 'Circle Model';
+            unit_renderCircle(container, d);
+            caption.innerHTML = `The whole circle is split into <strong>${d} equal pieces</strong>. One piece is <strong>1/${d}</strong>.`;
+        } else if(unitState.representation === 'bar') {
+            label.textContent = 'Bar Model';
+            unit_renderBar(container, d);
+            caption.innerHTML = `The whole bar is split into <strong>${d} equal lengths</strong>. One length is <strong>1/${d}</strong>.`;
+        } else if(unitState.representation === 'line') {
+            label.textContent = 'Number Line';
+            unit_renderLine(container, d);
+            caption.innerHTML = `The distance from 0 to 1 is split into <strong>${d} equal intervals</strong>. The first interval lands at <strong>1/${d}</strong>.`;
+        } else {
+            label.textContent = 'Set Model';
+            unit_renderSet(container, d);
+            caption.innerHTML = `The whole is this set of <strong>${d} objects</strong>. One object is <strong>1/${d}</strong> of the set.`;
+        }
+    }
+
+    function unit_renderCircle(container, d) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 680 300');
+        const cx = 340, cy = 145, r = 120;
+        for(let i = 0; i < d; i++) {
+            const a1 = (i * 360 / d) - 90;
+            const a2 = ((i + 1) * 360 / d) - 90;
+            const x1 = cx + r * Math.cos(a1 * Math.PI / 180);
+            const y1 = cy + r * Math.sin(a1 * Math.PI / 180);
+            const x2 = cx + r * Math.cos(a2 * Math.PI / 180);
+            const y2 = cy + r * Math.sin(a2 * Math.PI / 180);
+            const large = (a2 - a1) > 180 ? 1 : 0;
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('d', `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`);
+            path.setAttribute('fill', i === 0 ? 'var(--c-green)' : 'white');
+            path.setAttribute('stroke', 'var(--text-main)');
+            path.setAttribute('stroke-width', '3');
+            svg.appendChild(path);
+        }
+        const txt = document.createElementNS(svgNS, 'text');
+        txt.setAttribute('x', cx); txt.setAttribute('y', 292);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('class', 'nl-text-large');
+        txt.textContent = `1/${d}`;
+        svg.appendChild(txt);
+        container.replaceChildren(svg);
+    }
+
+    function unit_renderBar(container, d) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 680 250');
+        const x0 = 40, y0 = 70, w = 600, h = 95, seg = w / d;
+        for(let i = 0; i < d; i++) {
+            const rect = document.createElementNS(svgNS, 'rect');
+            rect.setAttribute('x', x0 + i * seg);
+            rect.setAttribute('y', y0);
+            rect.setAttribute('width', seg);
+            rect.setAttribute('height', h);
+            rect.setAttribute('fill', i === 0 ? 'var(--c-green)' : 'white');
+            rect.setAttribute('stroke', 'var(--text-main)');
+            rect.setAttribute('stroke-width', '3');
+            svg.appendChild(rect);
+        }
+        const txt = document.createElementNS(svgNS, 'text');
+        txt.setAttribute('x', x0 + seg / 2); txt.setAttribute('y', y0 + h / 2 + 9);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('class', 'nl-text-large');
+        txt.setAttribute('fill', 'white');
+        txt.textContent = `1/${d}`;
+        svg.appendChild(txt);
+        container.replaceChildren(svg);
+    }
+
+    function unit_renderLine(container, d) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 680 250');
+        const x0 = 55, x1 = 625, y = 125, step = (x1 - x0) / d;
+
+        const highlight = document.createElementNS(svgNS, 'line');
+        highlight.setAttribute('x1', x0); highlight.setAttribute('x2', x0 + step);
+        highlight.setAttribute('y1', y); highlight.setAttribute('y2', y);
+        highlight.setAttribute('stroke', 'var(--c-green)'); highlight.setAttribute('stroke-width', '12');
+        highlight.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(highlight);
+
+        const base = document.createElementNS(svgNS, 'line');
+        base.setAttribute('x1', x0); base.setAttribute('x2', x1);
+        base.setAttribute('y1', y); base.setAttribute('y2', y);
+        base.setAttribute('stroke', 'var(--text-main)'); base.setAttribute('stroke-width', '3');
+        svg.appendChild(base);
+
+        for(let i = 0; i <= d; i++) {
+            const x = x0 + i * step;
+            const tick = document.createElementNS(svgNS, 'line');
+            tick.setAttribute('x1', x); tick.setAttribute('x2', x);
+            tick.setAttribute('y1', y - 14); tick.setAttribute('y2', y + 14);
+            tick.setAttribute('stroke', 'var(--text-main)'); tick.setAttribute('stroke-width', '2');
+            svg.appendChild(tick);
+        }
+
+        const point = document.createElementNS(svgNS, 'circle');
+        point.setAttribute('cx', x0 + step); point.setAttribute('cy', y);
+        point.setAttribute('r', 9); point.setAttribute('fill', 'var(--c-green)');
+        svg.appendChild(point);
+
+        const labels = [
+            {x:x0, text:'0', cls:'nl-text-large'},
+            {x:x0 + step, text:`1/${d}`, cls:'nl-text-large'},
+            {x:x1, text:'1', cls:'nl-text-large'}
+        ];
+        labels.forEach(item => {
+            const t = document.createElementNS(svgNS, 'text');
+            t.setAttribute('x', item.x); t.setAttribute('y', y + 48);
+            t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', item.cls);
+            t.textContent = item.text; svg.appendChild(t);
+        });
+        container.replaceChildren(svg);
+    }
+
+    function unit_renderSet(container, d) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 680 300');
+        const cols = Math.min(6, d);
+        const rows = Math.ceil(d / cols);
+        const gapX = 80, gapY = 82;
+        const totalW = (cols - 1) * gapX;
+        const totalH = (rows - 1) * gapY;
+        const startX = 340 - totalW / 2;
+        const startY = 130 - totalH / 2;
+
+        const frame = document.createElementNS(svgNS, 'rect');
+        frame.setAttribute('x', startX - 48); frame.setAttribute('y', startY - 48);
+        frame.setAttribute('width', totalW + 96); frame.setAttribute('height', totalH + 96);
+        frame.setAttribute('rx', 24); frame.setAttribute('fill', 'white');
+        frame.setAttribute('stroke', 'var(--border)'); frame.setAttribute('stroke-width', '3');
+        frame.setAttribute('stroke-dasharray', '8 6');
+        svg.appendChild(frame);
+
+        for(let i = 0; i < d; i++) {
+            const col = i % cols, row = Math.floor(i / cols);
+            const dot = document.createElementNS(svgNS, 'circle');
+            dot.setAttribute('cx', startX + col * gapX);
+            dot.setAttribute('cy', startY + row * gapY);
+            dot.setAttribute('r', 24);
+            dot.setAttribute('fill', i === 0 ? 'var(--c-green)' : '#eceff1');
+            dot.setAttribute('stroke', 'var(--text-main)');
+            dot.setAttribute('stroke-width', '2');
+            svg.appendChild(dot);
+        }
+
+        const txt = document.createElementNS(svgNS, 'text');
+        txt.setAttribute('x', 340); txt.setAttribute('y', 285);
+        txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('class', 'nl-text-large');
+        txt.textContent = `1 of ${d} = 1/${d}`;
+        svg.appendChild(txt);
+        container.replaceChildren(svg);
     }
 
     // =====================================================
@@ -1433,6 +1730,7 @@
         document.getElementById('btn-common').style.display = 'none';
         
         updateLab();
+        unit_init();
         lcd_init();
         simp_update();
         fb_addBar(1);
