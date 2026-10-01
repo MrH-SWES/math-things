@@ -365,7 +365,7 @@ function geom() {
 
 let camL = 0, camR = 100;
 let currentNum  = null;
-let selectedPV  = null;
+let selectedPV  = null; // persistent once the teacher chooses a rounding place
 let availPVs    = [];
 let ball        = null;
 let trail       = [];
@@ -381,6 +381,10 @@ const PV_DEFS = [
  { name:'Tenths',    word:'Tenths',    v:0.1  },
  { name:'Hundredths',word:'Hundredths',v:0.01 }
 ];
+
+// Place is an independent choice, so all place buttons are always available.
+// This allows "choose Hundreds, then type 72" instead of deriving place from number.
+availPVs = PV_DEFS.slice();
 
 function v2x(rv) { return PAD_X + ((rv - camL) / (camR - camL)) * (W - PAD_X * 2); }
 function waveY(rv) {
@@ -463,8 +467,9 @@ function draw() {
  ctx.clearRect(0, 0, W, H);
 
  const span = camR - camL;
+ const activePeriod = wavePeriodOverride !== null ? wavePeriodOverride : WAVE_PERIOD;
  const pxPerUnit   = (W - PAD_X * 2) / span;
- const pxPerPeriod = pxPerUnit * WAVE_PERIOD;
+ const pxPerPeriod = pxPerUnit * activePeriod;
  const hasNum      = currentNum !== null;
  const activeRGB   = getActiveRGB();
 
@@ -498,7 +503,6 @@ function draw() {
  ctx.stroke();
 
  // ── Markers ──
- const activePeriod = wavePeriodOverride !== null ? wavePeriodOverride : WAVE_PERIOD;
  const labelStride = pxPerPeriod > 55 ? 1 : pxPerPeriod > 25 ? 2 : pxPerPeriod > 12 ? 5 : 10;
  const n0 = Math.floor(camL / activePeriod) - 1;
  const n1 = Math.ceil( camR / activePeriod) + 1;
@@ -675,12 +679,23 @@ function onInput() {
  gustLayer.classList.remove('active');
 
  if (!raw || raw === '.' || raw === '-') {
-   currentNum = null; availPVs = []; selectedPV = null;
+   currentNum = null;
+   availPVs = PV_DEFS.slice();
    ball = null; trail = [];
    dropBtn.disabled = true;
-   appCard.style.setProperty('--active-color', '#1D1D1F');
-   appCard.style.setProperty('--active-rgb', '29, 29, 31');
-   buildPVButtons(); 
+
+   // Clearing/changing the number does not clear the selected rounding place.
+   if (selectedPV) {
+     appCard.style.setProperty('--active-color', PALETTE[selectedPV.v].hex);
+     appCard.style.setProperty('--active-rgb', PALETTE[selectedPV.v].rgb);
+     wavePeriodOverride = selectedPV.v;
+   } else {
+     appCard.style.setProperty('--active-color', '#1D1D1F');
+     appCard.style.setProperty('--active-rgb', '29, 29, 31');
+     wavePeriodOverride = null;
+   }
+
+   buildPVButtons();
    if (!busy) zoomTo(0, 100, 600);
    return;
  }
@@ -688,13 +703,12 @@ function onInput() {
  const val = parseFloat(raw);
  if (isNaN(val) || val < 0) { dropBtn.disabled = true; return; }
 
- wavePeriodOverride = null;
  currentNum = val;
- availPVs   = getAvailPVs(val, raw);
+ availPVs   = PV_DEFS.slice();
 
- const prevName = selectedPV ? selectedPV.name : null;
- const samePV   = availPVs.find(p => p.name === prevName);
- selectedPV     = samePV || defaultPV(val) || availPVs[0] || null;
+ // Only choose a default the first time. An explicitly chosen place is sticky.
+ if (!selectedPV) selectedPV = defaultPV(val) || PV_DEFS.find(p => p.v === 10);
+ wavePeriodOverride = selectedPV ? selectedPV.v : null;
 
  if(selectedPV) {
    appCard.style.setProperty('--active-color', PALETTE[selectedPV.v].hex);
@@ -751,59 +765,44 @@ function miniWaveSVG(lo, hi, active, pvVal) {
 }
 
 function selectPV(p) {
- if (busy || currentNum === null) return;
+ // Do not interrupt an actual drop/roll, but allow changing place during the
+ // harmless camera/pulse animation that follows number entry.
+ if (busy && ball && (ball.phase === 'drop' || ball.phase === 'roll')) return;
+ if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+ busy = false;
 
- const prevPV = selectedPV;
  selectedPV = p;
- 
+ wavePeriodOverride = p.v;
+
  appCard.style.setProperty('--active-color', PALETTE[p.v].hex);
  appCard.style.setProperty('--active-rgb', PALETTE[p.v].rgb);
+ buildPVButtons();
 
- buildPVButtons(); 
-
- ball  = { rv: currentNum, phase: 'hover', airY: null, pulsePhase: 0, label: String(currentNum) };
- trail = [];
  resultEq.classList.remove('show');
  resultSub.classList.remove('show');
  gustLayer.classList.remove('active');
- dropBtn.disabled = true;
- busy = true;
 
- if (!prevPV || prevPV === p) {
-   const tgt = camForPV(p.v, currentNum);
-   wavePeriodOverride = null;
-   zoomTo(tgt.l, tgt.r, 800, () => {
-     busy = false; dropBtn.disabled = false; draw();
-   });
+ // Place may be selected before a number is entered.
+ if (currentNum === null) {
+   ball = null;
+   trail = [];
+   dropBtn.disabled = true;
+   draw();
    return;
  }
 
- const swellOutL = 0;
- const swellOutR = p.v; 
+ // Keep the exact same number and ball; only change the rounding interval and
+ // reframe around that number. Never zoom to 0..place-value, which can hide it.
+ ball  = { rv: currentNum, phase: 'hover', airY: null, pulsePhase: 0, label: String(currentNum) };
+ trail = [];
+ dropBtn.disabled = true;
+ busy = true;
 
- wavePeriodOverride = null; 
- zoomTo(swellOutL, swellOutR, 900, () => {
-   const swellStart  = performance.now();
-   const SWELL_MS    = 1100;
-   const fromPeriod  = WAVE_PERIOD;
-   const toPeriod    = p.v;
-
-   function swellFrame(now) {
-     const t = Math.min((now - swellStart) / SWELL_MS, 1);
-     const e = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
-     wavePeriodOverride = fromPeriod + (toPeriod - fromPeriod) * e;
-     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-     draw();
-     if (t < 1) {
-       rafId = requestAnimationFrame(swellFrame);
-     } else {
-       wavePeriodOverride = p.v;
-       busy = false;
-       dropBtn.disabled = false;
-       draw();
-     }
-   }
-   rafId = requestAnimationFrame(swellFrame);
+ const tgt = camForPV(p.v, currentNum);
+ zoomTo(tgt.l, tgt.r, 650, () => {
+   busy = false;
+   dropBtn.disabled = false;
+   draw();
  });
 }
 
@@ -910,6 +909,7 @@ function doRoll(info) {
 
 window.addEventListener('resize', () => { if (!busy) resize(); });
 
+buildPVButtons();
 resize();
 camL = 0; camR = 100;
 draw();
