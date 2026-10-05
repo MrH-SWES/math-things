@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#f3f0e9;--ink:#1d1d1f;--ones:#DC143C;--tens:#4169E1;--hundreds:#FFD700;
-  --thousands:#4CBB17;--ten-thousands:#FF7F00;--cell:clamp(48px,8vw,72px);
+  --thousands:#4CBB17;--ten-thousands:#FF7F00;--tenths:#7B00FF;--hundredths:#FF9F0A;--thousandths:#64D2FF;--cell:clamp(48px,8vw,72px);
   --lane:clamp(66px,10vw,86px);--spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.22,1,.36,1)
 }
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Lexend,system-ui,sans-serif}
@@ -31,6 +31,8 @@ main{width:min(1040px,calc(100vw - 28px));margin:auto;padding:6px 0 78px}
 .digit:first-child{border-radius:13px 0 0 13px}.digit:last-child{border-right:1px solid #aaa59a;border-radius:0 13px 13px 0}.digit:only-child{border-radius:13px}
 .board.colors-on .digit{color:#fff;border-color:rgba(0,0,0,.23);background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.08) 30%,rgba(0,0,0,.14)),var(--pc);text-shadow:0 1px 1px rgba(0,0,0,.22)}
 .board.colors-on .digit[data-p="hundreds"]{color:#302d23;text-shadow:0 1px rgba(255,255,255,.25)}
+.decimal-point{position:relative;flex:0 0 0;width:0;height:calc(var(--cell)*.78);z-index:7;pointer-events:none;overflow:visible}
+.decimal-point:after{content:".";position:absolute;left:0;bottom:3px;transform:translateX(-50%);font-size:clamp(30px,5vw,48px);font-weight:900;line-height:1;color:#222;text-shadow:0 1px 2px rgba(255,255,255,.85),0 1px 3px rgba(0,0,0,.18)}
 .stud{position:absolute;left:50%;bottom:-8px;width:28px;height:4px;border-radius:999px;transform:translateX(-50%) scaleX(.35);opacity:0;background:#3f4144;box-shadow:0 1px 1px rgba(255,255,255,.5);transition:.18s var(--spring)}
 .board.marks-on .stud{opacity:.9;transform:translateX(-50%) scaleX(1)}
 
@@ -72,9 +74,9 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
 <aside class="panel" id="panel" aria-label="Teacher support controls">
   <h2>Custom numbers</h2>
   <div class="custom">
-    <textarea id="customNums" aria-label="Custom number sets" placeholder="23, 4&#10;41, 7&#10;103, 24"></textarea>
+    <textarea id="customNums" aria-label="Custom number sets" placeholder="23.4, 6.08&#10;41, 7.5&#10;103.25, 24.1"></textarea>
     <div class="custom-actions"><button class="preset" id="useCustom">USE NUMBERS</button><button class="preset" id="randomSet">RANDOM</button></div>
-    <div class="custom-help" id="customHelp" aria-live="polite">One set per line. Use commas or spaces. Example: 23, 4</div>
+    <div class="custom-help" id="customHelp" aria-live="polite">One set per line. Whole numbers or decimals. Example: 23.4, 6.08</div>
   </div>
   <h2>Supports</h2>
   <div class="presets"><button class="preset" data-pre="full">FULL</button><button class="preset" data-pre="light">LIGHT</button><button class="preset" data-pre="none">NONE</button></div>
@@ -94,22 +96,27 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     ["617","24","9","5080","103"],["2004","51","8","730","46"],["84","1007","6","239","50"],
     ["900","72","4","3165","28"],["63","5","407","1208","91"],["1000","36","7","245","80"]
   ];
-  var places=["ones","tens","hundreds","thousands","ten-thousands"];
-  var colors={"ones":"#DC143C","tens":"#4169E1","hundreds":"#FFD700","thousands":"#4CBB17","ten-thousands":"#FF7F00"};
+  var wholePlaces=["ones","tens","hundreds","thousands","ten-thousands"];
+  var fractionPlaces=["tenths","hundredths","thousandths"];
+  var colors={"ones":"#DC143C","tens":"#4169E1","hundreds":"#FFD700","thousands":"#4CBB17","ten-thousands":"#FF7F00","tenths":"#7B00FF","hundredths":"#FF9F0A","thousandths":"#64D2FF"};
   var board=document.getElementById("board"),lanes=document.getElementById("lanes"),guides=document.getElementById("guides"),
       rail=document.getElementById("rail"),pulse=document.getElementById("pulse"),panel=document.getElementById("panel"),
       gear=document.getElementById("gear"),check=document.getElementById("check"),next=document.getElementById("next"),
       customNums=document.getElementById("customNums"),customHelp=document.getElementById("customHelp"),
       useCustom=document.getElementById("useCustom"),randomSet=document.getElementById("randomSet");
   var state={set:Math.floor(Math.random()*sets.length),customSets:null,customIndex:0,slots:[],locked:false,s:{rail:true,colors:true,guides:false,marks:true,magnet:true}};
+  function parts(n){var a=String(n).split(".");return {whole:a[0]||"0",frac:a[1]||""}}
+  function onesIndex(n){return parts(n).whole.length-1}
+  function fracDigits(n){return parts(n).frac.length}
   function cell(){var d=board.querySelector(".digit");return d?d.getBoundingClientRect().width:board.getBoundingClientRect().width/COLS}
   function center(slot){return slot*cell()+cell()/2}
-  function leftFor(n,slot){return (slot-(String(n).length-1))*cell()}
-  function minSlot(n){return String(n).length-1}
-  function clamp(n,slot){return Math.max(minSlot(n),Math.min(COLS-1,slot))}
+  function leftFor(n,slot){return (slot-onesIndex(n))*cell()}
+  function minSlot(n){return onesIndex(n)}
+  function maxSlot(n){return COLS-1-fracDigits(n)}
+  function clamp(n,slot){return Math.max(minSlot(n),Math.min(maxSlot(n),slot))}
   function positionScaffold(){
     guides.innerHTML="";
-    for(var i=0;i<5;i++){var slot=ANCHOR-i;if(slot<0)continue;var g=document.createElement("div");g.className="guide";g.style.left=center(slot)+"px";guides.appendChild(g)}
+    for(var slot=0;slot<COLS;slot++){var g=document.createElement("div");g.className="guide";g.style.left=center(slot)+"px";guides.appendChild(g)}
     var anchorEdge=(ANCHOR+1)*cell();
     var gap=Math.min(10,cell()*.14);
     rail.style.left=(anchorEdge+gap)+"px";
@@ -121,16 +128,25 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     if(slot===ANCHOR){var alt=clamp(n,ANCHOR+(row%2?1:-1));if(alt!==ANCHOR)slot=alt}
     return slot
   }
-  function digit(ch,i,total){
-    var d=document.createElement("div"),p=places[total-1-i]||"ten-thousands";
+  function digit(ch,p){
+    var d=document.createElement("div");
     d.className="digit";d.dataset.p=p;d.style.setProperty("--pc",colors[p]||"#6B3FA0");d.textContent=ch;
-    if(i===total-1){var s=document.createElement("span");s.className="stud";s.setAttribute("aria-hidden","true");d.appendChild(s)}
+    if(p==="ones"){var s=document.createElement("span");s.className="stud";s.setAttribute("aria-hidden","true");d.appendChild(s)}
     return d
   }
+  function decimalPoint(){
+    var d=document.createElement("span");d.className="decimal-point";d.setAttribute("aria-hidden","true");return d
+  }
   function strip(n,row){
-    var el=document.createElement("div");el.className="strip"+(row===0?" anchor":"");el.dataset.row=row;el.dataset.n=n;
+    var el=document.createElement("div"),p=parts(n);el.className="strip"+(row===0?" anchor":"");el.dataset.row=row;el.dataset.n=n;
     el.setAttribute("aria-label",row===0?n+", reference number":n+", movable number");
-    String(n).split("").forEach(function(ch,i,a){el.appendChild(digit(ch,i,a.length))});
+    p.whole.split("").forEach(function(ch,i){
+      var place=wholePlaces[p.whole.length-1-i]||"ten-thousands";el.appendChild(digit(ch,place))
+    });
+    if(p.frac){
+      el.appendChild(decimalPoint());
+      p.frac.split("").forEach(function(ch,i){el.appendChild(digit(ch,fractionPlaces[i]||"thousandths"))})
+    }
     if(row!==0){el.tabIndex=0;drag(el);el.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();move(el,clamp(n,state.slots[row]+(e.key==="ArrowLeft"?-1:1)),true)})}
     return el
   }
@@ -156,7 +172,7 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     el.addEventListener("pointerdown",function(e){
       if(state.locked)return;e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add("drag");
       var row=Number(el.dataset.row),n=el.dataset.n,c=cell(),sx=e.clientX,ss=state.slots[row],sl=leftFor(n,ss);
-      function mv(ev){var dx=ev.clientX-sx,min=leftFor(n,minSlot(n)),max=leftFor(n,COLS-1);el.style.left=Math.max(min,Math.min(max,sl+dx))+"px"}
+      function mv(ev){var dx=ev.clientX-sx,min=leftFor(n,minSlot(n)),max=leftFor(n,maxSlot(n));el.style.left=Math.max(min,Math.min(max,sl+dx))+"px"}
       function up(ev){
         el.classList.remove("drag");el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);
         try{el.releasePointerCapture(ev.pointerId)}catch(_){}
@@ -188,7 +204,7 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
   function parseCustom(){
     var raw=customNums.value.trim();
     customHelp.className="custom-help";
-    if(!raw){customHelp.classList.add("error");customHelp.textContent="Type at least two whole numbers.";return}
+    if(!raw){customHelp.classList.add("error");customHelp.textContent="Type at least two numbers.";return}
     var lines=raw.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean),groups=[];
     var tokenLines=lines.map(function(line){return line.split(/[\s,]+/).filter(Boolean)});
     var everySingle=tokenLines.every(function(a){return a.length===1});
@@ -197,10 +213,11 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     for(var i=0;i<groups.length;i++){
       if(groups[i].length<2||groups[i].length>8){customHelp.classList.add("error");customHelp.textContent="Each set needs 2–8 numbers.";return}
       for(var j=0;j<groups[i].length;j++){
-        if(!/^\d{1,5}$/.test(groups[i][j])){customHelp.classList.add("error");customHelp.textContent="Use whole numbers from 0 to 99,999 only.";return}
+        if(!/^(?:\d{1,5}(?:\.\d{1,3})?|\.\d{1,3})$/.test(groups[i][j])){customHelp.classList.add("error");customHelp.textContent="Use up to 5 whole-number digits and 3 decimal places.";return}
+        if(groups[i][j].charAt(0)===".")groups[i][j]="0"+groups[i][j]
       }
     }
-    state.customSets=groups.map(function(g){return g.map(function(x){return String(Number(x))})});state.customIndex=0;
+    state.customSets=groups.map(function(g){return g.map(function(x){return x})});state.customIndex=0;
     customHelp.classList.add("ok");customHelp.textContent=state.customSets.length===1?"Custom set loaded.":"Loaded "+state.customSets.length+" custom sets.";
     render()
   }
