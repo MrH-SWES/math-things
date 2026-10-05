@@ -41,6 +41,7 @@ main{width:min(1040px,calc(100vw - 28px));margin:auto;padding:6px 0 78px}
 .panel.open{opacity:1;transform:none;pointer-events:auto}.panel h2{margin:0 2px 10px;font-size:12px;color:#89857d;letter-spacing:.12em;text-transform:uppercase}
 .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}.preset{height:38px;border:1px solid rgba(0,0,0,.08);border-radius:11px;background:linear-gradient(#fff,#ebe9e3);font-size:11px;font-weight:800;color:#5b5954;cursor:pointer}
 .row{min-height:48px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(0,0,0,.06);gap:12px}.label{font-size:14px;font-weight:700}
+.custom{margin:2px 0 12px}.custom textarea{width:100%;min-height:82px;resize:vertical;padding:10px 11px;border:1px solid rgba(0,0,0,.12);border-radius:12px;background:#fff;color:#2b2a27;font:600 13px/1.35 Lexend,system-ui,sans-serif;user-select:text}.custom textarea:focus{outline:2px solid rgba(65,105,225,.35);outline-offset:1px}.custom-actions{display:grid;grid-template-columns:1fr 86px;gap:7px;margin-top:7px}.custom-actions .preset{width:100%}.custom-help{min-height:31px;padding:7px 2px 0;font-size:11px;line-height:1.35;color:#77736c}.custom-help.error{color:#a51c30}.custom-help.ok{color:#356b2e}
 .sw{width:50px;height:29px;padding:3px;border:0;border-radius:999px;background:#c7c4bd;box-shadow:inset 0 1px 3px rgba(0,0,0,.14);cursor:pointer}.sw:after{content:"";display:block;width:23px;height:23px;border-radius:50%;background:linear-gradient(#fff,#e7e5e1);box-shadow:0 2px 5px rgba(0,0,0,.18);transition:.2s var(--spring)}.sw[aria-checked="true"]{background:#55595d}.sw[aria-checked="true"]:after{transform:translateX(21px)}
 footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-items:center;font-size:11px;color:rgba(55,52,48,.4);background:linear-gradient(transparent,rgba(243,240,233,.97) 50%);pointer-events:none}
 @media(max-width:720px){:root{--cell:clamp(40px,10.1vw,56px);--lane:clamp(60px,14vw,74px)}.top{height:66px}.shell{padding:11px;border-radius:21px}.panel{top:64px}.digit{font-size:clamp(25px,7vw,36px)}}
@@ -69,6 +70,12 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
   </section>
 </main>
 <aside class="panel" id="panel" aria-label="Teacher support controls">
+  <h2>Custom numbers</h2>
+  <div class="custom">
+    <textarea id="customNums" aria-label="Custom number sets" placeholder="23, 4&#10;41, 7&#10;103, 24"></textarea>
+    <div class="custom-actions"><button class="preset" id="useCustom">USE NUMBERS</button><button class="preset" id="randomSet">RANDOM</button></div>
+    <div class="custom-help" id="customHelp" aria-live="polite">One set per line. Use commas or spaces. Example: 23, 4</div>
+  </div>
   <h2>Supports</h2>
   <div class="presets"><button class="preset" data-pre="full">FULL</button><button class="preset" data-pre="light">LIGHT</button><button class="preset" data-pre="none">NONE</button></div>
   <div class="row"><span class="label">Anchor rail</span><button class="sw" data-k="rail" role="switch" aria-checked="true"></button></div>
@@ -91,8 +98,10 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
   var colors={"ones":"#DC143C","tens":"#4169E1","hundreds":"#FFD700","thousands":"#4CBB17","ten-thousands":"#FF7F00"};
   var board=document.getElementById("board"),lanes=document.getElementById("lanes"),guides=document.getElementById("guides"),
       rail=document.getElementById("rail"),pulse=document.getElementById("pulse"),panel=document.getElementById("panel"),
-      gear=document.getElementById("gear"),check=document.getElementById("check"),next=document.getElementById("next");
-  var state={set:Math.floor(Math.random()*sets.length),slots:[],locked:false,s:{rail:true,colors:true,guides:false,marks:true,magnet:true}};
+      gear=document.getElementById("gear"),check=document.getElementById("check"),next=document.getElementById("next"),
+      customNums=document.getElementById("customNums"),customHelp=document.getElementById("customHelp"),
+      useCustom=document.getElementById("useCustom"),randomSet=document.getElementById("randomSet");
+  var state={set:Math.floor(Math.random()*sets.length),customSets:null,customIndex:0,slots:[],locked:false,s:{rail:true,colors:true,guides:false,marks:true,magnet:true}};
   function cell(){var d=board.querySelector(".digit");return d?d.getBoundingClientRect().width:board.getBoundingClientRect().width/COLS}
   function center(slot){return slot*cell()+cell()/2}
   function leftFor(n,slot){return (slot-(String(n).length-1))*cell()}
@@ -130,8 +139,9 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     else el.style.left=leftFor(el.dataset.n,slot)+"px"
   }
   function move(el,slot,animate){var r=Number(el.dataset.row);state.slots[r]=clamp(el.dataset.n,slot);setLeft(el,state.slots[r],animate)}
+  function currentNums(){return state.customSets?state.customSets[state.customIndex]:sets[state.set]}
   function render(){
-    state.locked=false;board.classList.remove("ok");var nums=sets[state.set];state.slots=nums.map(startSlot);lanes.innerHTML="";
+    state.locked=false;board.classList.remove("ok");var nums=currentNums();state.slots=nums.map(startSlot);lanes.innerHTML="";
     nums.forEach(function(n,i){
       var lane=document.createElement("div");
       lane.className="lane"+(i===0?" anchor-lane":"");
@@ -168,7 +178,32 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
       if(navigator.vibrate)navigator.vibrate(20)
     }
   }
-  function newSet(){var n=state.set;while(n===state.set&&sets.length>1)n=Math.floor(Math.random()*sets.length);state.set=n;render()}
+  function newSet(){
+    if(state.customSets){state.customIndex=(state.customIndex+1)%state.customSets.length;render();return}
+    var n=state.set;while(n===state.set&&sets.length>1)n=Math.floor(Math.random()*sets.length);state.set=n;render()
+  }
+  function randomMode(){
+    state.customSets=null;state.customIndex=0;customHelp.className="custom-help";customHelp.textContent="Random number sets are active.";newSet()
+  }
+  function parseCustom(){
+    var raw=customNums.value.trim();
+    customHelp.className="custom-help";
+    if(!raw){customHelp.classList.add("error");customHelp.textContent="Type at least two whole numbers.";return}
+    var lines=raw.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean),groups=[];
+    var tokenLines=lines.map(function(line){return line.split(/[\s,]+/).filter(Boolean)});
+    var everySingle=tokenLines.every(function(a){return a.length===1});
+    if(everySingle)groups=[tokenLines.map(function(a){return a[0]})];else groups=tokenLines;
+    if(groups.length>30){customHelp.classList.add("error");customHelp.textContent="Use 30 sets or fewer.";return}
+    for(var i=0;i<groups.length;i++){
+      if(groups[i].length<2||groups[i].length>8){customHelp.classList.add("error");customHelp.textContent="Each set needs 2–8 numbers.";return}
+      for(var j=0;j<groups[i].length;j++){
+        if(!/^\d{1,5}$/.test(groups[i][j])){customHelp.classList.add("error");customHelp.textContent="Use whole numbers from 0 to 99,999 only.";return}
+      }
+    }
+    state.customSets=groups.map(function(g){return g.map(function(x){return String(Number(x))})});state.customIndex=0;
+    customHelp.classList.add("ok");customHelp.textContent=state.customSets.length===1?"Custom set loaded.":"Loaded "+state.customSets.length+" custom sets.";
+    render()
+  }
   function supports(){
     board.classList.toggle("rail-on",state.s.rail);board.classList.toggle("colors-on",state.s.colors);
     board.classList.toggle("guides-on",state.s.guides);board.classList.toggle("marks-on",state.s.marks);
@@ -185,6 +220,8 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
   gear.addEventListener("click",function(){var o=!panel.classList.contains("open");panel.classList.toggle("open",o);gear.setAttribute("aria-expanded",o?"true":"false")});
   document.addEventListener("pointerdown",function(e){if(panel.classList.contains("open")&&!panel.contains(e.target)&&!gear.contains(e.target)){panel.classList.remove("open");gear.setAttribute("aria-expanded","false")}});
   check.addEventListener("click",checkIt);next.addEventListener("click",newSet);
+  useCustom.addEventListener("click",parseCustom);randomSet.addEventListener("click",randomMode);
+  customNums.addEventListener("keydown",function(e){if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();parseCustom()}});
   window.addEventListener("resize",function(){positionScaffold();document.querySelectorAll(".strip").forEach(function(el){setLeft(el,state.slots[Number(el.dataset.row)],false)})});
   supports();render()
 })();
