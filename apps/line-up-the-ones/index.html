@@ -8,7 +8,8 @@
 <style>
 :root{
   --bg:#f3f0e9;--ink:#1d1d1f;--ones:#DC143C;--tens:#4169E1;--hundreds:#FFD700;
-  --thousands:#4CBB17;--ten-thousands:#FF7F00;--tenths:#7B00FF;--hundredths:#FF9F0A;--thousandths:#64D2FF;--cell:clamp(48px,8vw,72px);
+  --thousands:#4CBB17;--ten-thousands:#FF7F00;--hundred-thousands:#6B3FA0;
+  --tenths:#64D2FF;--hundredths:#FF9F0A;--thousandths:#7B00FF;--cell:clamp(48px,8vw,72px);
   --lane:clamp(66px,10vw,86px);--spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.22,1,.36,1)
 }
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Lexend,system-ui,sans-serif}
@@ -31,8 +32,17 @@ main{width:min(1040px,calc(100vw - 28px));margin:auto;padding:6px 0 78px}
 .digit:first-child{border-radius:13px 0 0 13px}.digit:last-child{border-right:1px solid #aaa59a;border-radius:0 13px 13px 0}.digit:only-child{border-radius:13px}
 .board.colors-on .digit{color:#fff;border-color:rgba(0,0,0,.23);background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.08) 30%,rgba(0,0,0,.14)),var(--pc);text-shadow:0 1px 1px rgba(0,0,0,.22)}
 .board.colors-on .digit[data-p="hundreds"]{color:#302d23;text-shadow:0 1px rgba(255,255,255,.25)}
-.decimal-point{position:relative;flex:0 0 0;width:0;height:calc(var(--cell)*.78);z-index:7;pointer-events:none;overflow:visible}
-.decimal-point:after{content:".";position:absolute;left:0;bottom:3px;transform:translateX(-50%);font-size:clamp(30px,5vw,48px);font-weight:900;line-height:1;color:#222;text-shadow:0 1px 2px rgba(255,255,255,.85),0 1px 3px rgba(0,0,0,.18)}
+.decimal-point{position:relative;flex:0 0 0;width:0;height:calc(var(--cell)*.78);z-index:8;pointer-events:none;overflow:visible}
+.decimal-point:after{
+  content:"";position:absolute;left:var(--rail-gap,8px);bottom:8px;
+  width:clamp(11px,1.7vw,15px);height:clamp(11px,1.7vw,15px);
+  transform:translateX(-50%);border-radius:50%;
+  background:
+    radial-gradient(circle at 33% 28%,rgba(255,255,255,.96) 0%,rgba(255,255,255,.34) 38%,transparent 63%),
+    linear-gradient(135deg,#efefef 0%,#d0d0d0 25%,#a8a8a8 50%,#c0c0c0 75%,#e0e0e0 100%);
+  border:1px solid rgba(70,70,70,.34);
+  box-shadow:0 2px 5px rgba(0,0,0,.26),inset 0 1px 1px rgba(255,255,255,.72);
+}
 .stud{position:absolute;left:50%;bottom:-8px;width:28px;height:4px;border-radius:999px;transform:translateX(-50%) scaleX(.35);opacity:0;background:#3f4144;box-shadow:0 1px 1px rgba(255,255,255,.5);transition:.18s var(--spring)}
 .board.marks-on .stud{opacity:.9;transform:translateX(-50%) scaleX(1)}
 
@@ -97,9 +107,9 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     ["617","24","9","5080","103"],["2004","51","8","730","46"],["84","1007","6","239","50"],
     ["900","72","4","3165","28"],["63","5","407","1208","91"],["1000","36","7","245","80"]
   ];
-  var wholePlaces=["ones","tens","hundreds","thousands","ten-thousands"];
+  var wholePlaces=["ones","tens","hundreds","thousands","ten-thousands","hundred-thousands"];
   var fractionPlaces=["tenths","hundredths","thousandths"];
-  var colors={"ones":"#DC143C","tens":"#4169E1","hundreds":"#FFD700","thousands":"#4CBB17","ten-thousands":"#FF7F00","tenths":"#7B00FF","hundredths":"#FF9F0A","thousandths":"#64D2FF"};
+  var colors={"ones":"#DC143C","tens":"#4169E1","hundreds":"#FFD700","thousands":"#4CBB17","ten-thousands":"#FF7F00","hundred-thousands":"#6B3FA0","tenths":"#64D2FF","hundredths":"#FF9F0A","thousandths":"#7B00FF"};
   var board=document.getElementById("board"),lanes=document.getElementById("lanes"),guides=document.getElementById("guides"),
       rail=document.getElementById("rail"),pulse=document.getElementById("pulse"),panel=document.getElementById("panel"),
       gear=document.getElementById("gear"),check=document.getElementById("check"),next=document.getElementById("next"),
@@ -120,6 +130,7 @@ footer{position:fixed;left:0;right:0;bottom:0;height:44px;display:grid;place-ite
     for(var slot=0;slot<COLS;slot++){var g=document.createElement("div");g.className="guide";g.style.left=center(slot)+"px";guides.appendChild(g)}
     var anchorEdge=(ANCHOR+1)*cell();
     var gap=Math.min(10,cell()*.14);
+    board.style.setProperty("--rail-gap",gap+"px");
     rail.style.left=(anchorEdge+gap)+"px";
     pulse.style.left=(anchorEdge+gap)+"px"
   }
