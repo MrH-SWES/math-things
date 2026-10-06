@@ -758,24 +758,83 @@
       return Math.abs(value - Math.round(value)) < 0.0000001;
     }
 
+    function decomposeByPlace(value) {
+      const n = Math.abs(roundSafe(value));
+      if (n === 0) return [];
+
+      // Work as an integer number of millionths so decimal decomposition is exact
+      // for every scale this app supports.
+      let scaled = Math.round(n * 1000000);
+      const places = [
+        { divisor:1000000000000, value:1000000 },
+        { divisor:100000000000,  value:100000 },
+        { divisor:10000000000,   value:10000 },
+        { divisor:1000000000,    value:1000 },
+        { divisor:100000000,     value:100 },
+        { divisor:10000000,      value:10 },
+        { divisor:1000000,       value:1 },
+        { divisor:100000,        value:.1 },
+        { divisor:10000,         value:.01 },
+        { divisor:1000,          value:.001 },
+        { divisor:100,           value:.0001 }
+      ];
+
+      const parts = [];
+      for (const place of places) {
+        const digit = Math.floor(scaled / place.divisor);
+        if (digit > 0) {
+          parts.push({
+            digit,
+            unit:place.value,
+            amount:roundSafe(digit * place.value)
+          });
+          scaled -= digit * place.divisor;
+        }
+      }
+      return parts;
+    }
+
     function getHopPlan() {
       const jump = readJump();
-      if (jump <= 0) return { repeated:false, count:0, unit:0 };
+      if (jump <= 0) return { mode:'none', count:0, unit:0, parts:[] };
 
-      let unit = Math.pow(10,Math.floor(Math.log10(jump)));
-      let exact = jump / unit;
+      const parts = decomposeByPlace(jump);
 
-      while ((!nearlyInteger(exact) || exact > 12) && unit > .000001) {
-        unit /= 10;
-        exact = jump / unit;
-        if (exact > 20) break;
+      // A single non-zero place is a counting-on problem:
+      // 7 = seven 1s, .7 = seven tenths, 70 = seven tens.
+      if (parts.length === 1) {
+        const part = parts[0];
+        return {
+          mode:'repeated',
+          repeated:true,
+          count:part.digit,
+          unit:part.unit,
+          parts:[part]
+        };
       }
 
-      if (nearlyInteger(exact) && exact <= 12) {
-        return { repeated:true, count:Math.round(exact), unit:roundSafe(unit) };
-      }
+      // Multiple non-zero places are an expanded-form problem:
+      // 7.32 = 7 + .3 + .02, one meaningful hop per place value.
+      return {
+        mode:'place-value',
+        repeated:false,
+        count:parts.length,
+        unit:null,
+        parts
+      };
+    }
 
-      return { repeated:false, count:1, unit:jump };
+    function zoomIndexForUnit(unit) {
+      let best = 0;
+      let bestError = Infinity;
+      for (let i=0;i<ZOOM_LEVELS.length;i++) {
+        const error = Math.abs(Math.log10(ZOOM_LEVELS[i].step) - Math.log10(unit));
+        if (error < bestError) {
+          bestError = error;
+          best = i;
+        }
+      }
+      return best;
     }
 
     function viewportSpan() {
@@ -917,9 +976,15 @@
       zoomWrap.setAttribute('aria-valuetext',zoom.name);
 
       const plan = getHopPlan();
-      if (!readJump()) scaleNote.textContent = '';
-      else if (plan.repeated) scaleNote.textContent = plan.count + (plan.count === 1 ? ' hop' : ' hops') + ' × ' + formatNumber(plan.unit);
-      else scaleNote.textContent = 'one jump of ' + formatNumber(readJump());
+      if (!readJump()) {
+        scaleNote.textContent = '';
+      } else if (plan.mode === 'repeated') {
+        scaleNote.textContent = plan.count + (plan.count === 1 ? ' hop' : ' hops') + ' × ' + formatNumber(plan.unit);
+      } else if (plan.mode === 'place-value') {
+        scaleNote.textContent = plan.parts.map(part => formatNumber(part.amount)).join('  +  ');
+      } else {
+        scaleNote.textContent = '';
+      }
     }
 
     function renderWorld() {
@@ -1059,17 +1124,35 @@
       const plan = getHopPlan();
 
       // Motion is the mathematical representation in this tool, not decoration.
-      // Always perform the teacher-triggered hop sequence, even when the OS/browser
-      // prefers reduced motion. The user explicitly initiates the motion.
-      if (plan.repeated) {
+      // Always perform the teacher-triggered hop sequence.
+      if (plan.mode === 'repeated') {
+        // Single-place-value quantity: count it on one unit at a time.
         let from = start;
+        zoomIndex = zoomIndexForUnit(plan.unit);
+        cameraCenter = from;
+        renderWorld();
+
         for (let i=0;i<plan.count;i++) {
           const to = roundSafe(from + operation*plan.unit);
           await animateHop(from,to,HOP_DURATION);
           from = to;
         }
-      } else {
-        await animateHop(start,end,HOP_DURATION * 1.25);
+      } else if (plan.mode === 'place-value') {
+        // Multi-place-value quantity: one hop per non-zero place, largest first.
+        let from = start;
+
+        for (const part of plan.parts) {
+          zoomIndex = zoomIndexForUnit(part.unit);
+          cameraCenter = from;
+          renderWorld();
+
+          // Give the scale change a short readable beat before the next place-value hop.
+          await sleep(260);
+
+          const to = roundSafe(from + operation*part.amount);
+          await animateHop(from,to,HOP_DURATION * 1.12);
+          from = to;
+        }
       }
 
       frogValue = end;
