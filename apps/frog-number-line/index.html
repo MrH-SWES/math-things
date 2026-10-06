@@ -689,8 +689,8 @@
       { name:'Millions', step:1000000, color:'var(--millions)' }
     ];
 
-    const HOP_DURATION = 2100;
-    const LANDING_PAUSE = 700;
+    const HOP_DURATION = 1750;
+    const LANDING_PAUSE = 200;
     const CAMERA_FROG_OFFSET = .06;
 
     const startInput = document.getElementById('startInput');
@@ -986,8 +986,13 @@
           const raw = Math.min(1,(now-started)/duration);
           const t = smooth(raw);
 
+          // The frog gets a head start across the screen. The camera begins
+          // following after takeoff and catches up by the landing.
+          const cameraRaw = raw < .28 ? 0 : Math.min(1,(raw-.28)/.72);
+          const cameraT = smooth(cameraRaw);
+
           frogValue = roundSafe(fromValue + (toValue-fromValue)*t);
-          cameraCenter = startCamera + (targetCamera-startCamera)*t;
+          cameraCenter = startCamera + (targetCamera-startCamera)*cameraT;
           frogLift = hopHeight * Math.sin(Math.PI*raw);
 
           currentHop = {
@@ -1011,11 +1016,13 @@
             setFrogPose(1,direction,true);
             renderWorld();
 
+            // Brief compression on impact, then a fully still 0.2-second beat
+            // before the next hop begins.
             window.setTimeout(() => {
               neutralFrogPose();
               renderWorld();
-              resolve();
-            },LANDING_PAUSE);
+              window.setTimeout(resolve,LANDING_PAUSE);
+            },140);
           }
         }
 
