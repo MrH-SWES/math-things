@@ -13,16 +13,14 @@
       --gray:#86868B;
       --light:#AEAEB2;
       --border:rgba(0,0,0,.08);
-      --line:#3A3A3C;
-      --frog:#47A447;
-      --frog-dark:#28712F;
-      --frog-light:#A7E36D;
+      --line:#343438;
+      --frog:#48A94B;
+      --frog-dark:#276B31;
+      --frog-light:#8DDA68;
+      --frog-belly:#B9E687;
       --start:#4169E1;
-      --answer:#47A447;
+      --answer:#48A94B;
       --jump:#FF9F0A;
-      --spring:cubic-bezier(.34,1.56,.64,1);
-      --ease:cubic-bezier(.22,1,.36,1);
-
       --millions:#FF00FF;
       --hundred-thousands:#6B3FA0;
       --ten-thousands:#FF7F00;
@@ -37,14 +35,14 @@
     }
 
     * { box-sizing:border-box; margin:0; padding:0; }
-
+    html,body { min-height:100%; }
     body {
       min-height:100vh;
       font-family:'Lexend',sans-serif;
       color:var(--ink);
       background:
-        radial-gradient(circle at 10% 5%, rgba(100,210,255,.08), transparent 28rem),
-        radial-gradient(circle at 95% 90%, rgba(71,164,71,.08), transparent 28rem),
+        radial-gradient(circle at 7% 8%,rgba(100,210,255,.08),transparent 28rem),
+        radial-gradient(circle at 95% 90%,rgba(72,169,75,.08),transparent 28rem),
         var(--bg);
       -webkit-font-smoothing:antialiased;
     }
@@ -57,7 +55,7 @@
       align-items:center;
       justify-content:center;
       border-bottom:1px solid var(--border);
-      background:rgba(245,245,247,.86);
+      background:rgba(245,245,247,.88);
       backdrop-filter:blur(26px);
       -webkit-backdrop-filter:blur(26px);
     }
@@ -65,8 +63,8 @@
     .logo {
       display:inline-flex;
       align-items:baseline;
-      font-weight:900;
       font-size:1.35rem;
+      font-weight:900;
       letter-spacing:-.045em;
     }
 
@@ -77,7 +75,7 @@
       margin-bottom:.08em;
       border-radius:50%;
       background:linear-gradient(135deg,#efefef,#a8a8a8,#dedede);
-      box-shadow:inset 1px 1px 2px rgba(255,255,255,.9), inset -1px -1px 2px rgba(0,0,0,.18), 0 2px 4px rgba(0,0,0,.18);
+      box-shadow:inset 1px 1px 2px rgba(255,255,255,.9),inset -1px -1px 2px rgba(0,0,0,.18),0 2px 4px rgba(0,0,0,.18);
     }
 
     main {
@@ -90,7 +88,6 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:18px;
       margin-bottom:14px;
     }
 
@@ -112,11 +109,11 @@
     }
 
     .panel {
-      background:var(--surface);
+      overflow:hidden;
       border:1px solid var(--border);
       border-radius:26px;
+      background:var(--surface);
       box-shadow:0 10px 34px rgba(0,0,0,.06);
-      overflow:hidden;
     }
 
     .teacher-dock {
@@ -132,11 +129,11 @@
     .field label {
       display:block;
       margin:0 0 6px 2px;
+      color:var(--light);
       font-size:.68rem;
       font-weight:800;
       letter-spacing:.12em;
       text-transform:uppercase;
-      color:var(--light);
     }
 
     .field input {
@@ -145,13 +142,12 @@
       padding:8px 12px;
       border:2px solid rgba(0,0,0,.08);
       border-radius:15px;
+      outline:none;
       background:#fff;
       color:var(--ink);
       font-size:1.6rem;
       font-weight:800;
       text-align:center;
-      outline:none;
-      transition:border-color .2s ease, box-shadow .2s ease;
       appearance:textfield;
       -moz-appearance:textfield;
     }
@@ -164,20 +160,15 @@
       box-shadow:0 0 0 4px rgba(0,122,255,.10);
     }
 
-    .op-toggle {
-      display:flex;
-      gap:8px;
-    }
+    .op-toggle { display:flex; gap:8px; }
 
-    .op-btn,
-    .hop-btn,
-    .reset-btn {
+    .op-btn,.hop-btn,.reset-btn {
       min-width:56px;
       min-height:56px;
       border:0;
       border-radius:15px;
       cursor:pointer;
-      transition:transform .18s var(--spring), box-shadow .18s ease, background .18s ease;
+      transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease;
     }
 
     .op-btn {
@@ -188,8 +179,8 @@
     }
 
     .op-btn.active {
-      color:#fff;
       background:#1D1D1F;
+      color:#fff;
       box-shadow:0 6px 14px rgba(0,0,0,.15);
     }
 
@@ -199,24 +190,11 @@
       justify-content:center;
       gap:8px;
       padding:0 18px;
+      background:linear-gradient(180deg,#59BA59,#388C40);
       color:#fff;
-      background:linear-gradient(180deg,#58B757,#388B3F);
-      box-shadow:0 7px 16px rgba(40,113,47,.22), inset 0 1px 0 rgba(255,255,255,.35);
       font-weight:800;
+      box-shadow:0 7px 16px rgba(40,113,47,.22),inset 0 1px 0 rgba(255,255,255,.35);
       white-space:nowrap;
-    }
-
-    .hop-btn:hover:not(:disabled),
-    .op-btn:hover,
-    .reset-btn:hover { transform:translateY(-2px); }
-
-    .hop-btn:active:not(:disabled),
-    .op-btn:active,
-    .reset-btn:active { transform:translateY(0) scale(.98); }
-
-    .hop-btn:disabled {
-      opacity:.55;
-      cursor:default;
     }
 
     .reset-btn {
@@ -226,6 +204,10 @@
       font-weight:800;
     }
 
+    .op-btn:hover,.hop-btn:hover:not(:disabled),.reset-btn:hover { transform:translateY(-2px); }
+    .op-btn:active,.hop-btn:active:not(:disabled),.reset-btn:active { transform:translateY(0) scale(.98); }
+    .hop-btn:disabled { opacity:.5; cursor:default; }
+
     .equation-strip {
       min-height:72px;
       display:flex;
@@ -233,7 +215,6 @@
       justify-content:center;
       padding:10px 20px;
       border-bottom:1px solid var(--border);
-      background:#fff;
     }
 
     .equation {
@@ -246,17 +227,15 @@
     .equation .unknown { color:var(--light); }
     .equation .result { color:var(--frog-dark); }
 
-    .zoom-area {
-      padding:18px 24px 10px;
-    }
+    .zoom-area { padding:18px 24px 10px; }
 
     .zoom-meta {
       display:flex;
-      justify-content:space-between;
       align-items:center;
+      justify-content:space-between;
       margin-bottom:10px;
-      font-size:.72rem;
       color:var(--gray);
+      font-size:.72rem;
     }
 
     .zoom-meta strong {
@@ -288,7 +267,7 @@
       background:
         radial-gradient(circle at 33% 28%,rgba(255,255,255,.92),rgba(255,255,255,.28) 40%,transparent 65%),
         linear-gradient(135deg,#ededed,#a9a9a9 52%,#dadada);
-      box-shadow:inset 1px 1px 2px rgba(255,255,255,.85), inset -1px -1px 2px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.18);
+      box-shadow:inset 1px 1px 2px rgba(255,255,255,.85),inset -1px -1px 2px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.18);
     }
 
     .zoom-labels {
@@ -298,7 +277,6 @@
       color:var(--light);
       font-size:.58rem;
       font-weight:600;
-      letter-spacing:.02em;
     }
 
     .stage {
@@ -306,13 +284,14 @@
       min-height:430px;
       padding:14px 26px 30px;
       overflow:hidden;
-      background:linear-gradient(180deg,#fff 0%,#fff 70%,#FAFCF9 100%);
+      background:linear-gradient(180deg,#fff 0%,#fff 72%,#FAFCF9 100%);
     }
 
     .number-line-stage {
       position:relative;
       height:330px;
       margin-top:18px;
+      overflow:hidden;
       user-select:none;
       touch-action:pan-y;
     }
@@ -321,15 +300,13 @@
       position:absolute;
       left:3%;
       right:3%;
-      top:190px;
+      top:196px;
       height:5px;
       border-radius:99px;
       background:var(--line);
-      box-shadow:0 1px 0 rgba(255,255,255,.8);
     }
 
-    .line::before,
-    .line::after {
+    .line::before,.line::after {
       content:'';
       position:absolute;
       top:50%;
@@ -340,22 +317,15 @@
       border-bottom:8px solid transparent;
     }
 
-    .line::before {
-      left:-1px;
-      border-right:12px solid var(--line);
-    }
-
-    .line::after {
-      right:-1px;
-      border-left:12px solid var(--line);
-    }
+    .line::before { left:-1px; border-right:12px solid var(--line); }
+    .line::after { right:-1px; border-left:12px solid var(--line); }
 
     .ticks {
       position:absolute;
       left:5%;
       width:90%;
-      top:163px;
-      height:110px;
+      top:169px;
+      height:112px;
     }
 
     .tick-wrap {
@@ -381,38 +351,38 @@
 
     .tick-label {
       margin-top:9px;
+      color:var(--gray);
       font-size:.8rem;
       font-weight:600;
-      color:var(--gray);
       white-space:nowrap;
       font-variant-numeric:tabular-nums;
     }
 
     .tick-wrap.major .tick-label {
       color:var(--ink);
-      font-weight:800;
       font-size:.9rem;
+      font-weight:800;
     }
 
-    .start-pin,
-    .answer-pin {
+    .start-pin,.answer-pin {
       position:absolute;
-      top:168px;
+      top:174px;
       width:18px;
       height:18px;
+      border:3px solid #fff;
       border-radius:50%;
       transform:translateX(-50%);
-      z-index:6;
-      border:3px solid #fff;
+      z-index:7;
       box-shadow:0 2px 7px rgba(0,0,0,.18);
     }
 
     .start-pin { background:var(--start); }
+
     .answer-pin {
       background:var(--answer);
       opacity:0;
       transform:translateX(-50%) scale(.6);
-      transition:opacity .2s ease, transform .3s var(--spring);
+      transition:opacity .2s ease,transform .3s cubic-bezier(.34,1.56,.64,1);
     }
 
     .answer-pin.show {
@@ -422,31 +392,28 @@
 
     .answer-label {
       position:absolute;
-      top:224px;
-      transform:translateX(-50%);
+      top:231px;
+      z-index:8;
       padding:7px 11px;
       border-radius:10px;
+      transform:translateX(-50%);
       background:#ECF7EC;
       color:var(--frog-dark);
       font-size:.86rem;
       font-weight:800;
-      opacity:0;
-      transition:opacity .2s ease, transform .3s var(--spring);
       font-variant-numeric:tabular-nums;
       white-space:nowrap;
-      z-index:8;
+      opacity:0;
     }
 
-    .answer-label.show {
-      opacity:1;
-    }
+    .answer-label.show { opacity:1; }
 
     .hop-layer {
       position:absolute;
       left:5%;
       width:90%;
       top:64px;
-      height:128px;
+      height:134px;
       overflow:visible;
       pointer-events:none;
       z-index:3;
@@ -455,18 +422,13 @@
     .hop-arc {
       fill:none;
       stroke:var(--jump);
-      stroke-width:3.5;
+      stroke-width:3.8;
       stroke-linecap:round;
       opacity:.86;
       vector-effect:non-scaling-stroke;
-      stroke-dasharray:260;
-      stroke-dashoffset:260;
-      animation:drawArc 2.4s ease forwards;
     }
 
-    .hop-arc.single {
-      stroke-width:4.5;
-    }
+    .hop-arc.current { opacity:.96; stroke-width:4.6; }
 
     .arc-label {
       fill:#B46600;
@@ -476,63 +438,36 @@
       text-anchor:middle;
     }
 
-    @keyframes drawArc { to { stroke-dashoffset:0; } }
-
-    .frog {
+    .frog-shadow {
       position:absolute;
-      top:111px;
+      top:188px;
       width:66px;
-      height:66px;
+      height:11px;
+      z-index:5;
+      border-radius:50%;
       transform:translateX(-50%);
-      z-index:10;
-      transition:left .42s var(--ease), top .22s ease, transform .22s ease;
-      filter:drop-shadow(0 8px 7px rgba(0,0,0,.16));
+      background:rgba(0,0,0,.12);
+      filter:blur(1px);
       pointer-events:none;
     }
 
-    .frog.airborne {
-      top:71px;
-      transform:translateX(-50%) rotate(-4deg) scale(1.04);
+    .frog {
+      position:absolute;
+      top:105px;
+      width:104px;
+      height:90px;
+      z-index:10;
+      transform:translateX(-50%);
+      filter:drop-shadow(0 8px 7px rgba(0,0,0,.16));
+      pointer-events:none;
+      will-change:left,top,transform;
     }
 
-    .frog.land {
-      animation:land .25s var(--spring);
-    }
-
-    @keyframes land {
-      0% { transform:translateX(-50%) scale(1); }
-      45% { transform:translateX(-50%) scale(1.08,.90); }
-      100% { transform:translateX(-50%) scale(1); }
-    }
-
-    .frog svg { width:100%; height:100%; display:block; }
-
-    .legend {
-      display:flex;
-      justify-content:center;
-      gap:18px;
-      padding:0 20px 18px;
-      color:var(--gray);
-      font-size:.7rem;
-      font-weight:600;
-    }
-
-    .legend span {
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-    }
-
-    .dot {
-      width:10px;
-      height:10px;
-      border-radius:50%;
-      display:inline-block;
-    }
-
-    .dot.start { background:var(--start); }
-    .dot.answer { background:var(--answer); }
-    .dot.jump { background:var(--jump); }
+    .frog svg { width:100%; height:100%; overflow:visible; display:block; }
+    .frog-part { transform-box:fill-box; }
+    #frogRearLeg { transform-origin:58% 28%; }
+    #frogFrontLeg { transform-origin:35% 18%; }
+    #frogBodyGroup { transform-origin:center center; }
 
     .scale-note {
       position:absolute;
@@ -545,6 +480,22 @@
       white-space:nowrap;
     }
 
+    .legend {
+      display:flex;
+      justify-content:center;
+      gap:18px;
+      padding:0 20px 18px;
+      color:var(--gray);
+      font-size:.7rem;
+      font-weight:600;
+    }
+
+    .legend span { display:inline-flex; align-items:center; gap:6px; }
+    .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+    .dot.start { background:var(--start); }
+    .dot.answer { background:var(--answer); }
+    .dot.jump { background:var(--jump); }
+
     footer {
       padding:22px;
       text-align:center;
@@ -555,9 +506,7 @@
       text-transform:uppercase;
     }
 
-    button:focus-visible,
-    input:focus-visible,
-    .zoom-bar-wrap:focus-visible {
+    button:focus-visible,input:focus-visible,.zoom-bar-wrap:focus-visible {
       outline:3px solid rgba(0,122,255,.3);
       outline-offset:3px;
     }
@@ -571,7 +520,6 @@
     }
 
     @media (max-width:560px) {
-      .app-title-row { margin-bottom:10px; }
       .frog-badge { display:none; }
       .teacher-dock { grid-template-columns:1fr 1fr; }
       .op-toggle { grid-column:1 / -1; justify-content:center; }
@@ -584,11 +532,7 @@
     }
 
     @media (prefers-reduced-motion:reduce) {
-      *,*::before,*::after {
-        animation-duration:.01ms !important;
-        animation-iteration-count:1 !important;
-        transition-duration:.01ms !important;
-      }
+      .frog,.frog-part,.frog-shadow { transition:none !important; animation:none !important; }
     }
   </style>
 </head>
@@ -601,13 +545,13 @@
     <div class="app-title-row">
       <div class="app-title">Frog Number Line</div>
       <div class="frog-badge" aria-hidden="true">
-        <svg viewBox="0 0 80 80" width="46" height="46">
-          <circle cx="25" cy="22" r="11" fill="#47A447"/>
-          <circle cx="55" cy="22" r="11" fill="#47A447"/>
-          <ellipse cx="40" cy="42" rx="26" ry="22" fill="#47A447"/>
-          <circle cx="25" cy="20" r="5" fill="#fff"/><circle cx="55" cy="20" r="5" fill="#fff"/>
-          <circle cx="26" cy="20" r="2.3" fill="#1D1D1F"/><circle cx="54" cy="20" r="2.3" fill="#1D1D1F"/>
-          <path d="M28 44 Q40 55 52 44" fill="none" stroke="#28712F" stroke-width="3.5" stroke-linecap="round"/>
+        <svg viewBox="0 0 120 90" width="50" height="42">
+          <ellipse cx="55" cy="52" rx="30" ry="21" fill="#48A94B"/>
+          <ellipse cx="83" cy="39" rx="20" ry="18" fill="#59BA59"/>
+          <circle cx="86" cy="23" r="10" fill="#59BA59"/>
+          <circle cx="88" cy="21" r="5" fill="#fff"/>
+          <circle cx="90" cy="21" r="2" fill="#1D1D1F"/>
+          <path d="M91 43 Q103 46 108 41" fill="none" stroke="#276B31" stroke-width="3" stroke-linecap="round"/>
         </svg>
       </div>
     </div>
@@ -656,34 +600,63 @@
 
       <div class="stage">
         <div class="number-line-stage" id="stage">
-          <svg class="hop-layer" id="hopLayer" viewBox="0 0 1000 128" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <svg class="hop-layer" id="hopLayer" viewBox="0 0 1000 134" preserveAspectRatio="none" aria-hidden="true"></svg>
           <div class="line"></div>
           <div class="ticks" id="ticks" aria-hidden="true"></div>
           <div class="start-pin" id="startPin" aria-hidden="true"></div>
           <div class="answer-pin" id="answerPin" aria-hidden="true"></div>
           <div class="answer-label" id="answerLabel" aria-hidden="true"></div>
+          <div class="frog-shadow" id="frogShadow" aria-hidden="true"></div>
 
           <div class="frog" id="frog" aria-hidden="true">
-            <svg viewBox="0 0 100 90">
+            <svg viewBox="0 0 120 90">
               <defs>
                 <linearGradient id="frogBody" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#76C95E"/>
-                  <stop offset=".58" stop-color="#47A447"/>
-                  <stop offset="1" stop-color="#2F8139"/>
+                  <stop offset="0" stop-color="#6CCB62"/>
+                  <stop offset=".58" stop-color="#48A94B"/>
+                  <stop offset="1" stop-color="#2F7E39"/>
+                </linearGradient>
+                <linearGradient id="frogLeg" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#57B953"/>
+                  <stop offset="1" stop-color="#2F7E39"/>
                 </linearGradient>
               </defs>
-              <ellipse cx="23" cy="24" rx="15" ry="16" fill="url(#frogBody)" stroke="#28712F" stroke-width="2"/>
-              <ellipse cx="77" cy="24" rx="15" ry="16" fill="url(#frogBody)" stroke="#28712F" stroke-width="2"/>
-              <ellipse cx="50" cy="51" rx="37" ry="29" fill="url(#frogBody)" stroke="#28712F" stroke-width="2.4"/>
-              <circle cx="23" cy="21" r="8" fill="#fff"/>
-              <circle cx="77" cy="21" r="8" fill="#fff"/>
-              <circle cx="24" cy="22" r="3.5" fill="#1D1D1F"/>
-              <circle cx="76" cy="22" r="3.5" fill="#1D1D1F"/>
-              <ellipse cx="40" cy="45" rx="2" ry="1.5" fill="#28712F"/>
-              <ellipse cx="60" cy="45" rx="2" ry="1.5" fill="#28712F"/>
-              <path d="M35 54 Q50 68 65 54" fill="none" stroke="#215F2A" stroke-width="4" stroke-linecap="round"/>
-              <path d="M20 67 Q10 76 6 85" fill="none" stroke="#28712F" stroke-width="8" stroke-linecap="round"/>
-              <path d="M80 67 Q90 76 94 85" fill="none" stroke="#28712F" stroke-width="8" stroke-linecap="round"/>
+
+              <!-- far hind leg -->
+              <path d="M40 57 Q25 67 20 82 Q31 79 39 72 Q44 67 50 63"
+                    fill="none" stroke="#2F7E39" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".72"/>
+
+              <g id="frogRearLeg" class="frog-part">
+                <path d="M46 57 Q29 65 22 77" fill="none" stroke="url(#frogLeg)" stroke-width="12" stroke-linecap="round"/>
+                <path d="M22 77 Q14 82 7 78" fill="none" stroke="#3B9241" stroke-width="8" stroke-linecap="round"/>
+                <path d="M11 79 L3 84 M12 80 L6 88 M14 80 L11 89"
+                      fill="none" stroke="#2F7E39" stroke-width="3.5" stroke-linecap="round"/>
+              </g>
+
+              <g id="frogBodyGroup" class="frog-part">
+                <ellipse cx="53" cy="52" rx="32" ry="22" fill="url(#frogBody)" stroke="#276B31" stroke-width="2.4"/>
+                <ellipse cx="58" cy="58" rx="20" ry="13" fill="#B9E687" opacity=".52"/>
+                <ellipse cx="83" cy="39" rx="22" ry="19" fill="#59BA59" stroke="#276B31" stroke-width="2.3"/>
+
+                <circle cx="86" cy="23" r="11" fill="#59BA59" stroke="#276B31" stroke-width="2.2"/>
+                <circle cx="88" cy="21" r="6" fill="#fff"/>
+                <circle cx="90" cy="21" r="2.6" fill="#1D1D1F"/>
+                <circle cx="91" cy="20" r=".8" fill="#fff"/>
+
+                <ellipse cx="100" cy="38" rx="2.2" ry="1.4" fill="#276B31"/>
+                <path d="M91 44 Q101 49 108 42" fill="none" stroke="#276B31" stroke-width="3" stroke-linecap="round"/>
+                <path d="M104 43 Q110 45 113 42" fill="none" stroke="#276B31" stroke-width="2" stroke-linecap="round"/>
+
+                <circle cx="49" cy="42" r="2.2" fill="#398D3E" opacity=".7"/>
+                <circle cx="41" cy="49" r="1.8" fill="#398D3E" opacity=".6"/>
+              </g>
+
+              <g id="frogFrontLeg" class="frog-part">
+                <path d="M77 55 Q89 63 94 76" fill="none" stroke="url(#frogLeg)" stroke-width="9" stroke-linecap="round"/>
+                <path d="M94 76 Q101 80 108 77" fill="none" stroke="#3B9241" stroke-width="6.5" stroke-linecap="round"/>
+                <path d="M105 78 L114 82 M104 79 L112 86 M102 80 L107 88"
+                      fill="none" stroke="#2F7E39" stroke-width="3" stroke-linecap="round"/>
+              </g>
             </svg>
           </div>
 
@@ -703,18 +676,22 @@
 
   <script>
     const ZOOM_LEVELS = [
-      { name:'Ten Thousandths', step:.0001, decimals:4, color:'var(--ten-thousandths)' },
-      { name:'Thousandths', step:.001, decimals:3, color:'var(--thousandths)' },
-      { name:'Hundredths', step:.01, decimals:2, color:'var(--hundredths)' },
-      { name:'Tenths', step:.1, decimals:1, color:'var(--tenths)' },
-      { name:'Ones', step:1, decimals:0, color:'var(--ones)' },
-      { name:'Tens', step:10, decimals:0, color:'var(--tens)' },
-      { name:'Hundreds', step:100, decimals:0, color:'var(--hundreds)' },
-      { name:'Thousands', step:1000, decimals:0, color:'var(--thousands)' },
-      { name:'Ten Thousands', step:10000, decimals:0, color:'var(--ten-thousands)' },
-      { name:'Hundred Thousands', step:100000, decimals:0, color:'var(--hundred-thousands)' },
-      { name:'Millions', step:1000000, decimals:0, color:'var(--millions)' }
+      { name:'Ten Thousandths', step:.0001, color:'var(--ten-thousandths)' },
+      { name:'Thousandths', step:.001, color:'var(--thousandths)' },
+      { name:'Hundredths', step:.01, color:'var(--hundredths)' },
+      { name:'Tenths', step:.1, color:'var(--tenths)' },
+      { name:'Ones', step:1, color:'var(--ones)' },
+      { name:'Tens', step:10, color:'var(--tens)' },
+      { name:'Hundreds', step:100, color:'var(--hundreds)' },
+      { name:'Thousands', step:1000, color:'var(--thousands)' },
+      { name:'Ten Thousands', step:10000, color:'var(--ten-thousands)' },
+      { name:'Hundred Thousands', step:100000, color:'var(--hundred-thousands)' },
+      { name:'Millions', step:1000000, color:'var(--millions)' }
     ];
+
+    const HOP_DURATION = 2100;
+    const LANDING_PAUSE = 700;
+    const CAMERA_FROG_OFFSET = .06;
 
     const startInput = document.getElementById('startInput');
     const jumpInput = document.getElementById('jumpInput');
@@ -730,6 +707,10 @@
     const ticks = document.getElementById('ticks');
     const hopLayer = document.getElementById('hopLayer');
     const frog = document.getElementById('frog');
+    const frogShadow = document.getElementById('frogShadow');
+    const frogRearLeg = document.getElementById('frogRearLeg');
+    const frogFrontLeg = document.getElementById('frogFrontLeg');
+    const frogBodyGroup = document.getElementById('frogBodyGroup');
     const startPin = document.getElementById('startPin');
     const answerPin = document.getElementById('answerPin');
     const answerLabel = document.getElementById('answerLabel');
@@ -740,9 +721,13 @@
     let zoomIndex = 4;
     let landed = false;
     let animating = false;
-    let currentRange = { min:0, max:10 };
-    let frogValue = 30;
     let dragZoom = false;
+
+    let frogValue = 30;
+    let cameraCenter = 30;
+    let frogLift = 0;
+    let hopTrail = [];
+    let currentHop = null;
 
     function roundSafe(value) {
       return Math.round((value + Number.EPSILON) * 1000000) / 1000000;
@@ -755,7 +740,7 @@
 
     function readJump() {
       const n = Number.parseFloat(jumpInput.value);
-      return Number.isFinite(n) ? Math.max(0, roundSafe(n)) : 0;
+      return Number.isFinite(n) ? Math.max(0,roundSafe(n)) : 0;
     }
 
     function resultValue() {
@@ -763,8 +748,7 @@
     }
 
     function formatNumber(value) {
-      const abs = Math.abs(value);
-      if (abs >= 1000) {
+      if (Math.abs(value) >= 1000) {
         return Number(value.toFixed(6)).toLocaleString(undefined,{maximumFractionDigits:6});
       }
       return Number(value.toFixed(6)).toString();
@@ -774,82 +758,64 @@
       return Math.abs(value - Math.round(value)) < 0.0000001;
     }
 
-    function niceStep(raw) {
-      if (!Number.isFinite(raw) || raw <= 0) return 1;
-      const power = Math.pow(10, Math.floor(Math.log10(raw)));
-      const n = raw / power;
-      const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-      return nice * power;
-    }
-
     function getHopPlan() {
       const jump = readJump();
       if (jump <= 0) return { repeated:false, count:0, unit:0 };
 
-      const unit = Math.pow(10, Math.floor(Math.log10(jump)));
-      const exact = jump / unit;
+      let unit = Math.pow(10,Math.floor(Math.log10(jump)));
+      let exact = jump / unit;
+
+      while ((!nearlyInteger(exact) || exact > 12) && unit > .000001) {
+        unit /= 10;
+        exact = jump / unit;
+        if (exact > 20) break;
+      }
 
       if (nearlyInteger(exact) && exact <= 12) {
-        return { repeated:true, count:Math.round(exact), unit:unit };
+        return { repeated:true, count:Math.round(exact), unit:roundSafe(unit) };
       }
 
       return { repeated:false, count:1, unit:jump };
     }
 
-    function computeRange(focusValue, includeWholeTrip) {
-      const step = ZOOM_LEVELS[zoomIndex].step;
-      const span = step * 10;
-      const start = readStart();
-      const end = resultValue();
-      const low = Math.min(start,end);
-      const high = Math.max(start,end);
-      const distance = high - low;
-
-      let min;
-
-      if (includeWholeTrip && distance <= span + step * 0.001) {
-        // Keep the entire problem visible without moving the camera.
-        // Prefer a little breathing room when the scale allows it.
-        const spare = span - distance;
-        const targetMin = low - spare / 2;
-        min = Math.floor(targetMin / step) * step;
-
-        // Correct rounding so both endpoints remain inside the ten-interval viewport.
-        if (low < min - step * 0.001) min -= step;
-        if (high > min + span + step * 0.001) min += step;
-      } else {
-        // True zoomed viewport centered on the requested focus.
-        const targetMin = focusValue - span / 2;
-        min = Math.floor(targetMin / step) * step;
-      }
-
-      return {
-        min:roundSafe(min),
-        max:roundSafe(min + span),
-        tickStep:step,
-        intervals:10
-      };
+    function viewportSpan() {
+      return ZOOM_LEVELS[zoomIndex].step * 10;
     }
 
-    function posFor(value) {
-      return 5 + ((value - currentRange.min) / (currentRange.max - currentRange.min)) * 90;
+    function viewportMin() {
+      return cameraCenter - viewportSpan() / 2;
     }
 
-    function valueIsVisible(value) {
-      const eps = currentRange.tickStep * 0.001;
-      return value >= currentRange.min - eps && value <= currentRange.max + eps;
+    function worldToPct(value) {
+      return 5 + ((value - viewportMin()) / viewportSpan()) * 90;
+    }
+
+    function valueIsVisible(value, pad) {
+      const p = pad || 0;
+      return value >= viewportMin() - p && value <= viewportMin() + viewportSpan() + p;
+    }
+
+    function worldToSvgX(value) {
+      return ((worldToPct(value) - 5) / 90) * 1000;
     }
 
     function renderTicks() {
       ticks.innerHTML = '';
-      const step = currentRange.tickStep;
+      const step = ZOOM_LEVELS[zoomIndex].step;
+      const min = viewportMin();
+      const max = min + viewportSpan();
+      let first = Math.ceil((min - step * .000001) / step) * step;
+      let guard = 0;
 
-      for (let i = 0; i <= 10; i++) {
-        const value = roundSafe(currentRange.min + step * i);
-        const pct = i * 10;
+      for (let value = first; value <= max + step * .0001 && guard < 20; value += step, guard++) {
+        const v = roundSafe(value);
+        const pct = worldToPct(v);
+        if (pct < 4.8 || pct > 95.2) continue;
+
+        const multiple = Math.round(v / step);
+        const major = ((multiple % 5) + 5) % 5 === 0;
 
         const wrap = document.createElement('div');
-        const major = i === 0 || i === 5 || i === 10;
         wrap.className = 'tick-wrap' + (major ? ' major' : '');
         wrap.style.left = pct + '%';
 
@@ -858,160 +824,198 @@
 
         const label = document.createElement('div');
         label.className = 'tick-label';
-        label.textContent = formatNumber(value);
+        label.textContent = formatNumber(v);
 
-        wrap.appendChild(mark);
-        wrap.appendChild(label);
+        wrap.append(mark,label);
         ticks.appendChild(wrap);
       }
     }
 
-    function setFrog(value, immediate) {
-      const pct = posFor(value);
-      if (immediate) {
-        const old = frog.style.transition;
-        frog.style.transition = 'none';
-        frog.style.left = pct + '%';
-        frog.offsetWidth;
-        frog.style.transition = old;
-      } else {
-        frog.style.left = pct + '%';
-      }
-      frogValue = value;
+    function arcPath(fromValue,toValue) {
+      const x1 = worldToSvgX(fromValue);
+      const x2 = worldToSvgX(toValue);
+      const mid = (x1 + x2) / 2;
+      const dist = Math.abs(x2 - x1);
+      const peak = Math.max(12,70 - Math.min(50,dist * .10));
+      return 'M ' + x1 + ' 134 Q ' + mid + ' ' + peak + ' ' + x2 + ' 134';
     }
 
-    function renderEquation() {
-      const start = readStart();
-      const jump = readJump();
-      const symbol = operation === 1 ? '+' : '−';
-      equation.innerHTML =
-        '<span>' + formatNumber(start) + ' ' + symbol + ' ' + formatNumber(jump) + ' = </span>' +
-        (landed
-          ? '<span class="result">' + formatNumber(resultValue()) + '</span>'
-          : '<span class="unknown">?</span>');
-    }
-
-    function renderStatic() {
-      const start = readStart();
-      const end = resultValue();
-      const zoom = ZOOM_LEVELS[zoomIndex];
-
-      currentRange = computeRange(landed ? end : start, true);
-      panel.style.setProperty('--active-color', zoom.color);
-      zoomName.textContent = zoom.name;
-      zoomKnob.style.left = (zoomIndex / (ZOOM_LEVELS.length - 1) * 100) + '%';
-      zoomWrap.setAttribute('aria-valuenow', String(zoomIndex));
-      zoomWrap.setAttribute('aria-valuetext', zoom.name);
-
-      renderTicks();
-      renderEquation();
-
-      startPin.style.left = posFor(start) + '%';
-      startPin.style.display = valueIsVisible(start) ? 'block' : 'none';
-
-      answerPin.style.left = posFor(end) + '%';
-      answerLabel.style.left = posFor(end) + '%';
-      answerLabel.textContent = formatNumber(end);
-
-      const showAnswer = landed && valueIsVisible(end);
-      answerPin.classList.toggle('show', showAnswer);
-      answerLabel.classList.toggle('show', showAnswer);
-
-      const plan = getHopPlan();
-      if (readJump() === 0) {
-        scaleNote.textContent = '';
-      } else if (plan.repeated) {
-        scaleNote.textContent = plan.count + (plan.count === 1 ? ' hop' : ' hops') + ' × ' + formatNumber(plan.unit);
-      } else {
-        scaleNote.textContent = 'one jump of ' + formatNumber(readJump());
-      }
-
-      if (!animating) setFrog(landed ? end : start, true);
-    }
-
-    function resetHop() {
-      landed = false;
-      animating = false;
-      hopBtn.disabled = false;
-      frog.classList.remove('airborne','land');
-      frog.style.top = '111px';
-      frog.style.transform = 'translateX(-50%)';
-      frog.style.transition = '';
-      hopLayer.innerHTML = '';
-      renderStatic();
-    }
-
-    function setOperation(next) {
-      operation = next;
-      addBtn.classList.toggle('active', operation === 1);
-      subBtn.classList.toggle('active', operation === -1);
-      addBtn.setAttribute('aria-pressed', operation === 1 ? 'true' : 'false');
-      subBtn.setAttribute('aria-pressed', operation === -1 ? 'true' : 'false');
-      resetHop();
-    }
-
-    function addArc(fromValue, toValue, labelText, single) {
-      const startX = ((posFor(fromValue) - 5) / 90) * 1000;
-      const endX = ((posFor(toValue) - 5) / 90) * 1000;
-      const midX = (startX + endX) / 2;
-      const width = Math.max(18, Math.abs(endX - startX));
-      const peak = Math.max(16, 62 - Math.min(42, width * .12));
-
+    function drawArc(fromValue,toValue,isCurrent,labelText) {
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d','M ' + startX + ' 128 Q ' + midX + ' ' + peak + ' ' + endX + ' 128');
-      path.setAttribute('class','hop-arc' + (single ? ' single' : ''));
+      path.setAttribute('d',arcPath(fromValue,toValue));
+      path.setAttribute('class','hop-arc' + (isCurrent ? ' current' : ''));
       hopLayer.appendChild(path);
 
       if (labelText) {
+        const x1 = worldToSvgX(fromValue);
+        const x2 = worldToSvgX(toValue);
         const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-        label.setAttribute('x',String(midX));
-        label.setAttribute('y',String(Math.max(14,peak - 8)));
+        label.setAttribute('x',String((x1+x2)/2));
+        label.setAttribute('y','24');
         label.setAttribute('class','arc-label');
         label.textContent = labelText;
         hopLayer.appendChild(label);
       }
     }
 
-    function sleep(ms) {
-      return new Promise(function(resolve){ window.setTimeout(resolve,ms); });
+    function renderArcs() {
+      hopLayer.innerHTML = '';
+      for (const hop of hopTrail) {
+        if (valueIsVisible(hop.from,viewportSpan()) || valueIsVisible(hop.to,viewportSpan())) {
+          drawArc(hop.from,hop.to,false,'');
+        }
+      }
+      if (currentHop) {
+        drawArc(currentHop.from,currentHop.to,true,currentHop.label || '');
+      }
     }
 
-    function animateFrogHop(fromValue, toValue, duration) {
-      const fromPct = posFor(fromValue);
-      const toPct = posFor(toValue);
-      const direction = toPct >= fromPct ? 1 : -1;
-      const baseTop = 111;
-      const height = Math.max(44, Math.min(76, Math.abs(toPct - fromPct) * 5.2));
+    function renderMarkers() {
+      const start = readStart();
+      const end = resultValue();
 
-      return new Promise(function(resolve) {
+      const startVisible = valueIsVisible(start);
+      startPin.style.display = startVisible ? 'block' : 'none';
+      if (startVisible) startPin.style.left = worldToPct(start) + '%';
+
+      const answerVisible = landed && valueIsVisible(end);
+      answerPin.classList.toggle('show',answerVisible);
+      answerLabel.classList.toggle('show',answerVisible);
+      if (answerVisible) {
+        answerPin.style.left = worldToPct(end) + '%';
+        answerLabel.style.left = worldToPct(end) + '%';
+        answerLabel.textContent = formatNumber(end);
+      }
+    }
+
+    function renderFrog() {
+      const pct = worldToPct(frogValue);
+      frog.style.left = pct + '%';
+      frog.style.top = (105 - frogLift) + 'px';
+
+      frogShadow.style.left = pct + '%';
+      const shadowScale = Math.max(.45,1 - frogLift / 125);
+      frogShadow.style.transform = 'translateX(-50%) scaleX(' + shadowScale + ')';
+      frogShadow.style.opacity = String(Math.max(.05,.14 - frogLift / 900));
+    }
+
+    function renderEquation() {
+      const symbol = operation === 1 ? '+' : '−';
+      equation.innerHTML =
+        '<span>' + formatNumber(readStart()) + ' ' + symbol + ' ' + formatNumber(readJump()) + ' = </span>' +
+        (landed
+          ? '<span class="result">' + formatNumber(resultValue()) + '</span>'
+          : '<span class="unknown">?</span>');
+    }
+
+    function renderScale() {
+      const zoom = ZOOM_LEVELS[zoomIndex];
+      panel.style.setProperty('--active-color',zoom.color);
+      zoomName.textContent = zoom.name;
+      zoomKnob.style.left = (zoomIndex / (ZOOM_LEVELS.length - 1) * 100) + '%';
+      zoomWrap.setAttribute('aria-valuenow',String(zoomIndex));
+      zoomWrap.setAttribute('aria-valuetext',zoom.name);
+
+      const plan = getHopPlan();
+      if (!readJump()) scaleNote.textContent = '';
+      else if (plan.repeated) scaleNote.textContent = plan.count + (plan.count === 1 ? ' hop' : ' hops') + ' × ' + formatNumber(plan.unit);
+      else scaleNote.textContent = 'one jump of ' + formatNumber(readJump());
+    }
+
+    function renderWorld() {
+      renderTicks();
+      renderArcs();
+      renderMarkers();
+      renderFrog();
+      renderEquation();
+      renderScale();
+    }
+
+    function setFrogPose(raw,direction,landing) {
+      const air = Math.sin(Math.PI * raw);
+      const crouch = raw < .18 ? (1 - raw/.18) : raw > .82 ? ((raw-.82)/.18) : 0;
+      const backward = direction < 0;
+
+      const rearBase = backward ? -16 : 16;
+      const rearSwing = rearBase + (backward ? 34 : -34) * air;
+      const frontBase = backward ? 15 : -12;
+      const frontSwing = frontBase + (backward ? -24 : 24) * air;
+
+      frogRearLeg.style.transform = 'rotate(' + rearSwing + 'deg) scaleY(' + (1 + .18*air) + ')';
+      frogFrontLeg.style.transform = 'rotate(' + frontSwing + 'deg) scaleY(' + (1 + .10*air) + ')';
+
+      const squash = landing ? .86 : (1 - .10*crouch);
+      const stretch = landing ? 1.08 : (1 + .06*air);
+      frogBodyGroup.style.transform = 'scale(' + stretch + ',' + squash + ')';
+
+      const tilt = (backward ? 5 : -5) * air;
+      frog.style.transform = 'translateX(-50%) rotate(' + tilt + 'deg)';
+    }
+
+    function neutralFrogPose() {
+      frogRearLeg.style.transform = 'rotate(8deg)';
+      frogFrontLeg.style.transform = 'rotate(-4deg)';
+      frogBodyGroup.style.transform = 'scale(1,1)';
+      frog.style.transform = 'translateX(-50%)';
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => window.setTimeout(resolve,ms));
+    }
+
+    function smooth(t) {
+      return t*t*(3-2*t);
+    }
+
+    function animateHop(fromValue,toValue,duration) {
+      const direction = toValue >= fromValue ? 1 : -1;
+      const startCamera = cameraCenter;
+      const span = viewportSpan();
+
+      // Keep the frog slightly ahead of center while moving forward and
+      // slightly behind center while hopping backward. The camera itself
+      // therefore travels in the same direction as the frog.
+      const desiredScreen = direction > 0 ? .56 : .44;
+      const targetCamera = toValue - (desiredScreen - .5) * span;
+      const hopHeight = 68;
+
+      return new Promise(resolve => {
         const started = performance.now();
-        frog.style.transition = 'none';
-        frog.classList.remove('airborne','land');
 
         function frame(now) {
-          const raw = Math.min(1, (now - started) / duration);
-          const t = raw * raw * (3 - 2 * raw);
-          const x = fromPct + (toPct - fromPct) * t;
-          const lift = 4 * raw * (1 - raw);
-          const y = baseTop - height * lift;
-          const tilt = direction * (raw < .5 ? -7 : 5) * Math.sin(Math.PI * raw);
+          const raw = Math.min(1,(now-started)/duration);
+          const t = smooth(raw);
 
-          frog.style.left = x + '%';
-          frog.style.top = y + 'px';
-          frog.style.transform = 'translateX(-50%) rotate(' + tilt + 'deg) scale(' + (1 + .04 * lift) + ')';
+          frogValue = roundSafe(fromValue + (toValue-fromValue)*t);
+          cameraCenter = startCamera + (targetCamera-startCamera)*t;
+          frogLift = hopHeight * Math.sin(Math.PI*raw);
+
+          currentHop = {
+            from:fromValue,
+            to:frogValue,
+            label:''
+          };
+
+          setFrogPose(raw,direction,false);
+          renderWorld();
 
           if (raw < 1) {
             requestAnimationFrame(frame);
           } else {
-            frog.style.left = toPct + '%';
-            frog.style.top = baseTop + 'px';
-            frog.style.transform = 'translateX(-50%)';
-            frog.classList.add('land');
-            window.setTimeout(function() {
-              frog.classList.remove('land');
-              frog.style.transition = '';
+            frogValue = toValue;
+            cameraCenter = targetCamera;
+            frogLift = 0;
+            currentHop = null;
+            hopTrail.push({from:fromValue,to:toValue});
+
+            setFrogPose(1,direction,true);
+            renderWorld();
+
+            window.setTimeout(() => {
+              neutralFrogPose();
+              renderWorld();
               resolve();
-            }, 1000);
+            },LANDING_PAUSE);
           }
         }
 
@@ -1028,167 +1032,158 @@
 
       if (jump === 0) {
         landed = true;
-        renderStatic();
+        frogValue = start;
+        cameraCenter = start;
+        renderWorld();
         return;
       }
 
       landed = false;
       animating = true;
       hopBtn.disabled = true;
-      hopLayer.innerHTML = '';
-      renderStatic();
-      setFrog(start,true);
+      hopTrail = [];
+      currentHop = null;
+      frogValue = start;
+      cameraCenter = start;
+      frogLift = 0;
+      neutralFrogPose();
+      renderWorld();
 
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const plan = getHopPlan();
 
       if (plan.repeated) {
         let from = start;
-
-        currentRange = computeRange(start, true);
-        renderTicks();
-        startPin.style.display = valueIsVisible(readStart()) ? 'block' : 'none';
-        setFrog(start,true);
-
-        for (let i = 0; i < plan.count; i++) {
-          const to = roundSafe(from + operation * plan.unit);
-
-          // Keep the camera fixed whenever the next landing is already visible.
-          // Only pan when the selected scale genuinely cannot contain the trip.
-          if (!valueIsVisible(to)) {
-            currentRange = computeRange((from + to) / 2, false);
-            renderTicks();
-            startPin.style.display = valueIsVisible(readStart()) ? 'block' : 'none';
-            hopLayer.innerHTML = '';
-            setFrog(from,true);
-          }
-
-          addArc(from,to,'',false);
-
+        for (let i=0;i<plan.count;i++) {
+          const to = roundSafe(from + operation*plan.unit);
           if (reduced) {
-            setFrog(to,true);
+            frogValue = to;
+            const desired = operation > 0 ? .56 : .44;
+            cameraCenter = to - (desired-.5)*viewportSpan();
+            hopTrail.push({from,to});
+            renderWorld();
           } else {
-            await animateFrogHop(from,to,3200);
+            await animateHop(from,to,HOP_DURATION);
           }
-
-          frogValue = to;
           from = to;
         }
       } else {
-        const sign = operation === 1 ? '+' : '−';
-        currentRange = computeRange((start + end) / 2, true);
-        renderTicks();
-        startPin.style.display = valueIsVisible(start) ? 'block' : 'none';
-        setFrog(start,true);
-        hopLayer.innerHTML = '';
-        addArc(start,end,sign + formatNumber(jump),true);
-
         if (reduced) {
-          setFrog(end,true);
+          frogValue = end;
+          const desired = operation > 0 ? .56 : .44;
+          cameraCenter = end - (desired-.5)*viewportSpan();
+          hopTrail.push({from:start,to:end});
+          renderWorld();
         } else {
-          await animateFrogHop(start,end,4200);
+          await animateHop(start,end,HOP_DURATION * 1.25);
         }
-
-        frogValue = end;
       }
 
+      frogValue = end;
       landed = true;
       animating = false;
       hopBtn.disabled = false;
+      frogLift = 0;
+      currentHop = null;
+      neutralFrogPose();
+      renderWorld();
+    }
 
-      // Re-render the final number line, then rebuild the trail in that exact coordinate system.
-      renderStatic();
-      hopLayer.innerHTML = '';
+    function resetHop(recenter) {
+      landed = false;
+      animating = false;
+      hopBtn.disabled = false;
+      hopTrail = [];
+      currentHop = null;
+      frogLift = 0;
+      frogValue = readStart();
+      if (recenter !== false) cameraCenter = frogValue;
+      neutralFrogPose();
+      renderWorld();
+    }
 
-      const finalPlan = getHopPlan();
-      const finalStart = readStart();
-      const finalEnd = resultValue();
-      const finalSpan = ZOOM_LEVELS[zoomIndex].step * 10;
-
-      if (Math.abs(finalEnd - finalStart) <= finalSpan + ZOOM_LEVELS[zoomIndex].step * 0.001) {
-        if (finalPlan.repeated) {
-          let trailFrom = finalStart;
-          for (let i = 0; i < finalPlan.count; i++) {
-            const trailTo = roundSafe(trailFrom + operation * finalPlan.unit);
-            addArc(trailFrom,trailTo,'',false);
-            trailFrom = trailTo;
-          }
-        } else {
-          const sign = operation === 1 ? '+' : '−';
-          addArc(finalStart,finalEnd,sign + formatNumber(readJump()),true);
-        }
-      }
+    function setOperation(next) {
+      operation = next;
+      addBtn.classList.toggle('active',operation===1);
+      subBtn.classList.toggle('active',operation===-1);
+      addBtn.setAttribute('aria-pressed',operation===1 ? 'true' : 'false');
+      subBtn.setAttribute('aria-pressed',operation===-1 ? 'true' : 'false');
+      resetHop(true);
     }
 
     function normalizeInputs() {
-      if (startInput.value.trim() === '') startInput.value = '0';
-      const jump = readJump();
-      jumpInput.value = String(jump);
+      if (startInput.value.trim()==='') startInput.value='0';
+      jumpInput.value=String(readJump());
     }
 
     function changeZoom(next) {
-      zoomIndex = Math.max(0,Math.min(ZOOM_LEVELS.length - 1,next));
-      resetHop();
+      if (animating) return;
+      zoomIndex = Math.max(0,Math.min(ZOOM_LEVELS.length-1,next));
+
+      // Zoom the camera around the frog's current/landed location without
+      // erasing the completed trip. This is the teacher's "zoom out and see it"
+      // move after the animation.
+      cameraCenter = frogValue;
+      renderWorld();
     }
 
     function handleZoomPointer(clientX) {
       const rect = zoomBar.getBoundingClientRect();
-      const x = Math.max(0,Math.min(rect.width,clientX - rect.left));
-      changeZoom(Math.round((x / rect.width) * (ZOOM_LEVELS.length - 1)));
+      const x = Math.max(0,Math.min(rect.width,clientX-rect.left));
+      changeZoom(Math.round((x/rect.width)*(ZOOM_LEVELS.length-1)));
     }
 
-    [startInput,jumpInput].forEach(function(input){
-      input.addEventListener('input',resetHop);
-      input.addEventListener('blur',function(){
+    [startInput,jumpInput].forEach(input => {
+      input.addEventListener('input',() => resetHop(true));
+      input.addEventListener('blur',() => {
         normalizeInputs();
-        resetHop();
+        resetHop(true);
       });
-      input.addEventListener('keydown',function(e){
-        if (e.key === 'Enter') hop();
+      input.addEventListener('keydown',e => {
+        if (e.key==='Enter') hop();
       });
     });
 
-    addBtn.addEventListener('click',function(){ setOperation(1); });
-    subBtn.addEventListener('click',function(){ setOperation(-1); });
+    addBtn.addEventListener('click',() => setOperation(1));
+    subBtn.addEventListener('click',() => setOperation(-1));
     hopBtn.addEventListener('click',hop);
-    resetBtn.addEventListener('click',resetHop);
+    resetBtn.addEventListener('click',() => resetHop(true));
 
-    zoomWrap.addEventListener('pointerdown',function(e){
-      dragZoom = true;
+    zoomWrap.addEventListener('pointerdown',e => {
+      if (animating) return;
+      dragZoom=true;
       zoomWrap.setPointerCapture(e.pointerId);
       handleZoomPointer(e.clientX);
     });
 
-    zoomWrap.addEventListener('pointermove',function(e){
-      if (dragZoom) handleZoomPointer(e.clientX);
+    zoomWrap.addEventListener('pointermove',e => {
+      if (dragZoom && !animating) handleZoomPointer(e.clientX);
     });
 
-    zoomWrap.addEventListener('pointerup',function(){ dragZoom = false; });
-    zoomWrap.addEventListener('pointercancel',function(){ dragZoom = false; });
+    zoomWrap.addEventListener('pointerup',() => { dragZoom=false; });
+    zoomWrap.addEventListener('pointercancel',() => { dragZoom=false; });
 
-    zoomWrap.addEventListener('keydown',function(e){
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        changeZoom(zoomIndex - 1);
-      }
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        changeZoom(zoomIndex + 1);
-      }
-      if (e.key === 'Home') { e.preventDefault(); changeZoom(0); }
-      if (e.key === 'End') { e.preventDefault(); changeZoom(ZOOM_LEVELS.length - 1); }
+    zoomWrap.addEventListener('keydown',e => {
+      if (animating) return;
+      if (e.key==='ArrowLeft'||e.key==='ArrowDown') { e.preventDefault(); changeZoom(zoomIndex-1); }
+      if (e.key==='ArrowRight'||e.key==='ArrowUp') { e.preventDefault(); changeZoom(zoomIndex+1); }
+      if (e.key==='Home') { e.preventDefault(); changeZoom(0); }
+      if (e.key==='End') { e.preventDefault(); changeZoom(ZOOM_LEVELS.length-1); }
     });
 
-    document.getElementById('stage').addEventListener('wheel',function(e){
-      if (e.ctrlKey || e.metaKey) {
+    document.getElementById('stage').addEventListener('wheel',e => {
+      if (!animating && (e.ctrlKey||e.metaKey)) {
         e.preventDefault();
-        changeZoom(zoomIndex + (e.deltaY < 0 ? 1 : -1));
+        changeZoom(zoomIndex + (e.deltaY<0 ? 1 : -1));
       }
     },{passive:false});
 
-    window.addEventListener('resize',renderStatic);
+    window.addEventListener('resize',renderWorld);
 
-    renderStatic();
+    frogValue = readStart();
+    cameraCenter = frogValue;
+    neutralFrogPose();
+    renderWorld();
   </script>
   <script src="../../math-things-home.js"></script>
 </body>
