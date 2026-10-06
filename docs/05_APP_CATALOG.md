@@ -18,6 +18,7 @@ Use `harness/APP_AUDIT_TEMPLATE.md` to conduct each audit.
 | Line Up the Ones | `apps/line-up-the-ones/` | New build | Rigid multi-digit numeral strips sharing a ones anchor | Slide each numeral horizontally until the ones align | Teacher-toggleable rail, place colors, column guides, ones markers, and magnet |
 | Number Line | `apps/number-line/` | Needs audit | TBD | TBD | TBD |
 | Zooming Number Line | `apps/zooming-number-line/` | Needs audit | TBD | TBD | TBD |
+| Frog Number Line | `apps/frog-number-line/` | New build | Zoomable number line with a moving point | Set a start and directed distance, then watch the frog traverse the line in scale-sized hops | Teacher demonstration variant; answer is delayed until landing |
 | Fraction Lab | `apps/fraction-lab/` | Needs audit | TBD | TBD | TBD |
 | Measure Bench | `apps/measure-bench/` | Needs audit | TBD | TBD | TBD |
 
