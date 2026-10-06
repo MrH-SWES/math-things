@@ -827,26 +827,35 @@
       font-size: 18px;
     }
     .algo-addend {
-      left: 24px;
-      bottom: 2px;
-      width: auto;
-      min-width: 92px;
-      height: 32px;
-      min-height: 32px;
-      padding: 0 12px;
-      border-radius: 999px;
-      color: #2d6b42 !important;
-      border-color: rgba(45,107,66,0.28) !important;
-      font-size: 12px;
+      left: 28px;
+      bottom: 3px;
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      min-height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      color: #5f6f63 !important;
+      background: rgba(255,255,255,.78) !important;
+      border-color: rgba(45,80,55,.16) !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,.10) !important;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
       white-space: nowrap;
-      opacity: 1 !important;
+      opacity: .72 !important;
       transform: none !important;
       cursor: pointer;
       touch-action: manipulation;
       pointer-events: auto;
     }
+    .algo-holder:hover .algo-addend,
+    .algo-holder.active .algo-addend {
+      opacity: 1 !important;
+      border-color: rgba(45,80,55,.24) !important;
+    }
     .algo-addend:disabled {
-      opacity: .45 !important;
+      opacity: .28 !important;
       cursor: default;
     }
     .row:hover .note-delete,
@@ -2202,7 +2211,8 @@
     if (button) {
       const count = operands.length;
       button.disabled = count >= MAX_ADDEND_COUNT;
-      button.textContent = count >= MAX_ADDEND_COUNT ? '5 addends' : '+ addend';
+      button.textContent = '+';
+      button.title = count >= MAX_ADDEND_COUNT ? 'Maximum of five addends' : 'Add another addend';
       button.setAttribute('aria-label', count >= MAX_ADDEND_COUNT ? 'maximum of five addends reached' : 'add another addend');
     }
   }
@@ -2310,8 +2320,9 @@
       const addend = document.createElement('button');
       addend.type = 'button';
       addend.className = 'algo-addend';
-      addend.textContent = '+ addend';
+      addend.textContent = '+';
       addend.setAttribute('aria-label', 'add another addend');
+      addend.title = 'Add another addend';
       addend.addEventListener('pointerdown', event => {
         event.preventDefault();
         event.stopPropagation();
