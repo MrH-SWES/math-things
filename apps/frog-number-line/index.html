@@ -461,7 +461,7 @@
       vector-effect:non-scaling-stroke;
       stroke-dasharray:260;
       stroke-dashoffset:260;
-      animation:drawArc 1.8s ease forwards;
+      animation:drawArc 2.4s ease forwards;
     }
 
     .hop-arc.single {
@@ -796,19 +796,36 @@
       return { repeated:false, count:1, unit:jump };
     }
 
-    function computeRange(focusValue) {
+    function computeRange(focusValue, includeWholeTrip) {
       const step = ZOOM_LEVELS[zoomIndex].step;
       const span = step * 10;
+      const start = readStart();
+      const end = resultValue();
+      const low = Math.min(start,end);
+      const high = Math.max(start,end);
+      const distance = high - low;
 
-      // Center the selected value in a true ten-interval viewport.
-      // Zooming to tenths therefore shows one unit total; hundredths shows one tenth, etc.
-      let min = focusValue - span / 2;
-      min = Math.floor(min / step) * step;
-      const max = min + span;
+      let min;
+
+      if (includeWholeTrip && distance <= span + step * 0.001) {
+        // Keep the entire problem visible without moving the camera.
+        // Prefer a little breathing room when the scale allows it.
+        const spare = span - distance;
+        const targetMin = low - spare / 2;
+        min = Math.floor(targetMin / step) * step;
+
+        // Correct rounding so both endpoints remain inside the ten-interval viewport.
+        if (low < min - step * 0.001) min -= step;
+        if (high > min + span + step * 0.001) min += step;
+      } else {
+        // True zoomed viewport centered on the requested focus.
+        const targetMin = focusValue - span / 2;
+        min = Math.floor(targetMin / step) * step;
+      }
 
       return {
         min:roundSafe(min),
-        max:roundSafe(max),
+        max:roundSafe(min + span),
         tickStep:step,
         intervals:10
       };
@@ -879,7 +896,7 @@
       const end = resultValue();
       const zoom = ZOOM_LEVELS[zoomIndex];
 
-      currentRange = computeRange(landed ? end : start);
+      currentRange = computeRange(landed ? end : start, true);
       panel.style.setProperty('--active-color', zoom.color);
       zoomName.textContent = zoom.name;
       zoomKnob.style.left = (zoomIndex / (ZOOM_LEVELS.length - 1) * 100) + '%';
@@ -994,7 +1011,7 @@
               frog.classList.remove('land');
               frog.style.transition = '';
               resolve();
-            }, 800);
+            }, 1000);
           }
         }
 
@@ -1028,21 +1045,30 @@
       if (plan.repeated) {
         let from = start;
 
+        currentRange = computeRange(start, true);
+        renderTicks();
+        startPin.style.display = valueIsVisible(readStart()) ? 'block' : 'none';
+        setFrog(start,true);
+
         for (let i = 0; i < plan.count; i++) {
           const to = roundSafe(from + operation * plan.unit);
 
-          currentRange = computeRange((from + to) / 2);
-          renderTicks();
-          startPin.style.display = valueIsVisible(readStart()) ? 'block' : 'none';
-          setFrog(from,true);
+          // Keep the camera fixed whenever the next landing is already visible.
+          // Only pan when the selected scale genuinely cannot contain the trip.
+          if (!valueIsVisible(to)) {
+            currentRange = computeRange((from + to) / 2, false);
+            renderTicks();
+            startPin.style.display = valueIsVisible(readStart()) ? 'block' : 'none';
+            hopLayer.innerHTML = '';
+            setFrog(from,true);
+          }
 
-          hopLayer.innerHTML = '';
           addArc(from,to,'',false);
 
           if (reduced) {
             setFrog(to,true);
           } else {
-            await animateFrogHop(from,to,2400);
+            await animateFrogHop(from,to,3200);
           }
 
           frogValue = to;
@@ -1050,7 +1076,7 @@
         }
       } else {
         const sign = operation === 1 ? '+' : '−';
-        currentRange = computeRange((start + end) / 2);
+        currentRange = computeRange((start + end) / 2, true);
         renderTicks();
         startPin.style.display = valueIsVisible(start) ? 'block' : 'none';
         setFrog(start,true);
@@ -1060,7 +1086,7 @@
         if (reduced) {
           setFrog(end,true);
         } else {
-          await animateFrogHop(start,end,3200);
+          await animateFrogHop(start,end,4200);
         }
 
         frogValue = end;
@@ -1069,7 +1095,29 @@
       landed = true;
       animating = false;
       hopBtn.disabled = false;
+
+      // Re-render the final number line, then rebuild the trail in that exact coordinate system.
       renderStatic();
+      hopLayer.innerHTML = '';
+
+      const finalPlan = getHopPlan();
+      const finalStart = readStart();
+      const finalEnd = resultValue();
+      const finalSpan = ZOOM_LEVELS[zoomIndex].step * 10;
+
+      if (Math.abs(finalEnd - finalStart) <= finalSpan + ZOOM_LEVELS[zoomIndex].step * 0.001) {
+        if (finalPlan.repeated) {
+          let trailFrom = finalStart;
+          for (let i = 0; i < finalPlan.count; i++) {
+            const trailTo = roundSafe(trailFrom + operation * finalPlan.unit);
+            addArc(trailFrom,trailTo,'',false);
+            trailFrom = trailTo;
+          }
+        } else {
+          const sign = operation === 1 ? '+' : '−';
+          addArc(finalStart,finalEnd,sign + formatNumber(readJump()),true);
+        }
+      }
     }
 
     function normalizeInputs() {
