@@ -841,8 +841,8 @@
       let index = 0;
 
       for (let v = first; v <= currentRange.max + step * .001 && index < 60; v += step, index++) {
-        const pct = posFor(v);
-        if (pct < 4.8 || pct > 95.2) continue;
+        const pct = ((v - currentRange.min) / (currentRange.max - currentRange.min)) * 100;
+        if (pct < -0.01 || pct > 100.01) continue;
 
         const wrap = document.createElement('div');
         const major = index % 2 === 0 || Math.abs(v) < step * .0001;
@@ -926,6 +926,9 @@
       animating = false;
       hopBtn.disabled = false;
       frog.classList.remove('airborne','land');
+      frog.style.top = '111px';
+      frog.style.transform = 'translateX(-50%)';
+      frog.style.transition = '';
       hopLayer.innerHTML = '';
       renderStatic();
     }
@@ -947,7 +950,7 @@
       const peak = Math.max(16, 62 - Math.min(42, width * .12));
 
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d','M ' + startX + ' 112 Q ' + midX + ' ' + peak + ' ' + endX + ' 112');
+      path.setAttribute('d','M ' + startX + ' 128 Q ' + midX + ' ' + peak + ' ' + endX + ' 128');
       path.setAttribute('class','hop-arc' + (single ? ' single' : ''));
       hopLayer.appendChild(path);
 
@@ -963,6 +966,49 @@
 
     function sleep(ms) {
       return new Promise(function(resolve){ window.setTimeout(resolve,ms); });
+    }
+
+    function animateFrogHop(fromValue, toValue, duration) {
+      const fromPct = posFor(fromValue);
+      const toPct = posFor(toValue);
+      const direction = toPct >= fromPct ? 1 : -1;
+      const baseTop = 111;
+      const height = Math.max(44, Math.min(76, Math.abs(toPct - fromPct) * 5.2));
+
+      return new Promise(function(resolve) {
+        const started = performance.now();
+        frog.style.transition = 'none';
+        frog.classList.remove('airborne','land');
+
+        function frame(now) {
+          const raw = Math.min(1, (now - started) / duration);
+          const t = 1 - Math.pow(1 - raw, 2);
+          const x = fromPct + (toPct - fromPct) * t;
+          const lift = 4 * raw * (1 - raw);
+          const y = baseTop - height * lift;
+          const tilt = direction * (raw < .5 ? -7 : 5) * Math.sin(Math.PI * raw);
+
+          frog.style.left = x + '%';
+          frog.style.top = y + 'px';
+          frog.style.transform = 'translateX(-50%) rotate(' + tilt + 'deg) scale(' + (1 + .04 * lift) + ')';
+
+          if (raw < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            frog.style.left = toPct + '%';
+            frog.style.top = baseTop + 'px';
+            frog.style.transform = 'translateX(-50%)';
+            frog.classList.add('land');
+            window.setTimeout(function() {
+              frog.classList.remove('land');
+              frog.style.transition = '';
+              resolve();
+            }, 150);
+          }
+        }
+
+        requestAnimationFrame(frame);
+      });
     }
 
     async function hop() {
@@ -995,41 +1041,26 @@
           const to = roundSafe(from + operation * plan.unit);
           addArc(from,to,'',false);
 
-          if (!reduced) {
-            frog.classList.add('airborne');
-            await sleep(145);
+          if (reduced) {
+            setFrog(to,true);
+          } else {
+            await animateFrogHop(from,to,460);
           }
 
-          setFrog(to,false);
-
-          if (!reduced) {
-            await sleep(300);
-            frog.classList.remove('airborne');
-            frog.classList.add('land');
-            await sleep(120);
-            frog.classList.remove('land');
-          }
-
+          frogValue = to;
           from = to;
         }
       } else {
         const sign = operation === 1 ? '+' : '−';
         addArc(start,end,sign + formatNumber(jump),true);
 
-        if (!reduced) {
-          frog.classList.add('airborne');
-          await sleep(180);
+        if (reduced) {
+          setFrog(end,true);
+        } else {
+          await animateFrogHop(start,end,720);
         }
 
-        setFrog(end,false);
-
-        if (!reduced) {
-          await sleep(520);
-          frog.classList.remove('airborne');
-          frog.classList.add('land');
-          await sleep(160);
-          frog.classList.remove('land');
-        }
+        frogValue = end;
       }
 
       landed = true;
