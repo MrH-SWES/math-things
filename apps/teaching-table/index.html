@@ -2020,21 +2020,31 @@
     return cellsForRow(row).map(c => c.textContent || '').join('').replace(/^\s+/, '');
   }
 
-  const ADD_FRACTION_COLUMNS = 3;
+  const ADD_DEFAULT_WHOLE_COLUMNS = 2;
+  const ADD_MAX_FRACTION_COLUMNS = 3;
+
+  function additionFractionColumnCount(block) {
+    const value = Number(block?.dataset.fractionColumns);
+    return Number.isFinite(value) && value >= 0
+      ? Math.min(ADD_MAX_FRACTION_COLUMNS, value)
+      : 0;
+  }
 
   function markAdditionPlaces(block) {
     if (!block || block.dataset.alg !== 'add') return;
+    const fractionColumns = additionFractionColumnCount(block);
     block.querySelectorAll('.algo-row').forEach(row => {
       const cells = cellsForRow(row);
       cells.forEach(cell => cell.classList.remove('ones-slot'));
-      const onesIndex = cells.length - ADD_FRACTION_COLUMNS - 1;
+      const onesIndex = cells.length - fractionColumns - 1;
       if (onesIndex >= 0 && cells[onesIndex]) cells[onesIndex].classList.add('ones-slot');
     });
   }
 
   function additionOnesCell(row) {
     const cells = cellsForRow(row);
-    const onesIndex = cells.length - ADD_FRACTION_COLUMNS - 1;
+    const block = row?.closest('.algo-block');
+    const onesIndex = cells.length - additionFractionColumnCount(block) - 1;
     return cells[Math.max(0, Math.min(cells.length - 1, onesIndex))] || cells[cells.length - 1] || null;
   }
 
@@ -2052,15 +2062,26 @@
       frac = frac.slice(0, ADD_FRACTION_COLUMNS);
 
       const wholeNeeded = Math.max(1, whole.length);
-      let wholeCapacity = cells.length - ADD_FRACTION_COLUMNS;
+      const fractionNeeded = hasDecimal
+        ? Math.max(1, Math.min(ADD_MAX_FRACTION_COLUMNS, frac.length || 1))
+        : 0;
+      let fractionColumns = additionFractionColumnCount(block);
+
+      if (fractionNeeded > fractionColumns) {
+        expandAdditionFractionColumns(block, fractionNeeded - fractionColumns);
+        cells = cellsForRow(row);
+        fractionColumns = additionFractionColumnCount(block);
+      }
+
+      let wholeCapacity = cells.length - fractionColumns;
       if (wholeNeeded > wholeCapacity) {
         expandAlgoBlock(block, wholeNeeded - wholeCapacity);
         cells = cellsForRow(row);
-        wholeCapacity = cells.length - ADD_FRACTION_COLUMNS;
+        wholeCapacity = cells.length - fractionColumns;
       }
 
       markAdditionPlaces(block);
-      const onesIndex = cells.length - ADD_FRACTION_COLUMNS - 1;
+      const onesIndex = cells.length - fractionColumns - 1;
       cells.forEach(cell => { cell.textContent = ''; });
 
       for (let i = whole.length - 1, ci = onesIndex; i >= 0 && ci >= 0; i--, ci--) {
@@ -2192,6 +2213,41 @@
     wireDigitCell(cell);
   }
 
+  function addRightColumnToRow(row) {
+    const cell = document.createElement('span');
+    cell.className = 'digit-cell';
+    cell.tabIndex = 0;
+    row.appendChild(cell);
+    wireDigitCell(cell);
+  }
+
+  function expandAdditionFractionColumns(block, amount = 1) {
+    if (!block || block.dataset.alg !== 'add') return false;
+    const currentFractions = additionFractionColumnCount(block);
+    const currentColumns = algorithmColumnCount(block);
+    const room = Math.max(0, MAX_ALGO_COLUMNS - currentColumns);
+    const requested = Math.max(1, amount);
+    const added = Math.min(
+      room,
+      ADD_MAX_FRACTION_COLUMNS - currentFractions,
+      requested
+    );
+    if (added <= 0) return false;
+
+    for (let i = 0; i < added; i += 1) {
+      block.querySelectorAll('.algo-row').forEach(addRightColumnToRow);
+    }
+
+    const targetColumns = currentColumns + added;
+    block.dataset.columns = String(targetColumns);
+    block.dataset.fractionColumns = String(currentFractions + added);
+    block.style.setProperty('--algo-cols', String(targetColumns));
+    markAdditionPlaces(block);
+    assignRightToLeftOrders(block, { type: 'add' });
+    updateStageMinHeight();
+    return true;
+  }
+
   function expandAlgoBlock(block, amount = 1) {
     if (!block) return false;
     const current = algorithmColumnCount(block);
@@ -2286,13 +2342,20 @@
     return true;
   }
 
-  function makeAlgoBlock(type, columns = DEFAULT_ALGO_COLUMNS, addendCount = DEFAULT_ADDEND_COUNT) {
-    const requestedColumns = Math.max(DEFAULT_ALGO_COLUMNS, Math.min(MAX_ALGO_COLUMNS, Number(columns) || DEFAULT_ALGO_COLUMNS));
-    const columnCount = type === 'add' ? Math.max(8, requestedColumns) : requestedColumns;
+  function makeAlgoBlock(type, columns = null, addendCount = DEFAULT_ADDEND_COUNT, fractionColumns = 0) {
+    const defaultColumns = type === 'add' ? ADD_DEFAULT_WHOLE_COLUMNS : DEFAULT_ALGO_COLUMNS;
+    const requestedColumns = Math.max(defaultColumns, Math.min(MAX_ALGO_COLUMNS, Number(columns) || defaultColumns));
+    const addFractions = type === 'add'
+      ? Math.max(0, Math.min(ADD_MAX_FRACTION_COLUMNS, Number(fractionColumns) || 0))
+      : 0;
+    const columnCount = type === 'add'
+      ? Math.max(ADD_DEFAULT_WHOLE_COLUMNS + addFractions, requestedColumns)
+      : requestedColumns;
     const block = document.createElement('div');
     block.className = 'algo-block ' + type + (type === 'div' ? ' longdiv-block' : '');
     block.dataset.alg = type;
     block.dataset.columns = String(columnCount);
+    if (type === 'add') block.dataset.fractionColumns = String(addFractions);
     block.style.setProperty('--algo-cols', String(columnCount));
     if (type === 'add') {
       const count = Math.max(DEFAULT_ADDEND_COUNT, Math.min(MAX_ADDEND_COUNT, Number(addendCount) || DEFAULT_ADDEND_COUNT));
@@ -2448,6 +2511,7 @@
             kind: 'alg',
             type: b?.dataset.alg || 'add',
             columns: algorithmColumnCount(b),
+            fractionColumns: b?.dataset.alg === 'add' ? additionFractionColumnCount(b) : undefined,
             addends: b?.dataset.alg === 'add' ? additionOperandCount(b) : undefined,
             entries: [...b.querySelectorAll('.algo-row')].map(row => row.dataset.entryValue ?? null),
             values: [...b.querySelectorAll('.digit-cell')].map(c => c.textContent || ''),
@@ -2612,7 +2676,12 @@
           if (item.positioned) positionRow(mf.closest('.row'), item.x || 0, item.y || 0);
         }
         if (item.kind === 'alg') {
-          makeAlgoBlock(item.type || 'add', item.columns || DEFAULT_ALGO_COLUMNS, item.addends || DEFAULT_ADDEND_COUNT);
+          makeAlgoBlock(
+            item.type || 'add',
+            item.columns ?? null,
+            item.addends || DEFAULT_ADDEND_COUNT,
+            item.fractionColumns ?? 0
+          );
           const holder = stage.lastElementChild;
           const block = holder?.querySelector('.algo-block');
           const cells = block ? [...block.querySelectorAll('.digit-cell')] : [];
