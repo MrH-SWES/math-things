@@ -50,9 +50,14 @@
 
 .curriculum-library-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 7px;
   align-items: center;
+}
+#curriculum-drive-connect.connected {
+  background: #e9f6ed;
+  border-color: rgba(45,107,66,.28);
+  color: #2d6b42;
 }
 #curriculum-library {
   min-width: 0;
