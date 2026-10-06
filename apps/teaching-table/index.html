@@ -796,7 +796,8 @@
     .note-delete,
     .algo-delete,
     .algo-expand,
-    .algo-addend {
+    .algo-addend,
+    .algo-remove-addend {
       position: absolute;
       z-index: 45;
       width: 24px;
@@ -826,8 +827,8 @@
       border-color: rgba(46,88,148,0.24) !important;
       font-size: 18px;
     }
-    .algo-addend {
-      left: 28px;
+    .algo-addend,
+    .algo-remove-addend {
       bottom: 3px;
       width: 28px;
       min-width: 28px;
@@ -843,19 +844,24 @@
       font-weight: 800;
       line-height: 1;
       white-space: nowrap;
-      opacity: .72 !important;
+      opacity: .68 !important;
       transform: none !important;
       cursor: pointer;
       touch-action: manipulation;
       pointer-events: auto;
     }
+    .algo-addend { left: 28px; }
+    .algo-remove-addend { left: 60px; }
     .algo-holder:hover .algo-addend,
-    .algo-holder.active .algo-addend {
+    .algo-holder.active .algo-addend,
+    .algo-holder:hover .algo-remove-addend,
+    .algo-holder.active .algo-remove-addend {
       opacity: 1 !important;
       border-color: rgba(45,80,55,.24) !important;
     }
-    .algo-addend:disabled {
-      opacity: .28 !important;
+    .algo-addend:disabled,
+    .algo-remove-addend:disabled {
+      opacity: .22 !important;
       cursor: default;
     }
     .row:hover .note-delete,
@@ -1961,10 +1967,14 @@
     clearActiveCell();
     activeCell = cell;
     if (cell) {
+      const focused = document.activeElement;
+      if (focused?.tagName === 'MATH-FIELD') focused.blur();
+      activeField = null;
       cell.classList.add('active');
       cell.closest('.algo-block')?.classList.add('active');
       cell.closest('.algo-holder')?.classList.add('active');
       document.querySelectorAll('.row').forEach(row => row.classList.remove('active'));
+      try { cell.focus({ preventScroll: true }); } catch { cell.focus(); }
     }
   }
 
@@ -2020,6 +2030,12 @@
       const onesIndex = cells.length - ADD_FRACTION_COLUMNS - 1;
       if (onesIndex >= 0 && cells[onesIndex]) cells[onesIndex].classList.add('ones-slot');
     });
+  }
+
+  function additionOnesCell(row) {
+    const cells = cellsForRow(row);
+    const onesIndex = cells.length - ADD_FRACTION_COLUMNS - 1;
+    return cells[Math.max(0, Math.min(cells.length - 1, onesIndex))] || cells[cells.length - 1] || null;
   }
 
   function writeRowDigits(row, value) {
@@ -2153,7 +2169,11 @@
   function wireDigitCell(cell) {
     cell.addEventListener('pointerdown', event => {
       event.preventDefault();
+      event.stopPropagation();
       setActiveCell(cell);
+    });
+    cell.addEventListener('focus', () => {
+      if (activeCell !== cell) setActiveCell(cell);
     });
   }
 
@@ -2207,13 +2227,20 @@
       const op = row.querySelector('.opcell');
       if (op) op.textContent = index === operands.length - 1 ? '+' : '';
     });
-    const button = block.closest('.algo-holder')?.querySelector('.algo-addend');
+    const holder = block.closest('.algo-holder');
+    const button = holder?.querySelector('.algo-addend');
+    const removeButton = holder?.querySelector('.algo-remove-addend');
+    const count = operands.length;
     if (button) {
-      const count = operands.length;
       button.disabled = count >= MAX_ADDEND_COUNT;
       button.textContent = '+';
       button.title = count >= MAX_ADDEND_COUNT ? 'Maximum of five addends' : 'Add another addend';
       button.setAttribute('aria-label', count >= MAX_ADDEND_COUNT ? 'maximum of five addends reached' : 'add another addend');
+    }
+    if (removeButton) {
+      removeButton.disabled = count <= DEFAULT_ADDEND_COUNT;
+      removeButton.title = count <= DEFAULT_ADDEND_COUNT ? 'Two addends minimum' : 'Remove last addend';
+      removeButton.setAttribute('aria-label', count <= DEFAULT_ADDEND_COUNT ? 'two addends minimum' : 'remove last addend');
     }
   }
 
@@ -2232,7 +2259,29 @@
     refreshAdditionOperator(block);
     markAdditionPlaces(block);
     assignRightToLeftOrders(block, { type: 'add' });
-    setActiveCell(row.querySelector('.digit-cell:last-child'));
+    setActiveCell(additionOnesCell(row));
+    updateStageMinHeight();
+    return true;
+  }
+
+  function removeAdditionOperand(block) {
+    if (!block || block.dataset.alg !== 'add') return false;
+    const operands = [...block.querySelectorAll('.algo-row.operand')];
+    if (operands.length <= DEFAULT_ADDEND_COUNT) return false;
+
+    const doomed = operands[operands.length - 1];
+    const activeWasInside = !!activeCell && doomed.contains(activeCell);
+    doomed.remove();
+
+    refreshAdditionOperator(block);
+    markAdditionPlaces(block);
+    assignRightToLeftOrders(block, { type: 'add' });
+
+    if (activeWasInside) {
+      const remaining = [...block.querySelectorAll('.algo-row.operand')];
+      setActiveCell(additionOnesCell(remaining[remaining.length - 1]));
+    }
+
     updateStageMinHeight();
     return true;
   }
@@ -2330,6 +2379,20 @@
         if (addAdditionOperand(block)) scheduleSave();
       });
       holder.appendChild(addend);
+
+      const removeAddend = document.createElement('button');
+      removeAddend.type = 'button';
+      removeAddend.className = 'algo-remove-addend';
+      removeAddend.textContent = '−';
+      removeAddend.setAttribute('aria-label', 'remove last addend');
+      removeAddend.title = 'Remove last addend';
+      removeAddend.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (removeAddend.disabled) return;
+        if (removeAdditionOperand(block)) scheduleSave();
+      });
+      holder.appendChild(removeAddend);
     }
 
     holder.appendChild(block);
