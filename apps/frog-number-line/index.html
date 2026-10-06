@@ -1056,34 +1056,20 @@
       neutralFrogPose();
       renderWorld();
 
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const plan = getHopPlan();
 
+      // Motion is the mathematical representation in this tool, not decoration.
+      // Always perform the teacher-triggered hop sequence, even when the OS/browser
+      // prefers reduced motion. The user explicitly initiates the motion.
       if (plan.repeated) {
         let from = start;
         for (let i=0;i<plan.count;i++) {
           const to = roundSafe(from + operation*plan.unit);
-          if (reduced) {
-            frogValue = to;
-            const desired = operation > 0 ? .56 : .44;
-            cameraCenter = to - (desired-.5)*viewportSpan();
-            hopTrail.push({from,to});
-            renderWorld();
-          } else {
-            await animateHop(from,to,HOP_DURATION);
-          }
+          await animateHop(from,to,HOP_DURATION);
           from = to;
         }
       } else {
-        if (reduced) {
-          frogValue = end;
-          const desired = operation > 0 ? .56 : .44;
-          cameraCenter = end - (desired-.5)*viewportSpan();
-          hopTrail.push({from:start,to:end});
-          renderWorld();
-        } else {
-          await animateHop(start,end,HOP_DURATION * 1.25);
-        }
+        await animateHop(start,end,HOP_DURATION * 1.25);
       }
 
       frogValue = end;
