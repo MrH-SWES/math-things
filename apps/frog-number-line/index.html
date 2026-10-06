@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Things. | Frog Number Line</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#F5F5F7;
+      --surface:#FFFFFF;
+      --ink:#1D1D1F;
+      --gray:#86868B;
+      --light:#AEAEB2;
+      --border:rgba(0,0,0,.08);
+      --line:#3A3A3C;
+      --frog:#47A447;
+      --frog-dark:#28712F;
+      --frog-light:#A7E36D;
+      --start:#4169E1;
+      --answer:#47A447;
+      --jump:#FF9F0A;
+      --spring:cubic-bezier(.34,1.56,.64,1);
+      --ease:cubic-bezier(.22,1,.36,1);
+
+      --millions:#FF00FF;
+      --hundred-thousands:#6B3FA0;
+      --ten-thousands:#FF7F00;
+      --thousands:#4CBB17;
+      --hundreds:#FFD700;
+      --tens:#4169E1;
+      --ones:#DC143C;
+      --tenths:#64D2FF;
+      --hundredths:#FF9F0A;
+      --thousandths:#7B00FF;
+      --ten-thousandths:#E57373;
+    }
+
+    * { box-sizing:border-box; margin:0; padding:0; }
+
+    body {
+      min-height:100vh;
+      font-family:'Lexend',sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 5%, rgba(100,210,255,.08), transparent 28rem),
+        radial-gradient(circle at 95% 90%, rgba(71,164,71,.08), transparent 28rem),
+        var(--bg);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    button,input { font:inherit; }
+
+    header {
+      height:58px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-bottom:1px solid var(--border);
+      background:rgba(245,245,247,.86);
+      backdrop-filter:blur(26px);
+      -webkit-backdrop-filter:blur(26px);
+    }
+
+    .logo {
+      display:inline-flex;
+      align-items:baseline;
+      font-weight:900;
+      font-size:1.35rem;
+      letter-spacing:-.045em;
+    }
+
+    .logo-bead {
+      width:.22em;
+      height:.22em;
+      margin-left:.04em;
+      margin-bottom:.08em;
+      border-radius:50%;
+      background:linear-gradient(135deg,#efefef,#a8a8a8,#dedede);
+      box-shadow:inset 1px 1px 2px rgba(255,255,255,.9), inset -1px -1px 2px rgba(0,0,0,.18), 0 2px 4px rgba(0,0,0,.18);
+    }
+
+    main {
+      width:min(1180px,100%);
+      margin:0 auto;
+      padding:24px 24px 34px;
+    }
+
+    .app-title-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:14px;
+    }
+
+    .app-title {
+      font-size:clamp(1.2rem,2vw,1.6rem);
+      font-weight:800;
+      letter-spacing:-.035em;
+    }
+
+    .frog-badge {
+      width:54px;
+      height:54px;
+      display:grid;
+      place-items:center;
+      border-radius:18px;
+      background:#EEF8EA;
+      border:1px solid rgba(40,113,47,.12);
+      box-shadow:0 8px 22px rgba(40,113,47,.09);
+    }
+
+    .panel {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:26px;
+      box-shadow:0 10px 34px rgba(0,0,0,.06);
+      overflow:hidden;
+    }
+
+    .teacher-dock {
+      display:grid;
+      grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr) auto auto;
+      gap:12px;
+      align-items:end;
+      padding:18px;
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg,#fff,#FBFBFC);
+    }
+
+    .field label {
+      display:block;
+      margin:0 0 6px 2px;
+      font-size:.68rem;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--light);
+    }
+
+    .field input {
+      width:100%;
+      min-height:56px;
+      padding:8px 12px;
+      border:2px solid rgba(0,0,0,.08);
+      border-radius:15px;
+      background:#fff;
+      color:var(--ink);
+      font-size:1.6rem;
+      font-weight:800;
+      text-align:center;
+      outline:none;
+      transition:border-color .2s ease, box-shadow .2s ease;
+      appearance:textfield;
+      -moz-appearance:textfield;
+    }
+
+    .field input::-webkit-outer-spin-button,
+    .field input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+
+    .field input:focus {
+      border-color:rgba(0,122,255,.48);
+      box-shadow:0 0 0 4px rgba(0,122,255,.10);
+    }
+
+    .op-toggle {
+      display:flex;
+      gap:8px;
+    }
+
+    .op-btn,
+    .hop-btn,
+    .reset-btn {
+      min-width:56px;
+      min-height:56px;
+      border:0;
+      border-radius:15px;
+      cursor:pointer;
+      transition:transform .18s var(--spring), box-shadow .18s ease, background .18s ease;
+    }
+
+    .op-btn {
+      background:#F1F1F4;
+      color:var(--gray);
+      font-size:1.6rem;
+      font-weight:800;
+    }
+
+    .op-btn.active {
+      color:#fff;
+      background:#1D1D1F;
+      box-shadow:0 6px 14px rgba(0,0,0,.15);
+    }
+
+    .hop-btn {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:0 18px;
+      color:#fff;
+      background:linear-gradient(180deg,#58B757,#388B3F);
+      box-shadow:0 7px 16px rgba(40,113,47,.22), inset 0 1px 0 rgba(255,255,255,.35);
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .hop-btn:hover:not(:disabled),
+    .op-btn:hover,
+    .reset-btn:hover { transform:translateY(-2px); }
+
+    .hop-btn:active:not(:disabled),
+    .op-btn:active,
+    .reset-btn:active { transform:translateY(0) scale(.98); }
+
+    .hop-btn:disabled {
+      opacity:.55;
+      cursor:default;
+    }
+
+    .reset-btn {
+      background:#F1F1F4;
+      color:var(--gray);
+      font-size:1.35rem;
+      font-weight:800;
+    }
+
+    .equation-strip {
+      min-height:72px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 20px;
+      border-bottom:1px solid var(--border);
+      background:#fff;
+    }
+
+    .equation {
+      font-size:clamp(1.7rem,4vw,2.6rem);
+      font-weight:800;
+      letter-spacing:-.045em;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .equation .unknown { color:var(--light); }
+    .equation .result { color:var(--frog-dark); }
+
+    .zoom-area {
+      padding:18px 24px 10px;
+    }
+
+    .zoom-meta {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+      font-size:.72rem;
+      color:var(--gray);
+    }
+
+    .zoom-meta strong {
+      color:var(--active-color,var(--ink));
+      font-size:.82rem;
+      font-weight:800;
+    }
+
+    .zoom-bar-wrap {
+      padding:8px 0 14px;
+      cursor:pointer;
+      touch-action:none;
+    }
+
+    .zoom-bar {
+      position:relative;
+      height:8px;
+      border-radius:999px;
+      background:rgba(0,0,0,.07);
+    }
+
+    .zoom-knob {
+      position:absolute;
+      top:50%;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      transform:translate(-50%,-50%);
+      background:
+        radial-gradient(circle at 33% 28%,rgba(255,255,255,.92),rgba(255,255,255,.28) 40%,transparent 65%),
+        linear-gradient(135deg,#ededed,#a9a9a9 52%,#dadada);
+      box-shadow:inset 1px 1px 2px rgba(255,255,255,.85), inset -1px -1px 2px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.18);
+    }
+
+    .zoom-labels {
+      display:flex;
+      justify-content:space-between;
+      margin-top:11px;
+      color:var(--light);
+      font-size:.58rem;
+      font-weight:600;
+      letter-spacing:.02em;
+    }
+
+    .stage {
+      position:relative;
+      min-height:430px;
+      padding:14px 26px 30px;
+      overflow:hidden;
+      background:linear-gradient(180deg,#fff 0%,#fff 70%,#FAFCF9 100%);
+    }
+
+    .number-line-stage {
+      position:relative;
+      height:330px;
+      margin-top:18px;
+      user-select:none;
+      touch-action:pan-y;
+    }
+
+    .line {
+      position:absolute;
+      left:3%;
+      right:3%;
+      top:190px;
+      height:5px;
+      border-radius:99px;
+      background:var(--line);
+      box-shadow:0 1px 0 rgba(255,255,255,.8);
+    }
+
+    .line::before,
+    .line::after {
+      content:'';
+      position:absolute;
+      top:50%;
+      width:0;
+      height:0;
+      transform:translateY(-50%);
+      border-top:8px solid transparent;
+      border-bottom:8px solid transparent;
+    }
+
+    .line::before {
+      left:-1px;
+      border-right:12px solid var(--line);
+    }
+
+    .line::after {
+      right:-1px;
+      border-left:12px solid var(--line);
+    }
+
+    .ticks {
+      position:absolute;
+      left:5%;
+      width:90%;
+      top:163px;
+      height:110px;
+    }
+
+    .tick-wrap {
+      position:absolute;
+      top:0;
+      transform:translateX(-50%);
+      text-align:center;
+    }
+
+    .tick {
+      width:2px;
+      height:40px;
+      margin:auto;
+      border-radius:4px;
+      background:rgba(0,0,0,.20);
+    }
+
+    .tick.major {
+      width:3px;
+      height:53px;
+      background:var(--line);
+    }
+
+    .tick-label {
+      margin-top:9px;
+      font-size:.8rem;
+      font-weight:600;
+      color:var(--gray);
+      white-space:nowrap;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .tick-wrap.major .tick-label {
+      color:var(--ink);
+      font-weight:800;
+      font-size:.9rem;
+    }
+
+    .start-pin,
+    .answer-pin {
+      position:absolute;
+      top:168px;
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      transform:translateX(-50%);
+      z-index:6;
+      border:3px solid #fff;
+      box-shadow:0 2px 7px rgba(0,0,0,.18);
+    }
+
+    .start-pin { background:var(--start); }
+    .answer-pin {
+      background:var(--answer);
+      opacity:0;
+      transform:translateX(-50%) scale(.6);
+      transition:opacity .2s ease, transform .3s var(--spring);
+    }
+
+    .answer-pin.show {
+      opacity:1;
+      transform:translateX(-50%) scale(1);
+    }
+
+    .answer-label {
+      position:absolute;
+      top:224px;
+      transform:translateX(-50%);
+      padding:7px 11px;
+      border-radius:10px;
+      background:#ECF7EC;
+      color:var(--frog-dark);
+      font-size:.86rem;
+      font-weight:800;
+      opacity:0;
+      transition:opacity .2s ease, transform .3s var(--spring);
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+      z-index:8;
+    }
+
+    .answer-label.show {
+      opacity:1;
+    }
+
+    .hop-layer {
+      position:absolute;
+      left:5%;
+      width:90%;
+      top:64px;
+      height:128px;
+      overflow:visible;
+      pointer-events:none;
+      z-index:3;
+    }
+
+    .hop-arc {
+      fill:none;
+      stroke:var(--jump);
+      stroke-width:3.5;
+      stroke-linecap:round;
+      opacity:.86;
+      vector-effect:non-scaling-stroke;
+      stroke-dasharray:260;
+      stroke-dashoffset:260;
+      animation:drawArc .28s ease forwards;
+    }
+
+    .hop-arc.single {
+      stroke-width:4.5;
+    }
+
+    .arc-label {
+      fill:#B46600;
+      font-family:'Lexend',sans-serif;
+      font-size:12px;
+      font-weight:800;
+      text-anchor:middle;
+    }
+
+    @keyframes drawArc { to { stroke-dashoffset:0; } }
+
+    .frog {
+      position:absolute;
+      top:111px;
+      width:66px;
+      height:66px;
+      transform:translateX(-50%);
+      z-index:10;
+      transition:left .42s var(--ease), top .22s ease, transform .22s ease;
+      filter:drop-shadow(0 8px 7px rgba(0,0,0,.16));
+      pointer-events:none;
+    }
+
+    .frog.airborne {
+      top:71px;
+      transform:translateX(-50%) rotate(-4deg) scale(1.04);
+    }
+
+    .frog.land {
+      animation:land .25s var(--spring);
+    }
+
+    @keyframes land {
+      0% { transform:translateX(-50%) scale(1); }
+      45% { transform:translateX(-50%) scale(1.08,.90); }
+      100% { transform:translateX(-50%) scale(1); }
+    }
+
+    .frog svg { width:100%; height:100%; display:block; }
+
+    .legend {
+      display:flex;
+      justify-content:center;
+      gap:18px;
+      padding:0 20px 18px;
+      color:var(--gray);
+      font-size:.7rem;
+      font-weight:600;
+    }
+
+    .legend span {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .dot {
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      display:inline-block;
+    }
+
+    .dot.start { background:var(--start); }
+    .dot.answer { background:var(--answer); }
+    .dot.jump { background:var(--jump); }
+
+    .scale-note {
+      position:absolute;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%);
+      color:var(--light);
+      font-size:.72rem;
+      font-weight:600;
+      white-space:nowrap;
+    }
+
+    footer {
+      padding:22px;
+      text-align:center;
+      color:var(--light);
+      font-size:.66rem;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    .zoom-bar-wrap:focus-visible {
+      outline:3px solid rgba(0,122,255,.3);
+      outline-offset:3px;
+    }
+
+    @media (max-width:820px) {
+      main { padding:18px 14px 28px; }
+      .teacher-dock { grid-template-columns:1fr auto 1fr; }
+      .hop-btn { grid-column:1 / span 2; }
+      .reset-btn { grid-column:3; }
+      .stage { padding-inline:10px; }
+    }
+
+    @media (max-width:560px) {
+      .app-title-row { margin-bottom:10px; }
+      .frog-badge { display:none; }
+      .teacher-dock { grid-template-columns:1fr 1fr; }
+      .op-toggle { grid-column:1 / -1; justify-content:center; }
+      .hop-btn,.reset-btn { grid-column:auto; }
+      .field input { font-size:1.35rem; }
+      .zoom-labels { display:none; }
+      .stage { min-height:390px; }
+      .number-line-stage { height:305px; }
+      .legend { display:none; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      *,*::before,*::after {
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+  </header>
+
+  <main>
+    <div class="app-title-row">
+      <div class="app-title">Frog Number Line</div>
+      <div class="frog-badge" aria-hidden="true">
+        <svg viewBox="0 0 80 80" width="46" height="46">
+          <circle cx="25" cy="22" r="11" fill="#47A447"/>
+          <circle cx="55" cy="22" r="11" fill="#47A447"/>
+          <ellipse cx="40" cy="42" rx="26" ry="22" fill="#47A447"/>
+          <circle cx="25" cy="20" r="5" fill="#fff"/><circle cx="55" cy="20" r="5" fill="#fff"/>
+          <circle cx="26" cy="20" r="2.3" fill="#1D1D1F"/><circle cx="54" cy="20" r="2.3" fill="#1D1D1F"/>
+          <path d="M28 44 Q40 55 52 44" fill="none" stroke="#28712F" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="teacher-dock">
+        <div class="field">
+          <label for="startInput">Start</label>
+          <input id="startInput" type="number" inputmode="decimal" step="any" value="30">
+        </div>
+
+        <div class="op-toggle" aria-label="Operation">
+          <button class="op-btn active" id="addBtn" type="button" aria-pressed="true" aria-label="Add">+</button>
+          <button class="op-btn" id="subBtn" type="button" aria-pressed="false" aria-label="Subtract">−</button>
+        </div>
+
+        <div class="field">
+          <label for="jumpInput">Jump</label>
+          <input id="jumpInput" type="number" inputmode="decimal" step="any" min="0" value="7">
+        </div>
+
+        <button class="hop-btn" id="hopBtn" type="button" aria-label="Hop">
+          <span aria-hidden="true">🐸</span><span>Hop</span>
+        </button>
+        <button class="reset-btn" id="resetBtn" type="button" aria-label="Reset frog to starting number" title="Reset">↺</button>
+      </div>
+
+      <div class="equation-strip" aria-live="polite">
+        <div class="equation" id="equation"></div>
+      </div>
+
+      <div class="zoom-area">
+        <div class="zoom-meta">
+          <span>Scale</span>
+          <strong id="zoomName">Ones</strong>
+        </div>
+        <div class="zoom-bar-wrap" id="zoomWrap" tabindex="0" role="slider" aria-label="Number line scale" aria-valuemin="0" aria-valuemax="10" aria-valuenow="4">
+          <div class="zoom-bar" id="zoomBar">
+            <div class="zoom-knob" id="zoomKnob"></div>
+          </div>
+          <div class="zoom-labels" aria-hidden="true">
+            <span>.0001</span><span>.001</span><span>.01</span><span>.1</span><span>1</span><span>10</span><span>100</span><span>1K</span><span>10K</span><span>100K</span><span>1M</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="number-line-stage" id="stage">
+          <svg class="hop-layer" id="hopLayer" viewBox="0 0 1000 128" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="line"></div>
+          <div class="ticks" id="ticks" aria-hidden="true"></div>
+          <div class="start-pin" id="startPin" aria-hidden="true"></div>
+          <div class="answer-pin" id="answerPin" aria-hidden="true"></div>
+          <div class="answer-label" id="answerLabel" aria-hidden="true"></div>
+
+          <div class="frog" id="frog" aria-hidden="true">
+            <svg viewBox="0 0 100 90">
+              <defs>
+                <linearGradient id="frogBody" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#76C95E"/>
+                  <stop offset=".58" stop-color="#47A447"/>
+                  <stop offset="1" stop-color="#2F8139"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="23" cy="24" rx="15" ry="16" fill="url(#frogBody)" stroke="#28712F" stroke-width="2"/>
+              <ellipse cx="77" cy="24" rx="15" ry="16" fill="url(#frogBody)" stroke="#28712F" stroke-width="2"/>
+              <ellipse cx="50" cy="51" rx="37" ry="29" fill="url(#frogBody)" stroke="#28712F" stroke-width="2.4"/>
+              <circle cx="23" cy="21" r="8" fill="#fff"/>
+              <circle cx="77" cy="21" r="8" fill="#fff"/>
+              <circle cx="24" cy="22" r="3.5" fill="#1D1D1F"/>
+              <circle cx="76" cy="22" r="3.5" fill="#1D1D1F"/>
+              <ellipse cx="40" cy="45" rx="2" ry="1.5" fill="#28712F"/>
+              <ellipse cx="60" cy="45" rx="2" ry="1.5" fill="#28712F"/>
+              <path d="M35 54 Q50 68 65 54" fill="none" stroke="#215F2A" stroke-width="4" stroke-linecap="round"/>
+              <path d="M20 67 Q10 76 6 85" fill="none" stroke="#28712F" stroke-width="8" stroke-linecap="round"/>
+              <path d="M80 67 Q90 76 94 85" fill="none" stroke="#28712F" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="scale-note" id="scaleNote"></div>
+        </div>
+
+        <div class="legend" aria-hidden="true">
+          <span><i class="dot start"></i>start</span>
+          <span><i class="dot jump"></i>movement</span>
+          <span><i class="dot answer"></i>landing</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Math Things. | Math, in your hands.</footer>
+
+  <script>
+    const ZOOM_LEVELS = [
+      { name:'Ten Thousandths', step:.0001, decimals:4, color:'var(--ten-thousandths)' },
+      { name:'Thousandths', step:.001, decimals:3, color:'var(--thousandths)' },
+      { name:'Hundredths', step:.01, decimals:2, color:'var(--hundredths)' },
+      { name:'Tenths', step:.1, decimals:1, color:'var(--tenths)' },
+      { name:'Ones', step:1, decimals:0, color:'var(--ones)' },
+      { name:'Tens', step:10, decimals:0, color:'var(--tens)' },
+      { name:'Hundreds', step:100, decimals:0, color:'var(--hundreds)' },
+      { name:'Thousands', step:1000, decimals:0, color:'var(--thousands)' },
+      { name:'Ten Thousands', step:10000, decimals:0, color:'var(--ten-thousands)' },
+      { name:'Hundred Thousands', step:100000, decimals:0, color:'var(--hundred-thousands)' },
+      { name:'Millions', step:1000000, decimals:0, color:'var(--millions)' }
+    ];
+
+    const startInput = document.getElementById('startInput');
+    const jumpInput = document.getElementById('jumpInput');
+    const addBtn = document.getElementById('addBtn');
+    const subBtn = document.getElementById('subBtn');
+    const hopBtn = document.getElementById('hopBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const equation = document.getElementById('equation');
+    const zoomWrap = document.getElementById('zoomWrap');
+    const zoomBar = document.getElementById('zoomBar');
+    const zoomKnob = document.getElementById('zoomKnob');
+    const zoomName = document.getElementById('zoomName');
+    const ticks = document.getElementById('ticks');
+    const hopLayer = document.getElementById('hopLayer');
+    const frog = document.getElementById('frog');
+    const startPin = document.getElementById('startPin');
+    const answerPin = document.getElementById('answerPin');
+    const answerLabel = document.getElementById('answerLabel');
+    const scaleNote = document.getElementById('scaleNote');
+    const panel = document.querySelector('.panel');
+
+    let operation = 1;
+    let zoomIndex = 4;
+    let landed = false;
+    let animating = false;
+    let currentRange = { min:0, max:10 };
+    let frogValue = 30;
+    let dragZoom = false;
+
+    function roundSafe(value) {
+      return Math.round((value + Number.EPSILON) * 1000000) / 1000000;
+    }
+
+    function readStart() {
+      const n = Number.parseFloat(startInput.value);
+      return Number.isFinite(n) ? roundSafe(n) : 0;
+    }
+
+    function readJump() {
+      const n = Number.parseFloat(jumpInput.value);
+      return Number.isFinite(n) ? Math.max(0, roundSafe(n)) : 0;
+    }
+
+    function resultValue() {
+      return roundSafe(readStart() + operation * readJump());
+    }
+
+    function formatNumber(value) {
+      const abs = Math.abs(value);
+      if (abs >= 1000) {
+        return Number(value.toFixed(6)).toLocaleString(undefined,{maximumFractionDigits:6});
+      }
+      return Number(value.toFixed(6)).toString();
+    }
+
+    function nearlyInteger(value) {
+      return Math.abs(value - Math.round(value)) < 0.0000001;
+    }
+
+    function niceStep(raw) {
+      if (!Number.isFinite(raw) || raw <= 0) return 1;
+      const power = Math.pow(10, Math.floor(Math.log10(raw)));
+      const n = raw / power;
+      const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+      return nice * power;
+    }
+
+    function getHopPlan() {
+      const jump = readJump();
+      const unit = ZOOM_LEVELS[zoomIndex].step;
+      const exact = jump / unit;
+      if (jump > 0 && nearlyInteger(exact) && exact <= 12) {
+        return { repeated:true, count:Math.round(exact), unit:unit };
+      }
+      return { repeated:false, count:jump > 0 ? 1 : 0, unit:jump };
+    }
+
+    function computeRange() {
+      const start = readStart();
+      const end = resultValue();
+      const zoomStep = ZOOM_LEVELS[zoomIndex].step;
+      const low = Math.min(start,end);
+      const high = Math.max(start,end);
+      const distance = Math.abs(end-start);
+      const units = distance / zoomStep;
+
+      let tickStep;
+      let intervalCount;
+
+      if (units <= 16) {
+        tickStep = zoomStep;
+        intervalCount = Math.max(10, Math.ceil(units) + 2);
+      } else {
+        tickStep = Math.max(zoomStep, niceStep(distance / 8));
+        intervalCount = Math.max(8, Math.ceil(distance / tickStep) + 2);
+      }
+
+      const span = tickStep * intervalCount;
+      const center = (low + high) / 2;
+      let min = Math.floor((center - span / 2) / tickStep) * tickStep;
+      let max = min + span;
+
+      if (low < min + tickStep * .5) {
+        min = Math.floor((low - tickStep) / tickStep) * tickStep;
+        max = min + span;
+      }
+      if (high > max - tickStep * .5) {
+        max = Math.ceil((high + tickStep) / tickStep) * tickStep;
+        min = max - span;
+      }
+
+      return { min:roundSafe(min), max:roundSafe(max), tickStep:tickStep, intervals:intervalCount };
+    }
+
+    function posFor(value) {
+      return 5 + ((value - currentRange.min) / (currentRange.max - currentRange.min)) * 90;
+    }
+
+    function renderTicks() {
+      ticks.innerHTML = '';
+      const span = currentRange.max - currentRange.min;
+      const step = currentRange.tickStep;
+      const first = Math.ceil((currentRange.min - 1e-9) / step) * step;
+      let index = 0;
+
+      for (let v = first; v <= currentRange.max + step * .001 && index < 60; v += step, index++) {
+        const pct = posFor(v);
+        if (pct < 4.8 || pct > 95.2) continue;
+
+        const wrap = document.createElement('div');
+        const major = index % 2 === 0 || Math.abs(v) < step * .0001;
+        wrap.className = 'tick-wrap' + (major ? ' major' : '');
+        wrap.style.left = pct + '%';
+
+        const mark = document.createElement('div');
+        mark.className = 'tick' + (major ? ' major' : '');
+
+        const label = document.createElement('div');
+        label.className = 'tick-label';
+        label.textContent = formatNumber(roundSafe(v));
+
+        wrap.appendChild(mark);
+        wrap.appendChild(label);
+        ticks.appendChild(wrap);
+      }
+    }
+
+    function setFrog(value, immediate) {
+      const pct = posFor(value);
+      if (immediate) {
+        const old = frog.style.transition;
+        frog.style.transition = 'none';
+        frog.style.left = pct + '%';
+        frog.offsetWidth;
+        frog.style.transition = old;
+      } else {
+        frog.style.left = pct + '%';
+      }
+      frogValue = value;
+    }
+
+    function renderEquation() {
+      const start = readStart();
+      const jump = readJump();
+      const symbol = operation === 1 ? '+' : '−';
+      equation.innerHTML =
+        '<span>' + formatNumber(start) + ' ' + symbol + ' ' + formatNumber(jump) + ' = </span>' +
+        (landed
+          ? '<span class="result">' + formatNumber(resultValue()) + '</span>'
+          : '<span class="unknown">?</span>');
+    }
+
+    function renderStatic() {
+      const start = readStart();
+      const end = resultValue();
+      const zoom = ZOOM_LEVELS[zoomIndex];
+
+      currentRange = computeRange();
+      panel.style.setProperty('--active-color', zoom.color);
+      zoomName.textContent = zoom.name;
+      zoomKnob.style.left = (zoomIndex / (ZOOM_LEVELS.length - 1) * 100) + '%';
+      zoomWrap.setAttribute('aria-valuenow', String(zoomIndex));
+      zoomWrap.setAttribute('aria-valuetext', zoom.name);
+
+      renderTicks();
+      renderEquation();
+
+      startPin.style.left = posFor(start) + '%';
+      answerPin.style.left = posFor(end) + '%';
+      answerLabel.style.left = posFor(end) + '%';
+      answerLabel.textContent = formatNumber(end);
+      answerPin.classList.toggle('show', landed);
+      answerLabel.classList.toggle('show', landed);
+
+      const plan = getHopPlan();
+      if (readJump() === 0) {
+        scaleNote.textContent = '';
+      } else if (plan.repeated) {
+        scaleNote.textContent = plan.count + (plan.count === 1 ? ' hop' : ' hops') + ' × ' + formatNumber(plan.unit);
+      } else {
+        scaleNote.textContent = 'one jump of ' + formatNumber(readJump());
+      }
+
+      if (!animating) setFrog(landed ? end : start, true);
+    }
+
+    function resetHop() {
+      landed = false;
+      animating = false;
+      hopBtn.disabled = false;
+      frog.classList.remove('airborne','land');
+      hopLayer.innerHTML = '';
+      renderStatic();
+    }
+
+    function setOperation(next) {
+      operation = next;
+      addBtn.classList.toggle('active', operation === 1);
+      subBtn.classList.toggle('active', operation === -1);
+      addBtn.setAttribute('aria-pressed', operation === 1 ? 'true' : 'false');
+      subBtn.setAttribute('aria-pressed', operation === -1 ? 'true' : 'false');
+      resetHop();
+    }
+
+    function addArc(fromValue, toValue, labelText, single) {
+      const startX = ((posFor(fromValue) - 5) / 90) * 1000;
+      const endX = ((posFor(toValue) - 5) / 90) * 1000;
+      const midX = (startX + endX) / 2;
+      const width = Math.max(18, Math.abs(endX - startX));
+      const peak = Math.max(16, 62 - Math.min(42, width * .12));
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','M ' + startX + ' 112 Q ' + midX + ' ' + peak + ' ' + endX + ' 112');
+      path.setAttribute('class','hop-arc' + (single ? ' single' : ''));
+      hopLayer.appendChild(path);
+
+      if (labelText) {
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x',String(midX));
+        label.setAttribute('y',String(Math.max(14,peak - 8)));
+        label.setAttribute('class','arc-label');
+        label.textContent = labelText;
+        hopLayer.appendChild(label);
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(function(resolve){ window.setTimeout(resolve,ms); });
+    }
+
+    async function hop() {
+      if (animating) return;
+
+      const jump = readJump();
+      const start = readStart();
+      const end = resultValue();
+
+      if (jump === 0) {
+        landed = true;
+        renderStatic();
+        return;
+      }
+
+      landed = false;
+      animating = true;
+      hopBtn.disabled = true;
+      hopLayer.innerHTML = '';
+      renderStatic();
+      setFrog(start,true);
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const plan = getHopPlan();
+
+      if (plan.repeated) {
+        let from = start;
+
+        for (let i = 0; i < plan.count; i++) {
+          const to = roundSafe(from + operation * plan.unit);
+          addArc(from,to,'',false);
+
+          if (!reduced) {
+            frog.classList.add('airborne');
+            await sleep(145);
+          }
+
+          setFrog(to,false);
+
+          if (!reduced) {
+            await sleep(300);
+            frog.classList.remove('airborne');
+            frog.classList.add('land');
+            await sleep(120);
+            frog.classList.remove('land');
+          }
+
+          from = to;
+        }
+      } else {
+        const sign = operation === 1 ? '+' : '−';
+        addArc(start,end,sign + formatNumber(jump),true);
+
+        if (!reduced) {
+          frog.classList.add('airborne');
+          await sleep(180);
+        }
+
+        setFrog(end,false);
+
+        if (!reduced) {
+          await sleep(520);
+          frog.classList.remove('airborne');
+          frog.classList.add('land');
+          await sleep(160);
+          frog.classList.remove('land');
+        }
+      }
+
+      landed = true;
+      animating = false;
+      hopBtn.disabled = false;
+      renderStatic();
+    }
+
+    function normalizeInputs() {
+      if (startInput.value.trim() === '') startInput.value = '0';
+      const jump = readJump();
+      jumpInput.value = String(jump);
+    }
+
+    function changeZoom(next) {
+      zoomIndex = Math.max(0,Math.min(ZOOM_LEVELS.length - 1,next));
+      resetHop();
+    }
+
+    function handleZoomPointer(clientX) {
+      const rect = zoomBar.getBoundingClientRect();
+      const x = Math.max(0,Math.min(rect.width,clientX - rect.left));
+      changeZoom(Math.round((x / rect.width) * (ZOOM_LEVELS.length - 1)));
+    }
+
+    [startInput,jumpInput].forEach(function(input){
+      input.addEventListener('input',resetHop);
+      input.addEventListener('blur',function(){
+        normalizeInputs();
+        resetHop();
+      });
+      input.addEventListener('keydown',function(e){
+        if (e.key === 'Enter') hop();
+      });
+    });
+
+    addBtn.addEventListener('click',function(){ setOperation(1); });
+    subBtn.addEventListener('click',function(){ setOperation(-1); });
+    hopBtn.addEventListener('click',hop);
+    resetBtn.addEventListener('click',resetHop);
+
+    zoomWrap.addEventListener('pointerdown',function(e){
+      dragZoom = true;
+      zoomWrap.setPointerCapture(e.pointerId);
+      handleZoomPointer(e.clientX);
+    });
+
+    zoomWrap.addEventListener('pointermove',function(e){
+      if (dragZoom) handleZoomPointer(e.clientX);
+    });
+
+    zoomWrap.addEventListener('pointerup',function(){ dragZoom = false; });
+    zoomWrap.addEventListener('pointercancel',function(){ dragZoom = false; });
+
+    zoomWrap.addEventListener('keydown',function(e){
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        changeZoom(zoomIndex - 1);
+      }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        changeZoom(zoomIndex + 1);
+      }
+      if (e.key === 'Home') { e.preventDefault(); changeZoom(0); }
+      if (e.key === 'End') { e.preventDefault(); changeZoom(ZOOM_LEVELS.length - 1); }
+    });
+
+    document.getElementById('stage').addEventListener('wheel',function(e){
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        changeZoom(zoomIndex + (e.deltaY < 0 ? 1 : -1));
+      }
+    },{passive:false});
+
+    window.addEventListener('resize',renderStatic);
+
+    renderStatic();
+  </script>
+  <script src="../../math-things-home.js"></script>
+</body>
+</html>
