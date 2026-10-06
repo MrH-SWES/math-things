@@ -461,7 +461,7 @@
       vector-effect:non-scaling-stroke;
       stroke-dasharray:260;
       stroke-dashoffset:260;
-      animation:drawArc .9s ease forwards;
+      animation:drawArc 1.8s ease forwards;
     }
 
     .hop-arc.single {
@@ -784,68 +784,55 @@
 
     function getHopPlan() {
       const jump = readJump();
-      const unit = ZOOM_LEVELS[zoomIndex].step;
+      if (jump <= 0) return { repeated:false, count:0, unit:0 };
+
+      const unit = Math.pow(10, Math.floor(Math.log10(jump)));
       const exact = jump / unit;
-      if (jump > 0 && nearlyInteger(exact) && exact <= 12) {
+
+      if (nearlyInteger(exact) && exact <= 12) {
         return { repeated:true, count:Math.round(exact), unit:unit };
       }
-      return { repeated:false, count:jump > 0 ? 1 : 0, unit:jump };
+
+      return { repeated:false, count:1, unit:jump };
     }
 
-    function computeRange() {
-      const start = readStart();
-      const end = resultValue();
-      const zoomStep = ZOOM_LEVELS[zoomIndex].step;
-      const low = Math.min(start,end);
-      const high = Math.max(start,end);
-      const distance = Math.abs(end-start);
-      const units = distance / zoomStep;
+    function computeRange(focusValue) {
+      const step = ZOOM_LEVELS[zoomIndex].step;
+      const span = step * 10;
 
-      let tickStep;
-      let intervalCount;
+      // Center the selected value in a true ten-interval viewport.
+      // Zooming to tenths therefore shows one unit total; hundredths shows one tenth, etc.
+      let min = focusValue - span / 2;
+      min = Math.floor(min / step) * step;
+      const max = min + span;
 
-      if (units <= 16) {
-        tickStep = zoomStep;
-        intervalCount = Math.max(10, Math.ceil(units) + 2);
-      } else {
-        tickStep = Math.max(zoomStep, niceStep(distance / 8));
-        intervalCount = Math.max(8, Math.ceil(distance / tickStep) + 2);
-      }
-
-      const span = tickStep * intervalCount;
-      const center = (low + high) / 2;
-      let min = Math.floor((center - span / 2) / tickStep) * tickStep;
-      let max = min + span;
-
-      if (low < min + tickStep * .5) {
-        min = Math.floor((low - tickStep) / tickStep) * tickStep;
-        max = min + span;
-      }
-      if (high > max - tickStep * .5) {
-        max = Math.ceil((high + tickStep) / tickStep) * tickStep;
-        min = max - span;
-      }
-
-      return { min:roundSafe(min), max:roundSafe(max), tickStep:tickStep, intervals:intervalCount };
+      return {
+        min:roundSafe(min),
+        max:roundSafe(max),
+        tickStep:step,
+        intervals:10
+      };
     }
 
     function posFor(value) {
       return 5 + ((value - currentRange.min) / (currentRange.max - currentRange.min)) * 90;
     }
 
+    function valueIsVisible(value) {
+      const eps = currentRange.tickStep * 0.001;
+      return value >= currentRange.min - eps && value <= currentRange.max + eps;
+    }
+
     function renderTicks() {
       ticks.innerHTML = '';
-      const span = currentRange.max - currentRange.min;
       const step = currentRange.tickStep;
-      const first = Math.ceil((currentRange.min - 1e-9) / step) * step;
-      let index = 0;
 
-      for (let v = first; v <= currentRange.max + step * .001 && index < 60; v += step, index++) {
-        const pct = ((v - currentRange.min) / (currentRange.max - currentRange.min)) * 100;
-        if (pct < -0.01 || pct > 100.01) continue;
+      for (let i = 0; i <= 10; i++) {
+        const value = roundSafe(currentRange.min + step * i);
+        const pct = i * 10;
 
         const wrap = document.createElement('div');
-        const major = index % 2 === 0 || Math.abs(v) < step * .0001;
+        const major = i === 0 || i === 5 || i === 10;
         wrap.className = 'tick-wrap' + (major ? ' major' : '');
         wrap.style.left = pct + '%';
 
@@ -854,7 +841,7 @@
 
         const label = document.createElement('div');
         label.className = 'tick-label';
-        label.textContent = formatNumber(roundSafe(v));
+        label.textContent = formatNumber(value);
 
         wrap.appendChild(mark);
         wrap.appendChild(label);
@@ -892,7 +879,7 @@
       const end = resultValue();
       const zoom = ZOOM_LEVELS[zoomIndex];
 
-      currentRange = computeRange();
+      currentRange = computeRange(landed ? end : start);
       panel.style.setProperty('--active-color', zoom.color);
       zoomName.textContent = zoom.name;
       zoomKnob.style.left = (zoomIndex / (ZOOM_LEVELS.length - 1) * 100) + '%';
@@ -903,11 +890,15 @@
       renderEquation();
 
       startPin.style.left = posFor(start) + '%';
+      startPin.style.display = valueIsVisible(start) ? 'block' : 'none';
+
       answerPin.style.left = posFor(end) + '%';
       answerLabel.style.left = posFor(end) + '%';
       answerLabel.textContent = formatNumber(end);
-      answerPin.classList.toggle('show', landed);
-      answerLabel.classList.toggle('show', landed);
+
+      const showAnswer = landed && valueIsVisible(end);
+      answerPin.classList.toggle('show', showAnswer);
+      answerLabel.classList.toggle('show', showAnswer);
 
       const plan = getHopPlan();
       if (readJump() === 0) {
@@ -1003,7 +994,7 @@
               frog.classList.remove('land');
               frog.style.transition = '';
               resolve();
-            }, 520);
+            }, 800);
           }
         }
 
@@ -1039,12 +1030,19 @@
 
         for (let i = 0; i < plan.count; i++) {
           const to = roundSafe(from + operation * plan.unit);
+
+          currentRange = computeRange((from + to) / 2);
+          renderTicks();
+          startPin.style.display = valueIsVisible(readStart()) ? 'block' : 'none';
+          setFrog(from,true);
+
+          hopLayer.innerHTML = '';
           addArc(from,to,'',false);
 
           if (reduced) {
             setFrog(to,true);
           } else {
-            await animateFrogHop(from,to,1400);
+            await animateFrogHop(from,to,2400);
           }
 
           frogValue = to;
@@ -1052,12 +1050,17 @@
         }
       } else {
         const sign = operation === 1 ? '+' : '−';
+        currentRange = computeRange((start + end) / 2);
+        renderTicks();
+        startPin.style.display = valueIsVisible(start) ? 'block' : 'none';
+        setFrog(start,true);
+        hopLayer.innerHTML = '';
         addArc(start,end,sign + formatNumber(jump),true);
 
         if (reduced) {
           setFrog(end,true);
         } else {
-          await animateFrogHop(start,end,1800);
+          await animateFrogHop(start,end,3200);
         }
 
         frogValue = end;
