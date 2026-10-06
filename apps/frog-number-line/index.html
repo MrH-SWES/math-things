@@ -461,7 +461,7 @@
       vector-effect:non-scaling-stroke;
       stroke-dasharray:260;
       stroke-dashoffset:260;
-      animation:drawArc .28s ease forwards;
+      animation:drawArc .9s ease forwards;
     }
 
     .hop-arc.single {
@@ -1003,7 +1003,7 @@
               frog.classList.remove('land');
               frog.style.transition = '';
               resolve();
-            }, 240);
+            }, 520);
           }
         }
 
@@ -1044,7 +1044,7 @@
           if (reduced) {
             setFrog(to,true);
           } else {
-            await animateFrogHop(from,to,780);
+            await animateFrogHop(from,to,1400);
           }
 
           frogValue = to;
@@ -1057,7 +1057,7 @@
         if (reduced) {
           setFrog(end,true);
         } else {
-          await animateFrogHop(start,end,1050);
+          await animateFrogHop(start,end,1800);
         }
 
         frogValue = end;
