@@ -17,6 +17,7 @@
   const pick = $('#curriculum-pick');
   const input = $('#curriculumFile');
   const library = $('#curriculum-library');
+  const driveConnect = $('#curriculum-drive-connect');
   const tocEl = $('#curriculum-toc');
   const search = $('#curriculum-search');
   const pageInput = $('#curriculum-page-input');
@@ -32,6 +33,113 @@
   const DB_NAME = 'teaching-table-curriculum-v1';
   const DB_VERSION = 1;
   const BOOK_STORE = 'books';
+
+  const DRIVE_CLIENT_KEY = 'teaching-table-google-client-id';
+  const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+  const IREADY_DRIVE_FOLDER_ID = '1nAedHgz5W7tPXmrMBZxsOIlg1wAvI29C';
+  const IREADY_DRIVE_BOOKS = [
+    { grade: 'K', name: 'iRCM0K_NN_EN_SW.epub', id: '1Zvp7s7uLwcyG69PWUJknBnpbqoPtgqFV' },
+    { grade: '1', name: 'iRCM01_NN_EN_SW.epub', id: '1cPpnhsHeOWsNPAy8nNM4Nkn1Z7fZsnUc' },
+    { grade: '2', name: 'iRCM02_NN_EN_SW.epub', id: '124YWq939VlCsqEe56ykugRRnarmGBqDE' },
+    { grade: '3', name: 'iRCM03_NN_EN_SW.epub', id: '1Af-uyBFUoALq6IxF65vam5bjyBm17Oo8' },
+    { grade: '4', name: 'iRCM04_NN_EN_SW.epub', id: '1KC2hR9tGjmK78rw2h63fUaduuWPzha8Z' },
+    { grade: '5', name: 'iRCM05_NN_EN_SW.epub', id: '1WnBGDzloKtzfocOSwhMHEbKoDQVSJxCg' },
+    { grade: '6', name: 'iRCM06_NN_EN_SW.epub', id: '1HYMc_26NO0-rbXXrsrvLbN9klpHIllqy' },
+    { grade: '7', name: 'iRCM07_NN_EN_SW.epub', id: '1GjLXDHcc4xRI1SmUv9V5TZPv4XxvVuW8' },
+    { grade: '8', name: 'iRCM08_NN_EN_SW.epub', id: '1C4eRBZyNNBLRo58EoCP483M1CYYOXFg_' },
+  ];
+  let driveAccessToken = '';
+  let driveTokenClient = null;
+
+  function driveClientId() {
+    return localStorage.getItem(DRIVE_CLIENT_KEY) || '';
+  }
+
+  function setDriveButtonState(connected = false) {
+    if (!driveConnect) return;
+    driveConnect.textContent = connected ? 'Drive connected' : 'Connect Google Drive';
+    driveConnect.classList.toggle('connected', connected);
+  }
+
+  function waitForGoogleIdentity(timeoutMs = 8000) {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const tick = () => {
+        if (window.google?.accounts?.oauth2) return resolve(window.google.accounts.oauth2);
+        if (Date.now() - start > timeoutMs) return reject(new Error('Google sign-in library did not load.'));
+        setTimeout(tick, 100);
+      };
+      tick();
+    });
+  }
+
+  async function ensureDriveToken(interactive = true) {
+    if (driveAccessToken) return driveAccessToken;
+    const oauth2 = await waitForGoogleIdentity();
+
+    let clientId = driveClientId();
+    if (!clientId && interactive) {
+      clientId = window.prompt(
+        'Paste the Google OAuth Web Client ID for Teaching Table.\n\nAuthorized JavaScript origin should include:\nhttps://mrh-swes.github.io'
+      )?.trim() || '';
+      if (clientId) localStorage.setItem(DRIVE_CLIENT_KEY, clientId);
+    }
+    if (!clientId) throw new Error('Teaching Table needs a Google OAuth client ID before it can open private Drive books.');
+
+    return await new Promise((resolve, reject) => {
+      const finish = response => {
+        if (response?.error) {
+          reject(new Error(response.error_description || response.error));
+          return;
+        }
+        driveAccessToken = response.access_token || '';
+        if (!driveAccessToken) {
+          reject(new Error('Google did not return a Drive access token.'));
+          return;
+        }
+        setDriveButtonState(true);
+        resolve(driveAccessToken);
+      };
+
+      try {
+        driveTokenClient = oauth2.initTokenClient({
+          client_id: clientId,
+          scope: DRIVE_SCOPE,
+          callback: finish,
+          error_callback: err => reject(new Error(err?.message || 'Google Drive authorization failed.')),
+        });
+        driveTokenClient.requestAccessToken({ prompt: interactive ? 'consent' : '' });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  async function fetchDriveBook(book) {
+    const token = await ensureDriveToken(true);
+    setStatus('Downloading Grade ' + book.grade + ' from Google Drive…');
+    const res = await fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(book.id) + '?alt=media', {
+      headers: { Authorization: 'Bearer ' + token },
+      cache: 'no-store',
+    });
+
+    if (res.status === 401) {
+      driveAccessToken = '';
+      setDriveButtonState(false);
+      throw new Error('Google Drive authorization expired. Connect Drive again.');
+    }
+    if (!res.ok) throw new Error('Google Drive download failed (' + res.status + ').');
+
+    const blob = await res.blob();
+    return new File([blob], book.name, {
+      type: blob.type || 'application/epub+zip',
+      lastModified: Date.now(),
+    });
+  }
+
+  function driveBookById(id) {
+    return IREADY_DRIVE_BOOKS.find(book => book.id === id) || null;
+  }
 
   function openLibraryDb() {
     return new Promise((resolve, reject) => {
@@ -143,14 +251,34 @@
   async function refreshLibrary(selectedId = '') {
     if (!library) return;
     const books = await listSavedBooks();
-    library.innerHTML = '<option value="">Saved books…</option>';
-    books.forEach(book => {
+    library.innerHTML = '<option value="">Curriculum books…</option>';
+
+    const driveGroup = document.createElement('optgroup');
+    driveGroup.label = 'i-Ready Math — Google Drive';
+    IREADY_DRIVE_BOOKS.forEach(book => {
       const option = document.createElement('option');
-      option.value = book.id;
-      option.textContent = prettyBookName(book);
-      library.appendChild(option);
+      option.value = 'drive:' + book.id;
+      option.textContent = 'Grade ' + book.grade;
+      driveGroup.appendChild(option);
     });
-    if (selectedId && books.some(b => b.id === selectedId)) library.value = selectedId;
+    library.appendChild(driveGroup);
+
+    if (books.length) {
+      const savedGroup = document.createElement('optgroup');
+      savedGroup.label = 'Cached on this device';
+      books.forEach(book => {
+        const option = document.createElement('option');
+        option.value = 'local:' + book.id;
+        option.textContent = prettyBookName(book);
+        savedGroup.appendChild(option);
+      });
+      library.appendChild(savedGroup);
+    }
+
+    if (selectedId) {
+      const localValue = books.some(b => b.id === selectedId) ? 'local:' + selectedId : selectedId;
+      if ([...library.options].some(o => o.value === localValue)) library.value = localValue;
+    }
   }
 
   async function requestPersistentStorage() {
@@ -272,17 +400,54 @@
   close.addEventListener('click', closeDrawer);
   pick.addEventListener('click', () => input.click());
   library?.addEventListener('change', async () => {
-    const id = library.value;
-    if (!id) return;
-    setStatus('Opening saved book…');
+    const value = library.value;
+    if (!value) return;
+
     try {
-      const record = await getSavedBook(id);
-      if (!record?.blob) throw new Error('Saved book data is missing.');
-      const file = new File([record.blob], record.name || id, { type: record.type || 'application/epub+zip', lastModified: record.modified || Date.now() });
-      await openEpubFile(file, { save: false, libraryId: id });
+      if (value.startsWith('drive:')) {
+        const id = value.slice(6);
+        const book = driveBookById(id);
+        if (!book) throw new Error('Unknown Drive book.');
+        const cached = await getSavedBook(book.name);
+        if (cached?.blob) {
+          setStatus('Opening cached Grade ' + book.grade + '…');
+          const file = new File([cached.blob], cached.name || book.name, {
+            type: cached.type || 'application/epub+zip',
+            lastModified: cached.modified || Date.now(),
+          });
+          await openEpubFile(file, { save: false, libraryId: cached.id });
+        } else {
+          const file = await fetchDriveBook(book);
+          await openEpubFile(file, { save: true, libraryId: file.name });
+        }
+        library.value = value;
+        return;
+      }
+
+      if (value.startsWith('local:')) {
+        const id = value.slice(6);
+        setStatus('Opening saved book…');
+        const record = await getSavedBook(id);
+        if (!record?.blob) throw new Error('Saved book data is missing.');
+        const file = new File([record.blob], record.name || id, {
+          type: record.type || 'application/epub+zip',
+          lastModified: record.modified || Date.now(),
+        });
+        await openEpubFile(file, { save: false, libraryId: id });
+      }
     } catch (err) {
       console.error(err);
-      setStatus(err.message || 'Could not open saved book.', true);
+      setStatus(err.message || 'Could not open curriculum book.', true);
+    }
+  });
+
+  driveConnect?.addEventListener('click', async () => {
+    try {
+      await ensureDriveToken(true);
+      setStatus('Google Drive connected. Choose a grade.');
+    } catch (err) {
+      console.error(err);
+      setStatus(err.message || 'Could not connect Google Drive.', true);
     }
   });
   search.addEventListener('input', renderToc);
@@ -743,6 +908,7 @@
   });
 
   requestPersistentStorage();
+  setDriveButtonState(false);
   refreshLibrary().catch(err => console.warn('Could not load saved curriculum library:', err));
   renderToc();
 })();
