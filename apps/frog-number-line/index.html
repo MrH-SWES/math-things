@@ -982,7 +982,7 @@
 
         function frame(now) {
           const raw = Math.min(1, (now - started) / duration);
-          const t = 1 - Math.pow(1 - raw, 2);
+          const t = raw * raw * (3 - 2 * raw);
           const x = fromPct + (toPct - fromPct) * t;
           const lift = 4 * raw * (1 - raw);
           const y = baseTop - height * lift;
@@ -1003,7 +1003,7 @@
               frog.classList.remove('land');
               frog.style.transition = '';
               resolve();
-            }, 150);
+            }, 240);
           }
         }
 
@@ -1044,7 +1044,7 @@
           if (reduced) {
             setFrog(to,true);
           } else {
-            await animateFrogHop(from,to,460);
+            await animateFrogHop(from,to,780);
           }
 
           frogValue = to;
@@ -1057,7 +1057,7 @@
         if (reduced) {
           setFrog(end,true);
         } else {
-          await animateFrogHop(start,end,720);
+          await animateFrogHop(start,end,1050);
         }
 
         frogValue = end;
