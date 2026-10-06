@@ -13,6 +13,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>  <style>
     :root {
       --paper: #f7efdc;
@@ -1468,10 +1469,11 @@
       </div>
       <div class="curriculum-controls">
         <div class="curriculum-library-row">
-          <select id="curriculum-library" aria-label="saved curriculum books">
-            <option value="">Saved books…</option>
+          <select id="curriculum-library" aria-label="curriculum books">
+            <option value="">Curriculum books…</option>
           </select>
-          <button type="button" id="curriculum-pick">Add EPUB(s)</button>
+          <button type="button" id="curriculum-drive-connect">Connect Google Drive</button>
+          <button type="button" id="curriculum-pick">Add local EPUB(s)</button>
         </div>
         <input id="curriculum-search" type="search" placeholder="Find a lesson or session…" disabled />
         <div class="curriculum-page-jump" aria-label="jump to curriculum page">
