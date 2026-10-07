@@ -725,6 +725,7 @@
 
     let frogValue = 30;
     let cameraCenter = 30;
+    let cameraSpan = 10;
     let frogLift = 0;
     let hopTrail = [];
     let currentHop = null;
@@ -838,11 +839,61 @@
     }
 
     function viewportSpan() {
-      return ZOOM_LEVELS[zoomIndex].step * 10;
+      return cameraSpan;
     }
 
     function viewportMin() {
-      return cameraCenter - viewportSpan() / 2;
+      return cameraCenter - cameraSpan / 2;
+    }
+
+    function scaleIndexForDistance(distance) {
+      const d = Math.abs(distance);
+      if (!Number.isFinite(d) || d <= 0) return 4;
+
+      const unit = Math.pow(10,Math.floor(Math.log10(d)));
+      return zoomIndexForUnit(unit);
+    }
+
+    function framedView(fromValue,toValue,step) {
+      const low = Math.min(fromValue,toValue);
+      const high = Math.max(fromValue,toValue);
+      const eps = Math.max(1e-9,Math.abs(step) * 1e-7);
+
+      let min = Math.floor((low + eps) / step) * step;
+      let max = Math.ceil((high - eps) / step) * step;
+
+      // Guarantee visible number line beyond each endpoint.
+      if (Math.abs(min-low) < eps) min -= step;
+      if (Math.abs(max-high) < eps) max += step;
+
+      min = roundSafe(min);
+      max = roundSafe(max);
+
+      // Degenerate/super-small ranges still get a useful local field.
+      if (!(max > min)) {
+        min = roundSafe(low-step);
+        max = roundSafe(high+step);
+      }
+
+      return {
+        center:roundSafe((min+max)/2),
+        span:roundSafe(max-min)
+      };
+    }
+
+    function overviewView() {
+      const start = readStart();
+      const end = resultValue();
+      const index = scaleIndexForDistance(Math.abs(end-start));
+      const step = ZOOM_LEVELS[index].step;
+      const view = framedView(start,end,step);
+      return { zoomIndex:index, center:view.center, span:view.span };
+    }
+
+    function placeValueView(fromValue,toValue,unit) {
+      const index = zoomIndexForUnit(unit);
+      const view = framedView(fromValue,toValue,ZOOM_LEVELS[index].step);
+      return { zoomIndex:index, center:view.center, span:view.span };
     }
 
     function worldToPct(value) {
@@ -864,9 +915,11 @@
       const min = viewportMin();
       const max = min + viewportSpan();
       let first = Math.ceil((min - step * .000001) / step) * step;
+      const approxTicks = Math.max(1,Math.ceil((max-min)/step)+1);
+      const labelEvery = Math.max(1,Math.ceil(approxTicks/14));
       let guard = 0;
 
-      for (let value = first; value <= max + step * .0001 && guard < 20; value += step, guard++) {
+      for (let value = first; value <= max + step * .0001 && guard < 180; value += step, guard++) {
         const v = roundSafe(value);
         const pct = worldToPct(v);
         if (pct < 4.8 || pct > 95.2) continue;
@@ -884,6 +937,9 @@
         const label = document.createElement('div');
         label.className = 'tick-label';
         label.textContent = formatNumber(v);
+        if (approxTicks > 18 && guard % labelEvery !== 0 && !major) {
+          label.style.visibility = 'hidden';
+        }
 
         wrap.append(mark,label);
         ticks.appendChild(wrap);
@@ -921,7 +977,7 @@
       hopLayer.innerHTML = '';
       for (const hop of hopTrail) {
         if (valueIsVisible(hop.from,viewportSpan()) || valueIsVisible(hop.to,viewportSpan())) {
-          drawArc(hop.from,hop.to,false,'');
+          drawArc(hop.from,hop.to,false,hop.label || '');
         }
       }
       if (currentHop) {
@@ -1032,16 +1088,46 @@
       return t*t*(3-2*t);
     }
 
-    function animateHop(fromValue,toValue,duration) {
-      const direction = toValue >= fromValue ? 1 : -1;
-      const startCamera = cameraCenter;
-      const span = viewportSpan();
+    function animateViewTo(target,duration) {
+      const startCenter = cameraCenter;
+      const startSpan = cameraSpan;
+      const targetCenter = target.center;
+      const targetSpan = target.span;
+      const targetZoom = target.zoomIndex;
 
-      // Keep the frog slightly ahead of center while moving forward and
-      // slightly behind center while hopping backward. The camera itself
-      // therefore travels in the same direction as the frog.
-      const desiredScreen = direction > 0 ? .56 : .44;
-      const targetCamera = toValue - (desiredScreen - .5) * span;
+      return new Promise(resolve => {
+        const started = performance.now();
+
+        function frame(now) {
+          const raw = Math.min(1,(now-started)/duration);
+          const t = smooth(raw);
+
+          cameraCenter = startCenter + (targetCenter-startCenter)*t;
+          cameraSpan = startSpan + (targetSpan-startSpan)*t;
+
+          // Switch tick units early enough that the scale visibly becomes the
+          // new place value while the camera is still zooming.
+          if (raw >= .28) zoomIndex = targetZoom;
+
+          renderWorld();
+
+          if (raw < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            zoomIndex = targetZoom;
+            cameraCenter = targetCenter;
+            cameraSpan = targetSpan;
+            renderWorld();
+            resolve();
+          }
+        }
+
+        requestAnimationFrame(frame);
+      });
+    }
+
+    function animateHop(fromValue,toValue,duration,labelText) {
+      const direction = toValue >= fromValue ? 1 : -1;
       const hopHeight = 68;
 
       return new Promise(resolve => {
@@ -1051,19 +1137,13 @@
           const raw = Math.min(1,(now-started)/duration);
           const t = smooth(raw);
 
-          // The frog gets a head start across the screen. The camera begins
-          // following after takeoff and catches up by the landing.
-          const cameraRaw = raw < .28 ? 0 : Math.min(1,(raw-.28)/.72);
-          const cameraT = smooth(cameraRaw);
-
           frogValue = roundSafe(fromValue + (toValue-fromValue)*t);
-          cameraCenter = startCamera + (targetCamera-startCamera)*cameraT;
           frogLift = hopHeight * Math.sin(Math.PI*raw);
 
           currentHop = {
             from:fromValue,
             to:frogValue,
-            label:''
+            label:labelText || ''
           };
 
           setFrogPose(raw,direction,false);
@@ -1073,16 +1153,17 @@
             requestAnimationFrame(frame);
           } else {
             frogValue = toValue;
-            cameraCenter = targetCamera;
             frogLift = 0;
             currentHop = null;
-            hopTrail.push({from:fromValue,to:toValue});
+            hopTrail.push({
+              from:fromValue,
+              to:toValue,
+              label:labelText || ''
+            });
 
             setFrogPose(1,direction,true);
             renderWorld();
 
-            // Brief compression on impact, then a fully still 0.2-second beat
-            // before the next hop begins.
             window.setTimeout(() => {
               neutralFrogPose();
               renderWorld();
@@ -1105,7 +1186,10 @@
       if (jump === 0) {
         landed = true;
         frogValue = start;
-        cameraCenter = start;
+        const overview = overviewView();
+        zoomIndex = overview.zoomIndex;
+        cameraCenter = overview.center;
+        cameraSpan = overview.span;
         renderWorld();
         return;
       }
@@ -1116,43 +1200,57 @@
       hopTrail = [];
       currentHop = null;
       frogValue = start;
-      cameraCenter = start;
       frogLift = 0;
       neutralFrogPose();
+
+      const overview = overviewView();
+      zoomIndex = overview.zoomIndex;
+      cameraCenter = overview.center;
+      cameraSpan = overview.span;
       renderWorld();
 
       const plan = getHopPlan();
 
-      // Motion is the mathematical representation in this tool, not decoration.
-      // Always perform the teacher-triggered hop sequence.
       if (plan.mode === 'repeated') {
-        // Single-place-value quantity: count it on one unit at a time.
+        // A single-place-value quantity is counted on one unit at a time,
+        // with the entire start-to-finish distance visible throughout.
         let from = start;
-        zoomIndex = zoomIndexForUnit(plan.unit);
-        cameraCenter = from;
-        renderWorld();
 
         for (let i=0;i<plan.count;i++) {
           const to = roundSafe(from + operation*plan.unit);
-          await animateHop(from,to,HOP_DURATION);
+          await animateHop(from,to,HOP_DURATION,'');
           from = to;
         }
       } else if (plan.mode === 'place-value') {
-        // Multi-place-value quantity: one hop per non-zero place, largest first.
+        // A mixed-place quantity is one hop per non-zero place.
+        // The viewport reframes BETWEEN hops, never while the frog is airborne.
         let from = start;
 
-        for (const part of plan.parts) {
-          zoomIndex = zoomIndexForUnit(part.unit);
-          cameraCenter = from;
-          renderWorld();
-
-          // Give the scale change a short readable beat before the next place-value hop.
-          await sleep(260);
-
+        for (let i=0;i<plan.parts.length;i++) {
+          const part = plan.parts[i];
           const to = roundSafe(from + operation*part.amount);
-          await animateHop(from,to,HOP_DURATION * 1.12);
+          const targetView = placeValueView(from,to,part.unit);
+
+          const sameView =
+            zoomIndex === targetView.zoomIndex &&
+            Math.abs(cameraCenter-targetView.center) < 1e-9 &&
+            Math.abs(cameraSpan-targetView.span) < 1e-9;
+
+          if (!sameView) {
+            await animateViewTo(targetView,620);
+            await sleep(140);
+          }
+
+          const sign = operation === 1 ? '+' : '−';
+          await animateHop(from,to,HOP_DURATION * 1.06,sign + formatNumber(part.amount));
           from = to;
         }
+
+        // Let the final fine-scale landing register, then restore the complete
+        // start-to-finish context. The hop trail remains in world coordinates,
+        // so every completed arc survives the zoom-out.
+        await sleep(420);
+        await animateViewTo(overview,760);
       }
 
       frogValue = end;
@@ -1173,7 +1271,12 @@
       currentHop = null;
       frogLift = 0;
       frogValue = readStart();
-      if (recenter !== false) cameraCenter = frogValue;
+
+      const overview = overviewView();
+      zoomIndex = overview.zoomIndex;
+      cameraCenter = overview.center;
+      cameraSpan = overview.span;
+
       neutralFrogPose();
       renderWorld();
     }
@@ -1196,10 +1299,9 @@
       if (animating) return;
       zoomIndex = Math.max(0,Math.min(ZOOM_LEVELS.length-1,next));
 
-      // Zoom the camera around the frog's current/landed location without
-      // erasing the completed trip. This is the teacher's "zoom out and see it"
-      // move after the animation.
+      // After the automatic sequence, the teacher owns the camera.
       cameraCenter = frogValue;
+      cameraSpan = ZOOM_LEVELS[zoomIndex].step * 10;
       renderWorld();
     }
 
@@ -1257,7 +1359,10 @@
     window.addEventListener('resize',renderWorld);
 
     frogValue = readStart();
-    cameraCenter = frogValue;
+    const initialOverview = overviewView();
+    zoomIndex = initialOverview.zoomIndex;
+    cameraCenter = initialOverview.center;
+    cameraSpan = initialOverview.span;
     neutralFrogPose();
     renderWorld();
   </script>
