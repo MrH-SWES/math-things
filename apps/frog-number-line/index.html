@@ -294,10 +294,90 @@
       overflow:hidden;
       user-select:none;
       touch-action:pan-y;
+      border-radius:20px;
+      background:#F9FCFD;
     }
+
+    .fixed-backdrop {
+      position:absolute;
+      inset:0;
+      z-index:0;
+      overflow:hidden;
+      pointer-events:none;
+      background:
+        linear-gradient(180deg,
+          #F4FBFE 0%,
+          #F7FCFE 47%,
+          #F2F7ED 47%,
+          #F7FAF2 100%);
+    }
+
+    .fixed-backdrop::after {
+      content:'';
+      position:absolute;
+      left:0;
+      right:0;
+      top:47%;
+      height:2px;
+      background:rgba(72,169,75,.09);
+    }
+
+    .backdrop-cloud {
+      position:absolute;
+      height:18px;
+      border-radius:999px;
+      background:rgba(255,255,255,.92);
+      box-shadow:
+        16px -7px 0 2px rgba(255,255,255,.92),
+        34px 0 0 -1px rgba(255,255,255,.92);
+      opacity:.92;
+    }
+
+    .cloud-a { width:42px; left:10%; top:28px; }
+    .cloud-b { width:34px; right:13%; top:58px; transform:scale(.82); opacity:.75; }
+
+    .backdrop-hill {
+      position:absolute;
+      bottom:0;
+      width:44%;
+      height:118px;
+      border-radius:50% 50% 0 0 / 78% 78% 0 0;
+      background:rgba(116,176,96,.055);
+    }
+
+    .hill-a { left:-10%; }
+    .hill-b { right:-12%; height:96px; background:rgba(87,153,77,.045); }
+
+    .backdrop-grass {
+      position:absolute;
+      bottom:34px;
+      width:30px;
+      height:34px;
+      opacity:.26;
+      background:
+        linear-gradient(74deg,transparent 45%,#5C9A54 46% 52%,transparent 53%) 0 0/10px 34px,
+        linear-gradient(106deg,transparent 45%,#5C9A54 46% 52%,transparent 53%) 4px 2px/11px 31px;
+    }
+
+    .grass-a { left:8%; }
+    .grass-b { right:9%; transform:scale(.8); }
+
+    .backdrop-rock {
+      position:absolute;
+      bottom:27px;
+      width:28px;
+      height:13px;
+      border-radius:55% 48% 42% 45%;
+      background:rgba(120,126,132,.18);
+      transform:rotate(-5deg);
+    }
+
+    .rock-a { left:23%; }
+    .rock-b { right:25%; width:19px; height:10px; transform:rotate(7deg); opacity:.7; }
 
     .line {
       position:absolute;
+      z-index:2;
       left:3%;
       right:3%;
       top:196px;
@@ -322,6 +402,7 @@
 
     .ticks {
       position:absolute;
+      z-index:2;
       left:5%;
       width:90%;
       top:169px;
@@ -600,6 +681,16 @@
 
       <div class="stage">
         <div class="number-line-stage" id="stage">
+          <div class="fixed-backdrop" aria-hidden="true">
+            <div class="backdrop-cloud cloud-a"></div>
+            <div class="backdrop-cloud cloud-b"></div>
+            <div class="backdrop-hill hill-a"></div>
+            <div class="backdrop-hill hill-b"></div>
+            <div class="backdrop-grass grass-a"></div>
+            <div class="backdrop-grass grass-b"></div>
+            <div class="backdrop-rock rock-a"></div>
+            <div class="backdrop-rock rock-b"></div>
+          </div>
           <svg class="hop-layer" id="hopLayer" viewBox="0 0 1000 134" preserveAspectRatio="none" aria-hidden="true"></svg>
           <div class="line"></div>
           <div class="ticks" id="ticks" aria-hidden="true"></div>
