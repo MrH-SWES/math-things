@@ -68,9 +68,10 @@
       toolsBtn = document.createElement('button');
       toolsBtn.id = 'toolsBtn';
       toolsBtn.type = 'button';
-      toolsBtn.textContent = '＋ Tools';
+      toolsBtn.textContent = '＋ More Tools';
+      toolsBtn.setAttribute('aria-controls', 'tool-palette');
       toolsBtn.setAttribute('aria-expanded', 'false');
-      dock.insertBefore(toolsBtn, tidyBtn || null);
+      (document.getElementById('favorite-tools') || dock).appendChild(toolsBtn);
     }
 
     let mathBtn = document.getElementById('mathPanelBtn');
@@ -87,7 +88,7 @@
     if (!palette) {
       palette = document.createElement('div');
       palette.id = 'tool-palette';
-      palette.setAttribute('aria-label', 'Math Things tools');
+      palette.setAttribute('aria-label', 'More Math Things tools');
       document.body.appendChild(palette);
     }
 
@@ -95,6 +96,8 @@
       // renderDock() in the original Teaching Table rebuilds these wrappers.
       // Move the freshly populated wrappers into the standalone palette each time.
       [...dock.querySelectorAll('.domain-btn-wrap')].forEach(w => palette.appendChild(w));
+      const favorites = document.getElementById('favorite-tools');
+      if (favorites && toolsBtn.parentNode !== favorites) favorites.appendChild(toolsBtn);
     }
 
     syncPalette();
@@ -106,6 +109,7 @@
     }
 
     function setTools(open) {
+      if (open) palette.style.top = Math.min(toolsBtn.getBoundingClientRect().bottom + 8, window.innerHeight - 120) + 'px';
       palette.classList.toggle('show', open);
       toolsBtn.classList.toggle('is-on', open);
       toolsBtn.setAttribute('aria-expanded', String(open));

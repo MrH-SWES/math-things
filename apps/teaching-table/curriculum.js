@@ -337,6 +337,38 @@
     return parts.join('/');
   }
 
+  // Verified menu-only corrections for the Grade 4/5 i-Ready EPUBs.
+  // Keys are grade + resolved EPUB target, never a global text replacement.
+  // Licensed source files and lesson content are left unchanged.
+  const IREADY_NAV_LABELS = {
+    "4": {
+        "OEBPS/xhtml/04_Unit01.xhtml": "Unit 1: Whole Numbers: Place Value, Comparison, Addition, and Subtraction",
+        "OEBPS/xhtml/59_Lesson_29.xhtml": "Lesson 29: Problems About Length, Liquid Volume, Mass, and Weight",
+        "OEBPS/xhtml/67_Lesson_30.xhtml": "Lesson 30: Points, Lines, Rays, and Angles"
+    },
+    "5": {
+        "OEBPS/xhtml/16_unit_02.xhtml": "Unit 2: Decimals and Fractions: Place Value, Addition, and Subtraction",
+        "OEBPS/xhtml/20_chapter_16.xhtml": "Lesson 7: Understand Powers of 10",
+        "OEBPS/xhtml/30_Lesson_30.xhtml": "Lesson 30: Evaluate, Write, and Interpret Expressions",
+        "OEBPS/xhtml/31_Lesson_31.xhtml": "Lesson 31: Understand the Coordinate Plane",
+        "OEBPS/xhtml/32_Lesson_32.xhtml": "Lesson 32: Represent Problems in the Coordinate Plane",
+        "OEBPS/xhtml/33_Lesson_33.xhtml": "Lesson 33: Analyze Patterns and Relationships"
+    }
+};
+
+  function ireadyGrade(fileName, bookTitle) {
+    const fileGrade = String(fileName || '').match(/^iRCM(04|05)_/i)?.[1];
+    if (fileGrade) return String(Number(fileGrade));
+    if (!/i[-–]Ready Classroom Mathematics/i.test(bookTitle)) return '';
+    return String(bookTitle).match(/\bGrade\s+([45])\b/i)?.[1] || '';
+  }
+
+  function correctedNavLabel(grade, navPath, href, label) {
+    // Fragment links may be page numbers or subheadings; preserve their labels.
+    if (String(href).includes('#')) return label;
+    return IREADY_NAV_LABELS[grade]?.[resolve(navPath, href)] || label;
+  }
+
   const extUrl = u =>
     /^(?:[a-z]+:)?\/\//i.test(u) ||
     /^(?:data|blob|mailto|tel):/i.test(u);
@@ -539,18 +571,18 @@
       state.zip = zip;
       state.navPath = navPath;
       state.current = -1;
+      state.bookTitle =
+        clean([...opf.getElementsByTagNameNS('*', 'title')][0]?.textContent) ||
+        file.name.replace(/\.epub$/i, '');
+      const grade = ireadyGrade(file.name, state.bookTitle);
       state.toc = links
         .map((a, i) => ({
           i,
-          label: clean(a.textContent) || ('Section ' + (i + 1)),
+          label: correctedNavLabel(grade, navPath, a.getAttribute('href') || '', clean(a.textContent) || ('Section ' + (i + 1))),
           href: a.getAttribute('href') || '',
           depth: depth(a),
         }))
         .filter(x => x.href);
-
-      state.bookTitle =
-        clean([...opf.getElementsByTagNameNS('*', 'title')][0]?.textContent) ||
-        file.name.replace(/\.epub$/i, '');
 
       const libraryId = options.libraryId || savedRecord?.id || file.name;
       try {

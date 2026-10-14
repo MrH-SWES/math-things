@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./curriculum.css?v=20260930c">
-  <link rel="stylesheet" href="./table-v2.css?v=20260930c">
+  <link rel="stylesheet" href="./table-v2.css?v=20261014a">
   <link rel="stylesheet" href="./accessibility.css?v=20260930c">
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
@@ -1460,6 +1460,7 @@
         <button id="curriculumBtn" class="tool-tidy" aria-label="open curriculum">▤ Curriculum</button>
         <button class="tool-tidy" id="tidyBtn" aria-label="tidy windows">⌖ Tidy</button>
       </div>
+      <nav id="favorite-tools" aria-label="Favorite Math Things tools"></nav>
       <div id="pad-frame">
         <section id="pad" class="plain" aria-label="math scratch pad">
           <div id="stage">
@@ -1650,6 +1651,8 @@
     { id: 'trigexplorer',    domain: 'G',   name: 'Trig Explorer',      url: 'https://mrh-swes.github.io/math-things/apps/trig-explorer/',        icon: 'sin', w: 680,  h: 520, baseW: 920,  baseH: 660,  minW: 320, minH: 250, minWFrac: 0.22, minHFrac: 0.24 },
   ];
 
+  const FAVORITE_TOOL_IDS = ['fractionlab', 'arrayarchitect', 'placevalue', 'base10'];
+  const OPTIONAL_OPERATION_IDS = ['multmachine', 'divmachine', 'longdivbuddy'];
   let TOOLS = TOOL_OVERRIDES.map(tool => ({ ...tool }));
 
   const LIVE_CATEGORY_META = {
@@ -1738,7 +1741,11 @@
       });
 
       if (live.length) {
-        TOOLS = live;
+        // Keep bundled tools reachable even when the main menu omits one.
+        const livePaths = new Set(live.map(tool => normalizedToolPath(tool.url)));
+        const retained = TOOL_OVERRIDES.filter(tool => !livePaths.has(normalizedToolPath(tool.url)))
+          .map(tool => ({ ...tool, domain: 'EXPLORATION' }));
+        TOOLS = [...live, ...retained];
         DOMAIN_META = { ...LIVE_CATEGORY_META };
       }
     } catch (error) {
@@ -3296,7 +3303,8 @@
   function buildDomainDock() {
     const dock = document.getElementById('tools-dock');
     if (!dock) return;
-    dock.querySelectorAll('.domain-btn-wrap').forEach(el => el.remove());
+    // The v2 palette may already have moved the initial wrappers out of the dock.
+    document.querySelectorAll('#tools-dock .domain-btn-wrap, #tool-palette .domain-btn-wrap').forEach(el => el.remove());
     let tidyBtn = document.getElementById('tidyBtn');
     if (!tidyBtn) {
       tidyBtn = document.createElement('button');
@@ -3307,6 +3315,7 @@
       dock.appendChild(tidyBtn);
     }
 
+    DOMAIN_META.EXTRAS = { label: '× / ÷ Extras', color: '#2e5894', fullName: 'Optional multiplication & division tools' };
     Object.entries(DOMAIN_META).forEach(([domain, meta]) => {
       const wrap = document.createElement('div');
       wrap.className = 'domain-btn-wrap';
@@ -3323,13 +3332,39 @@
     });
   }
 
+  function renderFavorites() {
+    const favorites = document.getElementById('favorite-tools');
+    if (!favorites) return;
+    // Preserve the More Tools control if the palette enhancement ran first.
+    favorites.querySelectorAll('.favorite-label, .favorite-tool-btn').forEach(el => el.remove());
+    const label = document.createElement('span');
+    label.className = 'favorite-label';
+    label.textContent = 'Favorites';
+    favorites.prepend(label);
+    FAVORITE_TOOL_IDS.forEach(id => {
+      const tool = TOOLS.find(t => t.id === id);
+      if (!tool) return;
+      const name = TOOL_OVERRIDES.find(t => t.id === id)?.name || tool.name;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'domain-tool-btn favorite-tool-btn';
+      button.dataset.toolId = id;
+      button.setAttribute('aria-label', name);
+      button.setAttribute('aria-pressed', 'false');
+      button.textContent = tool.icon + ' ' + name;
+      button.addEventListener('click', () => toggleTool(id));
+      favorites.insertBefore(button, document.getElementById('toolsBtn')?.parentNode === favorites ? document.getElementById('toolsBtn') : null);
+    });
+  }
+
   function renderDock() {
     buildDomainDock();
+    renderFavorites();
     // Populate each domain panel with its tools
     Object.keys(DOMAIN_META).forEach(domain => {
       const panel = document.querySelector(`.domain-panel[data-domain="${domain}"]`);
       if (!panel) return;
-      const tools = TOOLS.filter(t => t.domain === domain);
+      const tools = TOOLS.filter(t => domain === 'EXTRAS' ? OPTIONAL_OPERATION_IDS.includes(t.id) : t.domain === domain);
       panel.innerHTML = `
         <div class="domain-panel-header">${DOMAIN_META[domain].fullName}</div>
         <div class="domain-panel-grid">
@@ -3430,10 +3465,11 @@
     document.querySelectorAll('.domain-tool-btn').forEach(btn => {
       const id = btn.dataset.toolId;
       btn.classList.toggle('active', !!toolStates[id]?.open);
+      if (btn.classList.contains('favorite-tool-btn')) btn.setAttribute('aria-pressed', String(!!toolStates[id]?.open));
     });
     // Show a filled dot on domain button if any tool in that domain is open
     Object.keys(DOMAIN_META).forEach(domain => {
-      const anyOpen = TOOLS.filter(t => t.domain === domain).some(t => toolStates[t.id]?.open);
+      const anyOpen = TOOLS.filter(t => domain === 'EXTRAS' ? OPTIONAL_OPERATION_IDS.includes(t.id) : t.domain === domain).some(t => toolStates[t.id]?.open);
       const btn = document.querySelector(`.domain-btn[data-domain="${domain}"]`);
       if (btn) btn.classList.toggle('has-open', anyOpen);
     });
@@ -4018,9 +4054,10 @@
   });
 })();
 </script>
-  <script src="./curriculum.js?v=20260930c"></script>
-  <script src="./table-v2.js?v=20260930e"></script>
+  <script src="./curriculum.js?v=20261014a"></script>
+  <script src="./table-v2.js?v=20261014a"></script>
   <script src="./tts-client.js?v=20261001a"></script>
   <script src="./accessibility.js?v=20261001b"></script>
 </body>
 </html>
+

@@ -373,3 +373,61 @@ body.math-panel-open .side {
   box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 14px 40px rgba(0,0,0,.08);
 }
 #curriculum-loading.show { display: grid; }
+
+
+/* Four everyday favorites; the full roster remains inside More Tools. */
+#favorite-tools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 10px;
+  overflow-x: auto;
+  background: rgba(250,250,248,.90);
+  border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.favorite-label {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: #707078;
+  margin-right: 3px;
+}
+#favorite-tools .favorite-tool-btn,
+#favorite-tools #toolsBtn {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 32px;
+  font-family: inherit;
+  font-size: 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(0,0,0,.09);
+  background: rgba(255,255,255,.76);
+  box-shadow: none;
+}
+#favorite-tools .favorite-tool-btn.active {
+  background: #e4edf8;
+  border-color: #a5bfdf;
+}
+#favorite-tools button:focus-visible,
+#tool-palette button:focus-visible {
+  outline: 2px solid #2e5894;
+  outline-offset: 2px;
+}
+#tool-palette {
+  max-height: calc(100dvh - 120px);
+  overflow: auto;
+}
+#tool-palette .domain-btn-wrap { width: 100%; }
+#tool-palette .domain-panel {
+  position: static;
+  min-width: 0;
+  margin-top: 4px;
+  box-shadow: none;
+}
+@media (max-width: 520px) {
+  .favorite-label { display: none; }
+  #favorite-tools { padding: 5px 6px; }
+  #tool-palette .domain-panel-grid { grid-template-columns: 1fr; }
+}
