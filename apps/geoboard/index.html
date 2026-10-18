@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Geoboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BOARD ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .hit-edge { pointer-events: stroke; cursor: grab; }
+    #board .hit-fill { pointer-events: fill; cursor: move; }
+    #board .hit-vtx { pointer-events: all; cursor: grab; }
+    #board .band { outline: none; }
+    #board .band.focus-band .edge { stroke-dasharray: none; filter: drop-shadow(0 0 3px #007AFF); }
+    #board .sel { fill: none; stroke: #007AFF; stroke-width: 2.5; pointer-events: none; }
+    #board .measure { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #board.rec .measure { opacity: 1; }
+    #board .measure text { font-family: 'Lexend', sans-serif; font-weight: 800; text-anchor: middle; dominant-baseline: central; fill: #3A3D42; paint-order: stroke; stroke: rgba(255,255,255,0.92); stroke-width: 4px; stroke-linejoin: round; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .bin {
+      width: clamp(64px, 17vw, 108px);
+      height: clamp(56px, 12vw, 76px);
+      border: none; border-radius: 18px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg { width: 70%; height: 70%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Geoboard"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <button class="bin" id="bandBin" aria-label="Band bin. Hooks a new band on the board."></button>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show perimeter and area" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Take all the bands off">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.24" stop-color="#F1F1F3"/><stop offset="0.55" stop-color="#C8C9CD"/><stop offset="0.82" stop-color="#A7A8AD"/><stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <linearGradient id="plateMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F5F7"/><stop offset="0.5" stop-color="#E4E6EA"/><stop offset="1" stop-color="#D3D6DB"/>
+    </linearGradient>
+    <pattern id="brushed" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="transparent"/><path d="M0,1.5H6M0,4.5H6" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="plate"></g>
+  <g id="bands"></g>
+  <g id="pegheads"></g>
+  <g id="handles"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const N = 11;                       // pegs per side: a 10-by-10 board of unit squares
+  const COLORS = ['#3A3D42', '#1F7A7A', '#7A3B6E', '#9A6A2F', '#5F6B2F', '#555B78'];
+  const MAX_BANDS = 6;
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), plate = $('plate'), bandsG = $('bands'), pegheads = $('pegheads'), handles = $('handles');
+  const dock = $('dock'), footer = $('footer'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn'), bandBin = $('bandBin');
+
+  let S = 48, BX = 0, BY = 0;          // peg spacing and the top-left peg, in px
+  let bands = [];                       // { id, color, pts: [{c, r}], g, edge, fill, hitEdge, hitFill, measure }
+  let nextId = 1, recordOn = false;
+
+  const px = p => ({ x: BX + p.c * S, y: BY + p.r * S });
+  const pegAt = (x, y) => ({ c: Math.min(N - 1, Math.max(0, Math.round((x - BX) / S))), r: Math.min(N - 1, Math.max(0, Math.round((y - BY) / S))) });
+  const onBoard = (x, y) => x > BX - 0.7 * S && x < BX + (N - 1 + 0.7) * S && y > BY - 0.7 * S && y < BY + (N - 1 + 0.7) * S;
+  const same = (a, b) => a.c === b.c && a.r === b.r;
+  const dockTop = () => dock.getBoundingClientRect().top;
+
+  // ═══════ BOARD ═══════
+  function layout() {
+    const W = innerWidth, H = dockTop();
+    S = Math.max(26, Math.min(56, (W - 32) / (N + 0.6), (H - 40) / (N + 0.6)));
+    BX = (W - (N - 1) * S) / 2;
+    BY = Math.max(24 + 0.8 * S, (H - (N - 1) * S) / 2);
+    defs.innerHTML =
+      `<filter id="bandShadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0.5" dy="${r2(S * 0.05)}" stdDeviation="${r2(S * 0.04)}" flood-color="#2A2018" flood-opacity="0.35"/></filter>` +
+      `<filter id="plateShadow" x="-5%" y="-5%" width="110%" height="115%"><feDropShadow dx="1" dy="6" stdDeviation="8" flood-color="#3B2A1A" flood-opacity="0.16"/></filter>`;
+    const m = 0.6 * S, size = (N - 1) * S + 2 * m;
+    plate.innerHTML =
+      `<rect x="${r2(BX - m)}" y="${r2(BY - m)}" width="${r2(size)}" height="${r2(size)}" rx="${r2(S * 0.35)}" fill="url(#plateMetal)" stroke="rgba(60,62,68,0.25)" filter="url(#plateShadow)"/>` +
+      `<rect x="${r2(BX - m)}" y="${r2(BY - m)}" width="${r2(size)}" height="${r2(size)}" rx="${r2(S * 0.35)}" fill="url(#brushed)"/>`;
+    let heads = '';
+    const pr = r2(Math.max(4, S * 0.13));
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const x = r2(BX + c * S), y = r2(BY + r * S);
+      heads += `<circle cx="${r2(x + 0.6)}" cy="${r2(y + 1.6)}" r="${pr}" fill="rgba(40,30,20,0.25)"/><circle cx="${x}" cy="${y}" r="${pr}" fill="url(#alum)" stroke="rgba(40,40,46,0.35)" stroke-width="0.8"/>`;
+    }
+    pegheads.innerHTML = heads;
+  }
+
+  // ═══════ MEASURES ═══════
+  function measures(b) {
+    const n = b.pts.length, P = b.pts;
+    if (n === 2) {
+      const dc = Math.abs(P[0].c - P[1].c), dr = Math.abs(P[0].r - P[1].r);
+      return { segment: true, length: dc === 0 || dr === 0 ? dc + dr : null };
+    }
+    let area2 = 0, per = 0, grid = true;
+    for (let i = 0; i < n; i++) {
+      const a = P[i], q = P[(i + 1) % n];
+      area2 += a.c * q.r - q.c * a.r;
+      const dc = q.c - a.c, dr = q.r - a.r;
+      if (dc !== 0 && dr !== 0) grid = false;
+      per += Math.hypot(dc, dr);
+    }
+    const right = [];
+    for (let i = 0; i < n; i++) {
+      const a = P[(i + n - 1) % n], v = P[i], q = P[(i + 1) % n];
+      const u1 = { x: a.c - v.c, y: a.r - v.r }, u2 = { x: q.c - v.c, y: q.r - v.r };
+      if ((u1.x || u1.y) && (u2.x || u2.y) && u1.x * u2.x + u1.y * u2.y === 0) right.push(i);
+    }
+    return { area: Math.abs(area2) / 2, perimeter: grid ? Math.round(per) : null, right };
+  }
+
+  const half = v => Number.isInteger(v) ? String(v) : `${Math.floor(v)}½`;
+
+  // ═══════ BANDS ═══════
+  function addBand(pts) {
+    const b = { id: nextId++, color: COLORS[(nextId - 2) % COLORS.length], pts };
+    b.g = el('g', { class: 'band', tabindex: '0', role: 'img' }, bandsG);
+    b.g.dataset.id = b.id;
+    b.fill = el('path', { fill: b.color, 'fill-opacity': '0.13' }, b.g);
+    b.edge = el('path', { class: 'edge', fill: 'none', stroke: b.color, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', filter: 'url(#bandShadow)' }, b.g);
+    b.sheen = el('path', { fill: 'none', stroke: 'rgba(255,255,255,0.35)', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, b.g);
+    b.hits = el('g', {}, handles);
+    b.measure = el('g', { class: 'measure' }, handles);
+    bands.push(b);
+    draw(b);
+    return b;
+  }
+
+  function pathOf(b) {
+    const pts = b.pts.map(px);
+    return 'M' + pts.map(p => `${r2(p.x)},${r2(p.y)}`).join('L') + (pts.length > 2 ? 'Z' : '');
+  }
+
+  function draw(b) {
+    const d = pathOf(b), w = r2(Math.max(3, S * 0.1));
+    b.edge.setAttribute('d', d);
+    b.edge.setAttribute('stroke-width', w);
+    b.sheen.setAttribute('d', d);
+    b.sheen.setAttribute('stroke-width', r2(w * 0.3));
+    b.sheen.setAttribute('transform', `translate(${r2(-w * 0.15)} ${r2(-w * 0.15)})`);
+    b.fill.setAttribute('d', b.pts.length > 2 ? d : '');
+    // touch targets: the inside moves the band, the band itself stretches, a corner moves that corner
+    let hits = '';
+    if (b.pts.length > 2) hits += `<path class="hit-fill" d="${d}" fill="transparent" data-band="${b.id}"/>`;
+    const pts = b.pts.map(px);
+    for (let i = 0; i < pts.length; i++) {
+      if (pts.length === 2 && i === 1) break;
+      const a = pts[i], q = pts[(i + 1) % pts.length];
+      hits += `<line class="hit-edge" x1="${r2(a.x)}" y1="${r2(a.y)}" x2="${r2(q.x)}" y2="${r2(q.y)}" stroke="transparent" stroke-width="${r2(S * 0.42)}" data-band="${b.id}" data-edge="${i}"/>`;
+    }
+    pts.forEach((p, i) => { hits += `<circle class="hit-vtx" cx="${r2(p.x)}" cy="${r2(p.y)}" r="${r2(Math.max(16, S * 0.32))}" fill="transparent" data-band="${b.id}" data-v="${i}"/>`; });
+    if (b.selV != null && b.pts[b.selV]) { const p = pts[b.selV]; hits += `<circle class="sel" cx="${r2(p.x)}" cy="${r2(p.y)}" r="${r2(S * 0.3)}"/>`; }
+    b.hits.innerHTML = hits;
+    drawMeasure(b);
+  }
+
+  function drawMeasure(b) {
+    const m = measures(b), pts = b.pts.map(px);
+    let s = '';
+    const fs = r2(Math.max(12, S * 0.36));
+    if (m.segment) {
+      if (m.length != null) {
+        const mx = (pts[0].x + pts[1].x) / 2, my = (pts[0].y + pts[1].y) / 2;
+        const vertical = pts[0].x === pts[1].x;
+        s += `<text x="${r2(mx + (vertical ? S * 0.45 : 0))}" y="${r2(my - (vertical ? 0 : S * 0.42))}" font-size="${fs}">${m.length}</text>`;
+      }
+    } else {
+      // right angles get their square corner
+      const q = S * 0.28;
+      for (const i of m.right) {
+        const v = pts[i], a = pts[(i + pts.length - 1) % pts.length], c = pts[(i + 1) % pts.length];
+        const ua = { x: (a.x - v.x) / Math.hypot(a.x - v.x, a.y - v.y), y: (a.y - v.y) / Math.hypot(a.x - v.x, a.y - v.y) };
+        const uc = { x: (c.x - v.x) / Math.hypot(c.x - v.x, c.y - v.y), y: (c.y - v.y) / Math.hypot(c.x - v.x, c.y - v.y) };
+        s += `<path d="M${r2(v.x + ua.x * q)},${r2(v.y + ua.y * q)}L${r2(v.x + (ua.x + uc.x) * q)},${r2(v.y + (ua.y + uc.y) * q)}L${r2(v.x + uc.x * q)},${r2(v.y + uc.y * q)}" fill="none" stroke="${b.color}" stroke-width="2"/>`;
+      }
+      const top = Math.min(...pts.map(p => p.y)), cx = (Math.min(...pts.map(p => p.x)) + Math.max(...pts.map(p => p.x))) / 2;
+      const label = (m.perimeter != null ? `P = ${m.perimeter}    ` : '') + `A = ${half(m.area)}`;
+      s += `<text x="${r2(cx)}" y="${r2(top - S * 0.48)}" font-size="${fs}">${label}</text>`;
+    }
+    b.measure.innerHTML = s;
+    b.g.setAttribute('aria-label', m.segment
+      ? `Band on 2 pegs` + (recordOn && m.length != null ? `, length ${m.length}` : '')
+      : `Band with ${b.pts.length} corners` + (recordOn ? `, area ${half(m.area)}` + (m.perimeter != null ? `, perimeter ${m.perimeter}` : '') : ''));
+  }
+
+  // Tidy a band after a move: a corner pulled onto the peg beside it lets go of one of them.
+  function tidy(b) {
+    const out = [];
+    for (const p of b.pts) if (!out.length || !same(out[out.length - 1], p)) out.push(p);
+    while (out.length > 2 && same(out[0], out[out.length - 1])) out.pop();
+    if (out.length < 2) {
+      const p = out[0] || b.pts[0];
+      out.push({ c: p.c < N - 1 ? p.c + 1 : p.c - 1, r: p.r });
+    }
+    b.pts = out;
+  }
+
+  function removeBand(b) {
+    bands = bands.filter(o => o !== b);
+    b.hits.remove();
+    b.measure.remove();
+    if (reduceMotion) b.g.remove();
+    else b.g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }).onfinish = () => b.g.remove();
+    buzz(6);
+    changed();
+  }
+
+  // A new band hooks two neighboring pegs in an open part of the board, nearest the middle.
+  function newBandSpot() {
+    const used = new Set();
+    bands.forEach(b => b.pts.forEach(p => used.add(p.c + ',' + p.r)));
+    const mid = (N - 1) / 2;
+    const spots = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N - 1; c++) spots.push({ c, r, d: Math.hypot(c + 0.5 - mid, r - mid) });
+    spots.sort((a, b) => a.d - b.d);
+    for (const s of spots) if (!used.has(s.c + ',' + s.r) && !used.has((s.c + 1) + ',' + s.r)) return [{ c: s.c, r: s.r }, { c: s.c + 1, r: s.r }];
+    return [{ c: 0, r: 0 }, { c: 1, r: 0 }];
+  }
+
+  function hookNewBand() {
+    if (bands.length >= MAX_BANDS) { anim(bandBin, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear'); return null; }
+    const b = addBand(newBandSpot());
+    anim(b.g, [{ opacity: 0 }, { opacity: 1 }], 180);
+    buzz(6);
+    changed();
+    return b;
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    bands.forEach(draw);
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      live.textContent = bands.length ? bands.map((b, k) => `Band ${k + 1}: ` + b.g.getAttribute('aria-label').replace(/^Band /, '')).join('. ') + '.' : 'No bands on the board.';
+    }, 400);
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  let lastTap = null;
+
+  board.addEventListener('pointerdown', e => {
+    const t = e.target, b = bands.find(o => o.id === +t.dataset.band);
+    if (!b) return;
+    e.preventDefault();
+    bandsG.appendChild(b.g);
+    handles.appendChild(b.hits);
+    handles.appendChild(b.measure);
+    const s = { b, sx: e.clientX, sy: e.clientY, moved: false };
+    if (t.classList.contains('hit-vtx')) { s.kind = 'vtx'; s.v = +t.dataset.v; }
+    else if (t.classList.contains('hit-edge')) { s.kind = 'edge'; s.edge = +t.dataset.edge; }
+    else { s.kind = 'move'; s.start = b.pts.map(p => ({ ...p })); s.p0 = pegAt(e.clientX, e.clientY); }
+    try { t.setPointerCapture(e.pointerId); } catch (err) {}
+    drags.set(e.pointerId, s);
+  });
+
+  bandBin.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    drags.set(e.pointerId, { kind: 'bin', sx: e.clientX, sy: e.clientY, moved: false });
+  });
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    if (!s.moved) {
+      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < 5) return;
+      s.moved = true;
+      if (s.kind === 'bin') {
+        // pulling a band out of the bin hooks its first end where the finger is
+        if (bands.length >= MAX_BANDS) { drags.delete(e.pointerId); return; }
+        const p = pegAt(e.clientX, e.clientY);
+        s.b = addBand([p, { c: p.c < N - 1 ? p.c + 1 : p.c - 1, r: p.r }]);
+        s.kind = 'vtx'; s.v = 1;
+      } else if (s.kind === 'edge') {
+        // stretching the band hooks it on a new peg between the two corners
+        s.b.pts.splice(s.edge + 1, 0, pegAt(e.clientX, e.clientY));
+        s.kind = 'vtx'; s.v = s.edge + 1;
+      }
+    }
+    const b = s.b;
+    if (s.kind === 'vtx') {
+      if (onBoard(e.clientX, e.clientY)) {
+        const p = pegAt(e.clientX, e.clientY);
+        if (!same(p, b.pts[s.v])) { b.pts[s.v] = p; buzz(2); }
+        s.off = null;
+        draw(b);
+      } else {
+        // off the board the band stretches toward the finger
+        s.off = { x: e.clientX, y: e.clientY };
+        const pts = b.pts.map(px);
+        pts[s.v] = s.off;
+        const d = 'M' + pts.map(p => `${r2(p.x)},${r2(p.y)}`).join('L') + (pts.length > 2 ? 'Z' : '');
+        b.edge.setAttribute('d', d); b.sheen.setAttribute('d', d); b.fill.setAttribute('d', pts.length > 2 ? d : '');
+      }
+    } else if (s.kind === 'move') {
+      const p = pegAt(e.clientX, e.clientY);
+      let dc = p.c - s.p0.c, dr = p.r - s.p0.r;
+      const cs = s.start.map(q => q.c), rs = s.start.map(q => q.r);
+      dc = Math.min(Math.max(dc, -Math.min(...cs)), N - 1 - Math.max(...cs));
+      dr = Math.min(Math.max(dr, -Math.min(...rs)), N - 1 - Math.max(...rs));
+      b.pts = s.start.map(q => ({ c: q.c + dc, r: q.r + dr }));
+      draw(b);
+    }
+  });
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    if (s.kind === 'bin') { if (!s.moved) hookNewBand(); return; }
+    const b = s.b;
+    if (!bands.includes(b)) return;
+    if (!s.moved) {
+      // double-tap a corner to unhook it from that peg
+      if (s.kind === 'vtx') {
+        const now = performance.now();
+        if (lastTap && lastTap.b === b && lastTap.v === s.v && now - lastTap.time < 380) {
+          lastTap = null;
+          if (b.pts.length > 2) { b.pts.splice(s.v, 1); buzz(6); changed(); }
+          else anim(b.g, [0, -4, 4, -2, 2, 0].map(v => ({ transform: `translateX(${v}px)` })), 240, 'linear');
+        } else lastTap = { b, v: s.v, time: now };
+      }
+      return;
+    }
+    if (s.kind === 'vtx' || s.kind === 'move') {
+      if (overDock(e.clientX, e.clientY)) { removeBand(b); return; }
+      if (s.off) b.pts[s.v] = pegAt(s.off.x, s.off.y);
+      tidy(b);
+      anim(b.g, [{ transform: 'scale(1.004)' }, { transform: 'scale(1)' }], 120);
+      changed();
+    }
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  // A focused band: arrows move it a peg at a time. Enter picks a corner (arrows then move the corner),
+  // Escape lets go of it, + hooks a new corner after it, Delete unhooks it (or takes the band off).
+  board.addEventListener('keydown', e => {
+    const g = e.target.closest('.band');
+    const b = g && bands.find(o => o.id === +g.dataset.id);
+    if (!b) return;
+    const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (mv) {
+      e.preventDefault();
+      if (b.selV != null) {
+        const p = b.pts[b.selV];
+        b.pts[b.selV] = { c: Math.min(N - 1, Math.max(0, p.c + mv[0])), r: Math.min(N - 1, Math.max(0, p.r + mv[1])) };
+      } else {
+        const cs = b.pts.map(q => q.c + mv[0]), rs = b.pts.map(q => q.r + mv[1]);
+        if (Math.min(...cs) >= 0 && Math.max(...cs) < N && Math.min(...rs) >= 0 && Math.max(...rs) < N) b.pts = b.pts.map(q => ({ c: q.c + mv[0], r: q.r + mv[1] }));
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      b.selV = b.selV == null ? 0 : (b.selV + 1) % b.pts.length;
+    } else if (e.key === 'Escape') {
+      b.selV = null;
+    } else if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      const i = b.selV == null ? b.pts.length - 1 : b.selV, p = b.pts[i];
+      b.pts.splice(i + 1, 0, { c: Math.min(N - 1, p.c + 1), r: Math.min(N - 1, p.r + 1) });
+      b.selV = i + 1;
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      if (b.selV != null && b.pts.length > 2) { b.pts.splice(b.selV, 1); b.selV = null; }
+      else { removeBand(b); return; }
+    } else return;
+    if (b.selV == null) tidy(b);
+    changed();
+  });
+  board.addEventListener('focusout', e => {
+    const g = e.target.closest && e.target.closest('.band');
+    const b = g && bands.find(o => o.id === +g.dataset.id);
+    if (b && b.selV != null) { b.selV = null; tidy(b); draw(b); }
+  });
+
+  bandBin.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    const b = hookNewBand();
+    if (b) b.g.focus();
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+  clearBtn.addEventListener('click', () => { [...bands].forEach(removeBand); });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => { layout(); bands.forEach(draw); });
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  // ═══════ START ═══════
+  bandBin.innerHTML = `<svg viewBox="0 0 80 50" aria-hidden="true" focusable="false">` +
+    `<path d="M18,25 C18,10 62,10 62,25 C62,40 18,40 18,25Z" fill="none" stroke="${COLORS[0]}" stroke-width="4"/>` +
+    `<path d="M14,22 C16,6 58,4 64,18" fill="none" stroke="${COLORS[1]}" stroke-width="4"/>` +
+    `<circle cx="22" cy="25" r="5" fill="url(#alum)" stroke="rgba(40,40,46,0.4)"/><circle cx="58" cy="25" r="5" fill="url(#alum)" stroke="rgba(40,40,46,0.4)"/></svg>`;
+  layout();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
