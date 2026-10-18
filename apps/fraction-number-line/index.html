@@ -286,9 +286,6 @@
   .bundle{font:700 11px Lexend;color:#575b60;display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:12px;background:#E5E5EA}
   .bundle[hidden]{display:none}.bundle input{width:21px;height:21px;accent-color:#64D2FF}
   .exit{font:800 11px Lexend;text-decoration:none;color:#82858B}
-  .value-wrap{position:fixed;top:clamp(140px,18vh,194px);left:50%;transform:translateX(-50%);pointer-events:none;z-index:11;text-align:center;white-space:nowrap}
-  #readout{font:900 clamp(52px,9vw,105px)/1 Lexend;color:#1D1D1F;letter-spacing:-.06em;text-shadow:0 4px 16px #0001}
-  .subtext{font:800 10px Lexend;color:#aaa;letter-spacing:1.4px;margin-top:12px}
   .steppers{position:fixed;bottom:clamp(60px,8vh,82px);left:50%;transform:translateX(-50%);z-index:11;display:flex;gap:12px;padding:7px;background:#f7f7f7e0;backdrop-filter:blur(8px);border:1px solid #ddd;border-radius:16px;box-shadow:0 8px 26px #0002}
   .steppers button{min-width:60px;min-height:47px;border:1px solid #D1D1D6;border-radius:11px;background:linear-gradient(#fff,#eee);font:800 22px Lexend;cursor:pointer}
   button:focus-visible,#partition:focus-visible,#stage canvas:focus-visible{outline:3px solid #007AFF;outline-offset:3px}
@@ -296,7 +293,7 @@
   #stage canvas{touch-action:none}
   @media(max-width:710px){.companion-header{padding:12px;align-items:flex-start}.companion-header .logo{font-size:21px}.controls{gap:5px}
     .pair button{padding:9px;font-size:11px}#partition{font-size:11px;max-width:125px}.bundle{font-size:10px}
-    .value-wrap{top:clamp(165px,26vh,214px)}#readout{font-size:clamp(45px,11vw,74px)}.steppers{bottom:63px}}
+    .steppers{bottom:63px}}
 
     </style>
     <script type="importmap">
@@ -325,7 +322,6 @@
       <a class="exit" href="../../">All Math Things</a>
     </div>
   </header>
-  <div class="value-wrap"><div id="readout">1/4</div><div class="subtext">ONE CUBE · 0 TO 1</div></div>
   <div class="steppers" role="group" aria-label="Add and remove slices">
     <button type="button" id="less" aria-label="Remove one slice">−</button>
     <button type="button" id="more" aria-label="Add one slice">+</button>
@@ -348,7 +344,7 @@ const PAL={ones:0xDC143C,tenths:0x64D2FF,hundredths:0xFF9F0A};
 const state={mode:'fraction',fractionDen:4,decimalDen:10,numerator:1,denominator:4,bundle:true};
 const scale=()=>state.mode==='fraction'?state.fractionDen:state.decimalDen;
 const position=()=>state.numerator/state.denominator;
-const parts=document.getElementById('partition'),val=document.getElementById('readout');
+const parts=document.getElementById('partition');
 const bundleInput=document.getElementById('bundle'),bundleBox=document.getElementById('bundleBox');
 const announce=document.getElementById('announce');
         function enamelMaterial(color) {
@@ -376,7 +372,11 @@ const announce=document.getElementById('announce');
 
 const ones=enamelMaterial(PAL.ones),fraction=enamelMaterial(PAL.ones);
 const tenth=enamelMaterial(PAL.tenths),hundredth=enamelMaterial(PAL.hundredths);
-const hsl=new THREE.Color(RED).getHSL({});
+// Keep the exact original red enamel hue; the represented quantity controls
+// optical transparency, never hue or saturation.
+fraction.transparent=true;
+fraction.depthWrite=false;
+fraction.opacity=.25;
 const trayMat=new THREE.MeshStandardMaterial({color:0xE5E5EA,roughness:.62});
 const white=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:.55});
 const metal=new THREE.MeshPhysicalMaterial({color:0xC4C6CB,metalness:1,roughness:.3,anisotropy:.6});
@@ -412,19 +412,47 @@ ground.scale.set(8000,8000,1);ground.position.z=-TRAY_D;ground.receiveShadow=tru
 const camera=new THREE.PerspectiveCamera(35,window.innerWidth/window.innerHeight,.05,200);
 let controls,dragging=false,dragId=null,dirty=true;
 const redraw=()=>{dirty=true};
-const bed=new THREE.Mesh(new RoundedBoxGeometry(1.78,2.6,TRAY_D,2,.035),trayMat);
-bed.position.set(.64,-.4,-TRAY_D/2);bed.castShadow=bed.receiveShadow=true;scene.add(bed);
-const topZone=new THREE.Mesh(new THREE.PlaneGeometry(1.72,1.0),white);
-topZone.position.set(.64,.56,.003);topZone.receiveShadow=true;scene.add(topZone);
+// The 0–1 piece of the original number line is magnified, not detached.
+// The chassis, painted zones, metal rail and engraved count carry on to x=21
+// so the same scale recedes out of the camera's right side.
+const TRACK_END=21.25,LOCAL_LEFT=-.25,LOCAL_RIGHT=1.25;
+const bed=new THREE.Mesh(
+  new RoundedBoxGeometry(TRACK_END+.6,BAND+1.2,TRAY_D,2,.035),trayMat);
+bed.position.set((TRACK_END-.6)/2,(1.2-BAND)/2,-TRAY_D/2);
+bed.castShadow=bed.receiveShadow=true;scene.add(bed);
+const zoneMats=[
+  new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:.55}),
+  new THREE.MeshStandardMaterial({color:0xD1D1D6,roughness:.55})
+];
+for(let i=0;i<3;i++){
+  const width=i===2?TRACK_END-20:10;
+  if(width<=0)continue;
+  const zone=new THREE.Mesh(new THREE.PlaneGeometry(width,1.15),zoneMats[i%2]);
+  zone.position.set(i*10+width/2,.6,.002);
+  zone.receiveShadow=true;
+  scene.add(zone);
+}
 const bandCanvas=document.createElement('canvas');bandCanvas.width=4096;bandCanvas.height=1024;
 const tex=new THREE.CanvasTexture(bandCanvas);
 tex.colorSpace=THREE.SRGBColorSpace;
 tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const bandMat=new THREE.MeshStandardMaterial({map:tex,roughness:.62,polygonOffset:true,polygonOffsetFactor:-1});
-const band=new THREE.Mesh(new THREE.PlaneGeometry(1.7,BAND-.035),bandMat);
-band.position.set(.7,-(BAND-.035)/2,.006);scene.add(band);
-const rail=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.7,12),metal);
-rail.rotation.z=-Math.PI/2;rail.position.set(.63,-LANE,.03);
+const band=new THREE.Mesh(new THREE.PlaneGeometry(LOCAL_RIGHT-LOCAL_LEFT,BAND-.035),bandMat);
+band.position.set((LOCAL_LEFT+LOCAL_RIGHT)/2,-(BAND-.035)/2,.006);scene.add(band);
+// At this zoom the detailed fractional engraving needs its own high-resolution
+// texture. The remainder of the same ruler is engraved at whole-unit spacing.
+const tailCanvas=document.createElement('canvas');tailCanvas.width=2048;tailCanvas.height=512;
+const tailTex=new THREE.CanvasTexture(tailCanvas);
+tailTex.colorSpace=THREE.SRGBColorSpace;
+tailTex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const tailMaterial=new THREE.MeshStandardMaterial({map:tailTex,roughness:.62,polygonOffset:true,polygonOffsetFactor:-1});
+const tail=new THREE.Mesh(new THREE.PlaneGeometry(TRACK_END-LOCAL_RIGHT,BAND-.035),tailMaterial);
+tail.position.set((LOCAL_RIGHT+TRACK_END)/2,-(BAND-.035)/2,.006);
+scene.add(tail);
+const rail=new THREE.Mesh(
+  new THREE.CylinderGeometry(.03,.03,TRACK_END+.22,12),metal);
+rail.rotation.z=-Math.PI/2;
+rail.position.set((TRACK_END-.22)/2,-LANE,.03);
 rail.castShadow=rail.receiveShadow=true;scene.add(rail);
 const hub=new THREE.Mesh(new THREE.SphereGeometry(.075,24,16),metal);
 hub.position.set(-LANE,-LANE,.04);hub.castShadow=true;scene.add(hub);
@@ -434,9 +462,6 @@ const unitGeometry=new RoundedBoxGeometry(1-2*GAP,1-2*GAP,1-2*GAP,3,.1);
 unitGeometry.translate(.5,.5,.5);
 const fullCube=new THREE.Mesh(unitGeometry,ones);
 fullCube.castShadow=fullCube.receiveShadow=true;scene.add(fullCube);
-const outline=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),
-  new THREE.LineBasicMaterial({color:RED,transparent:true,opacity:.20}));
-outline.position.set(.5,.5,.5);scene.add(outline);
 const pieces=new THREE.Group();scene.add(pieces);
 const geos=new Map();
 function pieceGeometry(width){
@@ -492,11 +517,11 @@ function renderBlocks(){
   const p=position(),d=scale();
   bead.position.set(p,-LANE,beadR+.06);
   fullCube.visible=p>=1-1e-10;
-  outline.visible=!fullCube.visible;
   if(p<=1e-10||fullCube.visible)return;
   if(state.mode==='fraction'){
-    // Saturation scales with the represented amount (half at 1/2, quarter at 1/4).
-    fraction.color.setHSL(hsl.h,hsl.s*p,hsl.l);
+    // 1/2 is half opaque, 1/4 one-quarter opaque, etc. The red remains
+    // the original Volume Space red, and 1/1 is the original solid unit cube.
+    fraction.opacity=p;
     const n=Math.floor(p*d+1e-8);
     for(let i=0;i<n;i++)addPiece(i/d,1/d,fraction);
     const remainder=p-n/d;if(remainder>1e-8)addPiece(n/d,remainder,fraction);
@@ -520,31 +545,64 @@ function renderRuler(){
   const g=bandCanvas.getContext('2d'),W=bandCanvas.width,H=bandCanvas.height,d=scale();
   g.clearRect(0,0,W,H);g.fillStyle='#fff';g.fillRect(0,0,W,H);
   g.fillStyle='rgba(0,0,0,.12)';g.fillRect(0,0,W,4);
-  const tx=x=>Math.round((x+.15)/1.7*W);
+  const tx=x=>(x-LOCAL_LEFT)/(LOCAL_RIGHT-LOCAL_LEFT)*W;
   for(let i=0;i<=d;i++){
     const major=i===0||i===d||(d===100&&i%10===0)||(d<100&&i*2===d);
-    g.fillStyle=major?'#70727a':'#a9adb4';
-    g.fillRect(tx(i/d)-2,6,major?5:2.3,major?H*.30:H*.15);
+    g.fillStyle=major?'#666970':'#afb2ba';
+    const x=tx(i/d);
+    g.fillRect(x-(major?2.6:1.2),7,major?5.2:2.4,major?H*.29:H*.15);
   }
   g.textAlign='center';g.textBaseline='middle';g.fillStyle='#1d1d1f';
-  g.font='800 114px Lexend,system-ui,sans-serif';
-  g.fillText('0',tx(0),H*.48);g.fillText('1',tx(1),H*.48);
+  g.font='800 111px Lexend,system-ui,sans-serif';
+  g.fillText('0',tx(0),H*.47);g.fillText('1',tx(1),H*.47);
   g.fillStyle='#85878e';
   if(d===100){
-    g.font='600 53px Lexend,system-ui,sans-serif';
-    for(let i=1;i<10;i++)g.fillText(state.mode==='decimal'?(i/10).toFixed(1):i*10+'/100',tx(i/10),H*.75);
+    g.font='600 57px Lexend,system-ui,sans-serif';
+    for(let i=1;i<10;i++){
+      const t=state.mode==='decimal'?(i/10).toFixed(1):i*10+'/100';
+      g.fillText(t,tx(i/10),H*.72);
+    }
   }else{
-    g.font='600 66px Lexend,system-ui,sans-serif';
+    g.font='600 70px Lexend,system-ui,sans-serif';
     for(let i=1;i<d;i++){
       if(d>8&&(d===16?i%4!==0:i%2!==0))continue;
-      g.fillText(state.mode==='fraction'?i+'/'+d:(i/d).toFixed(1),tx(i/d),H*.76);
+      g.fillText(state.mode==='fraction'?i+'/'+d:(i/d).toFixed(1),tx(i/d),H*.72);
     }
+  }
+  // The current bead value is engraved below its position on the ruler,
+  // never floating in front of the unit-cube geometry.
+  const p=position();
+  if(p>0&&p<1){
+    const word=format();
+    g.font='800 90px Lexend,system-ui,sans-serif';
+    g.fillStyle='#303137';
+    g.textAlign=p<.16?'left':p>.84?'right':'center';
+    const pad=p<.16?14:p>.84?-14:0;
+    g.fillText(word,tx(p)+pad,H*.94);
   }
   tex.needsUpdate=true;
 }
+function renderTailRuler(){
+  const g=tailCanvas.getContext('2d'),W=tailCanvas.width,H=tailCanvas.height;
+  g.clearRect(0,0,W,H);
+  const tx=x=>(x-LOCAL_RIGHT)/(TRACK_END-LOCAL_RIGHT)*W;
+  // Match the original continuously numbered count. This texture begins
+  // after the enlarged first unit and recedes toward the right edge.
+  for(let n=2;n<=21;n++){
+    if(n>TRACK_END)break;
+    const x=tx(n);
+    const major=n%10===0;
+    g.fillStyle=major?'#7a7c80':'#b5b6ba';
+    g.fillRect(x-1,5,major?3.4:2,major?H*.35:H*.2);
+    g.font=(major?'800 ':'600 ')+(major?'62px':'53px')+' Lexend,system-ui,sans-serif';
+    g.fillStyle=major?'#1d1d1f':'#5e6269';
+    g.textAlign='center';g.textBaseline='middle';
+    g.fillText(String(n),x,H*.66);
+  }
+  tailTex.needsUpdate=true;
+}
 function render(){
   renderBlocks();renderRuler();
-  val.textContent=format();
   canvas.setAttribute('aria-valuenow',String(position()));
   canvas.setAttribute('aria-valuetext',format());
   announce.textContent='The unit cube is filled to '+format()+'.';
@@ -636,8 +694,8 @@ function loop(){
   const moved=controls.update();
   if(dirty||moved){renderer.render(scene,camera);dirty=false}
 }
-document.fonts?.ready.then(()=>{renderRuler();redraw()});
-updateChoices();render();frame();loop();
+document.fonts?.ready.then(()=>{renderRuler();renderTailRuler();redraw()});
+updateChoices();renderTailRuler();render();frame();loop();
 window.__fractionSpace={state,position,setValue,changeMode,step,bead,pieces,camera,scene};
 </script>
 <script src="../../math-things-home.js"></script>
