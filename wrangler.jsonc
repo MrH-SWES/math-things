@@ -1,7 +1,14 @@
 {
-  "name": "math-things",
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "math-things-app",
   "main": "./worker/private-teaching-table.mjs",
   "compatibility_date": "2026-10-16",
+  "routes": [
+    {
+      "pattern": "app.maththingsedtech.com",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
