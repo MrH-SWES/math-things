@@ -277,22 +277,35 @@ The numerator determines how many pieces are present; it does **not** change the
 color. Never use opacity or saturation proportional to numerator.
 
 Use the shared source: \`math-things-fractions.js\` (exports
-\`FRACTION_DENOMINATORS\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
-This is the current **revision 1 palette**, pending classroom visual testing:
+\`FRACTION_DENOMINATORS\`, \`FRACTION_FAMILIES\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
+This is the current **revision 2 palette**, pending classroom visual testing.
 
-| Part size | Enamel color | Hex |
-|---|---|---|
-| One whole | Volume Space red | \`#DC143C\` |
-| Halves | Coral | \`#F06D6B\` |
-| Thirds | Golden ochre | \`#E4A646\` |
-| Fourths | Yellow | \`#C5AD30\` |
-| Fifths | Green | \`#58AC61\` |
-| Sixths | Teal | \`#3B9E90\` |
-| Eighths | Periwinkle | \`#7186D9\` |
-| Tenths | Canonical decimal-tenths cyan | \`#64D2FF\` |
-| Twelfths | Violet | \`#9B6ACA\` |
-| Sixteenths | Magenta | \`#D16DAA\` |
-| Hundredths | Canonical decimal-hundredths orange | \`#FF9F0A\` |
+Only three fraction colors are place-value colors, because only those three
+fractions *are* place values: one whole (ones red), tenths (tenths cyan) and
+hundredths (hundredths orange). Every other denominator comes from a muted
+**fraction family**, so a fraction piece never reads as a place value.
+Revision 1 used a rainbow whose fourths, fifths, eighths, twelfths and
+sixteenths sat next to the hundreds, thousands, tens, hundred-thousands and
+millions hues; revision 2 retires it.
+
+- Place-value enamel is fully saturated. Fraction-family enamel is dusty.
+- A family is one hue for one chain of splitting. Within a family, a smaller
+  piece is a deeper shade, so "a sixth is half of a third" reads as
+  "same color, cut smaller".
+
+| Part size | Family | Enamel color | Hex |
+|---|---|---|---|
+| One whole | Place value | Volume Space ones red | \`#DC143C\` |
+| Halves | Halving | Mauve, lightest | \`#D2A9C6\` |
+| Fourths | Halving | Mauve | \`#B783A8\` |
+| Eighths | Halving | Mauve | \`#96608A\` |
+| Sixteenths | Halving | Mauve, deepest | \`#74426B\` |
+| Thirds | Thirding | Sage, lightest | \`#A9C9B2\` |
+| Sixths | Thirding | Sage | \`#7CA68A\` |
+| Twelfths | Thirding | Sage, deepest | \`#5E8A72\` |
+| Fifths | Fifths | Sand | \`#C8A47E\` |
+| Tenths | Place value | Canonical decimal-tenths cyan | \`#64D2FF\` |
+| Hundredths | Place value | Canonical decimal-hundredths orange | \`#FF9F0A\` |
 
 The deliberate overlap at tenths and hundredths teaches that 1/10 = 0.1 and
 1/100 = 0.01. A fully assembled whole stays red, regardless of the colors
