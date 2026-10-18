@@ -269,6 +269,39 @@ Current palette:
 
 Whole-number places grow leftward from ones. Decimal places shrink rightward from ones. Color should reinforce structure, not decorate randomly.
 
+## 10A. Canonical Fraction Palette
+
+The denominator is the visual identity of a fractional part across the entire
+Math Things family: number line, fraction bars, fraction circles, and future tools.
+The numerator determines how many pieces are present; it does **not** change their
+color. Never use opacity or saturation proportional to numerator.
+
+Use the shared source: \`math-things-fractions.js\` (exports
+\`FRACTION_DENOMINATORS\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
+This is the current **revision 1 palette**, pending classroom visual testing:
+
+| Part size | Enamel color | Hex |
+|---|---|---|
+| One whole | Volume Space red | \`#DC143C\` |
+| Halves | Coral | \`#F06D6B\` |
+| Thirds | Golden ochre | \`#E4A646\` |
+| Fourths | Yellow | \`#C5AD30\` |
+| Fifths | Green | \`#58AC61\` |
+| Sixths | Teal | \`#3B9E90\` |
+| Eighths | Periwinkle | \`#7186D9\` |
+| Tenths | Canonical decimal-tenths cyan | \`#64D2FF\` |
+| Twelfths | Violet | \`#9B6ACA\` |
+| Sixteenths | Magenta | \`#D16DAA\` |
+| Hundredths | Canonical decimal-hundredths orange | \`#FF9F0A\` |
+
+The deliberate overlap at tenths and hundredths teaches that 1/10 = 0.1 and
+1/100 = 0.01. A fully assembled whole stays red, regardless of the colors
+of its component pieces. When ten orange hundredths are bundled together,
+the bundle becomes one cyan tenth. Individual fractional parts remain fully
+opaque, with physically distinct edges. The number/denominator must remain
+available in ruler labels and screen-reader text: color is supporting structure,
+not the only way to recognize the part.
+
 ## 11. Motion Doctrine
 
 Motion should teach.
