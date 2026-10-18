@@ -42,6 +42,8 @@
     #board .piece .base { pointer-events: fill; }
     #board .piece:focus-visible .base { stroke: #007AFF; stroke-width: 3; }
     #board .handle { pointer-events: all; cursor: grab; }
+    #board .piece.lifted { cursor: grabbing; }
+    #board .piece.lifted .base { stroke-width: 2.4; }
     #board .angles { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     #board.rec .angles { opacity: 1; }
     #board .angles text { font-family: 'Lexend', sans-serif; font-weight: 800; text-anchor: middle; dominant-baseline: central; fill: #2A2C30; paint-order: stroke; stroke: rgba(255,255,255,0.9); stroke-width: 3.5px; stroke-linejoin: round; }
@@ -60,10 +62,11 @@
       border-bottom: none;
       box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
     }
-    #bins { display: grid; grid-template-columns: repeat(6, auto); gap: clamp(6px, 1.2vw, 12px); }
-    @media (max-width: 560px) { #bins { grid-template-columns: repeat(3, auto); } }
+    #bins { display: grid; grid-template-columns: repeat(7, auto); gap: clamp(6px, 1.2vw, 12px); }
+    @media (max-width: 640px) { #bins { grid-template-columns: repeat(4, auto); } }
+    .bin.outline-bin { background: linear-gradient(180deg, #E6E2DA 0%, #F1EEE8 100%); }
     .bin {
-      width: clamp(58px, 9vw, 84px);
+      width: clamp(56px, 8.4vw, 84px);
       height: clamp(52px, 8vw, 72px);
       border: none; border-radius: 16px;
       background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
@@ -134,6 +137,7 @@
 
 <svg id="board">
   <defs id="defs"></defs>
+  <g id="outline"></g>
   <g id="pieces"></g>
   <g id="handles"></g>
 </svg>
@@ -174,6 +178,22 @@
     return '#' + ch.map(c => Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f).toString(16).padStart(2, '0')).join('');
   }
 
+  // outlines to fill, engraved into the mat; every one is built from whole blocks
+  const ring = (n, r, a0 = 0) => [...Array(n)].map((_, k) => [Math.cos(a0 + k * 2 * Math.PI / n) * r, -Math.sin(a0 + k * 2 * Math.PI / n) * r]);
+  const OUTLINES = [
+    null,
+    { name: 'hexagon', pts: ring(6, 1) },
+    { name: 'large triangle', pts: [[0, 0], [2, 0], [1, -2 * H]] },
+    { name: 'large rhombus', pts: [[0, 0], [2, 0], [3, -2 * H], [1, -2 * H]] },
+    { name: 'large square', pts: [[0, 0], [2, 0], [2, -2], [0, -2]] },
+    { name: 'large hexagon', pts: ring(6, 2) },
+    { name: 'star', pts: [...Array(12)].map((_, k) => { const r = k % 2 ? Math.sqrt(3) : 1, a = k * Math.PI / 6; return [Math.cos(a) * r, -Math.sin(a) * r]; }) },
+  ];
+  for (const o of OUTLINES) if (o) {
+    const n = o.pts.length, cx = o.pts.reduce((a, p) => a + p[0], 0) / n, cy = o.pts.reduce((a, p) => a + p[1], 0) / n;
+    o.local = o.pts.map(p => ({ x: p[0] - cx, y: p[1] - cy }));
+  }
+
   const MAX_PIECES = 120;
   const NS = 'http://www.w3.org/2000/svg';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -190,13 +210,13 @@
   const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
 
   const $ = id => document.getElementById(id);
-  const board = $('board'), defs = $('defs'), piecesG = $('pieces'), handles = $('handles');
+  const board = $('board'), defs = $('defs'), outlineG = $('outline'), piecesG = $('pieces'), handles = $('handles');
   const dock = $('dock'), binsEl = $('bins'), live = $('live');
   const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
 
   let S = 60, CX = 0, CY = 0;           // edge length and the middle of the mat, in px
   let pieces = [];                       // { id, type, x, y (edge units from the middle), rot (degrees), g, base, gloss, bevel, angles }
-  let nextId = 1, recordOn = false, selected = null;
+  let nextId = 1, recordOn = false, selected = null, outlineIx = 0;
 
   const dockTop = () => dock.getBoundingClientRect().top;
   const toPx = (x, y) => ({ x: CX + x * S, y: CY + y * S });
@@ -215,19 +235,39 @@
   }
   const poly = vs => 'M' + vs.map(v => `${r2(v.x)},${r2(v.y)}`).join('L') + 'Z';
 
+  // the outline sits in the middle of the mat; blocks snap to its corners and to each unit along its sides
+  const outlineVerts = () => OUTLINES[outlineIx] ? OUTLINES[outlineIx].local.map(v => toPx(v.x, v.y)) : [];
+  function outlinePoints() {
+    const vs = outlineVerts(), out = [];
+    vs.forEach((a, i) => {
+      const b = vs[(i + 1) % vs.length], n = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / S));
+      for (let k = 0; k < n; k++) out.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
+    });
+    return out;
+  }
+  function drawOutline() {
+    const vs = outlineVerts();
+    if (!vs.length) { outlineG.innerHTML = ''; return; }
+    const d = poly(vs), w = r2(Math.max(2, S * 0.04));
+    // a shallow recess: a darker floor, a shadowed upper edge and a lit lower edge
+    outlineG.innerHTML =
+      `<path d="${d}" fill="rgba(120,104,84,0.11)" stroke="rgba(255,255,255,0.9)" stroke-width="${r2(w * 2)}" stroke-linejoin="round" transform="translate(0 ${r2(w * 0.6)})"/>` +
+      `<path d="${d}" fill="rgba(120,104,84,0.11)" stroke="rgba(92,80,64,0.5)" stroke-width="${w}" stroke-linejoin="round"/>`;
+  }
+
   // ═══════ LAYOUT ═══════
   function layout() {
     const W = innerWidth, top = dockTop();
     S = Math.max(34, Math.min(72, W / 8, top / 7.5));
     CX = W / 2; CY = top / 2;
+    drawOutline();
     defs.innerHTML =
       `<filter id="pieceShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${innerHeight}"><feDropShadow dx="1" dy="${r2(S * 0.06)}" stdDeviation="${r2(S * 0.05)}" flood-color="#2A2018" flood-opacity="0.32"/></filter>`;
   }
 
   // ═══════ OVERLAP ═══════
   // Convex pieces overlap unless some edge direction separates them. Touching edges do not count.
-  function overlaps(A, B) {
-    const eps = 0.04 * S;
+  function overlaps(A, B, eps = 0.04 * S) {
     for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
       const a = P[i], b = P[(i + 1) % P.length];
       const nx = a.y - b.y, ny = b.x - a.x, len = Math.hypot(nx, ny);
@@ -238,6 +278,16 @@
     }
     return true;
   }
+  // blocks that share an edge or a corner belong to one design
+  const touching = (A, B) => overlaps(A, B, -0.06 * S);
+  function designOf(p) {
+    const out = [p];
+    for (let i = 0; i < out.length; i++) {
+      const vs = verts(out[i]);
+      for (const o of pieces) if (!out.includes(o) && Math.hypot(o.x - out[i].x, o.y - out[i].y) < 3 && touching(vs, verts(o))) out.push(o);
+    }
+    return out;
+  }
   const blocked = (p, vs) => pieces.some(o => o !== p && Math.hypot(o.x - p.x, o.y - p.y) < 3 && overlaps(vs, verts(o)));
   function blockedAt(p, x, y, rot) {
     const vs = verts(p, x, y, rot);
@@ -245,11 +295,16 @@
   }
 
   // ═══════ SNAP ═══════
-  // A piece let go near another settles edge to edge: the move that lines up the most corners wins.
-  function snap(p) {
-    const vs = verts(p), mine = snapPoints(p, vs), T = 0.3 * S, near = 0.06 * S;
-    const others = pieces.filter(o => o !== p && Math.hypot(o.x - p.x, o.y - p.y) < SHAPES[o.type].reach + SHAPES[p.type].reach + 0.5);
-    const theirs = others.flatMap(o => snapPoints(o));
+  // Blocks let go near other blocks or the outline settle edge to edge: the move that lines up the most
+  // corners wins. A lifted design snaps as one.
+  function snap(group) {
+    const T = 0.3 * S, near = 0.06 * S;
+    const shapes = group.map(p => verts(p)), mine = group.flatMap((p, i) => snapPoints(p, shapes[i]));
+    const xs = mine.map(m => m.x), ys = mine.map(m => m.y), pad = T + 2 * S;
+    const box = { l: Math.min(...xs) - pad, r: Math.max(...xs) + pad, t: Math.min(...ys) - pad, b: Math.max(...ys) + pad };
+    const others = pieces.filter(o => !group.includes(o)).map(o => ({ o, vs: verts(o) }))
+      .filter(({ vs }) => vs.some(v => v.x > box.l && v.x < box.r && v.y > box.t && v.y < box.b));
+    const theirs = others.flatMap(({ o, vs }) => snapPoints(o, vs)).concat(outlinePoints());
     let best = null;
     for (const a of mine) for (const b of theirs) {
       const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
@@ -257,11 +312,11 @@
       let score = 0;
       for (const m of mine) if (theirs.some(t => Math.hypot(m.x + dx - t.x, m.y + dy - t.y) < near)) score++;
       if (!best || score > best.score || (score === best.score && d < best.d)) {
-        const moved = vs.map(v => ({ x: v.x + dx, y: v.y + dy }));
-        if (!others.some(o => overlaps(moved, verts(o)))) best = { dx, dy, d, score };
+        const ok = shapes.every(vs => { const moved = vs.map(v => ({ x: v.x + dx, y: v.y + dy })); return !others.some(o => overlaps(moved, o.vs)); });
+        if (ok) best = { dx, dy, d, score };
       }
     }
-    if (best) { p.x += best.dx / S; p.y += best.dy / S; return true; }
+    if (best) { for (const p of group) { p.x += best.dx / S; p.y += best.dy / S; } return true; }
     return false;
   }
 
@@ -330,6 +385,14 @@
     changed();
   }
 
+  // a new block from a bin lands beside the outline, not in it (the outline's hull is close enough)
+  function onOutline(vs) {
+    const o = outlineVerts();
+    if (!o.length) return false;
+    const hull = OUTLINES[outlineIx].name === 'star' ? ring(6, Math.sqrt(3), Math.PI / 6).map(p => toPx(p[0], p[1])) : o;
+    return overlaps(vs, hull, -0.2 * S);
+  }
+
   // a free spot near the middle of the mat for a piece from the bin
   function freeSpot(type) {
     const p = { type, rot: 0 }, top = dockTop();
@@ -339,7 +402,9 @@
         const a = k / steps * Math.PI * 2, x = Math.cos(a) * ring * 0.7, y = Math.sin(a) * ring * 0.7;
         const px = toPx(x, y), m = SHAPES[type].reach * S;
         if (px.x < m || px.x > innerWidth - m || px.y < m || px.y > top - m) continue;
-        if (!blockedAt(p, x, y, 0)) return { x, y };
+        // leave a gap, so a new block never joins a design by accident
+        const vs = verts(p, x, y, 0);
+        if (!pieces.some(o => overlaps(vs, verts(o), -0.2 * S)) && !onOutline(vs)) return { x, y };
       }
     }
     return null;
@@ -407,7 +472,9 @@
     piecesG.appendChild(p.g);
     const o = toPx(p.x, p.y);
     try { t.setPointerCapture(e.pointerId); } catch (err) {}
-    drags.set(e.pointerId, { kind: 'move', p, sx: e.clientX, sy: e.clientY, ox: o.x - e.clientX, oy: o.y - e.clientY, x0: p.x, y0: p.y, moved: false });
+    const s = { kind: 'move', p, sx: e.clientX, sy: e.clientY, ox: o.x - e.clientX, oy: o.y - e.clientY, x0: p.x, y0: p.y, moved: false };
+    s.hold = setTimeout(() => { if (!s.moved && drags.get(e.pointerId) === s) lift(s); }, 450);
+    drags.set(e.pointerId, s);
   });
 
   // tapping the bare mat lets go of the selected piece
@@ -426,6 +493,7 @@
     if (!s.moved) {
       if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < 5) return;
       s.moved = true;
+      clearTimeout(s.hold);
       if (s.kind === 'bin') {
         // a block pulled out of its bin comes up under the finger
         if (pieces.length >= MAX_PIECES) { shake(s.btn); drags.delete(e.pointerId); return; }
@@ -441,6 +509,9 @@
       const u = toUnits(e.clientX + s.ox, e.clientY + s.oy);
       p.x = u.x; p.y = u.y;
       draw(p);
+    } else if (s.kind === 'group') {
+      const u = toUnits(e.clientX, e.clientY), dx = u.x - s.ux.x, dy = u.y - s.ux.y;
+      s.group.forEach((q, i) => { q.x = s.starts[i].x + dx; q.y = s.starts[i].y + dy; draw(q); });
     } else if (s.kind === 'turn') {
       const o = toPx(p.x, p.y);
       const deg = Math.atan2(-(e.clientY - o.y), e.clientX - o.x) * 180 / Math.PI;
@@ -454,37 +525,66 @@
     return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
   }
 
-  // a block that would sit on top of another one is refused and slides back
-  function refuse(p, x0, y0) {
-    const a = toPx(p.x, p.y);
-    p.x = x0; p.y = y0;
-    const b = toPx(x0, y0);
-    draw(p);
-    anim(p.g, [{ transform: `translate(${r2(a.x - b.x)}px, ${r2(a.y - b.y)}px)` }, { transform: 'none' }], 320, 'cubic-bezier(0.2, 0.8, 0.2, 1)');
+  // blocks that would sit on top of another one are refused and slide back
+  function refuse(group, starts) {
+    group.forEach((p, i) => {
+      const a = toPx(p.x, p.y);
+      p.x = starts[i].x; p.y = starts[i].y;
+      const b = toPx(p.x, p.y);
+      draw(p);
+      anim(p.g, [{ transform: `translate(${r2(a.x - b.x)}px, ${r2(a.y - b.y)}px)` }, { transform: 'none' }], 320, 'cubic-bezier(0.2, 0.8, 0.2, 1)');
+    });
     buzz([4, 30, 4]);
   }
 
-  function settle(p) {
-    const a = toPx(p.x, p.y);
-    const snapped = snap(p);
-    const b = toPx(p.x, p.y);
-    draw(p);
-    if (snapped) {
-      anim(p.g, [{ transform: `translate(${r2(a.x - b.x)}px, ${r2(a.y - b.y)}px)` }, { transform: 'none' }], 140);
-      buzz(8);
+  function settle(group) {
+    const a = toPx(group[0].x, group[0].y);
+    const snapped = snap(group);
+    const b = toPx(group[0].x, group[0].y);
+    for (const p of group) {
+      draw(p);
+      if (snapped) anim(p.g, [{ transform: `translate(${r2(a.x - b.x)}px, ${r2(a.y - b.y)}px)` }, { transform: 'none' }], 140);
     }
+    if (snapped) buzz(8);
   }
+  const groupBlocked = group => group.some(p => { const vs = verts(p); return pieces.some(o => !group.includes(o) && overlaps(vs, verts(o))); });
+
+  // pressing and holding a block lifts its whole design
+  function lift(s) {
+    s.kind = 'group';
+    s.group = designOf(s.p);
+    s.starts = s.group.map(p => ({ x: p.x, y: p.y }));
+    s.ux = toUnits(s.sx, s.sy);
+    if (selected) select(null);
+    for (const p of s.group) { piecesG.appendChild(p.g); p.g.classList.add('lifted'); anim(p.g, [{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)' }, { transform: 'translateY(0)' }], 220); }
+    buzz(14);
+  }
+  const drop = s => s.group.forEach(p => p.g.classList.remove('lifted'));
 
   function endDrag(e) {
     const s = drags.get(e.pointerId);
     if (!s) return;
     drags.delete(e.pointerId);
+    clearTimeout(s.hold);
     if (s.kind === 'bin') { if (!s.moved) placeFromBin(s.type, s.btn); return; }
+    if (s.kind === 'group') {
+      drop(s);
+      if (!s.moved) return;
+      if (overDock(e.clientX, e.clientY)) { s.group.forEach(removePiece); return; }
+      // keep the design's anchor block on the mat
+      const top = dockTop(), o = toPx(s.p.x, s.p.y);
+      const cx = Math.min(innerWidth - 8, Math.max(8, o.x)) - o.x, cy = Math.min(top - 8, Math.max(8, o.y)) - o.y;
+      s.group.forEach(q => { q.x += cx / S; q.y += cy / S; });
+      settle(s.group);
+      if (groupBlocked(s.group)) refuse(s.group, s.starts);
+      changed();
+      return;
+    }
     const p = s.p;
     if (!pieces.includes(p)) return;
     if (s.kind === 'turn') {
       if (blocked(p, verts(p))) { p.rot = s.rot0; draw(p); shake(p.g); buzz([4, 30, 4]); }
-      else settle(p);
+      else settle([p]);
       if (selected === p) draw(p);
       changed();
       return;
@@ -495,10 +595,10 @@
     const top = dockTop(), o = toPx(p.x, p.y);
     const u = toUnits(Math.min(innerWidth - 8, Math.max(8, o.x)), Math.min(top - 8, Math.max(8, o.y)));
     p.x = u.x; p.y = u.y;
-    settle(p);
+    settle([p]);
     if (blocked(p, verts(p))) {
       if (s.fresh) removePiece(p);
-      else refuse(p, s.x0, s.y0);
+      else refuse([p], [{ x: s.x0, y: s.y0 }]);
     }
     changed();
   }
@@ -506,19 +606,25 @@
   addEventListener('pointercancel', endDrag);
 
   // ═══════ KEYBOARD ═══════
-  // A focused block: arrows slide it (Shift slides a whole edge), R turns it 30° (Shift+R the other way),
-  // Delete puts it away.
+  // A focused block: arrows slide it (Shift slides a whole edge, Alt slides its whole design an edge),
+  // R turns it 30° (Shift+R the other way), Delete puts it away.
   board.addEventListener('keydown', e => {
     const g = e.target.closest('.piece');
     const p = g && pieces.find(o => o.id === +g.dataset.id);
     if (!p) return;
     const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (mv) {
+    if (mv && e.altKey) {
+      e.preventDefault();
+      const group = designOf(p), starts = group.map(q => ({ x: q.x, y: q.y }));
+      group.forEach(q => { q.x += mv[0]; q.y += mv[1]; });
+      if (groupBlocked(group)) { refuse(group, starts); return; }
+      group.forEach(draw);
+    } else if (mv) {
       e.preventDefault();
       const step = e.shiftKey ? 1 : 0.25, x = p.x + mv[0] * step, y = p.y + mv[1] * step;
       if (blockedAt(p, x, y, p.rot)) { shake(p.g); return; }
       p.x = x; p.y = y;
-      if (!e.shiftKey) settle(p); else draw(p);
+      if (!e.shiftKey) settle([p]); else draw(p);
     } else if (e.key === 'r' || e.key === 'R') {
       e.preventDefault();
       const rot = ((p.rot + (e.shiftKey ? 30 : -30)) % 360 + 360) % 360;
@@ -577,6 +683,25 @@
     });
     binsEl.appendChild(b);
   }
+  // the outline bin: each tap engraves the next outline into the mat, then none
+  const outlineBin = document.createElement('button');
+  outlineBin.className = 'bin outline-bin';
+  binsEl.appendChild(outlineBin);
+  function paintOutlineBin() {
+    const o = OUTLINES[outlineIx], next = OUTLINES[(outlineIx + 1) % OUTLINES.length];
+    const icon = o ? o.local : SHAPES.hexagon.local, k = o ? 26 / Math.max(...o.local.map(v => Math.hypot(v.x, v.y))) / 1.1 : 14;
+    outlineBin.innerHTML = `<svg viewBox="-32 -24 64 48" aria-hidden="true" focusable="false"><path d="${poly(icon.map(v => ({ x: v.x * k * 0.8, y: v.y * k * 0.8 })))}" fill="${o ? 'rgba(120,104,84,0.14)' : 'none'}" stroke="rgba(92,80,64,${o ? 0.75 : 0.35})" stroke-width="1.6" stroke-dasharray="${o ? 'none' : '3 3'}" stroke-linejoin="round"/></svg>`;
+    outlineBin.setAttribute('aria-label', `Outline bin. ${o ? 'Outline: ' + o.name + '.' : 'No outline.'} Next: ${next ? next.name : 'none'}.`);
+  }
+  outlineBin.addEventListener('click', () => {
+    outlineIx = (outlineIx + 1) % OUTLINES.length;
+    drawOutline();
+    paintOutlineBin();
+    if (OUTLINES[outlineIx]) anim(outlineG, [{ opacity: 0 }, { opacity: 1 }], 240);
+    buzz(6);
+    live.textContent = OUTLINES[outlineIx] ? `Outline: ${OUTLINES[outlineIx].name}.` : 'No outline.';
+  });
+  paintOutlineBin();
   layout();
   changed();
 })();
