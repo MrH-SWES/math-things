@@ -190,7 +190,7 @@
       image.alt = '';
       image.loading = 'lazy';
       image.decoding = 'async';
-      image.src = new URL('./covers/' + book.name.replace(/\\.epub$/i, '.webp'), BOOKS_BASE_URL).href;
+      image.src = new URL('../covers/' + book.name.replace('.epub', '.webp'), BOOKS_BASE_URL).href;
       image.addEventListener('load', () => art.classList.add('has-cover'));
       image.addEventListener('error', () => image.remove());
       art.append(fallback, image, grade);
