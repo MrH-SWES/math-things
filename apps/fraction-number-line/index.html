@@ -724,7 +724,7 @@ function renderRecord(){
 }
 function setFraction(n,d){
   state.fractionDen=d;updateChoices();
-  state.numerator=clamp(n,0,d);state.denominator=d;render();
+  n=clamp(n,0,d);state.anchor=n/d;show(n,d);
 }
 const whole=s=>/^\d{1,3}$/.test(s.trim())?Number(s):NaN;
 numIn.addEventListener('input',()=>{
@@ -748,7 +748,7 @@ decIn.addEventListener('input',()=>{
   // Typing hundredths moves to the hundredths partition; tenths keep whichever is showing.
   const d=(m[2]||'').length===2?100:state.decimalDen;
   state.decimalDen=d;updateChoices();
-  state.numerator=Math.round(v*d);state.denominator=d;render();
+  state.anchor=Math.round(v*d)/d;show(Math.round(v*d),d);
 });
 for(const el of [numIn,denIn,decIn]){
   // Select after the click lands, so typing always replaces the number.
@@ -763,10 +763,46 @@ function render(){
   announce.textContent='The unit cube is filled to '+format()+'.';
   redraw();
 }
+// ── THE WORKING NUMBER ──
+// `anchor` is the amount the student last chose: by dragging, stepping or
+// typing. Changing the partition or switching fractions ↔ decimals never moves
+// it; the cube shows the nearest whole number of the new pieces. Every toggle
+// snaps from the anchor, never from the previous snap, so a round trip
+// (2/3 → fourths → halves → thirds) always comes home to 2/3.
+state.anchor=state.numerator/state.denominator;
 function setValue(n,d){
   n=clamp(Math.round(n),0,d);
+  state.anchor=n/d;
   if(state.numerator===n&&state.denominator===d)return;
   state.numerator=n;state.denominator=d;render();
+}
+function show(n,d){state.numerator=n;state.denominator=d;render()}
+// Nearest piece of a partition. A cube that has something in it never snaps
+// to empty, and a part-filled cube never snaps to full.
+function nearest(v,d){
+  const n=Math.round(v*d+1e-9);
+  return v>0&&v<1?clamp(n,1,d-1):n;
+}
+// Decimals → fractions: the simplest fraction close to the decimal.
+// Exact matches win (0.5 → 1/2, 0.4 → 2/5, 0.3 → 3/10); otherwise
+// 0.28 → 1/4, 0.33 → 1/3, 0.72 → 3/4. "Close" is within 0.03, tightened near
+// 0 and 1 so a small amount is never doubled (0.07 → 1/16, not 1/10).
+// Anything else stays exact in hundredths.
+const SNAP=.03,SNAP_REL=.12,SIMPLEST=[2,3,4,5,6,8,10,12,16];
+function simplestFraction(v){
+  if(v<=1e-9||v>=1-1e-9)return {n:Math.round(v)*state.fractionDen,d:state.fractionDen};
+  const tol=Math.min(SNAP,SNAP_REL*v,SNAP_REL*(1-v))+1e-9;
+  for(const d of SIMPLEST){
+    const n=Math.round(v*d);
+    if(n>0&&n<d&&Math.abs(n/d-v)<=tol)return {n,d};
+  }
+  return {n:Math.round(v*100),d:100};
+}
+// Fractions → decimals: stay on the decimal partition in use when the value
+// fits it exactly (1/2 → 0.5); otherwise round to hundredths (1/3 → 0.33).
+function nearestDecimal(v){
+  const d=Math.abs(v*state.decimalDen-Math.round(v*state.decimalDen))<1e-9?state.decimalDen:100;
+  return {n:nearest(v,d),d};
 }
 function setFromPosition(x){setValue(Math.round(clamp(x,0,1)*scale()),scale())}
 function step(dir){
@@ -777,11 +813,14 @@ parts.addEventListener('change',()=>{
   const d=Number(parts.value);
   if(!(state.mode==='fraction'?FRACTIONS:DECIMALS).includes(d))return;
   if(state.mode==='fraction')state.fractionDen=d;else state.decimalDen=d;
-  updateChoices();render();
+  updateChoices();show(nearest(state.anchor,d),d);
 });
 function changeMode(next){
   if(next===state.mode)return;
-  state.mode=next;updateChoices();render();
+  state.mode=next;
+  const f=next==='fraction'?simplestFraction(state.anchor):nearestDecimal(state.anchor);
+  if(next==='fraction')state.fractionDen=f.d;else state.decimalDen=f.d;
+  updateChoices();show(f.n,f.d);
 }
 document.getElementById('fractionMode').addEventListener('click',()=>changeMode('fraction'));
 document.getElementById('decimalMode').addEventListener('click',()=>changeMode('decimal'));
