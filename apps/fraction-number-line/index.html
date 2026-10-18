@@ -616,7 +616,10 @@ function renderRuler(){
 }
 function renderTailRuler(){
   const g=tailCanvas.getContext('2d'),W=tailCanvas.width,H=tailCanvas.height;
-  g.clearRect(0,0,W,H);
+  // The Volume Space ruler is opaque porcelain: a transparent canvas texture
+  // produces a black slab on MeshStandardMaterial outside the 0–1 close-up.
+  g.fillStyle='#FFFFFF';
+  g.fillRect(0,0,W,H);
   const tx=x=>(x-LOCAL_RIGHT)/(TRACK_END-LOCAL_RIGHT)*W;
   // Match the original continuously numbered count. This texture begins
   // after the enlarged first unit and recedes toward the right edge.
