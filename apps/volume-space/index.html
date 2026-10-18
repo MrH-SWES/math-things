@@ -180,7 +180,8 @@
         }
         /* Line mode: one big numeral, as on the Number Line */
         .record.single .rec-expr { font-size: clamp(2.8rem, 6.4vw, 5rem); letter-spacing: -0.04em; }
-        .rec-expr [hidden] { display: none; }
+        /* Native [hidden] must win over the explicit display on editable factors/results. */
+        .rec-expr [hidden] { display: none !important; }
         .rec-expr .op { color: var(--text-light); font-weight: 600; margin: 0 0.2em; }
         .rec-expr .res { display: inline-block; }
 
