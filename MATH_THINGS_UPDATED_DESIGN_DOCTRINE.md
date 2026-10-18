@@ -299,6 +299,7 @@ millions colors; revision 2 retires it.
 | Fifths | Slate | \`#7E93C2\` |
 | Sixths | Clay | \`#CF8E70\` |
 | Eighths | Lavender | \`#A898D3\` |
+| Ninths | Cocoa | \`#8B6A58\` |
 | Tenths | Canonical decimal-tenths cyan | \`#64D2FF\` |
 | Twelfths | Moss | \`#8C9A4E\` |
 | Sixteenths | Deep teal | \`#4F8A8B\` |

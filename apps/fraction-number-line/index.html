@@ -556,7 +556,7 @@ function updateChoices(){
     option.textContent=state.mode==='decimal' ?
       (d===10?'Tenths (0.1)':'Hundredths (0.01)') :
       ({2:'Halves',3:'Thirds',4:'Fourths',5:'Fifths',6:'Sixths',
-        8:'Eighths',10:'Tenths',12:'Twelfths',16:'Sixteenths',100:'Hundredths'})[d];
+        8:'Eighths',9:'Ninths',10:'Tenths',12:'Twelfths',16:'Sixteenths',100:'Hundredths'})[d];
     parts.appendChild(option);
   }
   parts.value=String(scale());
@@ -630,9 +630,9 @@ function drawFraction(g,n,d,cx,cy,weight,size,color,maxW){
   g.fillRect(cx-w/2-size*.08,cy-size*.045,w+size*.16,Math.max(2,size*.09));
 }
 // Which ticks of the current partition carry a printed label.
-// Fine partitions print only their landmarks: quarters for twelfths and
-// sixteenths, tenths for hundredths. Every stop-mark is still engraved.
-function labelStep(d){return d===100?(state.mode==='fraction'?20:10):d===16?4:d===12?3:1}
+// Fine partitions print only their landmarks: thirds for ninths, quarters for
+// twelfths and sixteenths, tenths for hundredths. Every stop-mark is still engraved.
+function labelStep(d){return d===100?(state.mode==='fraction'?20:10):d===16?4:d===12||d===9?3:1}
 function labelFor(i,d){
   return state.mode==='fraction'?{n:i,d}:{t:(i/d).toFixed(d===100&&i%10?2:1)};
 }
@@ -784,18 +784,19 @@ function nearest(v,d){
   return v>0&&v<1?clamp(n,1,d-1):n;
 }
 // Decimals → fractions: the simplest fraction close to the decimal.
-// Exact matches win (0.5 → 1/2, 0.4 → 2/5, 0.3 → 3/10); otherwise
-// 0.28 → 1/4, 0.33 → 1/3, 0.72 → 3/4. "Close" is within 0.03, tightened near
-// 0 and 1 so a small amount is never doubled (0.07 → 1/16, not 1/10).
-// Anything else stays exact in hundredths.
-const SNAP=.03,SNAP_REL=.12,SIMPLEST=[2,3,4,5,6,8,10,12,16];
+// Exact matches win first (0.5 → 1/2, 0.4 → 2/5, 0.1 → 1/10, never 1/9);
+// otherwise 0.28 → 1/4, 0.33 → 1/3, 0.72 → 3/4. "Close" is within 0.03,
+// tightened near 0 and 1 so a small amount is never doubled (0.07 → 1/16,
+// not 1/10). Anything else stays exact in hundredths.
+const SNAP=.03,SNAP_REL=.12,SIMPLEST=FRACTIONS.filter(d=>d!==100);
 function simplestFraction(v){
   if(v<=1e-9||v>=1-1e-9)return {n:Math.round(v)*state.fractionDen,d:state.fractionDen};
   const tol=Math.min(SNAP,SNAP_REL*v,SNAP_REL*(1-v))+1e-9;
-  for(const d of SIMPLEST){
-    const n=Math.round(v*d);
-    if(n>0&&n<d&&Math.abs(n/d-v)<=tol)return {n,d};
-  }
+  for(const within of [1e-9,tol])
+    for(const d of SIMPLEST){
+      const n=Math.round(v*d);
+      if(n>0&&n<d&&Math.abs(n/d-v)<=within)return {n,d};
+    }
   return {n:Math.round(v*100),d:100};
 }
 // Fractions → decimals: stay on the decimal partition in use when the value

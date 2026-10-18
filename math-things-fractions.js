@@ -21,7 +21,7 @@
  * these mappings instead of inventing per-tool palettes.
  */
 export const FRACTION_DENOMINATORS = Object.freeze([
-  2, 3, 4, 5, 6, 8, 10, 12, 16, 100
+  2, 3, 4, 5, 6, 8, 9, 10, 12, 16, 100
 ]);
 
 export const FRACTION_COLORS = Object.freeze({
@@ -32,6 +32,7 @@ export const FRACTION_COLORS = Object.freeze({
   5: "#7E93C2",    // slate
   6: "#CF8E70",    // clay
   8: "#A898D3",    // lavender
+  9: "#8B6A58",    // cocoa
   10: "#64D2FF",   // canonical tenths — place value
   12: "#8C9A4E",   // moss
   16: "#4F8A8B",   // deep teal
