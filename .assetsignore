@@ -1,0 +1,18 @@
+# Serve the public Math Things app resources, not source, docs, or licenses.
+*
+!*/
+!*.html
+!*.js
+!*.css
+!*.svg
+!*.png
+!*.jpg
+!*.jpeg
+!*.gif
+!*.webp
+!*.ico
+!*.woff
+!*.woff2
+!*.ttf
+!*.otf
+!*.webmanifest
