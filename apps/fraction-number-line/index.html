@@ -288,6 +288,14 @@
     font:800 12px Lexend,system-ui,sans-serif;cursor:pointer;
     box-shadow:0 1px 4px rgba(0,0,0,.12)}
   .pv-toggle-wrap[hidden]{display:none}
+  /* Stacked fractions in the record, written the way students write them */
+  .rec-expr{align-items:center}
+  .rec-frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1;font-size:.72em}
+  .rec-frac .bar{align-self:stretch;height:.1em;margin:.08em 0;border-radius:.05em;background:var(--text-main)}
+  .rec-frac .f{text-align:center}
+  .rec-expr .res{color:var(--text-gray)}
+  .rec-expr .res .rec-frac .bar{background:var(--text-gray)}
+  .rec-expr .f.bad{color:var(--text-light)}
   .exit{font:700 11px Lexend,system-ui,sans-serif;color:var(--text-gray);
     text-decoration:none;white-space:nowrap}
   .steppers{position:fixed;bottom:clamp(60px,8vh,82px);left:50%;
@@ -350,6 +358,19 @@
       <a class="exit" href="../../">All Math Things</a>
     </div>
   </header>
+  <!-- The record: type a numerator, denominator or decimal and the cube refills to match -->
+  <div class="record" id="record">
+    <div class="rec-expr" id="recExpr">
+      <span class="rec-frac" id="recFrac">
+        <input class="f" id="numIn" inputmode="numeric" autocomplete="off" aria-label="Numerator: how many parts are filled">
+        <span class="bar" aria-hidden="true"></span>
+        <input class="f" id="denIn" inputmode="numeric" autocomplete="off" aria-label="Denominator: how many equal parts make one whole">
+      </span>
+      <input class="f" id="decIn" inputmode="decimal" autocomplete="off" aria-label="Decimal value" hidden>
+      <span class="op" id="recEq" hidden>=</span>
+      <span class="res" id="recRes" hidden></span>
+    </div>
+  </div>
   <div class="tools steppers" role="group" aria-label="Add and remove slices">
     <button class="tool" type="button" id="less" aria-label="Remove one slice">−</button>
     <button class="tool" type="button" id="more" aria-label="Add one slice">+</button>
@@ -447,10 +468,8 @@ const bed=new THREE.Mesh(
   new RoundedBoxGeometry(TRACK_END+.6,BAND+1.2,TRAY_D,2,.035),trayMat);
 bed.position.set((TRACK_END-.6)/2,(1.2-BAND)/2,-TRAY_D/2);
 bed.castShadow=bed.receiveShadow=true;scene.add(bed);
-const zoneMats=[
-  new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:.55}),
-  new THREE.MeshStandardMaterial({color:0xD1D1D6,roughness:.55})
-];
+const ZONE=['#FFFFFF','#D1D1D6'];   // alternating ten-zones, as in Volume Space
+const zoneMats=ZONE.map(color=>new THREE.MeshStandardMaterial({color,roughness:.55}));
 for(let i=0;i<3;i++){
   const width=i===2?TRACK_END-20:10;
   if(width<=0)continue;
@@ -459,22 +478,28 @@ for(let i=0;i<3;i++){
   zone.receiveShadow=true;
   scene.add(zone);
 }
-const bandCanvas=document.createElement('canvas');bandCanvas.width=4096;bandCanvas.height=1024;
+// Printed bands are drawn at a fixed number of pixels per world unit, exactly as
+// Volume Space does, so numerals keep their true proportions on the 3D surface.
+// The magnified 0–1 piece gets far more pixels per unit than the receding tail.
+const NPX=1024,TPX=128,BAND_H=BAND-.035,FONT='Lexend, system-ui, sans-serif';
+const ROW=.6,WHOLE_SIZE=.3;   // label row (units in from the track) and whole-number size
+const bandCanvas=document.createElement('canvas');
+bandCanvas.width=Math.round((LOCAL_RIGHT-LOCAL_LEFT)*NPX);bandCanvas.height=Math.round(BAND_H*NPX);
 const tex=new THREE.CanvasTexture(bandCanvas);
 tex.colorSpace=THREE.SRGBColorSpace;
 tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const bandMat=new THREE.MeshStandardMaterial({map:tex,roughness:.62,polygonOffset:true,polygonOffsetFactor:-1});
-const band=new THREE.Mesh(new THREE.PlaneGeometry(LOCAL_RIGHT-LOCAL_LEFT,BAND-.035),bandMat);
-band.position.set((LOCAL_LEFT+LOCAL_RIGHT)/2,-(BAND-.035)/2,.006);scene.add(band);
-// At this zoom the detailed fractional engraving needs its own high-resolution
-// texture. The remainder of the same ruler is engraved at whole-unit spacing.
-const tailCanvas=document.createElement('canvas');tailCanvas.width=2048;tailCanvas.height=512;
+const band=new THREE.Mesh(new THREE.PlaneGeometry(LOCAL_RIGHT-LOCAL_LEFT,BAND_H),bandMat);
+band.position.set((LOCAL_LEFT+LOCAL_RIGHT)/2,-BAND_H/2,.006);scene.add(band);
+// The remainder of the same ruler is engraved at whole-unit spacing.
+const tailCanvas=document.createElement('canvas');
+tailCanvas.width=Math.round((TRACK_END-LOCAL_RIGHT)*TPX);tailCanvas.height=Math.round(BAND_H*TPX);
 const tailTex=new THREE.CanvasTexture(tailCanvas);
 tailTex.colorSpace=THREE.SRGBColorSpace;
 tailTex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const tailMaterial=new THREE.MeshStandardMaterial({map:tailTex,roughness:.62,polygonOffset:true,polygonOffsetFactor:-1});
-const tail=new THREE.Mesh(new THREE.PlaneGeometry(TRACK_END-LOCAL_RIGHT,BAND-.035),tailMaterial);
-tail.position.set((LOCAL_RIGHT+TRACK_END)/2,-(BAND-.035)/2,.006);
+const tail=new THREE.Mesh(new THREE.PlaneGeometry(TRACK_END-LOCAL_RIGHT,BAND_H),tailMaterial);
+tail.position.set((LOCAL_RIGHT+TRACK_END)/2,-BAND_H/2,.006);
 scene.add(tail);
 const rail=new THREE.Mesh(
   new THREE.CylinderGeometry(.03,.03,TRACK_END+.22,12),metal);
@@ -531,7 +556,7 @@ function updateChoices(){
     option.textContent=state.mode==='decimal' ?
       (d===10?'Tenths (0.1)':'Hundredths (0.01)') :
       ({2:'Halves',3:'Thirds',4:'Fourths',5:'Fifths',6:'Sixths',
-        8:'Eighths',10:'Tenths',12:'Twelfths',16:'Sixteenths',100:'Hundredths'})[d];
+        8:'Eighths',9:'Ninths',10:'Tenths',12:'Twelfths',16:'Sixteenths',100:'Hundredths'})[d];
     parts.appendChild(option);
   }
   parts.value=String(scale());
@@ -584,80 +609,201 @@ function renderBlocks(){
     if(p-n/100>1e-8)addPiece(n/100,p-n/100,hundredth);
   }
 }
+// Text centred on its glyph box; shrinks to fit maxW (Volume Space's drawNumber).
+function drawText(g,text,cx,cy,weight,size,color,maxW){
+  g.font=`${weight} ${size}px ${FONT}`;
+  const w=g.measureText(text).width;
+  if(maxW&&w>maxW)g.font=`${weight} ${Math.floor(size*maxW/w)}px ${FONT}`;
+  const m=g.measureText(text);
+  g.fillStyle=color;g.textAlign='center';g.textBaseline='alphabetic';
+  g.fillText(text,cx,cy+(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2);
+  return m.width;
+}
+// A printed fraction is stacked, as students write it: numerator, bar, denominator.
+function drawFraction(g,n,d,cx,cy,weight,size,color,maxW){
+  g.font=`${weight} ${size}px ${FONT}`;
+  const widest=Math.max(g.measureText(String(n)).width,g.measureText(String(d)).width);
+  if(maxW&&widest>maxW)size=Math.floor(size*maxW/widest);
+  const off=size*.6;
+  const w=Math.max(drawText(g,String(n),cx,cy-off,weight,size,color),
+                   drawText(g,String(d),cx,cy+off,weight,size,color));
+  g.fillRect(cx-w/2-size*.08,cy-size*.045,w+size*.16,Math.max(2,size*.09));
+}
+// Which ticks of the current partition carry a printed label.
+// Fine partitions print only their landmarks: thirds for ninths, quarters for
+// twelfths and sixteenths, tenths for hundredths. Every stop-mark is still engraved.
+function labelStep(d){return d===100?(state.mode==='fraction'?20:10):d===16?4:d===12||d===9?3:1}
+function labelFor(i,d){
+  return state.mode==='fraction'?{n:i,d}:{t:(i/d).toFixed(d===100&&i%10?2:1)};
+}
 function renderRuler(){
   const g=bandCanvas.getContext('2d'),W=bandCanvas.width,H=bandCanvas.height,d=scale();
-  g.clearRect(0,0,W,H);g.fillStyle='#fff';g.fillRect(0,0,W,H);
-  g.fillStyle='rgba(0,0,0,.12)';g.fillRect(0,0,W,4);
-  const tx=x=>(x-LOCAL_LEFT)/(LOCAL_RIGHT-LOCAL_LEFT)*W;
+  const tx=x=>(x-LOCAL_LEFT)*NPX,U=NPX;
+  g.fillStyle='#FFFFFF';g.fillRect(0,0,W,H);
+  g.fillStyle='rgba(0,0,0,0.12)';g.fillRect(0,0,W,3);         // seam against the track
+  // Bead stop-marks: wholes are longest, then labelled marks, then the rest.
+  const step=labelStep(d);
   for(let i=0;i<=d;i++){
-    const major=i===0||i===d||(d===100&&i%10===0)||(d<100&&i*2===d);
-    g.fillStyle=major?'#666970':'#afb2ba';
-    const x=tx(i/d);
-    g.fillRect(x-(major?2.6:1.2),7,major?5.2:2.4,major?H*.29:H*.15);
+    const whole=i===0||i===d,labelled=i%step===0;
+    const w=(whole?.014:labelled?.009:.006)*U;
+    g.fillStyle=whole?'rgba(0,0,0,0.30)':labelled?'rgba(0,0,0,0.20)':'rgba(0,0,0,0.13)';
+    g.fillRect(tx(i/d)-w/2,4,w,(whole?.36:labelled?.26:.17)*U);
   }
-  g.textAlign='center';g.textBaseline='middle';g.fillStyle='#1d1d1f';
-  g.font='800 111px Lexend,system-ui,sans-serif';
-  g.fillText('0',tx(0),H*.47);g.fillText('1',tx(1),H*.47);
-  g.fillStyle='#85878e';
-  if(d===100){
-    g.font='600 57px Lexend,system-ui,sans-serif';
-    for(let i=1;i<10;i++){
-      const t=state.mode==='decimal'?(i/10).toFixed(1):i*10+'/100';
-      g.fillText(t,tx(i/10),H*.72);
-    }
-  }else{
-    g.font='600 70px Lexend,system-ui,sans-serif';
-    for(let i=1;i<d;i++){
-      if(d>8&&(d===16?i%4!==0:i%2!==0))continue;
-      g.fillText(state.mode==='fraction'?i+'/'+d:(i/d).toFixed(1),tx(i/d),H*.72);
-    }
-  }
-  // The current bead value is engraved below its position on the ruler,
-  // never floating in front of the unit-cube geometry.
-  const p=position();
-  if(p>0&&p<1){
-    const word=format();
-    g.font='800 90px Lexend,system-ui,sans-serif';
-    g.fillStyle='#303137';
-    g.textAlign=p<.16?'left':p>.84?'right':'center';
-    const pad=p<.16?14:p>.84?-14:0;
-    g.fillText(word,tx(p)+pad,H*.94);
+  // The label the bead rests on is printed dark; the record above shows the
+  // exact value wherever the bead stops.
+  const p=position(),pd=Math.round(p*d);
+  const current=Math.abs(p*d-pd)<1e-8?pd:-1;
+  drawText(g,'0',tx(0),ROW*U,800,WHOLE_SIZE*U,'#1D1D1F');
+  drawText(g,'1',tx(1),ROW*U,800,WHOLE_SIZE*U,'#1D1D1F');
+  // Decimal labels are wide for their spacing, so alternate ones drop a row.
+  const stagger=state.mode==='decimal',maxW=(stagger?1.5:.86)*step/d*U;
+  for(let i=step;i<d;i+=step){
+    const hot=i===current,lab=labelFor(i,d);
+    const color=hot?'#1D1D1F':'#6E6E73',weight=hot?800:600;
+    if(lab.t)drawText(g,lab.t,tx(i/d),(ROW+(stagger&&(i/step)%2?.17:-.03))*U,weight,.13*U,color,maxW);
+    else drawFraction(g,lab.n,lab.d,tx(i/d),ROW*U,weight,.13*U,color,maxW);
   }
   tex.needsUpdate=true;
 }
 function renderTailRuler(){
-  const g=tailCanvas.getContext('2d'),W=tailCanvas.width,H=tailCanvas.height;
-  // The Volume Space ruler is opaque porcelain: a transparent canvas texture
-  // produces a black slab on MeshStandardMaterial outside the 0–1 close-up.
-  g.fillStyle='#FFFFFF';
-  g.fillRect(0,0,W,H);
-  const tx=x=>(x-LOCAL_RIGHT)/(TRACK_END-LOCAL_RIGHT)*W;
-  // Match the original continuously numbered count. This texture begins
-  // after the enlarged first unit and recedes toward the right edge.
-  for(let n=2;n<=21;n++){
-    if(n>TRACK_END)break;
-    const x=tx(n);
-    const major=n%10===0;
-    g.fillStyle=major?'#7a7c80':'#b5b6ba';
-    g.fillRect(x-1,5,major?3.4:2,major?H*.35:H*.2);
-    g.font=(major?'800 ':'600 ')+(major?'62px':'53px')+' Lexend,system-ui,sans-serif';
-    g.fillStyle=major?'#1d1d1f':'#5e6269';
-    g.textAlign='center';g.textBaseline='middle';
-    g.fillText(String(n),x,H*.66);
+  const g=tailCanvas.getContext('2d'),W=tailCanvas.width,H=tailCanvas.height,U=TPX;
+  const tx=x=>(x-LOCAL_RIGHT)*U;
+  // Opaque porcelain in Volume Space's alternating ten-zones: a transparent
+  // canvas texture produces a black slab on MeshStandardMaterial.
+  for(let z=0;z*10<TRACK_END;z++){
+    const a=Math.max(tx(z*10),0),b=Math.min(tx(z*10+10),W);
+    g.fillStyle=ZONE[z%2];g.fillRect(a,0,b-a,H);
+  }
+  g.fillStyle='rgba(0,0,0,0.12)';g.fillRect(0,0,W,3);
+  for(let n=2;n<=TRACK_END;n++){
+    const major=n%10===0,w=major?4:2.5;
+    g.fillStyle=major?'rgba(0,0,0,0.26)':'rgba(0,0,0,0.15)';
+    g.fillRect(tx(n)-w/2,4,w,(major?.6:.42)*U);
+    // Continuous count on the same row and scale as 0 and 1: decades are anchors.
+    drawText(g,String(n),tx(n),ROW*U,major?800:500,WHOLE_SIZE*U,major?'#1D1D1F':'#4A4A4F',.9*U);
   }
   tailTex.needsUpdate=true;
 }
+const numIn=document.getElementById('numIn'),denIn=document.getElementById('denIn'),decIn=document.getElementById('decIn');
+const recFrac=document.getElementById('recFrac'),recEq=document.getElementById('recEq'),recRes=document.getElementById('recRes');
+// Each typeable factor is sized to its digits, as in Volume Space's equation.
+const fitInput=el=>{el.style.width=(Math.max(1,el.value.length)*.64+.14)+'em'};
+function shownFraction(){
+  const d=scale(),n=position()*d;
+  return Math.abs(n-Math.round(n))<1e-8?{n:Math.round(n),d}:{n:state.numerator,d:state.denominator};
+}
+function decimalText(){
+  const p=position();
+  for(const places of (state.mode==='decimal'&&scale()===100?[2]:[1,2]))
+    if(Math.abs(p*10**places-Math.round(p*10**places))<1e-8)return p.toFixed(places);
+  return '≈'+p.toFixed(2);
+}
+function stacked(n,d){
+  return `<span class="rec-frac"><span>${n}</span><span class="bar"></span><span>${d}</span></span>`;
+}
+function renderRecord(){
+  const fraction=state.mode==='fraction';
+  recFrac.hidden=!fraction;decIn.hidden=fraction;
+  let equivalent='';
+  if(fraction){
+    const f=shownFraction();
+    if(document.activeElement!==numIn){numIn.value=f.n;numIn.classList.remove('bad')}
+    if(document.activeElement!==denIn){denIn.value=f.d;denIn.classList.remove('bad')}
+    fitInput(numIn);fitInput(denIn);
+    // Tenths and hundredths ARE place values: say so with the decimal.
+    if(f.d===10||f.d===100)equivalent=(f.n/f.d).toFixed(f.d===10?1:2);
+  }else{
+    if(document.activeElement!==decIn){decIn.value=decimalText();decIn.classList.remove('bad')}
+    fitInput(decIn);
+    const p=position();
+    for(const d of [10,100])
+      if(Math.abs(p*d-Math.round(p*d))<1e-8){equivalent=stacked(Math.round(p*d),d);break}
+  }
+  recEq.hidden=recRes.hidden=!equivalent;
+  recRes.innerHTML=equivalent;
+}
+function setFraction(n,d){
+  state.fractionDen=d;updateChoices();
+  n=clamp(n,0,d);state.anchor=n/d;show(n,d);
+}
+const whole=s=>/^\d{1,3}$/.test(s.trim())?Number(s):NaN;
+numIn.addEventListener('input',()=>{
+  const n=whole(numIn.value),d=whole(denIn.value);
+  const ok=n>=0&&n<=d&&FRACTIONS.includes(d);
+  numIn.classList.toggle('bad',!ok);fitInput(numIn);
+  if(ok)setFraction(n,d);
+});
+denIn.addEventListener('input',()=>{
+  const n=whole(numIn.value),d=whole(denIn.value);
+  const ok=FRACTIONS.includes(d);
+  denIn.classList.toggle('bad',!ok);fitInput(denIn);
+  if(ok)setFraction(Number.isNaN(n)?0:Math.min(n,d),d);
+});
+decIn.addEventListener('input',()=>{
+  const m=decIn.value.trim().match(/^(0|1)?(?:\.(\d{0,2}))?$/);
+  const v=m&&(m[1]||m[2])?Number((m[1]||'0')+'.'+(m[2]||'0')):NaN;
+  const ok=v>=0&&v<=1;
+  decIn.classList.toggle('bad',!ok);fitInput(decIn);
+  if(!ok)return;
+  // Typing hundredths moves to the hundredths partition; tenths keep whichever is showing.
+  const d=(m[2]||'').length===2?100:state.decimalDen;
+  state.decimalDen=d;updateChoices();
+  state.anchor=Math.round(v*d)/d;show(Math.round(v*d),d);
+});
+for(const el of [numIn,denIn,decIn]){
+  // Select after the click lands, so typing always replaces the number.
+  el.addEventListener('focus',()=>setTimeout(()=>el.select()));
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Escape')el.blur()});
+  el.addEventListener('blur',renderRecord);   // an unfinished entry snaps back to the cube
+}
 function render(){
-  renderBlocks();renderRuler();
+  renderBlocks();renderRuler();renderRecord();
   canvas.setAttribute('aria-valuenow',String(position()));
   canvas.setAttribute('aria-valuetext',format());
   announce.textContent='The unit cube is filled to '+format()+'.';
   redraw();
 }
+// ── THE WORKING NUMBER ──
+// `anchor` is the amount the student last chose: by dragging, stepping or
+// typing. Changing the partition or switching fractions ↔ decimals never moves
+// it; the cube shows the nearest whole number of the new pieces. Every toggle
+// snaps from the anchor, never from the previous snap, so a round trip
+// (2/3 → fourths → halves → thirds) always comes home to 2/3.
+state.anchor=state.numerator/state.denominator;
 function setValue(n,d){
   n=clamp(Math.round(n),0,d);
+  state.anchor=n/d;
   if(state.numerator===n&&state.denominator===d)return;
   state.numerator=n;state.denominator=d;render();
+}
+function show(n,d){state.numerator=n;state.denominator=d;render()}
+// Nearest piece of a partition. A cube that has something in it never snaps
+// to empty, and a part-filled cube never snaps to full.
+function nearest(v,d){
+  const n=Math.round(v*d+1e-9);
+  return v>0&&v<1?clamp(n,1,d-1):n;
+}
+// Decimals → fractions: the simplest fraction close to the decimal.
+// Exact matches win first (0.5 → 1/2, 0.4 → 2/5, 0.1 → 1/10, never 1/9);
+// otherwise 0.28 → 1/4, 0.33 → 1/3, 0.72 → 3/4. "Close" is within 0.03,
+// tightened near 0 and 1 so a small amount is never doubled (0.07 → 1/16,
+// not 1/10). Anything else stays exact in hundredths.
+const SNAP=.03,SNAP_REL=.12,SIMPLEST=FRACTIONS.filter(d=>d!==100);
+function simplestFraction(v){
+  if(v<=1e-9||v>=1-1e-9)return {n:Math.round(v)*state.fractionDen,d:state.fractionDen};
+  const tol=Math.min(SNAP,SNAP_REL*v,SNAP_REL*(1-v))+1e-9;
+  for(const within of [1e-9,tol])
+    for(const d of SIMPLEST){
+      const n=Math.round(v*d);
+      if(n>0&&n<d&&Math.abs(n/d-v)<=within)return {n,d};
+    }
+  return {n:Math.round(v*100),d:100};
+}
+// Fractions → decimals: stay on the decimal partition in use when the value
+// fits it exactly (1/2 → 0.5); otherwise round to hundredths (1/3 → 0.33).
+function nearestDecimal(v){
+  const d=Math.abs(v*state.decimalDen-Math.round(v*state.decimalDen))<1e-9?state.decimalDen:100;
+  return {n:nearest(v,d),d};
 }
 function setFromPosition(x){setValue(Math.round(clamp(x,0,1)*scale()),scale())}
 function step(dir){
@@ -668,11 +814,14 @@ parts.addEventListener('change',()=>{
   const d=Number(parts.value);
   if(!(state.mode==='fraction'?FRACTIONS:DECIMALS).includes(d))return;
   if(state.mode==='fraction')state.fractionDen=d;else state.decimalDen=d;
-  updateChoices();render();
+  updateChoices();show(nearest(state.anchor,d),d);
 });
 function changeMode(next){
   if(next===state.mode)return;
-  state.mode=next;updateChoices();render();
+  state.mode=next;
+  const f=next==='fraction'?simplestFraction(state.anchor):nearestDecimal(state.anchor);
+  if(next==='fraction')state.fractionDen=f.d;else state.decimalDen=f.d;
+  updateChoices();show(f.n,f.d);
 }
 document.getElementById('fractionMode').addEventListener('click',()=>changeMode('fraction'));
 document.getElementById('decimalMode').addEventListener('click',()=>changeMode('decimal'));
@@ -681,11 +830,52 @@ document.getElementById('less').addEventListener('click',()=>step(-1));
 document.getElementById('more').addEventListener('click',()=>step(1));
 document.getElementById('clear').addEventListener('click',()=>setValue(0,scale()));
 
-const target=new V3(.5,.04,.43),dir=new V3(-.43,-.88,.53).normalize();
+// Volume Space's home view (in front, to the left, raised), turned closer to
+// head-on: zoomed in this far, the 0–1 piece of the ruler needs its full width.
+const HOME_DIR=new V3(-.2,-.78,.6).normalize();
+// Everything that must be in view: the cube, the bead, and the printed 0–1 labels.
+const FRAME_BOX=new THREE.Box3(new V3(LOCAL_LEFT,-.85,0),new V3(LOCAL_RIGHT,.95,.95));
+const target=new V3();
 function frame(){
-  camera.aspect=window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  camera.position.copy(target).addScaledVector(dir,Math.max(3.15,2.3/camera.aspect));
+  const W=window.innerWidth,H=window.innerHeight;
+  camera.aspect=W/H;camera.updateProjectionMatrix();
+  // The header wraps on narrow screens; the record always sits just below it.
+  document.getElementById('record').style.top=(document.querySelector('header').getBoundingClientRect().bottom+14)+'px';
+  // The free screen area sits between the record and the steppers.
+  const top=document.getElementById('record').getBoundingClientRect().bottom+12;
+  const bottom=document.querySelector('.steppers').getBoundingClientRect().top-14;
+  const side=Math.min(40,W*.04),availW=W-2*side,availH=Math.max(120,bottom-top);
+  const corners=[];
+  for(let i=0;i<8;i++)corners.push(new V3(
+    i&1?FRAME_BOX.max.x:FRAME_BOX.min.x,i&2?FRAME_BOX.max.y:FRAME_BOX.min.y,i&4?FRAME_BOX.max.z:FRAME_BOX.min.z));
+  const bounds=()=>{
+    camera.updateMatrixWorld();
+    let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+    for(const c of corners){
+      const v=c.clone().project(camera),px=(v.x+1)*W/2,py=(1-v.y)*H/2;
+      x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py);
+    }
+    return {x0,x1,y0,y1};
+  };
+  const place=dist=>{camera.position.copy(target).addScaledVector(HOME_DIR,dist);camera.lookAt(target)};
+  FRAME_BOX.getCenter(target);
+  let dist=3;
+  for(let pass=0;pass<3;pass++){
+    // Closest distance at which the box fits the free area…
+    let lo=.5,hi=40;
+    for(let k=0;k<30;k++){
+      dist=(lo+hi)/2;place(dist);
+      const b=bounds();
+      if(b.x1-b.x0<=availW&&b.y1-b.y0<=availH)hi=dist;else lo=dist;
+    }
+    dist=hi;place(dist);
+    // …then slide the target so the box is centred in that area.
+    const b=bounds(),perPx=2*dist*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/H;
+    const dx=((b.x0+b.x1)/2-(side+availW/2))*perPx,dy=((b.y0+b.y1)/2-(top+availH/2))*perPx;
+    const right=new V3().setFromMatrixColumn(camera.matrixWorld,0),up=new V3().setFromMatrixColumn(camera.matrixWorld,1);
+    target.addScaledVector(right,dx).addScaledVector(up,-dy);
+    place(dist);
+  }
   if(controls){controls.target.copy(target);controls.update()}
   redraw();
 }
