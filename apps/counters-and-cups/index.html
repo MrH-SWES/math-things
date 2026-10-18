@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Counters &amp; Cups</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --steel: #8E9196;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BOARD (pieces float above everything so they can be carried back to the bins) ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .cup, #board .ctr { cursor: grab; outline: none; }
+    #board .cup use, #board .ctr use { pointer-events: visiblePainted; }
+    #board .held { cursor: grabbing; }
+    #board .fx { transform-box: fill-box; transform-origin: 50% 50%; }
+    #board .cup:focus-visible .fx { outline: 3px solid #007AFF; outline-offset: 4px; }
+    #board .tally { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #board.rec .tally { opacity: 1; }
+    #board .tally text { font-family: 'Lexend', sans-serif; font-weight: 800; fill: var(--text-gray); }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .bin {
+      --bin-w: clamp(64px, 17vw, 108px);
+      --bin-h: clamp(64px, 15vw, 96px);
+      width: var(--bin-w);
+      height: var(--bin-h);
+      border: none; border-radius: 18px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg {
+      width: calc(var(--bin-w) * 0.72); height: calc(var(--bin-h) * 0.72);
+      overflow: visible; pointer-events: none;
+      filter: drop-shadow(0 3px 3px rgba(60,40,20,0.22));
+    }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── RECORD (optional, follows the cups) ── */
+    #record {
+      position: fixed; top: 14px; left: 50%; transform: translate(-50%, -6px);
+      z-index: 4; pointer-events: none;
+      display: flex; align-items: baseline; gap: 0.3em; white-space: nowrap;
+      font-weight: 900; font-size: clamp(22px, 3.2vw, 34px); letter-spacing: -0.02em;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s var(--spring);
+    }
+    #record.on { opacity: 1; transform: translate(-50%, 0); }
+    #record .op { color: var(--text-light); font-weight: 400; }
+    #record .loose { color: var(--steel); }
+    @media (max-width: 600px) { #record { top: 58px; } }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Counters and cups mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <button class="bin" data-bin="cup" aria-label="Cups bin"></button>
+    <button class="bin" data-bin="ctr" aria-label="Counters bin. Press and hold to pour."></button>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the numbers" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Clear the mat">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<div id="record" aria-hidden="true"></div>
+
+<!-- Paints shared by the mat and the bins -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- machined aluminum counter face -->
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.24" stop-color="#F1F1F3"/>
+      <stop offset="0.55" stop-color="#C8C9CD"/>
+      <stop offset="0.82" stop-color="#A7A8AD"/>
+      <stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <!-- glazed ceramic cup, seen from above -->
+    <radialGradient id="rim" cx="0.45" cy="0.4" r="0.65">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.78" stop-color="#F7F5F1"/>
+      <stop offset="1" stop-color="#E2DDD5"/>
+    </radialGradient>
+    <radialGradient id="well" cx="0.5" cy="0.56" r="0.6">
+      <stop offset="0" stop-color="#F3F0EA"/>
+      <stop offset="0.72" stop-color="#E9E5DE"/>
+      <stop offset="1" stop-color="#D8D2C8"/>
+    </radialGradient>
+    <linearGradient id="wellShade" x1="0.15" y1="0.1" x2="0.85" y2="0.9">
+      <stop offset="0" stop-color="#4A3826" stop-opacity="0.18"/>
+      <stop offset="0.45" stop-color="#4A3826" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="cupLayer"></g>
+  <g id="looseLayer" filter="url(#rest)"></g>
+  <g id="air"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ═══════ GEOMETRY ═══════
+  // Everything is measured in counter diameters (one counter = 1).
+  // Counters in a cup pack tight like real discs, in patterns a student can read at a glance:
+  // a pair, a triangle, a diamond, two over three, a pyramid, then a flower of seven,
+  // and from eight up an outer ring that fills in evenly around the flower.
+  const P = 1.06;             // center-to-center spacing of counters in a cup
+  const H = P * Math.sqrt(3) / 2;
+  const RI = 2 * P + 0.72;    // inside wall of the cup
+  const RO = RI + 0.42;       // outside of the rim
+  const CAP = 19;
+  const slotsFor = (() => {
+    const small = [
+      [],
+      [[0, 0]],
+      [[-P / 2, 0], [P / 2, 0]],
+      [[-P / 2, 0], [P / 2, 0], [0, -H]],
+      [[-P / 2, 0], [P / 2, 0], [0, -H], [0, H]],
+      [[-P / 2, -H / 2], [P / 2, -H / 2], [-P, H / 2], [0, H / 2], [P, H / 2]],
+      [[0, -H], [-P / 2, 0], [P / 2, 0], [-P, H], [0, H], [P, H]],
+    ];
+    const flower = [[0, 0]];
+    for (let k = 0; k < 6; k++) flower.push([P * Math.cos(k * Math.PI / 3), P * Math.sin(k * Math.PI / 3)]);
+    const ring = [];
+    for (const k of [0, 6, 3, 9, 1, 7, 4, 10, 2, 8, 5, 11]) {
+      const a = k * Math.PI / 6, r = k % 2 ? Math.sqrt(3) * P : 2 * P;
+      ring.push([r * Math.cos(a), r * Math.sin(a)]);
+    }
+    const centered = pts => {
+      const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+      return pts.map(([x, y]) => ({ x: x - cx, y: y - cy }));
+    };
+    const memo = [];
+    return n => memo[n] || (memo[n] = n <= 6 ? (n ? centered(small[n]) : [])
+      : flower.concat(ring.slice(0, n - 7)).map(([x, y]) => ({ x, y })));
+  })();
+  const MAX_COUNTERS = 240;
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ms = t => (reduceMotion ? 0 : t);
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const fmt = n => n.toLocaleString('en-US');
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), cupLayer = $('cupLayer'), looseLayer = $('looseLayer'), air = $('air');
+  const dock = $('dock'), footer = $('footer'), record = $('record'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+  const cupBin = dock.querySelector('[data-bin="cup"]'), ctrBin = dock.querySelector('[data-bin="ctr"]');
+
+  let D = 22;                      // pixels per counter diameter
+  const counters = new Map();      // id → { id, el, fx, cup, x, y, held }
+  const cups = new Map();          // id → { id, el, fx, inner, tally, items, x, y, held }
+  let nextId = 1;
+  let recordOn = false;
+
+  // ═══════ DRAWING ═══════
+  function counterMarkup(d) {
+    const r = d / 2, sw = r2(Math.max(0.6, d / 26));
+    const hx = r2(-r * 0.3), hy = r2(-r * 0.36);
+    return (
+      `<circle r="${r2(r)}" fill="url(#alum)"/>` +
+      // an engraved ring turned into the face
+      `<circle r="${r2(r * 0.68)}" fill="none" stroke="rgba(30,30,35,0.2)" stroke-width="${sw}"/>` +
+      `<circle r="${r2(r * 0.68)}" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="${sw}" transform="translate(${sw} ${sw})"/>` +
+      `<ellipse cx="${hx}" cy="${hy}" rx="${r2(r * 0.36)}" ry="${r2(r * 0.2)}" fill="#fff" opacity="0.75" transform="rotate(-35 ${hx} ${hy})"/>` +
+      `<circle r="${r2(r - sw / 2)}" fill="none" stroke="rgba(40,40,46,0.32)" stroke-width="${sw}"/>`
+    );
+  }
+
+  function cupMarkup(d) {
+    const ro = RO * d, ri = RI * d, sw = r2(Math.max(0.8, d / 22));
+    return (
+      `<circle r="${r2(ro)}" fill="url(#rim)" stroke="rgba(60,45,30,0.14)" stroke-width="${sw}"/>` +
+      `<circle r="${r2(ro - d * 0.1)}" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="${r2(sw * 1.4)}"/>` +
+      `<circle r="${r2(ri)}" fill="url(#well)"/>` +
+      `<circle r="${r2(ri)}" fill="url(#wellShade)"/>` +
+      `<circle r="${r2(ri)}" fill="none" stroke="rgba(60,45,30,0.16)" stroke-width="${sw}"/>`
+    );
+  }
+
+  function setD() {
+    // Big enough for a dozen cups: six to a row when the screen is wide, four to a row when it is tall.
+    const w = innerWidth - 48, h = innerHeight - dock.offsetHeight - footer.offsetHeight - 72;
+    D = Math.max(16, Math.min(30, Math.max(Math.min(w / 44, h / 22), Math.min(w / 30, h / 32))));
+    const shadow = (dx, dy, s, o) =>
+      `<feDropShadow dx="${r2(dx * D)}" dy="${r2(dy * D)}" stdDeviation="${r2(s * D)}" flood-color="#3B2A1A" flood-opacity="${o}"/>`;
+    defs.innerHTML =
+      `<filter id="rest" x="-30%" y="-30%" width="160%" height="170%">${shadow(0.05, 0.14, 0.09, 0.34)}</filter>` +
+      `<filter id="lift" x="-80%" y="-80%" width="260%" height="300%">${shadow(0.15, 0.5, 0.3, 0.24)}</filter>` +
+      `<filter id="cupShadow" x="-20%" y="-20%" width="140%" height="150%">${shadow(0.08, 0.3, 0.3, 0.22)}</filter>` +
+      `<g id="ctr">${counterMarkup(D)}</g>` +
+      `<g id="cup">${cupMarkup(D)}</g>`;
+  }
+
+  function miniMarkup(kind) {
+    if (kind === 'cup') {
+      const d = 9.6, ro = RO * d;
+      return `<svg viewBox="${r2(-ro - 3)} ${r2(-ro - 9)} ${r2(2 * ro + 12)} ${r2(2 * ro + 12)}" aria-hidden="true" focusable="false">` +
+        `<g transform="translate(6 -6)">${cupMarkup(d)}</g><g>${cupMarkup(d)}</g></svg>`;
+    }
+    const d = 22, pile = [[-0.55, 0.3], [0.55, 0.3], [0, -0.55], [-1.1, -0.55], [1.1, -0.55]];
+    return `<svg viewBox="${-1.75 * d} ${-1.2 * d} ${3.5 * d} ${2.3 * d}" aria-hidden="true" focusable="false">` +
+      pile.map(([x, y]) => `<g transform="translate(${x * d} ${y * d})">${counterMarkup(d)}</g>`).join('') + '</svg>';
+  }
+
+  // ═══════ PLACEMENT ═══════
+  function setXY(node, x, y, dur = 0) {
+    node.style.transition = dur && !reduceMotion ? `transform ${dur}ms cubic-bezier(.2,.85,.25,1.04)` : 'none';
+    node.style.transform = `translate(${r2(x * D)}px,${r2(y * D)}px)`;
+  }
+
+  function dockTop() { return dock.getBoundingClientRect().top / D; }
+
+  function clampPt(x, y, r) {
+    return {
+      x: Math.min(Math.max(x, r + 0.3), innerWidth / D - r - 0.3),
+      y: Math.min(Math.max(y, r + 0.3), dockTop() - r - 0.3),
+    };
+  }
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  function worldOf(c) {
+    if (!c.cup) return { x: c.x, y: c.y };
+    const s = slotsFor(c.cup.items.length)[c.cup.items.indexOf(c)];
+    return { x: c.cup.x + s.x, y: c.cup.y + s.y };
+  }
+
+  // ═══════ MOTION ═══════
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+  const pop = n => anim(n, [{ transform: 'scale(0.82)' }, { transform: 'scale(1.05)', offset: 0.6 }, { transform: 'scale(1)' }], 170);
+  const settle = n => anim(n, [{ transform: 'scale(1.06)' }, { transform: 'scale(0.98)', offset: 0.6 }, { transform: 'scale(1)' }], 200);
+  const shake = n => anim(n, [0, -0.16, 0.16, -0.1, 0.1, 0].map(v => ({ transform: `translateX(${v * D}px)` })), 260, 'linear');
+
+  // ═══════ COUNTERS ═══════
+  function addCounter(x, y, parent = looseLayer) {
+    if (counters.size >= MAX_COUNTERS) return null;
+    const c = { id: nextId++, cup: null, x, y, held: false };
+    c.el = el('g', { class: 'ctr' });
+    c.el.dataset.id = c.id;
+    c.fx = el('g', { class: 'fx' }, c.el);
+    el('use', { href: '#ctr' }, c.fx);
+    parent.appendChild(c.el);
+    setXY(c.el, x, y);
+    counters.set(c.id, c);
+    return c;
+  }
+
+  function removeCounter(c) {
+    counters.delete(c.id);
+    if (c.cup) { c.cup.items.splice(c.cup.items.indexOf(c), 1); layoutCup(c.cup, 160); c.cup = null; }
+    c.el.style.pointerEvents = 'none';
+    if (reduceMotion) c.el.remove();
+    else c.fx.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.6)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' })
+      .onfinish = () => c.el.remove();
+    changed();
+  }
+
+  // The next open spot in the loose pile, which grows up and out from just above the counters bin.
+  function pileSpot() {
+    const r = ctrBin.getBoundingClientRect();
+    const hx = (r.left + r.width / 2) / D, hy = dockTop() - 1.4;
+    const loose = [...counters.values()].filter(c => !c.cup && !c.held);
+    for (let ring = 0; ring < 40; ring++) {
+      const pts = hexRing(ring).filter(p => p.y <= 0.01)
+        .sort((a, b) => (Math.abs(a.x) - a.y * 1.2) - (Math.abs(b.x) - b.y * 1.2));
+      for (const p of pts) {
+        const x = hx + p.x * 1.04, y = hy + p.y * 1.04;
+        if (x < 0.8 || x > innerWidth / D - 0.8 || y < 0.8) continue;
+        if (loose.some(o => Math.hypot(o.x - x, o.y - y) < 0.98)) continue;
+        if ([...cups.values()].some(u => Math.hypot(u.x - x, u.y - y) < RO + 0.5)) continue;
+        return { x, y };
+      }
+    }
+    return clampPt(hx, hy, 0.5);
+  }
+
+  function hexRing(n) {
+    if (!n) return [{ x: 0, y: 0 }];
+    const out = [], dirs = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+    let q = -n, r = n;
+    for (let side = 0; side < 6; side++) {
+      for (let step = 0; step < n; step++) {
+        out.push({ x: q + r / 2, y: r * Math.sqrt(3) / 2 });
+        q += dirs[side][0]; r += dirs[side][1];
+      }
+    }
+    return out;
+  }
+
+  function addToPile() {
+    const p = pileSpot(), c = addCounter(p.x, p.y);
+    if (!c) return null;
+    pop(c.fx);
+    buzz(4);
+    changed();
+    return c;
+  }
+
+  // ═══════ CUPS ═══════
+  function addCup(x, y) {
+    const u = { id: nextId++, items: [], x, y, held: false };
+    u.el = el('g', { class: 'cup', tabindex: '0', role: 'button', filter: 'url(#cupShadow)' }, cupLayer);
+    u.el.dataset.id = u.id;
+    u.fx = el('g', { class: 'fx' }, u.el);
+    el('use', { href: '#cup' }, u.fx);
+    u.inner = el('g', { filter: 'url(#rest)' }, u.fx);
+    u.tally = el('g', { class: 'tally' }, u.fx);
+    el('circle', {}, u.tally);
+    el('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central' }, u.tally);
+    sizeTally(u);
+    setXY(u.el, x, y);
+    cups.set(u.id, u);
+    labelCup(u);
+    return u;
+  }
+
+  function sizeTally(u) {
+    const [dot, text] = u.tally.children, a = RO * 0.74 * D;
+    dot.setAttribute('cx', r2(a)); dot.setAttribute('cy', r2(-a)); dot.setAttribute('r', r2(0.5 * D));
+    dot.setAttribute('fill', '#fff'); dot.setAttribute('stroke', 'rgba(0,0,0,0.08)');
+    text.setAttribute('x', r2(a)); text.setAttribute('y', r2(-a));
+    text.setAttribute('font-size', r2(0.52 * D));
+  }
+
+  function labelCup(u) {
+    const n = u.items.length;
+    u.el.setAttribute('aria-label', `cup with ${n} ${n === 1 ? 'counter' : 'counters'}`);
+    u.tally.children[1].textContent = n;
+  }
+
+  function layoutCup(u, dur) {
+    const s = slotsFor(u.items.length);
+    u.items.forEach((c, i) => setXY(c.el, s[i].x, s[i].y, dur));
+    labelCup(u);
+  }
+
+  // The next empty place to set out a cup, filling rows from the top left, below the record.
+  function cupSpot() {
+    const r = record.getBoundingClientRect();
+    const step = 2 * RO + 0.5, top = Math.max(r.bottom + 20, 56) / D + RO, bottom = dockTop() - RO - 0.4;
+    for (let y = top; y <= bottom + 0.01; y += step) {
+      for (let x = RO + 0.6; x <= innerWidth / D - RO - 0.3; x += step) {
+        const open = ![...cups.values()].some(u => Math.hypot(u.x - x, u.y - y) < 2 * RO + 0.3) &&
+          ![...counters.values()].some(c => !c.cup && Math.hypot(c.x - x, c.y - y) < RO + 0.6);
+        if (open) return { x, y };
+      }
+    }
+    return clampPt(innerWidth / D / 2, top, RO);
+  }
+
+  function removeCup(u) {
+    cups.delete(u.id);
+    for (const c of u.items) counters.delete(c.id);
+    u.items = [];
+    u.el.style.pointerEvents = 'none';
+    u.el.removeAttribute('tabindex');
+    if (reduceMotion) u.el.remove();
+    else u.fx.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.82)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
+      .onfinish = () => u.el.remove();
+    changed();
+  }
+
+  function cupAt(x, y) {
+    let best = null, bestD = Infinity;
+    for (const u of cups.values()) {
+      if (u.held) continue;
+      const d = Math.hypot(x - u.x, y - u.y);
+      if (d < RI + 0.25 && d < bestD) { bestD = d; best = u; }
+    }
+    return best;
+  }
+
+  // A counter slides into the cup and the cup's pattern settles around it, or a full cup turns it away.
+  function putInCup(c, u) {
+    const w = worldOf(c);
+    if (u.items.length >= CAP) { bounceOff(c, u, w); return; }
+    c.cup = u;
+    c.x = w.x; c.y = w.y;
+    u.items.push(c);
+    u.inner.appendChild(c.el);
+    setXY(c.el, w.x - u.x, w.y - u.y);
+    c.el.getBoundingClientRect();
+    layoutCup(u, 190);
+    buzz(4);
+    changed();
+  }
+
+  // A full cup turns a counter away to the nearest open spot just outside its rim.
+  function bounceOff(c, u, w) {
+    const start = Math.hypot(w.x - u.x, w.y - u.y) < 0.01 ? 0 : Math.atan2(w.y - u.y, w.x - u.x);
+    let p = null;
+    for (let k = 0; k < 24 && !p; k++) {
+      const a = start + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * (Math.PI / 12);
+      const q = clampPt(u.x + Math.cos(a) * (RO + 0.7), u.y + Math.sin(a) * (RO + 0.7), 0.5);
+      if ([...cups.values()].every(o => Math.hypot(o.x - q.x, o.y - q.y) > RO + 0.5)) p = q;
+    }
+    if (!p) p = clampPt(u.x + RO + 0.7, u.y, 0.5);
+    c.cup = null;
+    c.x = p.x; c.y = p.y;
+    looseLayer.appendChild(c.el);
+    setXY(c.el, w.x, w.y);
+    c.el.getBoundingClientRect();
+    setXY(c.el, p.x, p.y, 220);
+    shake(c.fx);
+    shake(u.fx);
+    changed();
+  }
+
+  // Tapping a cup deals it one counter from the loose pile.
+  function deal(u) {
+    if (u.items.length >= CAP) { shake(u.fx); return; }
+    let best = null, bestD = Infinity;
+    for (const c of counters.values()) {
+      if (c.cup || c.held) continue;
+      const d = Math.hypot(c.x - u.x, c.y - u.y);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    if (!best) { shake(u.fx); buzz(4); return; }
+    putInCup(best, u);
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    const row = 2 * RO;
+    const list = [...cups.values()].sort((a, b) => (Math.round(a.y / row) - Math.round(b.y / row)) || (a.x - b.x));
+    const counts = list.map(u => u.items.length);
+    const loose = [...counters.values()].filter(c => !c.cup).length;
+    const total = counts.reduce((a, b) => a + b, 0) + loose;
+    const op = s => `<span class="op">${s}</span>`;
+    let html;
+    if (!list.length) {
+      html = loose ? `<span class="loose">${fmt(loose)}</span>` : '<span>0</span>';
+    } else {
+      const equal = counts.every(n => n === counts[0]);
+      html = list.length === 1 ? `<span>${counts[0]}</span>`
+        : equal ? `<span>${list.length}</span>${op('×')}<span>${counts[0]}</span>`
+        : counts.map(n => `<span>${n}</span>`).join(op('+'));
+      if (loose) html += `${op('+')}<span class="loose">${fmt(loose)}</span>`;
+      if (list.length > 1 || loose) html += `${op('=')}<span>${fmt(total)}</span>`;
+    }
+    record.innerHTML = html;
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const parts = [];
+      if (list.length) parts.push(`${list.length} ${list.length === 1 ? 'cup' : 'cups'} holding ${counts.join(', ')}`);
+      if (loose) parts.push(`${loose} loose ${loose === 1 ? 'counter' : 'counters'}`);
+      live.textContent = (parts.join('. ') || 'The mat is empty') + (recordOn && total ? `. ${fmt(total)} in all.` : '.');
+    }, 400);
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();   // pointerId → drag state
+  const toD = e => ({ x: e.clientX / D, y: e.clientY / D });
+
+  board.addEventListener('pointerdown', e => {
+    const p = toD(e);
+    const cn = e.target.closest('.ctr');
+    if (cn) {
+      const c = counters.get(+cn.dataset.id);
+      if (!c || c.held) return;
+      e.preventDefault();
+      try { cn.setPointerCapture(e.pointerId); } catch (err) {}
+      const w = worldOf(c);
+      drags.set(e.pointerId, { kind: 'ctr', c, sx: p.x, sy: p.y, ox: p.x - w.x, oy: p.y - w.y, moved: false });
+      return;
+    }
+    const un = e.target.closest('.cup');
+    if (un) {
+      const u = cups.get(+un.dataset.id);
+      if (!u || u.held) return;
+      e.preventDefault();
+      cupLayer.appendChild(u.el);
+      try { un.setPointerCapture(e.pointerId); } catch (err) {}
+      drags.set(e.pointerId, { kind: 'cup', u, sx: p.x, sy: p.y, ox: p.x - u.x, oy: p.y - u.y, moved: false });
+    }
+  });
+
+  dock.addEventListener('pointerdown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin) return;
+    e.preventDefault();
+    const p = toD(e), s = { kind: 'bin', bin: bin.dataset.bin, sx: p.x, sy: p.y, moved: false, pour: 0, hold: 0 };
+    if (s.bin === 'ctr') {
+      // press and hold to pour counters onto the pile
+      s.hold = setTimeout(() => { addToPile(); s.pour = setInterval(addToPile, 120); }, 380);
+    }
+    drags.set(e.pointerId, s);
+  });
+
+  function startCarry(s, p, e) {
+    if (s.kind === 'ctr') {
+      const c = s.c;
+      if (c.cup) {
+        // lift it out of its cup; the rest close up
+        const u = c.cup, w = worldOf(c);
+        u.items.splice(u.items.indexOf(c), 1);
+        c.cup = null;
+        c.x = w.x; c.y = w.y;
+        layoutCup(u, 180);
+      }
+      c.held = true;
+      air.appendChild(c.el);
+      c.el.setAttribute('filter', 'url(#lift)');
+      c.el.classList.add('held');
+      try { c.el.setPointerCapture(e.pointerId); } catch (err) {}
+      changed();
+    } else if (s.kind === 'cup') {
+      s.u.held = true;
+      s.u.el.setAttribute('filter', 'url(#lift)');
+      s.u.el.classList.add('held');
+    } else if (s.bin === 'ctr') {
+      clearTimeout(s.hold);
+      const c = addCounter(p.x, p.y, air);
+      if (!c) { drags.delete(e.pointerId); return; }
+      pop(c.fx);
+      c.held = true;
+      c.el.setAttribute('filter', 'url(#lift)');
+      c.el.classList.add('held');
+      Object.assign(s, { kind: 'ctr', c, ox: 0, oy: 0 });
+      changed();
+    } else {
+      const u = addCup(p.x, p.y);
+      pop(u.fx);
+      u.held = true;
+      u.el.setAttribute('filter', 'url(#lift)');
+      u.el.classList.add('held');
+      Object.assign(s, { kind: 'cup', u, ox: 0, oy: 0 });
+      changed();
+    }
+  }
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    const p = toD(e);
+    if (!s.moved) {
+      if (s.pour || Math.hypot(p.x - s.sx, p.y - s.sy) * D < 6) return;
+      s.moved = true;
+      startCarry(s, p, e);
+      if (!drags.has(e.pointerId)) return;
+    }
+    if (s.kind === 'ctr') { s.c.x = p.x - s.ox; s.c.y = p.y - s.oy; setXY(s.c.el, s.c.x, s.c.y); }
+    else if (s.kind === 'cup') { s.u.x = p.x - s.ox; s.u.y = p.y - s.oy; setXY(s.u.el, s.u.x, s.u.y); }
+  });
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    clearTimeout(s.hold);
+    clearInterval(s.pour);
+    if (s.kind === 'bin') {
+      if (s.pour) return;
+      if (s.bin === 'ctr') addToPile();
+      else { const p = cupSpot(), u = addCup(p.x, p.y); pop(u.fx); buzz(6); changed(); }
+      return;
+    }
+    if (!s.moved) {
+      // a tap anywhere on a cup, its counters included, deals it one more
+      const u = s.kind === 'cup' ? s.u : s.c.cup;
+      if (u) deal(u);
+      return;
+    }
+    if (s.kind === 'ctr') dropCounter(s.c, e.clientX, e.clientY);
+    else dropCup(s.u, e.clientX, e.clientY);
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  function dropCounter(c, cx, cy) {
+    c.held = false;
+    c.el.setAttribute('filter', 'none');
+    c.el.classList.remove('held');
+    if (overDock(cx, cy)) { removeCounter(c); return; }
+    const u = cupAt(c.x, c.y);
+    if (u) { putInCup(c, u); return; }
+    const p = clampPt(c.x, c.y, 0.5), moved = p.x !== c.x || p.y !== c.y;
+    c.x = p.x; c.y = p.y;
+    looseLayer.appendChild(c.el);
+    setXY(c.el, c.x, c.y, moved ? 180 : 0);
+    settle(c.fx);
+    changed();
+  }
+
+  function dropCup(u, cx, cy) {
+    u.held = false;
+    u.el.setAttribute('filter', 'url(#cupShadow)');
+    u.el.classList.remove('held');
+    if (overDock(cx, cy)) { removeCup(u); return; }
+    const p = clampPt(u.x, u.y, RO), moved = p.x !== u.x || p.y !== u.y;
+    u.x = p.x; u.y = p.y;
+    setXY(u.el, u.x, u.y, moved ? 200 : 0);
+    settle(u.fx);
+    buzz(6);
+    changed();
+  }
+
+  // ═══════ KEYBOARD ═══════
+  dock.addEventListener('keydown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    if (bin.dataset.bin === 'ctr') addToPile();
+    else { const p = cupSpot(), u = addCup(p.x, p.y); pop(u.fx); changed(); }
+  });
+
+  cupLayer.addEventListener('keydown', e => {
+    const un = e.target.closest('.cup');
+    const u = un && cups.get(+un.dataset.id);
+    if (!u) return;
+    const step = e.shiftKey ? 2 : 0.5;
+    const mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+    if (mv) {
+      e.preventDefault();
+      const p = clampPt(u.x + mv[0], u.y + mv[1], RO);
+      u.x = p.x; u.y = p.y;
+      setXY(u.el, u.x, u.y, 90);
+      changed();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      deal(u);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      removeCup(u);
+    }
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    record.classList.toggle('on', recordOn);
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+  clearBtn.addEventListener('click', () => {
+    [...cups.values()].forEach(removeCup);
+    [...counters.values()].forEach(removeCounter);
+  });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      setD();
+      for (const u of cups.values()) {
+        const p = clampPt(u.x, u.y, RO);
+        u.x = p.x; u.y = p.y;
+        setXY(u.el, u.x, u.y);
+        sizeTally(u);
+        layoutCup(u, 0);
+      }
+      for (const c of counters.values()) {
+        if (c.cup) continue;
+        const p = clampPt(c.x, c.y, 0.5);
+        c.x = p.x; c.y = p.y;
+        setXY(c.el, c.x, c.y);
+      }
+    });
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  cupBin.innerHTML = miniMarkup('cup');
+  ctrBin.innerHTML = miniMarkup('ctr');
+  setD();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
