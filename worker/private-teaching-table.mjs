@@ -76,12 +76,76 @@ async function book(name,size,token){
  if(!media.ok||!media.body)return closed(502,'EPUB download failed');
  return new Response(media.body,{headers:{'Content-Type':'application/epub+zip','Content-Disposition':'inline; filename="'+name+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 }
+// Minimal, authorized diagnostic: probes the selected LFS object without downloading it.
+// Never returns the GitHub token, LFS signed download URL, or private metadata.
+async function diagnoseBook(request,env){
+ const grade=new URL(request.url).searchParams.get('grade')||'04';
+ if(!/^(0K|0[1-8])$/.test(grade))return closed(400,'Invalid grade');
+ const name='iRCM'+grade+'_NN_EN_SW.epub',size=sizes.get(name);
+ const result={grade,stage:'start',status:0};
+ const finish=()=>new Response(JSON.stringify(result),{headers:{
+  'Content-Type':'application/json; charset=utf-8',
+  'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'
+ }});
+ const token=env.GITHUB_BOOKS_READ_TOKEN;
+ if(!token){result.stage='token-not-configured';return finish();}
+ try{
+  const pointerResponse=await fetch('https://api.github.com/repos/'+repo+'/contents/books/'+name+'?ref=main',{
+   headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','User-Agent':'school-teaching-table'}});
+  result.stage='github-contents';result.status=pointerResponse.status;
+  if(!pointerResponse.ok)return finish();
+  const data=await pointerResponse.json();
+  if(data.encoding!=='base64'||!data.content){result.stage='lfs-pointer-missing';return finish();}
+  const pointer=atob(data.content.replace(/\s/g,''));
+  const oid=/^oid sha256:([0-9a-f]{64})$/m.exec(pointer)?.[1];
+  const length=Number(/^size (\d+)$/m.exec(pointer)?.[1]);
+  if(!oid||length!==size){result.stage='lfs-pointer-invalid';return finish();}
+  const batch=await fetch('https://github.com/'+repo+'.git/info/lfs/objects/batch',{
+   method:'POST',
+   headers:{Authorization:'Basic '+btoa('x-access-token:'+token),
+    'Content-Type':'application/vnd.git-lfs+json',Accept:'application/vnd.git-lfs+json',
+    'User-Agent':'school-teaching-table'},
+   body:JSON.stringify({operation:'download',transfers:['basic'],
+    ref:{name:'refs/heads/main'},objects:[{oid,size}]})
+  });
+  result.stage='lfs-batch';result.status=batch.status;
+  if(!batch.ok)return finish();
+  const dataBatch=await batch.json();
+  const object=dataBatch.objects?.find(x=>x.oid===oid&&x.size===size);
+  if(object?.error){result.stage='lfs-object';result.status=object.error.code||0;return finish();}
+  const action=object?.actions?.download;
+  if(!action?.href||new URL(action.href).protocol!=='https:'){
+   result.stage='lfs-download-action-missing';return finish();
+  }
+  const upstream=await fetch(action.href,{
+   headers:{...(action.header||{}),Range:'bytes=0-3'}
+  });
+  result.stage='lfs-range';result.status=upstream.status;
+  result.type=upstream.headers.get('Content-Type')?.split(';')[0]||'unknown';
+  result.range=upstream.headers.get('Content-Range')?'partial':'unspecified';
+  if(!upstream.ok){await upstream.body?.cancel();return finish();}
+  if(!upstream.body){result.stage='lfs-empty-body';return finish();}
+  const reader=upstream.body.getReader();
+  const first=await reader.read();
+  result.stage=first.done?'lfs-empty-stream':'lfs-first-bytes';
+  result.bytesReceived=first.value?.byteLength||0;
+  await reader.cancel();
+  result.ok=result.bytesReceived>0;
+  return finish();
+ }catch(e){
+  result.stage='exception';
+  result.kind=e instanceof TypeError?'network-or-fetch':'processing';
+  return finish();
+ }
+}
+
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(path!==base&&!path.startsWith(base+'/'))return env.ASSETS.fetch(request);
  if(!['GET','HEAD'].includes(request.method))return closed(405,'Method not allowed');
  const access=await authorized(request,env);
  if(access!=='ok')return closed(403,'Teaching Table access check: '+access);
+ if(path===base+'/_diagnose-book')return diagnoseBook(request,env);
  if(path.startsWith(base+'/covers/')){
   if(request.method!=='GET')return closed(405,'Method not allowed');
   const name=path.slice((base+'/covers/').length),original=name.replace(/\.webp$/i,'.epub');
