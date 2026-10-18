@@ -164,9 +164,25 @@
     function formula() {
       if (state.numerator === 0) return '0';
       if (state.numerator === state.denominator) return '1';
-      if (state.mode === 'fraction') return state.numerator + '/' + state.denominator;
-      const fixed = Number(position().toFixed(3));
-      return Math.abs(fixed-position()) > 1e-8 ? '≈'+fixed : String(fixed);
+      const p = position();
+      if (state.mode === 'fraction') {
+        const scaled = p * state.fractionDen;
+        // Relabel a stationary bead on a newly selected, equivalent scale:
+        // e.g. 1/4 is precisely 25/100 when hundredths are selected.
+        if (Math.abs(scaled - Math.round(scaled)) < 1e-8)
+          return Math.round(scaled) + '/' + state.fractionDen;
+        return state.numerator + '/' + state.denominator;
+      }
+      const digits = state.decimalDen === 100 ? 2 : 1;
+      const exact = p.toFixed(2);
+      // A bead between tenths can still have an exact hundredths value.
+      if (Math.abs(Number(exact) - p) < 1e-8) {
+        const onSelectedScale = Math.abs(p * state.decimalDen -
+          Math.round(p * state.decimalDen)) < 1e-8;
+        return p.toFixed(onSelectedScale ? digits : 2);
+      }
+      // Repeating fractions need an approximation, never a false equality.
+      return '≈' + p.toFixed(2);
     }
     function description() {
       if (state.numerator === 0) return 'zero';
