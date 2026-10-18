@@ -1,402 +1,645 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#F5F5F7">
-  <title>Math Things. | Fraction & Decimal Number Line</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap">
-  <style>
-    :root {
-      --paper:#F5F5F7;--surface:#fff;--ink:#1D1D1F;--quiet:#86868B;
-      --ones:#DC143C;--steel:#959aa1;--spring:cubic-bezier(.34,1.56,.64,1);
-      --shadow:0 15px 32px rgba(35,36,42,.08),0 2px 5px rgba(35,36,42,.06);
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <title>Fraction &amp; Decimal Space | Math Things.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass: rgba(247,246,243,0.82);
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.06);
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --tens: #4169E1;
+            --ones: #DC143C;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Lexend', system-ui, sans-serif;
+            color: var(--text-main);
+            /* Warm showroom backdrop — the 3D canvas is transparent over it */
+            background: radial-gradient(130% 95% at 50% 40%, #FBFAF8 0%, #F3F1ED 55%, #E7E3DC 100%);
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none;
+        }
+
+        #stage { position: fixed; inset: 0; }
+        #stage canvas { display: block; outline: none; }
+
+        /* ── HEADER ── */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 20px;
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        /* The Bead */
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ── WORDLESS SEGMENTED CONTROL: Line | Grid | Solid ── */
+        .seg {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .seg-btn, .tool {
+            width: 38px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            padding: 0;
+            transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, opacity 0.2s ease;
+        }
+        .seg-btn.active, .tool.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06);
+        }
+        .seg-btn svg, .tool svg { display: block; }
+        .seg-btn:focus-visible, .tool:focus-visible, .pv-pill input:focus-visible + .pv-pill-track {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .tools {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .tool:disabled { opacity: 0.35; cursor: default; }
+        .tool .digits { font-weight: 800; font-size: 12px; letter-spacing: -0.02em; }
+
+        /* ── PLACE VALUE PILL TOGGLE (same as Number Line) ── */
+        .pv-toggle-wrap { display: flex; align-items: center; }
+        .pv-icon { display: flex; align-items: center; margin-right: 6px; opacity: 0.75; flex-shrink: 0; }
+        .pv-pill { position: relative; width: 48px; height: 28px; cursor: pointer; flex-shrink: 0; }
+        .pv-pill input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .pv-pill-track {
+            position: absolute; inset: 0;
+            background: #E5E5EA;
+            border-radius: 14px;
+            transition: background 0.25s ease;
+            display: block;
+        }
+        .pv-pill-thumb {
+            position: absolute;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px; left: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+            transition: left 0.25s var(--spring);
+        }
+        .pv-pill input:checked + .pv-pill-track { background: var(--accent); }
+        .pv-pill input:checked + .pv-pill-track .pv-pill-thumb { left: 22px; }
+
+        /* ── THE RECORD (follows the object) ── */
+        .record {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .record.off { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        .record.off .f { pointer-events: none; }
+
+        .rec-expr {
+            display: flex;
+            align-items: baseline;
+            white-space: nowrap;
+            font-weight: 900;
+            font-size: clamp(2rem, 4.8vw, 3.8rem);
+            letter-spacing: -0.035em;
+            line-height: 1.05;
+        }
+        /* Line mode: one big numeral, as on the Number Line */
+        .record.single .rec-expr { font-size: clamp(2.8rem, 6.4vw, 5rem); letter-spacing: -0.04em; }
+        /* Native [hidden] must win over the explicit display on editable factors/results. */
+        .rec-expr [hidden] { display: none !important; }
+        .rec-expr .op { color: var(--text-light); font-weight: 600; margin: 0 0.2em; }
+        .rec-expr .res { display: inline-block; }
+
+        /* Every factor is typeable: enter a dimension and the object rebuilds to match */
+        .rec-expr .f {
+            display: inline-block;
+            width: 0.8em;                 /* JS sizes each factor to its digits */
+            font: inherit;
+            letter-spacing: inherit;
+            color: var(--text-main);
+            background: transparent;
+            border: 0; outline: 0;
+            margin: 0;
+            padding: 0 0.06em;
+            border-radius: 0.14em;
+            text-align: center;
+            pointer-events: auto;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+            appearance: none;
+            -webkit-appearance: none;
+            text-shadow: inherit;
+            transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .rec-expr .f:hover { background: rgba(0,0,0,0.035); }
+        .rec-expr .f:focus {
+            background: rgba(255,255,255,0.85);
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.35), 0 4px 14px rgba(0,0,0,0.06);
+        }
+        .rec-expr .f.live { color: var(--accent); }
+        .rec-pop { animation: recPop 0.3s var(--spring); }
+        @keyframes recPop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.14); }
+            100% { transform: scale(1); }
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            text-align: center;
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            pointer-events: none;
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            margin-bottom: 0.08em;
+            background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: baseline;
+        }
+
+        .sr-only {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .rec-pop { animation: none !important; }
+        }
+
+        @media (max-width: 720px) {
+            header { padding: 0 10px; gap: 8px; }
+            .logo { font-size: 1.1rem; }
+            .header-controls { gap: 8px; }
+            .pv-icon { display: none; }
+            .seg-btn, .tool { width: 32px; height: 30px; }
+        }
+        @media (max-width: 480px) {
+            header { padding: 0 6px; gap: 6px; }
+            .header-controls { gap: 6px; }
+            .logo { font-size: 0.95rem; }
+            .seg-btn, .tool { width: 28px; }
+        }
+        @media (max-height: 500px) {
+            header { height: 48px; }
+            .record { top: 56px; }
+            .record.single .rec-expr { font-size: 2.6rem; }
+            .rec-expr { font-size: 2rem; }
+        }
+    
+  .companion-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pair{display:flex;gap:3px;border-radius:14px;background:#E5E5EA;padding:4px}
+  .pair button{border:0;border-radius:10px;background:transparent;color:#555;cursor:pointer;padding:10px 13px;font:800 12px Lexend;min-height:38px}
+  .pair button[aria-pressed=true]{color:#1D1D1F;background:white;box-shadow:0 2px 7px #0002}
+  #partition{min-height:45px;border:1px solid #D1D1D6;border-radius:12px;background:white;padding:7px 10px;font:800 13px Lexend}
+  .bundle{font:700 11px Lexend;color:#575b60;display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:12px;background:#E5E5EA}
+  .bundle[hidden]{display:none}.bundle input{width:21px;height:21px;accent-color:#64D2FF}
+  .exit{font:800 11px Lexend;text-decoration:none;color:#82858B}
+  .value-wrap{position:fixed;top:clamp(140px,18vh,194px);left:50%;transform:translateX(-50%);pointer-events:none;z-index:11;text-align:center;white-space:nowrap}
+  #readout{font:900 clamp(52px,9vw,105px)/1 Lexend;color:#1D1D1F;letter-spacing:-.06em;text-shadow:0 4px 16px #0001}
+  .subtext{font:800 10px Lexend;color:#aaa;letter-spacing:1.4px;margin-top:12px}
+  .steppers{position:fixed;bottom:clamp(60px,8vh,82px);left:50%;transform:translateX(-50%);z-index:11;display:flex;gap:12px;padding:7px;background:#f7f7f7e0;backdrop-filter:blur(8px);border:1px solid #ddd;border-radius:16px;box-shadow:0 8px 26px #0002}
+  .steppers button{min-width:60px;min-height:47px;border:1px solid #D1D1D6;border-radius:11px;background:linear-gradient(#fff,#eee);font:800 22px Lexend;cursor:pointer}
+  button:focus-visible,#partition:focus-visible,#stage canvas:focus-visible{outline:3px solid #007AFF;outline-offset:3px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #stage canvas{touch-action:none}
+  @media(max-width:710px){.companion-header{padding:12px;align-items:flex-start}.companion-header .logo{font-size:21px}.controls{gap:5px}
+    .pair button{padding:9px;font-size:11px}#partition{font-size:11px;max-width:125px}.bundle{font-size:10px}
+    .value-wrap{top:clamp(165px,26vh,214px)}#readout{font-size:clamp(45px,11vw,74px)}.steppers{bottom:63px}}
+
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
     }
-    *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;background:var(--paper)}
-    body{font-family:Lexend,system-ui,sans-serif;color:var(--ink);min-height:100dvh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
-    button,select{font:inherit;color:inherit}
-    button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-    button:focus-visible,select:focus-visible{outline:3px solid #3575bf;outline-offset:3px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px clamp(15px,3vw,34px);border-bottom:1px solid rgba(30,32,37,.07)}
-    .brand{font-size:clamp(18px,2.2vw,23px);font-weight:900;letter-spacing:-.05em}
-    .brand span{font-size:.75em;font-weight:400;letter-spacing:-.012em;color:var(--quiet)}
-    .home{background:#fff;border:1px solid #d9dade;padding:10px 13px;border-radius:11px;text-decoration:none;font-weight:700;font-size:12px;color:#676b70}
-    main{flex:1;width:min(1120px,100%);margin:0 auto;display:flex;flex-direction:column;justify-content:center;gap:17px;padding:clamp(12px,2vw,25px)}
-    .stage{border-radius:23px;background:linear-gradient(155deg,#fff,#f7f7f9);border:1px solid #fff;box-shadow:var(--shadow);padding:12px 12px 18px}
-    .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:6px 10px}
-    .mode-toggle{display:flex;gap:3px;padding:4px;border:1px solid #d8dbe0;border-radius:13px;background:#e8e9eb}
-    .mode-toggle button{min-height:35px;padding:6px 13px;border:0;border-radius:9px;background:transparent;font-weight:800;font-size:13px}
-    .mode-toggle button[aria-pressed="true"]{background:white;box-shadow:0 2px 5px rgba(32,33,38,.14)}
-    .choice{display:flex;align-items:center;gap:11px}
-    .choice label{font-size:12px;letter-spacing:.08em;color:#7a7d83;font-weight:800;text-transform:uppercase}
-    select{min-width:74px;min-height:43px;background:#fff;border:1px solid #dadde2;box-shadow:0 2px 5px rgba(0,0,0,.04);font-weight:800;font-size:17px;border-radius:11px;padding:5px 10px}
-    .actions{display:flex;gap:7px}
-    .button{min-height:43px;min-width:43px;padding:7px 12px;background:linear-gradient(145deg,#fff,#eff0f2);border:1px solid #d8dbe0;border-radius:12px;font-weight:800;box-shadow:0 2px 5px rgba(0,0,0,.05)}
-    .button:active{transform:translateY(1px)}
-    .button[aria-pressed="true"]{background:#353b45;border-color:#353b45;color:#fff}
-    .drawing{width:100%;height:390px;display:block;touch-action:none;user-select:none}
-    .context-track{stroke:#959ba4;stroke-width:4;stroke-linecap:round}
-    .context-slot{fill:#fff;stroke:#d5d8dc;stroke-width:.75}
-    .context-focus{fill:rgba(220,20,60,.13);stroke:var(--ones);stroke-width:2.5}
-    .context-tick{stroke:#a6aab1;stroke-width:1.4}
-    .context-tick.strong{stroke:#5e6470;stroke-width:2.3}
-    .context-label{font:700 13px Lexend,system-ui,sans-serif;fill:#646a74;text-anchor:middle}
-    .context-title{font:800 10px Lexend,system-ui,sans-serif;fill:#989ca3;letter-spacing:1.8px}
-    .focus-connector{stroke:#b6b9be;stroke-width:1.7;stroke-dasharray:5 8;opacity:.75}
-    .detail-title{font:800 10px Lexend,system-ui,sans-serif;fill:#989ca3;letter-spacing:1.8px}
-    .slice{fill:url(#enamel);stroke:rgba(130,12,36,.38);stroke-width:1}
-    .slice.selected{fill:url(#active)}
-    .unit-rim{fill:none;stroke:var(--ones);stroke-width:3.2}
-    .detail-rail{stroke:#9da1a9;stroke-width:5;stroke-linecap:round}
-    .detail-tick{stroke:#959ca6;stroke-width:1.9}
-    .detail-tick.major{stroke:#4c5360;stroke-width:3.1}
-    .integer{font:800 24px Lexend,system-ui,sans-serif;fill:#383d45;text-anchor:middle}
-    .fraction{font:800 27px Lexend,system-ui,sans-serif;fill:#393d44;text-anchor:middle}
-    .fraction-quiet{font:800 12px Lexend,system-ui,sans-serif;fill:#9b9da1;letter-spacing:1.2px;text-anchor:middle}
-    .bead{cursor:grab;outline:none}
-    .bead:active{cursor:grabbing}
-    .bead:focus-visible .focus-ring{stroke:#2277ca;stroke-width:4}
-    .bead .focus-ring{fill:none;stroke:transparent;stroke-width:4}
-    .bead .shell{fill:url(#steel);stroke:#717780;stroke-width:1.6;filter:url(#beadShadow)}
-    .bead .grip{stroke:#60656d;stroke-width:1.4;stroke-linecap:round;pointer-events:none}
-    .buttons{display:flex;justify-content:center;gap:12px}
-    .movement{display:flex;align-items:center;gap:14px;padding:10px 15px;background:linear-gradient(155deg,#fff,#f0f1f3);box-shadow:var(--shadow);border-radius:16px;border:1px solid #fff}
-    .movement .button{min-width:57px;font-size:23px;padding:7px}
-    .record{min-width:120px;font-size:22px;text-align:center;font-weight:900;letter-spacing:-.025em}
-    .record span{font-size:12px;color:var(--quiet);font-weight:700;margin-right:7px;letter-spacing:0}
-    .record[hidden]{display:none}
-    #announcer{position:absolute;width:1px;height:1px;clip:rect(0 0 0 0);overflow:hidden;white-space:nowrap}
-    footer{text-align:center;color:#aaaeb5;font-size:11px;padding:11px 20px 17px}
-    @media(max-width:540px){
-      header{padding:14px 13px}
-      .home{padding:9px}
-      main{gap:10px;padding:10px}
-      .stage{padding:8px 3px 12px;border-radius:17px}
-      .toolbar{padding:7px 10px}
-      .drawing{height:390px}
-      .choice label{font-size:10px}
-      .movement{padding:8px 11px;gap:10px}
-    }
-    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
-  </style>
+    </script>
 </head>
 <body>
-  <header>
-    <div class="brand">Math Things.<span> | Fraction &amp; Decimal Number Line</span></div>
-    <a class="home" href="../../">All Math Things</a>
-  </header>
-  <main>
-    <section class="stage" aria-label="Zoomed fraction number line from zero to one">
-      <div class="toolbar">
-        <div class="mode-toggle" role="group" aria-label="How to read the same number line">
-          <button type="button" id="fractionMode" aria-pressed="true">Fractions</button>
-          <button type="button" id="decimalMode" aria-pressed="false">Decimals</button>
-        </div>
-        <div class="choice">
-          <label for="parts" id="partsLabel">Parts of one</label>
-          <select id="parts" aria-label="Number of equal parts in one whole">
-            <option value="2">2</option><option value="3">3</option>
-            <option value="4" selected>4</option><option value="5">5</option>
-            <option value="6">6</option><option value="8">8</option>
-            <option value="10">10</option><option value="12">12</option>
-          </select>
-        </div>
-        <div class="actions">
-          <button class="button" type="button" id="labels" aria-label="Hide fraction label" aria-pressed="true" title="Show or hide fraction label">½</button>
-          <button class="button" type="button" id="reset" aria-label="Return bead to zero" title="Reset">↺</button>
-        </div>
+  <div id="stage" role="region" aria-label="Zoomed Volume Space unit cube sitting at zero on the original 3D number line"></div>
+  <header class="companion-header">
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <div class="controls">
+      <div class="pair" role="group" aria-label="Number representation">
+        <button id="fractionMode" type="button" aria-pressed="true">Fractions</button>
+        <button id="decimalMode" type="button" aria-pressed="false">Decimals</button>
       </div>
-      <svg class="drawing" id="numberLine" role="group" aria-label="The canonical 0 to 1 interval enlarged and divided into fraction or decimal slices" viewBox="0 0 960 390" xmlns="http://www.w3.org/2000/svg"></svg>
-    </section>
-    <div class="buttons">
-      <div class="movement" role="group" aria-label="Step the bead along the number line">
-        <button class="button" id="left" type="button" aria-label="One fraction to the left">−</button>
-        <div id="record" class="record" aria-label="Current fractional position"></div>
-        <button class="button" id="right" type="button" aria-label="One fraction to the right">+</button>
-      </div>
+      <select id="partition" aria-label="Choose subdivision of the unit cube"></select>
+      <label class="bundle" id="bundleBox" hidden>
+        <input type="checkbox" id="bundle" checked aria-label="Fuse ten contiguous hundredths into one tenth">
+        Bundle 10
+      </label>
+      <a class="exit" href="../../">All Math Things</a>
     </div>
-    <div id="announcer" role="status" aria-live="polite" aria-atomic="true"></div>
-  </main>
-  <footer>Math Things. | Math, in your hands.</footer>
-  <script>
-  (() => {
-    'use strict';
-    const svg = document.getElementById('numberLine');
-    const parts = document.getElementById('parts');
-    const labels = document.getElementById('labels');
-    const record = document.getElementById('record');
-    const live = document.getElementById('announcer');
-    const LEFT = 38, HEIGHT = 390, CONTEXT_Y = 93, RAIL_Y = 300;
-    const state = {
-      mode:'fraction', fractionDen:4, decimalDen:10,
-      denominator:4, numerator:1, showLabels:true
-    };
-    const clamp = (n,lo,hi) => Math.min(hi,Math.max(lo,n));
-    const position = () => state.numerator / state.denominator;
-    const units = () => state.mode === 'fraction' ? state.fractionDen : state.decimalDen;
-    const fractionChoices = [2,3,4,5,6,8,10,12,16,100];
-    const decimalChoices = [10,100];
-    function updateChoice() {
-      const opts = state.mode === 'fraction' ? fractionChoices : decimalChoices;
-      parts.replaceChildren();
-      for (const d of opts) {
-        const opt = document.createElement('option');
-        opt.value = d;
-        opt.textContent = state.mode === 'fraction' ? d :
-          d === 10 ? 'Tenths (0.1)' : 'Hundredths (0.01)';
-        parts.appendChild(opt);
-      }
-      parts.value = String(units());
-      document.getElementById('partsLabel').textContent =
-        state.mode === 'fraction' ? 'Parts of one' : 'Slice size';
-      parts.setAttribute('aria-label',state.mode === 'fraction' ?
-        'Equal fractional parts of one' : 'Decimal subdivisions of one');
-      for (const [id,mode] of [['fractionMode','fraction'],['decimalMode','decimal']])
-        document.getElementById(id).setAttribute('aria-pressed',String(state.mode===mode));
-    }
-    let dragging = null;
+  </header>
+  <div class="value-wrap"><div id="readout">1/4</div><div class="subtext">ONE CUBE · 0 TO 1</div></div>
+  <div class="steppers" role="group" aria-label="Add and remove slices">
+    <button type="button" id="less" aria-label="Remove one slice">−</button>
+    <button type="button" id="more" aria-label="Add one slice">+</button>
+    <button type="button" id="clear" aria-label="Clear all slices">↺</button>
+  </div>
+  <div class="sr-only" id="announce" aria-live="polite" role="status" aria-atomic="true"></div>
+  <footer>Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span></footer>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    function width() {
-      return Math.max(270,Math.round(svg.getBoundingClientRect().width ||
-        svg.parentElement?.clientWidth || 960));
-    }
-    function formula() {
-      if (state.numerator === 0) return '0';
-      if (state.numerator === state.denominator) return '1';
-      const p = position();
-      if (state.mode === 'fraction') {
-        const scaled = p * state.fractionDen;
-        // Relabel a stationary bead on a newly selected, equivalent scale:
-        // e.g. 1/4 is precisely 25/100 when hundredths are selected.
-        if (Math.abs(scaled - Math.round(scaled)) < 1e-8)
-          return Math.round(scaled) + '/' + state.fractionDen;
-        return state.numerator + '/' + state.denominator;
-      }
-      const digits = state.decimalDen === 100 ? 2 : 1;
-      const exact = p.toFixed(2);
-      // A bead between tenths can still have an exact hundredths value.
-      if (Math.abs(Number(exact) - p) < 1e-8) {
-        const onSelectedScale = Math.abs(p * state.decimalDen -
-          Math.round(p * state.decimalDen)) < 1e-8;
-        return p.toFixed(onSelectedScale ? digits : 2);
-      }
-      // Repeating fractions need an approximation, never a false equality.
-      return '≈' + p.toFixed(2);
-    }
-    function description() {
-      if (state.numerator === 0) return 'zero';
-      if (state.numerator === state.denominator) return 'one whole';
-      if (state.mode === 'decimal') return 'decimal position within one whole';
-      const d = state.fractionDen, scaled = position() * d;
-      const aligned = Math.abs(scaled - Math.round(scaled)) < 1e-8;
-      return (aligned ? Math.round(scaled) : state.numerator) + ' out of ' +
-        (aligned ? d : state.denominator) + ' equal parts of one whole';
-    }
-    function announce() {
-      live.textContent = 'Bead at ' + formula() + '. ' + description() + '.';
-    }
-    function render() {
-      const wasFocused = document.activeElement?.hasAttribute('data-bead');
-      const W = width();
-      const R = W - LEFT, span = R - LEFT, count = units(), slice = span / count;
-      const beadX = LEFT + span * position();
-      // The overview is the same number-line unit system: ten consecutive slots.
-      // Its first slot (0..1) is expanded below, never compared with another line.
-      const overviewSlot = span / 10;
-      const topX = LEFT + span * position() / 10;
-      let draw = [
-        '<defs>',
-        '<linearGradient id="steel" x1="0" x2=".9" y1="0" y2="1">',
-        '<stop stop-color="#fff"/><stop offset=".27" stop-color="#e4e5e7"/>',
-        '<stop offset=".55" stop-color="#a0a5ad"/><stop offset="1" stop-color="#e1e3e6"/>',
-        '</linearGradient>',
-        '<linearGradient id="enamel" x1="0" x2="0.15" y1="0" y2="1">',
-        '<stop stop-color="#fff"/><stop offset=".5" stop-color="#fbedf0"/><stop offset="1" stop-color="#f9dde3"/>',
-        '</linearGradient>',
-        '<linearGradient id="active" x1="0" x2=".2" y1="0" y2="1">',
-        '<stop stop-color="#ef8b9d"/><stop offset=".38" stop-color="#dc143c"/>',
-        '<stop offset="1" stop-color="#ad092b"/>',
-        '</linearGradient>',
-        '<filter id="beadShadow" x="-100%" y="-100%" width="300%" height="300%">',
-        '<feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity=".23"/>',
-        '</filter></defs>',
-        '<text x="' + LEFT + '" y="42" class="context-title">NUMBER LINE</text>',
-        '<rect x="' + LEFT + '" y="70" width="' + span +
-          '" height="46" rx="9" fill="#E5E5EA" stroke="#d0d2d8"/>'
-      ];
-      for (let i=0;i<10;i++) {
-        const x = LEFT + overviewSlot * i;
-        if (i === 0) continue;
-        draw.push('<rect class="context-slot" x="' + x +
-          '" y="71" width="' + overviewSlot + '" height="44"/>');
-      }
-      draw.push('<rect class="context-focus" x="' + LEFT + '" y="70" width="' +
-        overviewSlot + '" height="46" rx="5"/>');
-      draw.push('<line class="context-track" x1="' + LEFT + '" y1="' +
-        CONTEXT_Y + '" x2="' + R + '" y2="' + CONTEXT_Y + '"/>');
-      for (let i=0;i<=10;i++) {
-        const x = LEFT + overviewSlot * i;
-        const labeled = i===0 || i===1 || i===5 || i===10;
-        draw.push('<line class="context-tick' + (labeled ? ' strong' : '') +
-          '" x1="' + x + '" x2="' + x + '" y1="83" y2="103"/>');
-        if (labeled) draw.push('<text class="context-label" x="' + x +
-          '" y="139">' + i + '</text>');
-      }
-      draw.push(
-        '<circle cx="' + topX + '" cy="' + CONTEXT_Y + '" r="5" fill="#717780" stroke="#fff" stroke-width="1.5"/>',
-        '<line class="focus-connector" x1="' + LEFT + '" y1="118" x2="' + LEFT + '" y2="218"/>',
-        '<line class="focus-connector" x1="' + (LEFT + overviewSlot) +
-          '" y1="118" x2="' + R + '" y2="218"/>',
-        '<text class="detail-title" x="' + LEFT + '" y="209">ONE WHOLE, MAGNIFIED</text>'
-      );
-      // Every view partitions the same red 0..1 object. Changing reading mode
-      // never changes the bead's mathematical position.
-      draw.push('<rect x="' + LEFT +
-        '" y="227" width="' + span +
-        '" height="65" fill="url(#enamel)"/>');
-      draw.push('<rect x="' + LEFT +
-        '" y="227" width="' + (span*position()) +
-        '" height="65" fill="url(#active)"/>');
+// Same 3D coordinate system, material shader and physical pieces as Volume Space.
+THREE.Object3D.DEFAULT_UP.set(0,0,1);
+const V3=THREE.Vector3,clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const GAP=.05,TRAY_D=.14,BAND=1.9,LANE=.22,RED=0xDC143C;
+const FRACTIONS=[2,3,4,5,6,8,10,12,16,100],DECIMALS=[10,100];
+const PAL={ones:0xDC143C,tenths:0x64D2FF,hundredths:0xFF9F0A};
+const state={mode:'fraction',fractionDen:4,decimalDen:10,numerator:1,denominator:4,bundle:true};
+const scale=()=>state.mode==='fraction'?state.fractionDen:state.decimalDen;
+const position=()=>state.numerator/state.denominator;
+const parts=document.getElementById('partition'),val=document.getElementById('readout');
+const bundleInput=document.getElementById('bundle'),bundleBox=document.getElementById('bundleBox');
+const announce=document.getElementById('announce');
+        function enamelMaterial(color) {
+            const m = new THREE.MeshPhysicalMaterial({
+                color, roughness: 0.4, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.12,
+            });
+            m.onBeforeCompile = (sh) => {
+                sh.vertexShader = sh.vertexShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vSeamP;\nvarying vec3 vSeamN;')
+                    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeamP = position;\nvSeamN = normal;');
+                sh.fragmentShader = sh.fragmentShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vSeamP;\nvarying vec3 vSeamN;')
+                    .replace('#include <color_fragment>', `#include <color_fragment>
+                    {
+                        vec3 dist = abs(fract(vSeamP + 0.5) - 0.5);
+                        vec3 aa = fwidth(vSeamP) * 1.25;
+                        vec3 groove = 1.0 - smoothstep(vec3(0.02) - aa, vec3(0.02) + aa, dist);
+                        vec3 along = 1.0 - step(vec3(0.55), abs(vSeamN));
+                        float seam = max(max(groove.x * along.x, groove.y * along.y), groove.z * along.z);
+                        diffuseColor.rgb *= 1.0 - 0.42 * seam;
+                    }`);
+            };
+            return m;
+        }
 
-      // In hundredths, keep subtle unit seams and stronger tenth seams.
-      // The same point stays anchored when switching fractional or decimal scales.
-      const visualParts = Math.min(count,100);
-      for(let i=1;i<visualParts;i++) {
-        const x=LEFT+span*i/visualParts;
-        const major = i % (visualParts/10) === 0;
-        draw.push('<line x1="'+x+'" x2="'+x+'" y1="227" y2="291" stroke="' +
-          (major?'rgba(91,9,29,.55)':'rgba(91,9,29,.21)') +
-          '" stroke-width="'+(major?'2':'0.7')+'"/>');
-      }
-      draw.push('<rect class="unit-rim" x="' + LEFT +
-        '" y="227" width="' + span + '" height="65" rx="6"/>');
-      draw.push('<line class="detail-rail" x1="' + LEFT + '" y1="' +
-        RAIL_Y + '" x2="' + R + '" y2="' + RAIL_Y + '"/>');
-      for(let i=0;i<=visualParts;i++) {
-        const x=LEFT+span*i/visualParts;
-        const major=i===0 || i===visualParts ||
-          (state.mode==='decimal' && i % (visualParts/10)===0);
-        draw.push('<line class="detail-tick' + (major?' major':'') +
-          '" x1="' + x + '" x2="' + x + '" y1="' +
-          (major?282:291) + '" y2="' + (major?322:311) + '"/>');
-      }
-      draw.push('<text class="integer" x="' + LEFT +
-        '" y="347">0</text><text class="integer" x="' + R + '" y="347">1</text>');
-      if (state.showLabels) {
-        draw.push('<text class="fraction-quiet" x="' + (W/2) +
-          '" y="371">POSITION</text>');
-        draw.push('<text class="fraction" x="' + (W/2) +
-          '" y="389">' + formula() + '</text>');
-      }
-      draw.push(
-        '<rect data-rail="true" x="' + LEFT + '" y="218" width="' + span +
-        '" height="112" fill="transparent"/>',
-        '<g class="bead" data-bead="true" data-rail="true" role="slider" tabindex="0"',
-        ' aria-label="Number line bead" aria-valuemin="0" aria-valuemax="1"' +
-          ' aria-valuenow="' + position() + '" aria-valuetext="' + formula() + '">',
-        '<circle class="focus-ring" cx="' + beadX + '" cy="' + RAIL_Y + '" r="26"/>',
-        '<circle class="shell" cx="' + beadX + '" cy="' + RAIL_Y + '" r="18"/>',
-        '<path class="grip" d="M' + (beadX-5) + ' ' + (RAIL_Y-4) +
-          ' v8 M' + beadX + ' ' + (RAIL_Y-4) + ' v8 M' +
-          (beadX+5) + ' ' + (RAIL_Y-4) + ' v8"/>',
-        '</g>'
-      );
-      svg.setAttribute('viewBox','0 0 '+W+' '+HEIGHT);
-      svg.innerHTML=draw.join('');
-      if(wasFocused) svg.querySelector('[data-bead]')?.focus({preventScroll:true});
-      record.hidden = !state.showLabels;
-      record.innerHTML = state.showLabels ? '<span>0 — 1</span>' + formula() : '';
-      labels.setAttribute('aria-pressed',String(state.showLabels));
-      labels.setAttribute('aria-label',state.showLabels?'Hide value':'Show value');
-      labels.textContent = state.mode === 'fraction' ? '½' : '0.1';
+const ones=enamelMaterial(PAL.ones),fraction=enamelMaterial(PAL.ones);
+const tenth=enamelMaterial(PAL.tenths),hundredth=enamelMaterial(PAL.hundredths);
+const hsl=new THREE.Color(RED).getHSL({});
+const trayMat=new THREE.MeshStandardMaterial({color:0xE5E5EA,roughness:.62});
+const white=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:.55});
+const metal=new THREE.MeshPhysicalMaterial({color:0xC4C6CB,metalness:1,roughness:.3,anisotropy:.6});
+const chrome=new THREE.MeshPhysicalMaterial({color:0xD8D9DD,metalness:1,roughness:.24,anisotropy:.8,clearcoat:.4,clearcoatRoughness:.2});
+const groove=new THREE.MeshStandardMaterial({color:0x3a3a3f,metalness:.6,roughness:.5});
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setClearColor(0x000000,0);
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.NeutralToneMapping;
+renderer.toneMappingExposure=1;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const canvas=renderer.domElement;
+canvas.tabIndex=0;canvas.setAttribute('role','slider');
+canvas.setAttribute('aria-label','Chrome bead controlling the filled red cube');
+canvas.setAttribute('aria-valuemin','0');canvas.setAttribute('aria-valuemax','1');
+const scene=new THREE.Scene(), pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;
+scene.environmentIntensity=.36;
+scene.environmentRotation.set(Math.PI/2,0,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0xd6cfc4,.38));
+const sun=new THREE.DirectionalLight(0xfff8ee,.9);
+sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;
+sun.position.set(-2,-2,5);
+sun.target.position.set(.5,.5,.5);scene.add(sun,sun.target);
+const sc=sun.shadow.camera;sc.left=-3;sc.right=3;sc.top=3;sc.bottom=-3;sc.near=.1;sc.far=15;sc.updateProjectionMatrix();
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({color:0x2b2116,opacity:.16}));
+ground.scale.set(8000,8000,1);ground.position.z=-TRAY_D;ground.receiveShadow=true;scene.add(ground);
+const camera=new THREE.PerspectiveCamera(35,window.innerWidth/window.innerHeight,.05,200);
+let controls,dragging=false,dragId=null,dirty=true;
+const redraw=()=>{dirty=true};
+const bed=new THREE.Mesh(new RoundedBoxGeometry(1.78,2.6,TRAY_D,2,.035),trayMat);
+bed.position.set(.64,-.4,-TRAY_D/2);bed.castShadow=bed.receiveShadow=true;scene.add(bed);
+const topZone=new THREE.Mesh(new THREE.PlaneGeometry(1.72,1.0),white);
+topZone.position.set(.64,.56,.003);topZone.receiveShadow=true;scene.add(topZone);
+const bandCanvas=document.createElement('canvas');bandCanvas.width=4096;bandCanvas.height=1024;
+const tex=new THREE.CanvasTexture(bandCanvas);
+tex.colorSpace=THREE.SRGBColorSpace;
+tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const bandMat=new THREE.MeshStandardMaterial({map:tex,roughness:.62,polygonOffset:true,polygonOffsetFactor:-1});
+const band=new THREE.Mesh(new THREE.PlaneGeometry(1.7,BAND-.035),bandMat);
+band.position.set(.7,-(BAND-.035)/2,.006);scene.add(band);
+const rail=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.7,12),metal);
+rail.rotation.z=-Math.PI/2;rail.position.set(.63,-LANE,.03);
+rail.castShadow=rail.receiveShadow=true;scene.add(rail);
+const hub=new THREE.Mesh(new THREE.SphereGeometry(.075,24,16),metal);
+hub.position.set(-LANE,-LANE,.04);hub.castShadow=true;scene.add(hub);
+
+// Identical 1×1×1 geometry to the piece at Volume Space's origin.
+const unitGeometry=new RoundedBoxGeometry(1-2*GAP,1-2*GAP,1-2*GAP,3,.1);
+unitGeometry.translate(.5,.5,.5);
+const fullCube=new THREE.Mesh(unitGeometry,ones);
+fullCube.castShadow=fullCube.receiveShadow=true;scene.add(fullCube);
+const outline=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),
+  new THREE.LineBasicMaterial({color:RED,transparent:true,opacity:.20}));
+outline.position.set(.5,.5,.5);scene.add(outline);
+const pieces=new THREE.Group();scene.add(pieces);
+const geos=new Map();
+function pieceGeometry(width){
+  const key=width.toFixed(7);
+  if(geos.has(key))return geos.get(key);
+  const gap=Math.min(.004,width*.14),size=Math.max(width-gap,.002),r=Math.min(.045,size*.14);
+  const g=new RoundedBoxGeometry(size,.9,.9,2,r);
+  g.translate(width/2,.5,.5);
+  geos.set(key,g);return g;
+}
+function addPiece(x,w,mat){
+  if(w<1e-8)return;
+  const obj=new THREE.Mesh(pieceGeometry(w),mat);
+  obj.position.x=x;obj.castShadow=obj.receiveShadow=true;pieces.add(obj);
+}
+const beadR=.105,bead=new THREE.Group();
+const sphere=new THREE.Mesh(new THREE.SphereGeometry(beadR,32,24),chrome);
+sphere.castShadow=true;bead.add(sphere);
+for(const off of [-.043,0,.043]){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(Math.sqrt(beadR*beadR-off*off)+.001,.005,6,32),groove);
+  ring.rotation.y=Math.PI/2;ring.position.x=off;bead.add(ring);
+}
+scene.add(bead);
+function format(){
+  const p=position();
+  if(p===0)return '0';if(p===1)return '1';
+  if(state.mode==='fraction'){
+    const n=p*scale();
+    return Math.abs(n-Math.round(n))<1e-8 ? Math.round(n)+'/'+scale() :
+      state.numerator+'/'+state.denominator;
+  }
+  if(Math.abs(p-Number(p.toFixed(2)))>1e-8)return '≈'+p.toFixed(2);
+  const aligned=Math.abs(p*scale()-Math.round(p*scale()))<1e-8;
+  return p.toFixed(aligned?(scale()===10?1:2):2);
+}
+function updateChoices(){
+  parts.replaceChildren();
+  for(const d of (state.mode==='fraction'?FRACTIONS:DECIMALS)){
+    const option=document.createElement('option');option.value=String(d);
+    option.textContent=state.mode==='decimal' ?
+      (d===10?'Tenths (0.1)':'Hundredths (0.01)') :
+      ({2:'Halves',3:'Thirds',4:'Fourths',5:'Fifths',6:'Sixths',
+        8:'Eighths',10:'Tenths',12:'Twelfths',16:'Sixteenths',100:'Hundredths'})[d];
+    parts.appendChild(option);
+  }
+  parts.value=String(scale());
+  bundleBox.hidden=state.mode!=='decimal'||scale()!==100;
+  for(const m of ['fraction','decimal'])
+    document.getElementById(m+'Mode').setAttribute('aria-pressed',String(m===state.mode));
+}
+function renderBlocks(){
+  pieces.clear();
+  const p=position(),d=scale();
+  bead.position.set(p,-LANE,beadR+.06);
+  fullCube.visible=p>=1-1e-10;
+  outline.visible=!fullCube.visible;
+  if(p<=1e-10||fullCube.visible)return;
+  if(state.mode==='fraction'){
+    // Saturation scales with the represented amount (half at 1/2, quarter at 1/4).
+    fraction.color.setHSL(hsl.h,hsl.s*p,hsl.l);
+    const n=Math.floor(p*d+1e-8);
+    for(let i=0;i<n;i++)addPiece(i/d,1/d,fraction);
+    const remainder=p-n/d;if(remainder>1e-8)addPiece(n/d,remainder,fraction);
+  }else if(d===10){
+    const n=Math.floor(p*10+1e-8);
+    for(let i=0;i<n;i++)addPiece(i/10,.1,tenth);
+    if(p-n/10>1e-8)addPiece(n/10,p-n/10,tenth);
+  }else{
+    const n=Math.floor(p*100+1e-8);
+    let start=0;
+    if(state.bundle){
+      const groups=Math.floor(n/10);
+      for(let i=0;i<groups;i++)addPiece(i/10,.1,tenth);
+      start=groups*10;
     }
-    function setPosition(value) {
-      const d = units(), next=clamp(Math.round(value),0,d);
-      if(next===state.numerator && d===state.denominator)return;
-      state.numerator=next;
-      state.denominator=d;
-      render();
-      announce();
+    for(let i=start;i<n;i++)addPiece(i/100,.01,hundredth);
+    if(p-n/100>1e-8)addPiece(n/100,p-n/100,hundredth);
+  }
+}
+function renderRuler(){
+  const g=bandCanvas.getContext('2d'),W=bandCanvas.width,H=bandCanvas.height,d=scale();
+  g.clearRect(0,0,W,H);g.fillStyle='#fff';g.fillRect(0,0,W,H);
+  g.fillStyle='rgba(0,0,0,.12)';g.fillRect(0,0,W,4);
+  const tx=x=>Math.round((x+.15)/1.7*W);
+  for(let i=0;i<=d;i++){
+    const major=i===0||i===d||(d===100&&i%10===0)||(d<100&&i*2===d);
+    g.fillStyle=major?'#70727a':'#a9adb4';
+    g.fillRect(tx(i/d)-2,6,major?5:2.3,major?H*.30:H*.15);
+  }
+  g.textAlign='center';g.textBaseline='middle';g.fillStyle='#1d1d1f';
+  g.font='800 114px Lexend,system-ui,sans-serif';
+  g.fillText('0',tx(0),H*.48);g.fillText('1',tx(1),H*.48);
+  g.fillStyle='#85878e';
+  if(d===100){
+    g.font='600 53px Lexend,system-ui,sans-serif';
+    for(let i=1;i<10;i++)g.fillText(state.mode==='decimal'?(i/10).toFixed(1):i*10+'/100',tx(i/10),H*.75);
+  }else{
+    g.font='600 66px Lexend,system-ui,sans-serif';
+    for(let i=1;i<d;i++){
+      if(d>8&&(d===16?i%4!==0:i%2!==0))continue;
+      g.fillText(state.mode==='fraction'?i+'/'+d:(i/d).toFixed(1),tx(i/d),H*.76);
     }
-    function step(direction) {
-      const d = units(), scaled=position()*d;
-      const next = direction>0 ?
-        Math.floor(scaled+1e-9)+1 : Math.ceil(scaled-1e-9)-1;
-      setPosition(next);
-    }
-    function clientToParts(clientX) {
-      const rect=svg.getBoundingClientRect();
-      const W=width();
-      const coord=(clientX-rect.left)*(W/rect.width);
-      return clamp((coord-LEFT)/(W-2*LEFT),0,1)*units();
-    }
-    svg.addEventListener('pointerdown',event=>{
-      if(!event.target.closest('[data-rail]'))return;
-      dragging=event.pointerId;
-      event.preventDefault();
-      try{svg.setPointerCapture(event.pointerId)}catch{}
-      setPosition(clientToParts(event.clientX));
-      svg.querySelector('[data-bead]')?.focus({preventScroll:true});
-    });
-    svg.addEventListener('pointermove',event=>{
-      if(event.pointerId!==dragging)return;
-      event.preventDefault();
-      setPosition(clientToParts(event.clientX));
-    });
-    function release(event) {
-      if(event.pointerId!==dragging)return;
-      dragging=null;
-      try{svg.releasePointerCapture(event.pointerId)}catch{}
-    }
-    svg.addEventListener('pointerup',release);
-    svg.addEventListener('pointercancel',release);
-    svg.addEventListener('lostpointercapture',()=>dragging=null);
-    svg.addEventListener('keydown',event=>{
-      if(!event.target.closest('[data-bead]'))return;
-      if(event.key==='ArrowLeft'||event.key==='ArrowDown') {
-        event.preventDefault();step(-1);
-      } else if(event.key==='ArrowRight'||event.key==='ArrowUp') {
-        event.preventDefault();step(1);
-      } else if(event.key==='Home'||event.key==='PageDown') {
-        event.preventDefault();setPosition(0);
-      } else if(event.key==='End'||event.key==='PageUp') {
-        event.preventDefault();setPosition(units());
-      }
-    });
-    parts.addEventListener('change',()=>{
-      const d=Number(parts.value);
-      if (!(state.mode==='fraction' ? fractionChoices : decimalChoices).includes(d))return;
-      if(state.mode==='fraction')state.fractionDen=d;
-      else state.decimalDen=d;
-      // The selected position stays constant even as new cuts are drawn.
-      render();
-      announce();
-    });
-    function toggle(mode){
-      if(state.mode===mode)return;
-      state.mode=mode;
-      updateChoice();
-      render();
-      announce();
-    }
-    document.getElementById('fractionMode').addEventListener('click',()=>toggle('fraction'));
-    document.getElementById('decimalMode').addEventListener('click',()=>toggle('decimal'));
-    document.getElementById('left').addEventListener('click',()=>step(-1));
-    document.getElementById('right').addEventListener('click',()=>step(1));
-    labels.addEventListener('click',()=>{
-      state.showLabels=!state.showLabels;
-      render();
-    });
-    document.getElementById('reset').addEventListener('click',()=>{
-      setPosition(0);
-      announce();
-    });
-    if('ResizeObserver' in window) new ResizeObserver(render).observe(svg.parentElement);
-    else window.addEventListener('resize',render);
-    updateChoice();render();announce();
-  })();
-  </script>
-  <script src="../../math-things-home.js"></script>
+  }
+  tex.needsUpdate=true;
+}
+function render(){
+  renderBlocks();renderRuler();
+  val.textContent=format();
+  canvas.setAttribute('aria-valuenow',String(position()));
+  canvas.setAttribute('aria-valuetext',format());
+  announce.textContent='The unit cube is filled to '+format()+'.';
+  redraw();
+}
+function setValue(n,d){
+  n=clamp(Math.round(n),0,d);
+  if(state.numerator===n&&state.denominator===d)return;
+  state.numerator=n;state.denominator=d;render();
+}
+function setFromPosition(x){setValue(Math.round(clamp(x,0,1)*scale()),scale())}
+function step(dir){
+  const d=scale(),p=position()*d;
+  setValue(dir>0?Math.floor(p+1e-9)+1:Math.ceil(p-1e-9)-1,d);
+}
+parts.addEventListener('change',()=>{
+  const d=Number(parts.value);
+  if(!(state.mode==='fraction'?FRACTIONS:DECIMALS).includes(d))return;
+  if(state.mode==='fraction')state.fractionDen=d;else state.decimalDen=d;
+  updateChoices();render();
+});
+function changeMode(next){
+  if(next===state.mode)return;
+  state.mode=next;updateChoices();render();
+}
+document.getElementById('fractionMode').addEventListener('click',()=>changeMode('fraction'));
+document.getElementById('decimalMode').addEventListener('click',()=>changeMode('decimal'));
+bundleInput.addEventListener('change',()=>{state.bundle=bundleInput.checked;render()});
+document.getElementById('less').addEventListener('click',()=>step(-1));
+document.getElementById('more').addEventListener('click',()=>step(1));
+document.getElementById('clear').addEventListener('click',()=>setValue(0,scale()));
+
+const target=new V3(.5,.04,.43),dir=new V3(-.43,-.88,.53).normalize();
+function frame(){
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  camera.position.copy(target).addScaledVector(dir,Math.max(3.15,2.3/camera.aspect));
+  if(controls){controls.target.copy(target);controls.update()}
+  redraw();
+}
+function projected(x){
+  const r=canvas.getBoundingClientRect(),v=new V3(x,-LANE,beadR+.06).project(camera);
+  return {x:r.left+(v.x+1)*r.width/2,y:r.top+(1-v.y)*r.height/2};
+}
+function where(e){
+  const a=projected(0),b=projected(1),dx=b.x-a.x,dy=b.y-a.y;
+  const t=clamp(((e.clientX-a.x)*dx+(e.clientY-a.y)*dy)/(dx*dx+dy*dy),0,1);
+  return {t,dist:Math.hypot(e.clientX-a.x-t*dx,e.clientY-a.y-t*dy)};
+}
+// Bead receives the gesture before OrbitControls, as in the parent application.
+canvas.addEventListener('pointerdown',e=>{
+  camera.updateMatrixWorld();
+  const hit=where(e);
+  if(hit.dist>(e.pointerType==='touch'?49:35))return;
+  e.preventDefault();e.stopImmediatePropagation();
+  dragging=true;dragId=e.pointerId;controls.enabled=false;
+  canvas.setPointerCapture(e.pointerId);canvas.focus({preventScroll:true});
+  setFromPosition(hit.t);
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!dragging||dragId!==e.pointerId)return;
+  e.preventDefault();setFromPosition(where(e).t);
+});
+function stop(e){
+  if(!dragging||dragId!==e.pointerId)return;
+  dragging=false;dragId=null;controls.enabled=true;
+  try{canvas.releasePointerCapture(e.pointerId)}catch{}
+}
+canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);
+canvas.addEventListener('lostpointercapture',()=>{dragging=false;dragId=null;if(controls)controls.enabled=true});
+controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=.12;
+controls.zoomToCursor=true;controls.rotateSpeed=.75;controls.zoomSpeed=1.1;
+controls.minDistance=1.3;controls.maxDistance=30;controls.maxPolarAngle=Math.PI/2-.02;
+controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.ROTATE,RIGHT:THREE.MOUSE.PAN};
+controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
+controls.addEventListener('change',redraw);
+canvas.addEventListener('keydown',e=>{
+  if(['ArrowLeft','ArrowDown'].includes(e.key)){e.preventDefault();step(-1)}
+  else if(['ArrowRight','ArrowUp'].includes(e.key)){e.preventDefault();step(1)}
+  else if(e.key==='Home'){e.preventDefault();setValue(0,scale())}
+  else if(e.key==='End'){e.preventDefault();setValue(scale(),scale())}
+  else if(e.key==='PageUp'){e.preventDefault();setValue(Math.ceil(position()*10-1e-9)+1,10)}
+  else if(e.key==='PageDown'){e.preventDefault();setValue(Math.floor(position()*10+1e-9)-1,10)}
+});
+window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight);frame()});
+function loop(){
+  requestAnimationFrame(loop);
+  const moved=controls.update();
+  if(dirty||moved){renderer.render(scene,camera);dirty=false}
+}
+document.fonts?.ready.then(()=>{renderRuler();redraw()});
+updateChoices();render();frame();loop();
+window.__fractionSpace={state,position,setValue,changeMode,step,bead,pieces,camera,scene};
+</script>
+<script src="../../math-things-home.js"></script>
 </body>
 </html>
