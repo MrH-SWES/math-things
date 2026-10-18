@@ -11,7 +11,7 @@ Should Fix Soon:
 
 Notes:
 - Files changed: apps/geoboard/index.html (new app). No existing app was modified.
-- Behavior: A free geoboard for perimeter, area, right angles and shapes (Grade 4 Lessons 21, 29–31).
+- Behavior: A free geoboard for perimeter, area, right angles and shapes (Grade 4 Lessons 16, 30, 33, 34).
   - A brushed-metal plate holds an 11×11 grid of aluminum pegs (a 10×10 board of unit squares).
   - Tap the band bin to hook a band on two open pegs near the middle, or drag a band out of the bin to hook it where the finger is. Up to 6 bands, each its own color.
   - Drag a corner to move it to another peg. Drag the middle of a side to stretch the band around a new peg. Drag the inside of a shape to slide the whole band. Off the board, the band stretches toward the finger and snaps to the nearest peg on release.
