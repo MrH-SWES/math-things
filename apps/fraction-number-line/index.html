@@ -400,11 +400,14 @@ const announce=document.getElementById('announce');
 
 const ones=enamelMaterial(PAL.ones),fraction=enamelMaterial(PAL.ones);
 const tenth=enamelMaterial(PAL.tenths),hundredth=enamelMaterial(PAL.hundredths);
-// Keep the exact original red enamel hue; the represented quantity controls
-// optical transparency, never hue or saturation.
-fraction.transparent=true;
-fraction.depthWrite=false;
-fraction.opacity=.25;
+// Fractional pieces stay fully opaque. Lighter tints come from mixing the
+// canonical one-cube red with white according to the size of the partition.
+// Each subdivision has one stable enamel color; the whole remains solid red.
+const unitRed=new THREE.Color(PAL.ones),paperWhite=new THREE.Color(0xffffff);
+function fractionTint(denominator){
+  const lightening=.08+.53*Math.log2(denominator)/Math.log2(100);
+  fraction.color.copy(unitRed).lerp(paperWhite,clamp(lightening,.08,.61));
+}
 const trayMat=new THREE.MeshStandardMaterial({color:0xE5E5EA,roughness:.62});
 const white=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:.55});
 const metal=new THREE.MeshPhysicalMaterial({color:0xC4C6CB,metalness:1,roughness:.3,anisotropy:.6});
@@ -551,11 +554,18 @@ function renderBlocks(){
   fullCube.visible=p>=1-1e-10;
   if(p<=1e-10||fullCube.visible)return;
   if(state.mode==='fraction'){
-    // 1/2 is half opaque, 1/4 one-quarter opaque, etc. The red remains
-    // the original Volume Space red, and 1/1 is the original solid unit cube.
-    fraction.opacity=p;
+    fractionTint(d);
     const n=Math.floor(p*d+1e-8);
-    for(let i=0;i<n;i++)addPiece(i/d,1/d,fraction);
+    if(d===100){
+      // The denominator is still 100; the ruler retains hundredth marks.
+      // Complete runs of 10 contiguous hundredths are one physical piece,
+      // with ungrouped hundredths remaining at the growing end.
+      const groups=Math.floor(n/10);
+      for(let i=0;i<groups;i++)addPiece(i/10,.1,fraction);
+      for(let i=groups*10;i<n;i++)addPiece(i/100,.01,fraction);
+    }else{
+      for(let i=0;i<n;i++)addPiece(i/d,1/d,fraction);
+    }
     const remainder=p-n/d;if(remainder>1e-8)addPiece(n/d,remainder,fraction);
   }else if(d===10){
     const n=Math.floor(p*10+1e-8);
