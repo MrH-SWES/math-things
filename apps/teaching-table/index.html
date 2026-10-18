@@ -1598,159 +1598,38 @@
   const WORKER_URL = 'https://teaching-table-relay.ssccchef.workers.dev';
   window.TEACHING_TABLE_WORKER_URL = WORKER_URL;
 
-  // Tools available in the dock. Each entry creates a button in the top dock.
-  // Tapping a button opens the tool as a draggable, resizable window over the pad.
-  // - id:   unique slug (used for save/restore)
-  // - name: short label shown under the icon
-  // - url:  filename or path of the tool's HTML, relative to this file's location
-  // - icon: a short text glyph shown on the button (1–3 chars works best)
-  // - w/h:  default window size in pixels when first summoned
-  // Edit this list to match the actual filenames in your math-things repo.
-  // Add or remove rows freely; nothing else needs to change.
-  // NOTE: If you've already customized this list in your live copy (e.g. Ten Frame,
-  // Rekenrek), copy your edited TOOLS array over the one below before deploying.
+  // Reviewed classroom manipulatives only. This is deliberately NOT imported from
+  // the public app catalog: listing a new app there does not approve it here.
+  // Add tools only after reviewing the quiet, object-first acceptance criteria
+  // and confirming their production path is deployed. Keep IDs stable for saves.
   const TOOL_OVERRIDES = [
-    // OA — Operations & Algebraic Thinking
-    { id: 'numberline',      domain: 'OA',  name: 'Number Line',       url: 'https://mrh-swes.github.io/math-things/apps/number-line/',           icon: '━●━', w: 900,  h: 220, baseW: 1280, baseH: 300,  minW: 520, minH: 118, minWFrac: 0.38, minHFrac: 0.14 },
-    { id: 'numberbond',      domain: 'OA',  name: 'Number Bond',       url: 'https://mrh-swes.github.io/math-things/apps/number-bond/',           icon: '○',   w: 500,  h: 420, baseW: 700,  baseH: 560,  minW: 280, minH: 230, minWFrac: 0.20, minHFrac: 0.22 },
-    { id: 'tenframe',        domain: 'OA',  name: 'Ten Frame',         url: 'https://mrh-swes.github.io/math-things/apps/ten-frame/',             icon: '◫',   w: 500,  h: 400, baseW: 720,  baseH: 520,  minW: 260, minH: 210, minWFrac: 0.18, minHFrac: 0.22 },
-    { id: 'rekenrek',        domain: 'OA',  name: 'Rekenrek',          url: 'https://mrh-swes.github.io/math-things/apps/rekenrek/',              icon: '≡',   w: 600,  h: 350, baseW: 820,  baseH: 420,  minW: 340, minH: 170, minWFrac: 0.24, minHFrac: 0.17 },
-    { id: 'arrayarchitect',  domain: 'OA',  name: 'Array Architect',   url: 'https://mrh-swes.github.io/math-things/apps/array-architect/',       icon: '⊞',   w: 560,  h: 560, baseW: 820,  baseH: 640,  minW: 280, minH: 230, minWFrac: 0.18, minHFrac: 0.24 },
-    { id: 'arraybuilder',    domain: 'OA',  name: 'Array Builder',     url: 'https://mrh-swes.github.io/math-things/apps/array-builder/',         icon: '▦',   w: 560,  h: 480, baseW: 800,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.18, minHFrac: 0.22 },
-    { id: 'multmachine',     domain: 'OA',  name: 'Mult Machine',      url: 'https://mrh-swes.github.io/math-things/apps/multiplication-machine/',icon: '×',   w: 600,  h: 500, baseW: 840,  baseH: 640,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
-    { id: 'divmachine',      domain: 'OA',  name: 'Division Machine',  url: 'https://mrh-swes.github.io/math-things/apps/division-machine/',      icon: '÷',   w: 600,  h: 500, baseW: 840,  baseH: 640,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
-    { id: 'longdivbuddy',    domain: 'OA',  name: 'Long Division',     url: 'https://mrh-swes.github.io/math-things/apps/long-division-buddy/',   icon: '⟌',   w: 580,  h: 520, baseW: 820,  baseH: 660,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
-    { id: 'areaexcavator',   domain: 'OA',  name: 'Area Excavator',    url: 'https://mrh-swes.github.io/math-things/apps/area-excavator/',        icon: '⛏',   w: 620,  h: 520, baseW: 860,  baseH: 660,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.24 },
-    { id: 'balancescale',    domain: 'OA',  name: 'Balance Scale',     url: 'https://mrh-swes.github.io/math-things/apps/balance-scale/',         icon: '⚖',   w: 580,  h: 420, baseW: 820,  baseH: 560,  minW: 300, minH: 220, minWFrac: 0.20, minHFrac: 0.22 },
-    { id: 'primealtar',      domain: 'OA',  name: 'Prime Altar',       url: 'https://mrh-swes.github.io/math-things/apps/prime-altar/',           icon: '◆',   w: 720,  h: 560, baseW: 960,  baseH: 720,  minW: 320, minH: 240, minWFrac: 0.22, minHFrac: 0.25 },
-    { id: 'walkerellie',     domain: 'OA',  name: 'Walker & Ellie',    url: 'https://mrh-swes.github.io/math-things/apps/walker-ellie/',          icon: '⊹',   w: 620,  h: 560, baseW: 860,  baseH: 720,  minW: 300, minH: 260, minWFrac: 0.20, minHFrac: 0.25 },
-
-    // NBT — Number & Operations in Base Ten
-    { id: 'placevalue',      domain: 'NBT', name: 'Place Value Cards',  url: 'https://mrh-swes.github.io/math-things/apps/place-value-cards/',    icon: '▥',   w: 660,  h: 420, baseW: 900,  baseH: 560,  minW: 300, minH: 220, minWFrac: 0.20, minHFrac: 0.22 },
-    { id: 'base10',          domain: 'NBT', name: 'Base 10 Blocks',     url: 'https://mrh-swes.github.io/math-things/apps/place-value-blocks/',   icon: '▦',   w: 600,  h: 480, baseW: 840,  baseH: 620,  minW: 300, minH: 230, minWFrac: 0.20, minHFrac: 0.24 },
-    { id: 'zoomnumline',     domain: 'NBT', name: 'Zooming Number Line',url: 'https://mrh-swes.github.io/math-things/apps/zooming-number-line/',  icon: '🔍',  w: 800,  h: 280, baseW: 1100, baseH: 360,  minW: 480, minH: 160, minWFrac: 0.34, minHFrac: 0.16 },
-    { id: 'roundingwave',    domain: 'NBT', name: 'Rounding Waves',     url: 'https://mrh-swes.github.io/math-things/apps/rounding-waves/',       icon: '∼',   w: 720,  h: 360, baseW: 960,  baseH: 460,  minW: 360, minH: 180, minWFrac: 0.26, minHFrac: 0.18 },
-    { id: 'decimalorder',    domain: 'NBT', name: 'Decimal Order',      url: 'https://mrh-swes.github.io/math-things/apps/decimal-order/',        icon: '0.1', w: 600,  h: 460, baseW: 840,  baseH: 600,  minW: 300, minH: 230, minWFrac: 0.20, minHFrac: 0.22 },
-
-    // NF — Number & Operations — Fractions
-    { id: 'fractionlab',     domain: 'NF',  name: 'Fraction Lab',       url: 'https://mrh-swes.github.io/math-things/apps/fraction-lab/',         icon: '½',   w: 680,  h: 520, baseW: 920,  baseH: 660,  minW: 320, minH: 250, minWFrac: 0.22, minHFrac: 0.24 },
-    { id: 'legofractions',   domain: 'NF',  name: 'Lego Fractions',     url: 'https://mrh-swes.github.io/math-things/apps/lego-fractions/',       icon: '⬛',  w: 640,  h: 480, baseW: 880,  baseH: 620,  minW: 300, minH: 240, minWFrac: 0.20, minHFrac: 0.23 },
-
-    // MD — Measurement & Data
-    { id: 'measurebench',    domain: 'MD',  name: 'Measure Bench',      url: 'https://mrh-swes.github.io/math-things/apps/measure-bench/',        icon: '📏',  w: 700,  h: 380, baseW: 960,  baseH: 500,  minW: 360, minH: 190, minWFrac: 0.26, minHFrac: 0.18 },
-    { id: 'thedial',         domain: 'MD',  name: 'The Dial',           url: 'https://mrh-swes.github.io/math-things/apps/the-dial/',             icon: '🕐',  w: 480,  h: 480, baseW: 680,  baseH: 680,  minW: 260, minH: 260, minWFrac: 0.18, minHFrac: 0.25 },
-    { id: 'cardinalitytable',domain: 'MD',  name: 'Cardinality',        url: 'https://mrh-swes.github.io/math-things/apps/cardinality-table/',    icon: '#',   w: 560,  h: 460, baseW: 780,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.19, minHFrac: 0.22 },
-    { id: 'colorsorter',     domain: 'MD',  name: 'Color Sorter',       url: 'https://mrh-swes.github.io/math-things/apps/color-sorter/',         icon: '🎨',  w: 560,  h: 460, baseW: 780,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.19, minHFrac: 0.22 },
-    { id: 'pairsorter',      domain: 'MD',  name: 'Pair Sorter',        url: 'https://mrh-swes.github.io/math-things/apps/pair-sorter/',          icon: '⇌',   w: 560,  h: 460, baseW: 780,  baseH: 600,  minW: 280, minH: 230, minWFrac: 0.19, minHFrac: 0.22 },
-
-    // G — Geometry
-    { id: 'geolab',          domain: 'G',   name: 'Geo Lab',            url: 'https://mrh-swes.github.io/math-things/apps/geo-lab/',              icon: '△',   w: 600,  h: 600, baseW: 760,  baseH: 760,  minW: 280, minH: 260, minWFrac: 0.20, minHFrac: 0.26 },
-    { id: 'euclids',         domain: 'G',   name: "Euclid's Playground",url: 'https://mrh-swes.github.io/math-things/apps/euclids-playground/',   icon: '📐',  w: 640,  h: 560, baseW: 880,  baseH: 720,  minW: 300, minH: 260, minWFrac: 0.20, minHFrac: 0.25 },
-    { id: 'missingrect',     domain: 'G',   name: 'Missing Rectangle',  url: 'https://mrh-swes.github.io/math-things/apps/missing-side-rectangle/',icon: '□?', w: 560,  h: 480, baseW: 780,  baseH: 620,  minW: 280, minH: 240, minWFrac: 0.19, minHFrac: 0.23 },
-    { id: 'trigexplorer',    domain: 'G',   name: 'Trig Explorer',      url: 'https://mrh-swes.github.io/math-things/apps/trig-explorer/',        icon: 'sin', w: 680,  h: 520, baseW: 920,  baseH: 660,  minW: 320, minH: 250, minWFrac: 0.22, minHFrac: 0.24 },
+    {"id":"place-value-blocks-v2","name":"Place Value Blocks v2","icon":"▦","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/place-value-blocks-v2/"},
+    {"id":"counters-and-cups","name":"Counters & Cups","icon":"●","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/counters-and-cups/"},
+    {"id":"decimal-grid","name":"Decimal Grid","icon":"▦","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/decimal-grid/"},
+    {"id":"money","name":"Money","icon":"$","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/money/"},
+    {"id":"tenframe","domain":"CORE","name":"Ten Frame","url":"https://mrh-swes.github.io/math-things/apps/ten-frame/","icon":"◫","w":500,"h":400,"baseW":720,"baseH":520,"minW":260,"minH":210,"minWFrac":0.18,"minHFrac":0.22},
+    {"id":"rekenrek","domain":"CORE","name":"Rekenrek","url":"https://mrh-swes.github.io/math-things/apps/rekenrek/","icon":"≡","w":600,"h":350,"baseW":820,"baseH":420,"minW":340,"minH":170,"minWFrac":0.24,"minHFrac":0.17},
+    {"id":"numberline","domain":"CORE","name":"Number Line","url":"https://mrh-swes.github.io/math-things/apps/number-line/","icon":"━●━","w":900,"h":220,"baseW":1280,"baseH":300,"minW":520,"minH":118,"minWFrac":0.38,"minHFrac":0.14},
+    {"id":"fraction-number-line","name":"Fraction & Decimal Number Line","icon":"━●━","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/fraction-number-line/"},
+    {"id":"measurebench","domain":"CORE","name":"Measure Bench","url":"https://mrh-swes.github.io/math-things/apps/measure-bench/","icon":"📏","w":700,"h":380,"baseW":960,"baseH":500,"minW":360,"minH":190,"minWFrac":0.26,"minHFrac":0.18},
+    {"id":"dimensional-builder","name":"Dimensional Builder","icon":"▦","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/dimensional-builder/"},
+    {"id":"volume-space","name":"Volume Space","icon":"▣","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"CORE","url":"https://mrh-swes.github.io/math-things/apps/volume-space/"},
+    {"id":"thedial","domain":"CONCEPT","name":"The Dial","url":"https://mrh-swes.github.io/math-things/apps/the-dial/","icon":"🕐","w":480,"h":480,"baseW":680,"baseH":680,"minW":260,"minH":260,"minWFrac":0.18,"minHFrac":0.25},
+    {"id":"cardinalitytable","domain":"CONCEPT","name":"Cardinality Table","url":"https://mrh-swes.github.io/math-things/apps/cardinality-table/","icon":"#","w":560,"h":460,"baseW":780,"baseH":600,"minW":280,"minH":230,"minWFrac":0.19,"minHFrac":0.22},
+    {"id":"arrayarchitect","domain":"BRIDGE","name":"Array Architect","url":"https://mrh-swes.github.io/math-things/apps/array-architect/","icon":"⊞","w":560,"h":560,"baseW":820,"baseH":640,"minW":280,"minH":230,"minWFrac":0.18,"minHFrac":0.24},
+    {"id":"division-architect","name":"Division Architect","icon":"÷","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"BRIDGE","url":"https://mrh-swes.github.io/math-things/apps/division-architect/"},
+    {"id":"multmachine","domain":"ALGORITHM","name":"Multiplication Machine","url":"https://mrh-swes.github.io/math-things/apps/multiplication-machine/","icon":"×","w":600,"h":500,"baseW":840,"baseH":640,"minW":300,"minH":240,"minWFrac":0.2,"minHFrac":0.24},
+    {"id":"divmachine","domain":"ALGORITHM","name":"Division Machine","url":"https://mrh-swes.github.io/math-things/apps/division-machine/","icon":"÷","w":600,"h":500,"baseW":840,"baseH":640,"minW":300,"minH":240,"minWFrac":0.2,"minHFrac":0.24},
+    {"id":"protractor","name":"Protractor","icon":"∠","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"EXPLORATION","url":"https://mrh-swes.github.io/math-things/apps/protractor/"},
+    {"id":"euclids","domain":"EXPLORATION","name":"Euclid's Playground","url":"https://mrh-swes.github.io/math-things/apps/euclids-playground/","icon":"📐","w":640,"h":560,"baseW":880,"baseH":720,"minW":300,"minH":260,"minWFrac":0.2,"minHFrac":0.25},
+    {"id":"model-audition-quadrilateral-jig","name":"Quadrilateral Jig","icon":"◇","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"EXPLORATION","url":"https://mrh-swes.github.io/math-things/apps/model-audition-quadrilateral-jig/"},
+    {"id":"model-audition-scaling-wire","name":"Scaling Wire","icon":"↔","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"EXPLORATION","url":"https://mrh-swes.github.io/math-things/apps/model-audition-scaling-wire/"},
+    {"id":"model-audition-share-mill","name":"Share Mill","icon":"÷","w":620,"h":480,"baseW":900,"baseH":650,"minW":300,"minH":220,"minWFrac":0.2,"minHFrac":0.22,"domain":"EXPLORATION","url":"https://mrh-swes.github.io/math-things/apps/model-audition-share-mill/"}
   ];
 
-  const FAVORITE_TOOL_IDS = ['fractionlab', 'arrayarchitect', 'placevalue', 'base10'];
-  const OPTIONAL_OPERATION_IDS = ['multmachine', 'divmachine', 'longdivbuddy'];
-  let TOOLS = TOOL_OVERRIDES.map(tool => ({ ...tool }));
-
-  const LIVE_CATEGORY_META = {
-    CORE:        { label: 'Core',      color: '#dc143c', fullName: 'Core Manipulatives' },
-    CONCEPT:     { label: 'Concept',   color: '#6b3fa0', fullName: 'Concept Machines' },
-    BRIDGE:      { label: 'Bridge',    color: '#e6954a', fullName: 'Bridges' },
-    ALGORITHM:   { label: 'Algorithm', color: '#2e5894', fullName: 'Algorithm Machines' },
-    EXPLORATION: { label: 'Explore',   color: '#2d8a4e', fullName: 'Exploration' },
-  };
-
-  function normalizedToolPath(url) {
-    try {
-      return new URL(url, window.location.href).pathname.replace(/\/+$/, '/');
-    } catch (ignored) {
-      return String(url || '');
-    }
-  }
-
-  function categoryKey(label) {
-    const value = String(label || '').trim().toLowerCase();
-    if (value.startsWith('core')) return 'CORE';
-    if (value.startsWith('concept')) return 'CONCEPT';
-    if (value.startsWith('bridge')) return 'BRIDGE';
-    if (value.startsWith('algorithm')) return 'ALGORITHM';
-    return 'EXPLORATION';
-  }
-
-  function guessToolIcon(name) {
-    const n = String(name || '').toLowerCase();
-    if (n.includes('division')) return '÷';
-    if (n.includes('multiplication')) return '×';
-    if (n.includes('fraction')) return '½';
-    if (n.includes('number line')) return '━●━';
-    if (n.includes('number bond')) return '○';
-    if (n.includes('array')) return '▦';
-    if (n.includes('place value') || n.includes('ten frame')) return '▥';
-    if (n.includes('measure')) return '📏';
-    if (n.includes('geo') || n.includes('euclid') || n.includes('rectangle')) return '△';
-    if (n.includes('dial')) return '◷';
-    if (n.includes('balance')) return '⚖';
-    if (n.includes('prime')) return '◆';
-    return '◇';
-  }
-
-  async function refreshToolsFromAppMenu() {
-    try {
-      const response = await fetch('https://mrh-swes.github.io/math-things/index.html', { cache: 'no-store' });
-      if (!response.ok) throw new Error(`app menu returned ${response.status}`);
-      const html = await response.text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const overrideByPath = new Map(
-        TOOL_OVERRIDES.map(tool => [normalizedToolPath(tool.url), tool])
-      );
-      const live = [];
-
-      doc.querySelectorAll('.app-card').forEach(card => {
-        const rawHref = card.getAttribute('href');
-        if (!rawHref) return;
-
-        const absolute = new URL(rawHref, new URL('https://mrh-swes.github.io/math-things/', window.location.href));
-        const parts = absolute.pathname.split('/').filter(Boolean);
-        const slug = parts[parts.length - 1] || '';
-        if (!slug || slug === 'teaching-table') return;
-
-        const name = card.querySelector('.app-name')?.textContent?.trim() || slug;
-        const family = card.querySelector('.app-family')?.textContent?.trim() || 'Exploration';
-        const domain = categoryKey(family);
-        const override = overrideByPath.get(absolute.pathname.replace(/\/+$/, '/'));
-        const id = override?.id || slug.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
-
-        live.push({
-          id,
-          domain,
-          name,
-          url: absolute.href,
-          icon: override?.icon || guessToolIcon(name),
-          w: override?.w || 620,
-          h: override?.h || 480,
-          baseW: override?.baseW || 900,
-          baseH: override?.baseH || 650,
-          minW: override?.minW || 300,
-          minH: override?.minH || 220,
-          minWFrac: override?.minWFrac || 0.20,
-          minHFrac: override?.minHFrac || 0.22,
-        });
-      });
-
-      if (live.length) {
-        // Keep bundled tools reachable even when the main menu omits one.
-        const livePaths = new Set(live.map(tool => normalizedToolPath(tool.url)));
-        const retained = TOOL_OVERRIDES.filter(tool => !livePaths.has(normalizedToolPath(tool.url)))
-          .map(tool => ({ ...tool, domain: 'EXPLORATION' }));
-        TOOLS = [...live, ...retained];
-        DOMAIN_META = { ...LIVE_CATEGORY_META };
-      }
-    } catch (error) {
-      console.warn('Teaching Table could not refresh the live Math Things app list; using bundled fallback.', error);
-    }
-  }
+  const FAVORITE_TOOL_IDS = ['numberline', 'arrayarchitect', 'place-value-blocks-v2', 'fraction-number-line'];
+  const OPTIONAL_OPERATION_IDS = ['multmachine', 'divmachine'];
+  const TOOLS = TOOL_OVERRIDES;
 
   // =========================
 
@@ -2707,12 +2586,13 @@
       if (firstMathField) setActive(firstMathField);
       else activeField = null;
 
-      // Restore tool states; will be rendered after dock builds.
+      // Retain hidden tools non-destructively so saving this table does not erase
+      // their window state. Only the reviewed TOOLS registry may render/open them.
       if (data.tools && typeof data.tools === 'object') {
         Object.entries(data.tools).forEach(([id, s]) => {
-          if (TOOLS.find(t => t.id === id)) {
+          if (s && typeof s === 'object' && !Array.isArray(s)) {
             toolStates[id] = { ...s };
-            if (typeof s.z === 'number' && s.z > toolZTop) toolZTop = s.z + 1;
+            if (TOOLS.some(t => t.id === id) && Number.isFinite(s.z) && s.z > toolZTop) toolZTop = s.z + 1;
           }
         });
       }
@@ -3099,11 +2979,11 @@
 
   // ===== Tools dock and floating tool windows =====
 
-  const toolStates = {}; // { id: { x, y, w, h, open, z } }
+  const toolStates = Object.create(null); // { id: { x, y, w, h, open, z } }
   let toolZTop = 100;
 
   function defaultToolPosition(tool) {
-    const openCount = Object.values(toolStates).filter(s => s.open).length;
+    const openCount = TOOLS.filter(t => toolStates[t.id]?.open).length;
     const offset = openCount * 32;
     return { x: 28 + offset, y: 28 + offset, w: tool.w, h: tool.h };
   }
@@ -3291,12 +3171,12 @@
     }
   }
 
-  let DOMAIN_META = {
-    OA:  { label: 'OA',  color: '#2e5894', fullName: 'Operations & Algebraic Thinking' },
-    NBT: { label: 'NBT', color: '#e6954a', fullName: 'Number & Operations in Base Ten' },
-    NF:  { label: 'NF',  color: '#c04a8a', fullName: 'Number & Operations — Fractions' },
-    MD:  { label: 'MD',  color: '#2d8a4e', fullName: 'Measurement & Data' },
-    G:   { label: 'G',   color: '#7c4ab8', fullName: 'Geometry' },
+  const DOMAIN_META = {
+    CORE: { label: 'Core', color: '#dc143c', fullName: 'Core Manipulatives' },
+    CONCEPT: { label: 'Concept', color: '#6b3fa0', fullName: 'Concept Machines' },
+    BRIDGE: { label: 'Bridge', color: '#e6954a', fullName: 'Bridges' },
+    ALGORITHM: { label: 'Algorithm', color: '#2e5894', fullName: 'Algorithm Machines' },
+    EXPLORATION: { label: 'Explore', color: '#2d8a4e', fullName: 'Exploration' },
   };
 
   function buildDomainDock() {
@@ -3316,6 +3196,7 @@
 
     DOMAIN_META.EXTRAS = { label: '× / ÷ Extras', color: '#2e5894', fullName: 'Optional multiplication & division tools' };
     Object.entries(DOMAIN_META).forEach(([domain, meta]) => {
+      if (!TOOLS.some(t => domain === 'EXTRAS' ? OPTIONAL_OPERATION_IDS.includes(t.id) : t.domain === domain)) return;
       const wrap = document.createElement('div');
       wrap.className = 'domain-btn-wrap';
       wrap.dataset.domain = domain;
@@ -3911,7 +3792,6 @@
     if (!load()) { setMode('plain'); }
     const initialMathField = document.querySelector('math-field');
     if (initialMathField) setActive(initialMathField);
-    await refreshToolsFromAppMenu();
     renderDock();
     restoreOpenTools();
 
@@ -4059,4 +3939,5 @@
   <script src="./accessibility.js?v=20261001b"></script>
 </body>
 </html>
+
 
