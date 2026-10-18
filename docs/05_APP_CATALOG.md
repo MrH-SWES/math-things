@@ -22,6 +22,7 @@ Use `harness/APP_AUDIT_TEMPLATE.md` to conduct each audit.
 | Fraction & Decimal Number Line | `apps/fraction-number-line/` | New build (touch QA pending) | Canonical 0–1 number-line unit magnified into a horizontal red-enamel whole | Drag or step one bead between 0 and 1; switch between fractional partitioning and decimal slices without moving it | Fractions 2–12 parts; decimal tenths, hundredths and thousandths; exact position retained across modes, approximations labeled |
 | Fraction Lab | `apps/fraction-lab/` | Needs audit | TBD | TBD | TBD |
 | Measure Bench | `apps/measure-bench/` | Needs audit | TBD | TBD | TBD |
+| Volume Space | `apps/volume-space/` | Recovered Claude build (live QA pending) | Three-dimensional unit-cube prism with X/Y/Z dimensions | Pull the neutral metal X, Y, and Z beads to grow lines into grids and grids into solids; enter dimension factors when needed | Line/Grid/Solid permissions, optional equation record, place-value grouping, Three.js renderer, tablet testing outstanding |
 
 ## Concept Machines
 
