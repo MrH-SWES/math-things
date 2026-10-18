@@ -6,40 +6,43 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook touchscreen, especially stretching a band from its middle and double-tapping a corner. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
-- On phones, pegs are 30px apart; fine for a mouse, tight for a finger.
+- Try it on a real iPad or Chromebook touchscreen, especially turning a block by its bead and fitting blocks edge to edge. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
+- Decide whether the i-Ready pattern-block templates (outlines to fill) are needed. This build is a free mat with no outlines.
 
 Notes:
-- Files changed: apps/geoboard/index.html (new app). No existing app was modified.
-- Behavior: A free geoboard for perimeter, area, right angles and shapes (Grade 4 Lessons 16, 30, 33, 34).
-  - A brushed-metal plate holds an 11×11 grid of aluminum pegs (a 10×10 board of unit squares).
-  - Tap the band bin to hook a band on two open pegs near the middle, or drag a band out of the bin to hook it where the finger is. Up to 6 bands, each its own color.
-  - Drag a corner to move it to another peg. Drag the middle of a side to stretch the band around a new peg. Drag the inside of a shape to slide the whole band. Off the board, the band stretches toward the finger and snaps to the nearest peg on release.
-  - Double-tap a corner to unhook it from that peg. A band dropped on the cabinet is put away. ↺ takes all bands off.
-  - The eye button shows an optional record: square corners on right angles, a length on straight two-peg bands, and "P = 10  A = 6" above each shape. Perimeter shows only when every side runs along the grid; area shows half units ("A = 3½", "A = ½"). Off by default.
+- Files changed: apps/pattern-blocks/index.html (new app). No existing app was modified.
+- Behavior: A free pattern-block mat for shapes, angles and composing figures (Grade 4 Lessons 9, 33, 34).
+  - The six classic blocks in their usual colors, as enameled pieces: yellow hexagon, red trapezoid, blue rhombus, green triangle, orange square, tan rhombus. Every edge is one unit; the trapezoid's long side is two.
+  - The cabinet has a bin for each block, drawn at one shared scale so sizes compare. Tap a bin to set a block in an open spot near the middle, or drag a block out.
+  - Drag a block to move it. Let go near another block and it settles edge to edge: the move that lines up the most corners wins, including the middle of the trapezoid's long side.
+  - Blocks cannot overlap. A block dropped on another slides back where it came from; a new block dropped on another goes back in its bin.
+  - Tap a block to pick it up: an aluminum bead on an arm appears. Dragging the bead turns the block in 30° steps, the angle every pattern block is built from. A turn that would overlap another block is refused.
+  - Dropping a block on the cabinet puts it away. ↺ puts all blocks away.
+  - The eye button shows an optional record: the picked-up block's angle at every corner (arcs inside, square marks on right angles, measures just outside each corner). Off by default.
 - Doctrine principles applied:
   - No words or directions on the surface.
-  - Measures are optional and follow the band; there is no answer checking.
+  - The structure lives in the constraints: blocks fit edge to edge, turn only in 30° steps, and refuse to overlap.
+  - The record is optional and follows the block; there is no answer checking.
 - Fixes made during testing:
-  - Straight (horizontal or vertical) bands were invisible: the shadow filter's region was a percentage of a zero-height box. The filter now uses board coordinates.
-  - A keyboard-focused band had no visible focus; it now glows blue.
-  - Half a unit read "0½"; it now reads "½".
-- Desktop behavior (1024×768): A band stretched into a 3×2 rectangle reads P = 10, A = 6. Unhooking one corner leaves a right triangle reading A = 3 with no perimeter (slanted side). Sliding, putting away, dragging from the bin and clearing all work. A seventh band is refused. No console errors.
-- Mobile behavior (375×812): The board fits above the cabinet with no horizontal scroll; pegs 30px apart. Same tests pass.
-- Projector behavior (1920×1080): Pegs 56px apart; same tests pass.
-- Accessibility notes: The band bin is a button; Enter hooks a band and focuses it. A focused band: arrows move it a peg at a time, Enter picks a corner (arrows then move that corner), + hooks a new corner, Escape lets go, Delete unhooks the corner or takes the band off. A polite live region lists each band's corners, plus area and perimeter only while the record is shown.
+  - The turning bead turned the block the wrong way.
+  - Clicking a block selected it on focus and then deselected it on release.
+  - Angle measures crowded inside thin blocks (tan rhombus, blue rhombus, triangle); they now sit outside the corners, and the bead was moved out so it does not cover them.
+- Desktop behavior (1024×768): Edge 72px. A triangle dropped near a hexagon's top edge settles onto it, sharing both corners. A triangle dropped on the hexagon slides back. A square dragged from its bin onto the hexagon goes back in the bin; dragged to an open spot it stays. The bead turns a square to 30°. Records read 90° ×4, 120° ×6, and 30°/150° for the tan rhombus. No console errors.
+- Mobile behavior (375×812): The bins wrap to two rows of three; no horizontal scroll. Edge 47px. Same tests pass.
+- Projector behavior (1920×1080): Edge 72px; same tests pass.
+- Accessibility notes: Each bin is a button; Enter sets a block and focuses it. A focused block: arrows slide it a quarter edge (Shift: a whole edge), R turns it 30° clockwise (Shift+R counterclockwise), Delete puts it away, Escape lets go. Each block's label names it and its turn, plus its angles while the record is shown. A polite live region counts the blocks on the mat.
 - Remaining risks:
-  - A band crossed over itself (a bow tie) reports the signed shoelace area, which is not what a student would count.
-  - Perimeter is hidden for shapes with slanted sides, since those lengths are not whole units.
+  - Blocks move one at a time; there is no way to slide a finished design as a whole.
+  - No mirror line yet; symmetry (Lesson 34) is planned for the separate Symmetry / Fold app.
 
 Acceptance Tests:
-- Tapping the bin hooks a band; dragging from the bin hooks it under the finger. PASS
-- Stretching a side adds a corner; a 3×2 rectangle reads P = 10, A = 6. PASS
-- Double-tapping a corner unhooks it. PASS
-- The inside of a shape slides the band. PASS
-- A band dropped on the cabinet is put away; ↺ clears all bands. PASS
-- Straight two-peg bands are visible. PASS
-- Keyboard: Enter on the bin, arrows, +, Escape, Delete. PASS
+- Tapping a bin sets a block; dragging from a bin places it under the finger. PASS
+- A block let go near another settles edge to edge. PASS
+- Overlapping placements and turns are refused. PASS
+- The bead turns a block in 30° steps. PASS
+- The record shows each corner's angle on the picked-up block. PASS
+- A block dropped on the cabinet is put away; ↺ clears the mat. PASS
+- Keyboard: Enter on a bin, arrows, Shift+arrows, R, Delete. PASS
 - No visible instruction text on the student surface. PASS
 - No console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS
