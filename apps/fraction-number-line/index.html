@@ -277,23 +277,38 @@
             .rec-expr { font-size: 2rem; }
         }
     
-  .companion-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .pair{display:flex;gap:3px;border-radius:14px;background:#E5E5EA;padding:4px}
-  .pair button{border:0;border-radius:10px;background:transparent;color:#555;cursor:pointer;padding:10px 13px;font:800 12px Lexend;min-height:38px}
-  .pair button[aria-pressed=true]{color:#1D1D1F;background:white;box-shadow:0 2px 7px #0002}
-  #partition{min-height:45px;border:1px solid #D1D1D6;border-radius:12px;background:white;padding:7px 10px;font:800 13px Lexend}
-  .bundle{font:700 11px Lexend;color:#575b60;display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:12px;background:#E5E5EA}
-  .bundle[hidden]{display:none}.bundle input{width:21px;height:21px;accent-color:#64D2FF}
-  .exit{font:800 11px Lexend;text-decoration:none;color:#82858B}
-  .steppers{position:fixed;bottom:clamp(60px,8vh,82px);left:50%;transform:translateX(-50%);z-index:11;display:flex;gap:12px;padding:7px;background:#f7f7f7e0;backdrop-filter:blur(8px);border:1px solid #ddd;border-radius:16px;box-shadow:0 8px 26px #0002}
-  .steppers button{min-width:60px;min-height:47px;border:1px solid #D1D1D6;border-radius:11px;background:linear-gradient(#fff,#eee);font:800 22px Lexend;cursor:pointer}
-  button:focus-visible,#partition:focus-visible,#stage canvas:focus-visible{outline:3px solid #007AFF;outline-offset:3px}
-  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  /* All companion controls inherit Volume Space's original surface language:
+     wordless blue place-value switch, segmented tool buttons, neutral material. */
+  .header-controls{gap:12px}
+  .mode-label{width:auto;padding:0 12px;min-height:32px;font:800 12px Lexend,system-ui,sans-serif;white-space:nowrap}
+  .mode-label.active{background:white;color:var(--text-main);
+    box-shadow:0 1px 4px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06)}
+  #partition{height:32px;min-height:32px;border:0;border-radius:7px;
+    color:var(--text-main);background:#fff;padding:0 9px;
+    font:800 12px Lexend,system-ui,sans-serif;cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  .pv-toggle-wrap[hidden]{display:none}
+  .exit{font:700 11px Lexend,system-ui,sans-serif;color:var(--text-gray);
+    text-decoration:none;white-space:nowrap}
+  .steppers{position:fixed;bottom:clamp(60px,8vh,82px);left:50%;
+    transform:translateX(-50%);z-index:11}
+  .steppers .tool{width:48px;height:42px;font:800 21px Lexend,system-ui,sans-serif}
   #stage canvas{touch-action:none}
-  @media(max-width:710px){.companion-header{padding:12px;align-items:flex-start}.companion-header .logo{font-size:21px}.controls{gap:5px}
-    .pair button{padding:9px;font-size:11px}#partition{font-size:11px;max-width:125px}.bundle{font-size:10px}
-    .steppers{bottom:63px}}
+  #partition:focus-visible,.exit:focus-visible,#stage canvas:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media(max-width:710px){
+    header{height:auto;min-height:64px;padding:9px 12px;align-items:center;flex-wrap:wrap}
+    .header-controls{flex-wrap:wrap;gap:8px;justify-content:flex-end;flex:1}
+    .mode-label{padding:0 10px;font-size:11px}
+    #partition{max-width:132px}
+    .exit{font-size:10px}
+    .steppers{bottom:63px}
+  }
+  @media(max-width:420px){
+    .header-controls{justify-content:flex-start}
+    .exit{margin-left:auto}
+  }
 
     </style>
     <script type="importmap">
@@ -307,25 +322,38 @@
 </head>
 <body>
   <div id="stage" role="region" aria-label="Zoomed Volume Space unit cube sitting at zero on the original 3D number line"></div>
-  <header class="companion-header">
+  <header>
     <div class="logo">Math Things<span class="logo-bead"></span></div>
-    <div class="controls">
-      <div class="pair" role="group" aria-label="Number representation">
-        <button id="fractionMode" type="button" aria-pressed="true">Fractions</button>
-        <button id="decimalMode" type="button" aria-pressed="false">Decimals</button>
+    <div class="header-controls">
+      <div class="seg" role="group" aria-label="Number representation">
+        <button class="seg-btn mode-label active" id="fractionMode" type="button" aria-pressed="true">Fractions</button>
+        <button class="seg-btn mode-label" id="decimalMode" type="button" aria-pressed="false">Decimals</button>
       </div>
       <select id="partition" aria-label="Choose subdivision of the unit cube"></select>
-      <label class="bundle" id="bundleBox" hidden>
-        <input type="checkbox" id="bundle" checked aria-label="Fuse ten contiguous hundredths into one tenth">
-        Bundle 10
-      </label>
+            <div class="pv-toggle-wrap" id="bundleBox" hidden>
+                <!-- Wordless icon: small red unit cubes fusing into a blue ten-stick -->
+                <svg class="pv-icon" width="38" height="18" viewBox="0 0 38 18" fill="none" aria-hidden="true" focusable="false">
+                    <rect x="0" y="4" width="7" height="10" rx="1.5" fill="#FF9F0A"/>
+                    <rect x="9" y="4" width="7" height="10" rx="1.5" fill="#FF9F0A"/>
+                    <polyline points="18,9 21,9" stroke="#86868B" stroke-width="1.5" stroke-linecap="round"/>
+                    <polyline points="19.5,6.5 22,9 19.5,11.5" stroke="#86868B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="23" y="4" width="15" height="10" rx="1.5" fill="#64D2FF"/>
+                    <line x1="28.5" y1="4" x2="28.5" y2="14" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+                    <line x1="33"   y1="4" x2="33"   y2="14" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+                </svg>
+                <label class="pv-pill" title="Combine ten hundredths into one tenth">
+                    <input type="checkbox" id="bundle" checked aria-label="Place-value grouping: combine ten hundredths into one tenth">
+                    <span class="pv-pill-track"><span class="pv-pill-thumb"></span></span>
+                </label>
+            </div>
+
       <a class="exit" href="../../">All Math Things</a>
     </div>
   </header>
-  <div class="steppers" role="group" aria-label="Add and remove slices">
-    <button type="button" id="less" aria-label="Remove one slice">−</button>
-    <button type="button" id="more" aria-label="Add one slice">+</button>
-    <button type="button" id="clear" aria-label="Clear all slices">↺</button>
+  <div class="tools steppers" role="group" aria-label="Add and remove slices">
+    <button class="tool" type="button" id="less" aria-label="Remove one slice">−</button>
+    <button class="tool" type="button" id="more" aria-label="Add one slice">+</button>
+    <button class="tool" type="button" id="clear" aria-label="Clear all slices">↺</button>
   </div>
   <div class="sr-only" id="announce" aria-live="polite" role="status" aria-atomic="true"></div>
   <footer>Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span></footer>
@@ -509,8 +537,12 @@ function updateChoices(){
   }
   parts.value=String(scale());
   bundleBox.hidden=state.mode!=='decimal'||scale()!==100;
-  for(const m of ['fraction','decimal'])
-    document.getElementById(m+'Mode').setAttribute('aria-pressed',String(m===state.mode));
+  for(const m of ['fraction','decimal']){
+    const button=document.getElementById(m+'Mode');
+    const selected=m===state.mode;
+    button.setAttribute('aria-pressed',String(selected));
+    button.classList.toggle('active',selected);
+  }
 }
 function renderBlocks(){
   pieces.clear();
