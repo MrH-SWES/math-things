@@ -733,8 +733,14 @@ numIn.addEventListener('input',()=>{
   numIn.classList.toggle('bad',!ok);fitInput(numIn);
   if(ok)setFraction(n,d);
 });
+// Retyping a denominator passes through shorter ones (100 via 10), and each
+// live preview clamps the numerator. Every preview starts from the numerator
+// as it was when the denominator edit began, so 37/100 survives a retype.
+let denEditNum=null;
+denIn.addEventListener('focus',()=>{denEditNum=whole(numIn.value)});
+denIn.addEventListener('blur',()=>{denEditNum=null});
 denIn.addEventListener('input',()=>{
-  const n=whole(numIn.value),d=whole(denIn.value);
+  const n=denEditNum??whole(numIn.value),d=whole(denIn.value);
   const ok=FRACTIONS.includes(d);
   denIn.classList.toggle('bad',!ok);fitInput(denIn);
   if(ok)setFraction(Number.isNaN(n)?0:Math.min(n,d),d);
@@ -925,6 +931,14 @@ canvas.addEventListener('keydown',e=>{
   else if(e.key==='PageDown'){e.preventDefault();setValue(Math.floor(position()*10+1e-9)-1,10)}
 });
 window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight);frame()});
+// Header controls change without a resize (the bundle switch appears for
+// hundredths) and can wrap onto a second row on narrow screens; keep the
+// record below the header and the camera fitted to the free area.
+let headerH=0;
+new ResizeObserver(([e])=>{
+  const h=e.contentRect.height;
+  if(Math.abs(h-headerH)>.5){headerH=h;frame()}
+}).observe(document.querySelector('header'));
 function loop(){
   requestAnimationFrame(loop);
   const moved=controls.update();
