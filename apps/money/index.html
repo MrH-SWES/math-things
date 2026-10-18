@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Money</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BOARD ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .stack { cursor: grab; outline: none; }
+    #board .stack use { pointer-events: visiblePainted; }
+    #board .stack.held { cursor: grabbing; }
+    #board .fx { transform-box: fill-box; transform-origin: 50% 50%; }
+    #board .stack:focus-visible .fx { filter: drop-shadow(0 0 2px #007AFF) drop-shadow(0 0 2px #007AFF); }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+    /* ── CASH DRAWER ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 10px clamp(10px, 2vw, 18px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .drawer { display: grid; grid-template-columns: repeat(4, auto); gap: clamp(6px, 1.2vw, 10px); }
+    .bin {
+      width: clamp(56px, 13.5vw, 92px);
+      height: clamp(46px, 9vw, 58px);
+      border: none; border-radius: 14px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg { overflow: visible; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(60,40,20,0.22)); }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── RECORD (optional, follows the money) ── */
+    #record {
+      position: fixed; top: 14px; left: 50%; transform: translate(-50%, -6px);
+      z-index: 4; pointer-events: none; white-space: nowrap;
+      font-weight: 900; font-size: clamp(24px, 3.6vw, 38px); letter-spacing: -0.02em;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s var(--spring);
+    }
+    #record.on { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-width: 600px) { #record { top: 58px; } }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Money mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Cash drawer">
+    <div class="drawer">
+      <button class="bin" data-kind="7" aria-label="Twenty-dollar bills"></button>
+      <button class="bin" data-kind="6" aria-label="Ten-dollar bills"></button>
+      <button class="bin" data-kind="5" aria-label="Five-dollar bills"></button>
+      <button class="bin" data-kind="4" aria-label="One-dollar bills"></button>
+      <button class="bin" data-kind="3" aria-label="Quarters"></button>
+      <button class="bin" data-kind="2" aria-label="Dimes"></button>
+      <button class="bin" data-kind="1" aria-label="Nickels"></button>
+      <button class="bin" data-kind="0" aria-label="Pennies"></button>
+    </div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the total" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Clear the mat">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<div id="record" aria-hidden="true"></div>
+
+<!-- Paints shared by the mat and the drawer -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="silver" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.3" stop-color="#E9EAEC"/><stop offset="0.7" stop-color="#BFC1C6"/><stop offset="1" stop-color="#D6D8DB"/>
+    </radialGradient>
+    <radialGradient id="nickelMetal" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#FAFAF7"/><stop offset="0.3" stop-color="#E2E1DC"/><stop offset="0.7" stop-color="#B9B7B0"/><stop offset="1" stop-color="#D2D0CA"/>
+    </radialGradient>
+    <radialGradient id="copper" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#F6C9A3"/><stop offset="0.3" stop-color="#D98E57"/><stop offset="0.72" stop-color="#A9592A"/><stop offset="1" stop-color="#C47740"/>
+    </radialGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F1F5EC"/><stop offset="0.6" stop-color="#E1EADA"/><stop offset="1" stop-color="#D3DECB"/>
+    </linearGradient>
+    <radialGradient id="seal" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#F7FAF3"/><stop offset="1" stop-color="#DCE7D4"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="layer"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ═══════ MONEY ═══════
+  // Sizes are in quarter-diameters (a quarter = 1). Coins keep their true relative sizes.
+  const KINDS = [
+    { name: 'penny',            plural: 'pennies',           cents: 1,    coin: true, d: 0.78, paint: 'copper',      ink: '#6E3514', label: '1¢' },
+    { name: 'nickel',           plural: 'nickels',           cents: 5,    coin: true, d: 0.87, paint: 'nickelMetal', ink: '#55534D', label: '5¢' },
+    { name: 'dime',             plural: 'dimes',             cents: 10,   coin: true, d: 0.74, paint: 'silver',      ink: '#4C4F55', label: '10¢', reeded: true },
+    { name: 'quarter',          plural: 'quarters',          cents: 25,   coin: true, d: 1.0,  paint: 'silver',      ink: '#4C4F55', label: '25¢', reeded: true },
+    { name: 'one-dollar bill',  plural: 'one-dollar bills',  cents: 100,  label: '1' },
+    { name: 'five-dollar bill', plural: 'five-dollar bills', cents: 500,  label: '5' },
+    { name: 'ten-dollar bill',  plural: 'ten-dollar bills',  cents: 1000, label: '10' },
+    { name: 'twenty-dollar bill', plural: 'twenty-dollar bills', cents: 2000, label: '20' },
+  ];
+  const BW = 2.35, BH = 1.0;           // bill size
+  const MAX = [25, 20, 20, 12, 20, 10, 10, 10];
+  // breaking one piece into change
+  const CHANGE = { 1: [0, 0, 0, 0, 0], 2: [1, 1], 3: [2, 2, 1], 4: [3, 3, 3, 3], 5: [4, 4, 4, 4, 4], 6: [5, 5], 7: [6, 6] };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ms = t => (reduceMotion ? 0 : t);
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const dollars = c => '$' + (c / 100).toFixed(2);
+  const $ = id => document.getElementById(id);
+  const defs = $('defs'), layer = $('layer'), dock = $('dock'), footer = $('footer');
+  const record = $('record'), live = $('live'), recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+  let Q = 44;                        // px per quarter-diameter
+  const stacks = new Map();          // id → { id, kind, count, x, y, el, fx, busy, held }
+  let nextId = 1, recordOn = false;
+
+  const size = k => KINDS[k].coin ? { w: KINDS[k].d, h: KINDS[k].d } : { w: BW, h: BH };
+  // a stack fans out to the right so every piece shows
+  const step = k => KINDS[k].coin ? KINDS[k].d * 0.36 : 0.3;
+  function bbox(t, x = t.x, y = t.y) {
+    const s = size(t.kind), fan = step(t.kind) * (t.count - 1);
+    return { l: x - s.w / 2, t: y - s.h / 2, r: x + s.w / 2 + fan, b: y + s.h / 2 };
+  }
+
+  // ═══════ DRAWING ═══════
+  function coinMarkup(k, q) {
+    const K = KINDS[k], r = K.d * q / 2, sw = r2(Math.max(0.6, q / 50));
+    let edge = '';
+    if (K.reeded) {
+      for (let i = 0; i < 72; i++) {
+        const a = i * Math.PI / 36;
+        edge += `M${r2(Math.cos(a) * r * 0.93)},${r2(Math.sin(a) * r * 0.93)}L${r2(Math.cos(a) * r)},${r2(Math.sin(a) * r)}`;
+      }
+    }
+    const fs = r2(r * (K.label.length > 2 ? 0.62 : 0.72));
+    return (
+      `<circle r="${r2(r)}" fill="url(#${K.paint})" stroke="rgba(40,30,25,0.35)" stroke-width="${sw}"/>` +
+      (edge ? `<path d="${edge}" stroke="rgba(40,40,46,0.28)" stroke-width="${sw}"/>` : '') +
+      `<circle r="${r2(r * 0.84)}" fill="none" stroke="rgba(40,30,25,0.22)" stroke-width="${sw}"/>` +
+      `<circle r="${r2(r * 0.84)}" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="${sw}" transform="translate(${sw} ${sw})"/>` +
+      `<text text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="rgba(255,255,255,0.65)" x="${sw}" y="${sw}">${K.label}</text>` +
+      `<text text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${K.ink}" opacity="0.75">${K.label}</text>`
+    );
+  }
+
+  function billMarkup(k, q) {
+    const K = KINDS[k], w = BW * q, h = BH * q, sw = r2(Math.max(0.6, q / 50));
+    const big = r2(h * 0.46), small = r2(h * 0.2);
+    return (
+      `<rect x="${r2(-w / 2)}" y="${r2(-h / 2)}" width="${r2(w)}" height="${r2(h)}" rx="${r2(q * 0.05)}" fill="url(#paper)" stroke="rgba(60,80,55,0.45)" stroke-width="${sw}"/>` +
+      `<rect x="${r2(-w / 2 + h * 0.09)}" y="${r2(-h / 2 + h * 0.09)}" width="${r2(w - h * 0.18)}" height="${r2(h * 0.82)}" rx="${r2(q * 0.03)}" fill="none" stroke="rgba(70,105,62,0.55)" stroke-width="${r2(sw * 1.4)}"/>` +
+      `<ellipse rx="${r2(h * 0.62)}" ry="${r2(h * 0.33)}" fill="url(#seal)" stroke="rgba(70,105,62,0.45)" stroke-width="${sw}"/>` +
+      `<text text-anchor="middle" dominant-baseline="central" font-size="${big}" font-weight="900" fill="#3F5E38">$${K.label}</text>` +
+      `<text text-anchor="middle" dominant-baseline="central" font-size="${small}" font-weight="800" fill="#4D7046" x="${r2(-w / 2 + h * 0.3)}" y="${r2(-h / 2 + h * 0.26)}">${K.label}</text>` +
+      `<text text-anchor="middle" dominant-baseline="central" font-size="${small}" font-weight="800" fill="#4D7046" x="${r2(w / 2 - h * 0.3)}" y="${r2(h / 2 - h * 0.26)}">${K.label}</text>`
+    );
+  }
+
+  const pieceMarkup = (k, q) => KINDS[k].coin ? coinMarkup(k, q) : billMarkup(k, q);
+
+  function setQ() {
+    const w = innerWidth - 32, h = innerHeight - dock.offsetHeight - footer.offsetHeight - 80;
+    Q = Math.max(34, Math.min(58, w / 12, h / 9));
+    defs.innerHTML =
+      `<filter id="rest" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="1" dy="${r2(Q * 0.06)}" stdDeviation="${r2(Q * 0.05)}" flood-color="#3B2A1A" flood-opacity="0.3"/></filter>` +
+      `<filter id="lift" x="-50%" y="-50%" width="200%" height="240%"><feDropShadow dx="${r2(Q * 0.08)}" dy="${r2(Q * 0.25)}" stdDeviation="${r2(Q * 0.16)}" flood-color="#3B2A1A" flood-opacity="0.24"/></filter>` +
+      KINDS.map((K, k) => `<g id="m${k}">${pieceMarkup(k, Q)}</g>`).join('');
+  }
+
+  // ═══════ STACKS ═══════
+  function addStack(kind, count, x, y) {
+    const t = { id: nextId++, kind, count, x, y, busy: false, held: false };
+    stacks.set(t.id, t);
+    build(t);
+    return t;
+  }
+
+  function build(t) {
+    const old = t.el, hadFocus = old && document.activeElement === old;
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'stack');
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('filter', 'url(#rest)');
+    g.dataset.id = t.id;
+    const fx = document.createElementNS(NS, 'g');
+    fx.setAttribute('class', 'fx');
+    g.appendChild(fx);
+    for (let i = 0; i < t.count; i++) {
+      const u = document.createElementNS(NS, 'use');
+      u.setAttribute('href', `#m${t.kind}`);
+      u.setAttribute('x', r2(i * step(t.kind) * Q));
+      u.dataset.i = i;
+      fx.appendChild(u);
+    }
+    const K = KINDS[t.kind];
+    g.setAttribute('aria-label', t.count > 1 ? `${t.count} ${K.plural}` : `one ${K.name}`);
+    if (old) old.replaceWith(g); else layer.appendChild(g);
+    t.el = g;
+    t.fx = fx;
+    place(t);
+    if (hadFocus) g.focus({ preventScroll: true });
+  }
+
+  function place(t, dur = 0) {
+    t.el.style.transition = dur && !reduceMotion ? `transform ${dur}ms cubic-bezier(.2,.85,.25,1.04)` : 'none';
+    t.el.style.transform = `translate(${r2(t.x * Q)}px,${r2(t.y * Q)}px)`;
+  }
+
+  function lift(t, on) {
+    t.held = on;
+    t.el.setAttribute('filter', on ? 'url(#lift)' : 'url(#rest)');
+    t.el.classList.toggle('held', on);
+  }
+
+  const dockTop = () => dock.getBoundingClientRect().top / Q;
+  function clampXY(t, x, y) {
+    const b = bbox(t, x, y), L = 0.2, T = 0.2, R = innerWidth / Q - 0.2, B = dockTop() - 0.2;
+    let dx = 0, dy = 0;
+    if (b.r > R) dx = R - b.r;
+    if (b.l + dx < L) dx = L - b.l;
+    if (b.b > B) dy = B - b.b;
+    if (b.t + dy < T) dy = T - b.t;
+    return { x: x + dx, y: y + dy };
+  }
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  // ═══════ MOTION ═══════
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+  const pop = t => { anim(t.fx, [{ transform: 'scale(0.84)' }, { transform: 'scale(1.04)', offset: 0.6 }, { transform: 'scale(1)' }], 170); buzz(5); };
+  const settle = t => anim(t.fx, [{ transform: `translateY(${-0.06 * Q}px)` }, { transform: 'translateY(0)' }], 160);
+  const shake = t => { anim(t.fx, [0, -0.1, 0.1, -0.06, 0.06, 0].map(v => ({ transform: `translateX(${v * Q}px)` })), 260, 'linear'); buzz(4); };
+
+  // ═══════ STRUCTURE ═══════
+  function removeStack(t) {
+    stacks.delete(t.id);
+    t.el.style.pointerEvents = 'none';
+    t.el.removeAttribute('tabindex');
+    if (reduceMotion) t.el.remove();
+    else t.fx.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.8)' }], { duration: 170, easing: 'ease-in', fill: 'forwards' })
+      .onfinish = () => t.el.remove();
+    changed();
+  }
+
+  function findPartner(t) {
+    const s = size(t.kind), me = { l: t.x - s.w / 2, t: t.y - s.h / 2, r: t.x + s.w / 2, b: t.y + s.h / 2 };
+    let best = null, bestD = Infinity;
+    for (const o of stacks.values()) {
+      if (o === t || o.kind !== t.kind || o.busy || o.held || o.count >= MAX[o.kind]) continue;
+      const b = bbox(o), nx = o.x + step(o.kind) * o.count;
+      const zone = { l: b.l - 0.15, t: b.t - 0.15, r: Math.max(b.r, nx + s.w / 2) + 0.15, b: b.b + 0.15 };
+      if (me.l < zone.r && me.r > zone.l && me.t < zone.b && me.b > zone.t) {
+        const d = Math.hypot(t.x - nx, t.y - o.y);
+        if (d < bestD) { bestD = d; best = o; }
+      }
+    }
+    return best;
+  }
+
+  function drop(t, cx, cy) {
+    if (cx != null && overDock(cx, cy)) { removeStack(t); return; }
+    const c = clampXY(t, t.x, t.y), shifted = c.x !== t.x || c.y !== t.y;
+    t.x = c.x; t.y = c.y;
+    place(t, shifted ? 180 : 0);
+    const o = findPartner(t);
+    if (o) { join(t, o); return; }
+    settle(t);
+    changed();
+  }
+
+  // t slides onto the end of o's stack; anything past a full stack stays with t, beside it.
+  function join(t, o) {
+    t.busy = o.busy = true;
+    t.x = o.x + step(o.kind) * o.count; t.y = o.y;
+    place(t, 160);
+    buzz(4);
+    setTimeout(() => {
+      if (!stacks.has(t.id) || !stacks.has(o.id)) { t.busy = o.busy = false; return; }
+      const moved = Math.min(MAX[o.kind] - o.count, t.count);
+      o.count += moved;
+      t.count -= moved;
+      build(o);
+      if (t.count) {
+        build(t);
+        const b = bbox(o), c = clampXY(t, b.r + 0.4 + size(t.kind).w / 2, o.y);
+        t.el.getBoundingClientRect();
+        t.x = c.x; t.y = c.y;
+        place(t, 220);
+        t.busy = false;
+      } else {
+        stacks.delete(t.id);
+        t.el.remove();
+      }
+      const c = clampXY(o, o.x, o.y);
+      if (c.x !== o.x || c.y !== o.y) { o.x = c.x; o.y = c.y; place(o, 200); }
+      settle(o);
+      o.busy = false;
+      changed();
+    }, ms(170));
+  }
+
+  // Double-tap trades: a single piece breaks into change; a stack worth exactly one bigger piece becomes it.
+  function trade(t) {
+    if (t.busy || t.held) return;
+    const hadFocus = document.activeElement === t.el;
+    if (t.count === 1) {
+      const parts = CHANGE[t.kind];
+      if (!parts) { shake(t); return; }
+      const groups = {};
+      parts.forEach(k => { groups[k] = (groups[k] || 0) + 1; });
+      const next = t.el.nextSibling;
+      stacks.delete(t.id);
+      t.el.remove();
+      let x = t.x - size(t.kind).w / 2, first = null;
+      for (const k of Object.keys(groups).map(Number).sort((a, b) => b - a)) {
+        const s = size(k), n = addStack(k, groups[k], x + s.w / 2, t.y);
+        layer.insertBefore(n.el, next);
+        const c = clampXY(n, n.x, n.y);
+        n.x = c.x; n.y = c.y;
+        place(n);
+        pop(n);
+        x = bbox(n).r + 0.3;
+        first = first || n;
+      }
+      buzz(10);
+      if (hadFocus && first) first.el.focus({ preventScroll: true });
+      changed();
+      return;
+    }
+    const value = t.count * KINDS[t.kind].cents;
+    const up = KINDS.findIndex(K => K.cents === value);
+    if (up <= t.kind) { shake(t); return; }
+    const ghost = t.el;
+    ghost.style.pointerEvents = 'none';
+    ghost.removeAttribute('tabindex');
+    ghost.removeAttribute('data-id');
+    t.el = null;
+    t.kind = up;
+    t.count = 1;
+    build(t);
+    const c = clampXY(t, t.x, t.y);
+    t.x = c.x; t.y = c.y;
+    place(t);
+    if (reduceMotion) ghost.remove();
+    else {
+      ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).onfinish = () => ghost.remove();
+      t.fx.animate([{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'scale(1.04)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
+    }
+    buzz(16);
+    if (hadFocus) t.el.focus({ preventScroll: true });
+    changed();
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    const counts = KINDS.map(() => 0);
+    for (const t of stacks.values()) counts[t.kind] += t.count;
+    const total = counts.reduce((s, n, k) => s + n * KINDS[k].cents, 0);
+    record.textContent = dollars(total);
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const said = [7, 6, 5, 4, 3, 2, 1, 0].filter(k => counts[k]).map(k => `${counts[k]} ${counts[k] === 1 ? KINDS[k].name : KINDS[k].plural}`).join(', ');
+      live.textContent = (said || 'The mat is empty') + (recordOn && total ? `. ${dollars(total)} in all.` : '.');
+    }, 400);
+  }
+
+  // ═══════ DRAWER ═══════
+  // A tapped compartment sets its piece just above itself, onto a stack of the same kind if one is there.
+  function stagePos(k) {
+    const r = dock.querySelector(`.bin[data-kind="${k}"]`).getBoundingClientRect(), s = size(k);
+    const x0 = (r.left + r.width / 2) / Q, y0 = dockTop() - s.h / 2 - 0.5 - (KINDS[k].coin ? 0 : 1.3);
+    const probe = { kind: k, count: 1 };
+    for (let j = 0; j < 10; j++) {
+      const c = clampXY(probe, x0, y0 - j * 1.25), b = bbox(probe, c.x, c.y);
+      const blocked = [...stacks.values()].some(o => {
+        if (o.kind === k && o.count < MAX[k]) return false;
+        const ob = bbox(o);
+        return b.l < ob.r && b.r > ob.l && b.t < ob.b && b.b > ob.t;
+      });
+      if (!blocked) return c;
+    }
+    return clampXY(probe, x0, y0);
+  }
+
+  function spawnOnMat(k) {
+    const p = stagePos(k), t = addStack(k, 1, p.x, p.y);
+    pop(t);
+    setTimeout(() => { if (stacks.has(t.id)) drop(t); }, ms(110));
+  }
+
+  dock.querySelectorAll('.bin').forEach(bin => {
+    const k = +bin.dataset.kind, s = size(k), q = KINDS[k].coin ? 40 : 20;
+    const w = s.w * q, h = s.h * q;
+    bin.innerHTML = `<svg width="${r2(w + 6)}" height="${r2(h + 6)}" viewBox="${r2(-w / 2 - 3)} ${r2(-h / 2 - 3)} ${r2(w + 6)} ${r2(h + 6)}" aria-hidden="true" focusable="false">${pieceMarkup(k, q)}</svg>`;
+  });
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  let lastTap = null;
+  const toQ = e => ({ x: e.clientX / Q, y: e.clientY / Q });
+
+  layer.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.stack');
+    const t = g && stacks.get(+g.dataset.id);
+    if (!t || t.busy || t.held) return;
+    e.preventDefault();
+    layer.appendChild(t.el);
+    try { t.el.setPointerCapture(e.pointerId); } catch (err) {}
+    const use = e.target.closest('use'), p = toQ(e);
+    drags.set(e.pointerId, { t, i: use ? +use.dataset.i : 0, sx: p.x, sy: p.y, ox: p.x - t.x, oy: p.y - t.y, moved: false, bin: null });
+  });
+
+  dock.addEventListener('pointerdown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin) return;
+    e.preventDefault();
+    const p = toQ(e);
+    drags.set(e.pointerId, { t: null, sx: p.x, sy: p.y, moved: false, bin: +bin.dataset.kind });
+  });
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    const p = toQ(e);
+    if (!s.moved) {
+      if (Math.hypot(p.x - s.sx, p.y - s.sy) * Q < 6) return;
+      s.moved = true;
+      if (s.bin !== null) {
+        s.t = addStack(s.bin, 1, p.x, p.y);
+        s.ox = 0; s.oy = 0;
+        pop(s.t);
+        try { s.t.el.setPointerCapture(e.pointerId); } catch (err) {}
+      } else if (s.t.count > 1 && s.i === s.t.count - 1) {
+        // the top piece of a stack comes off by itself
+        const st = s.t, x = st.x + step(st.kind) * s.i;
+        const piece = addStack(st.kind, 1, x, st.y);
+        st.count--;
+        build(st);
+        s.t = piece;
+        s.ox = s.sx - piece.x; s.oy = s.sy - piece.y;
+        try { piece.el.setPointerCapture(e.pointerId); } catch (err) {}
+        changed();
+      }
+      lift(s.t, true);
+    }
+    s.t.x = p.x - s.ox;
+    s.t.y = p.y - s.oy;
+    place(s.t);
+  });
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    if (s.bin !== null && !s.moved) { spawnOnMat(s.bin); return; }
+    const t = s.t;
+    if (!t) return;
+    lift(t, false);
+    if (s.moved) { drop(t, e.clientX, e.clientY); return; }
+    const now = performance.now();
+    if (lastTap && lastTap.id === t.id && now - lastTap.time < 380) { lastTap = null; trade(t); }
+    else lastTap = { id: t.id, time: now };
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  dock.addEventListener('keydown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    spawnOnMat(+bin.dataset.kind);
+  });
+
+  layer.addEventListener('keydown', e => {
+    const g = e.target.closest('.stack');
+    const t = g && stacks.get(+g.dataset.id);
+    if (!t || t.busy) return;
+    const stepK = e.shiftKey ? 1 : 0.25;
+    const mv = { ArrowLeft: [-stepK, 0], ArrowRight: [stepK, 0], ArrowUp: [0, -stepK], ArrowDown: [0, stepK] }[e.key];
+    if (mv) {
+      e.preventDefault();
+      const c = clampXY(t, t.x + mv[0], t.y + mv[1]);
+      t.x = c.x; t.y = c.y;
+      place(t, 90);
+      clearTimeout(t.settleTimer);
+      t.settleTimer = setTimeout(() => { if (stacks.has(t.id) && !t.busy) drop(t); }, 450);
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      trade(t);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      removeStack(t);
+    }
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    record.classList.toggle('on', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+  clearBtn.addEventListener('click', () => { [...stacks.values()].forEach(removeStack); });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      setQ();
+      for (const t of stacks.values()) {
+        build(t);
+        const c = clampXY(t, t.x, t.y);
+        t.x = c.x; t.y = c.y;
+        place(t);
+      }
+    });
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  setQ();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
