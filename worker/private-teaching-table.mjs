@@ -23,6 +23,17 @@ async function authorized(request,env){
   return crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,bytes(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
  }catch{return false;}
 }
+async function cover(name,token){
+ const response=await fetch('https://api.github.com/repos/'+repo+'/contents/covers/'+name+'?ref=main',
+  {headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','User-Agent':'school-teaching-table'}});
+ if(response.status===404)return closed(404,'Cover preview not yet generated');
+ if(!response.ok)return closed(502,'Cover preview unavailable');
+ const data=await response.json();
+ if(data.encoding!=='base64'||!data.content||data.size>125000)return closed(502,'Invalid cover preview');
+ const binary=atob(data.content.replace(/\\s/g,'')),out=new Uint8Array(binary.length);
+ for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
+ return new Response(out,{headers:{'Content-Type':'image/webp','Cache-Control':'private, max-age=86400','X-Content-Type-Options':'nosniff'}});
+}
 async function book(name,size,token){
  const p=await fetch('https://api.github.com/repos/'+repo+'/contents/books/'+name+'?ref=main',
   {headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','User-Agent':'school-teaching-table'}});
@@ -49,6 +60,13 @@ export default {async fetch(request,env){
  if(path!==base&&!path.startsWith(base+'/'))return env.ASSETS.fetch(request);
  if(!['GET','HEAD'].includes(request.method))return closed(405,'Method not allowed');
  if(!await authorized(request,env))return closed(403,'Authorized school staff only');
+ if(path.startsWith(base+'/covers/')){
+  if(request.method!=='GET')return closed(405,'Method not allowed');
+  const name=path.slice((base+'/covers/').length),original=name.replace(/\\.webp$/i,'.epub');
+  if(!name.endsWith('.webp')||!sizes.has(original))return closed(404,'Unknown cover');
+  if(!env.GITHUB_BOOKS_READ_TOKEN)return closed(503,'Cover library not configured');
+  try{return await cover(name,env.GITHUB_BOOKS_READ_TOKEN);}catch{return closed(502,'Cover temporarily unavailable');}
+ }
  if(path.startsWith(base+'/books/')){
   if(request.method!=='GET')return closed(405,'Method not allowed');
   const name=path.slice((base+'/books/').length),size=sizes.get(name);
