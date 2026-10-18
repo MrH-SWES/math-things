@@ -19,7 +19,7 @@ Use `harness/APP_AUDIT_TEMPLATE.md` to conduct each audit.
 | Number Line | `apps/number-line/` | Needs audit | TBD | TBD | TBD |
 | Zooming Number Line | `apps/zooming-number-line/` | Needs audit | TBD | TBD | TBD |
 | Frog Number Line | `apps/frog-number-line/` | New build | Zoomable number line with a moving point | Set a start and directed distance, then watch the frog traverse the line in scale-sized hops | Teacher demonstration variant; answer is delayed until landing |
-| Fraction Number Line | `apps/fraction-number-line/` | New build (touch QA pending) | The canonical number line's 0–1 unit magnified into fractional positions | Partition the same one whole into 2–12 equal slices, then move one metal bead to a fraction | Overview 0–10 keeps scale continuity; one red-outlined whole; no comparison rails; optional fraction notation |
+| Fraction & Decimal Number Line | `apps/fraction-number-line/` | New build (touch QA pending) | Canonical 0–1 number-line unit magnified into a horizontal red-enamel whole | Drag or step one bead between 0 and 1; switch between fractional partitioning and decimal slices without moving it | Fractions 2–12 parts; decimal tenths, hundredths and thousandths; exact position retained across modes, approximations labeled |
 | Fraction Lab | `apps/fraction-lab/` | Needs audit | TBD | TBD | TBD |
 | Measure Bench | `apps/measure-bench/` | Needs audit | TBD | TBD | TBD |
 
