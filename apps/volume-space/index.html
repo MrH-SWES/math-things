@@ -338,7 +338,7 @@
             </div>
 
             <div class="tools" role="group" aria-label="View">
-                <button class="tool" id="sepBtn" aria-label="Separate layers" title="Separate layers" aria-pressed="false">
+                <button class="tool" id="sepBtn" aria-label="Unstack unit-cube layers" title="Unstack unit-cube layers" aria-pressed="false">
                     <svg width="22" height="20" viewBox="0 0 22 20" fill="none" aria-hidden="true" focusable="false">
                         <path d="M11 1.5l8.5 3.4L11 8.3 2.5 4.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
                         <path d="M2.5 10.2l8.5 3.4 8.5-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -940,7 +940,10 @@
 
         function rebuildPieces(animate) {
             const { a, b, c } = eff();
-            const pv = state.pv;
+            // Unstacking means revealing actual unit-height layers. A fused 10-stick
+            // must temporarily resolve into unit cubes or it appears to float over gaps.
+            // Re-fuse only after the layers have finished closing (sep === 0).
+            const pv = state.pv && !state.separate && sep === 0;
             const cull = !pv && !state.separate && sep === 0;
             const lists = enumeratePieces(a, b, c, pv, cull);
             const total = lists.reduce((s, l) => s + l.length / 3, 0);
