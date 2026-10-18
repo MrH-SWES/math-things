@@ -5,23 +5,44 @@ const closed=(status,message)=>new Response(message,{status,headers:{'Cache-Cont
 let keys,keysAt=0;
 const bytes=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(s.length/4)*4,'=')),x=>x.charCodeAt(0));
 const json=s=>JSON.parse(new TextDecoder().decode(bytes(s)));
+// A failure code diagnoses configuration without disclosing identities, tokens or keys.
 async function authorized(request,env){
- const domain=String(env.ACCESS_TEAM_DOMAIN||'').toLowerCase(),aud=String(env.ACCESS_AUD||'');
- if(!/^[a-z0-9-]+\.cloudflareaccess\.com$/.test(domain)||!aud)return false;
- const token=request.headers.get('Cf-Access-Jwt-Assertion')||'',parts=token.split('.');
- if(parts.length!==3||token.length>16000)return false;
+ const rawDomain=String(env.ACCESS_TEAM_DOMAIN||'').trim();
+ const domain=rawDomain.replace(/^https:\/\//i,'').replace(/\/+$/,'').toLowerCase();
+ const aud=String(env.ACCESS_AUD||'').trim();
+ if(!/^[a-z0-9-]+\.cloudflareaccess\.com$/.test(domain))return 'team-domain';
+ if(!aud)return 'aud-missing';
+ const header=request.headers.get('Cf-Access-Jwt-Assertion');
+ // Cloudflare also sets CF_Authorization after login. Both paths require full signature validation.
+ const accessCookie=(request.headers.get('Cookie')||'').split(';')
+  .map(x=>x.trim()).find(x=>x.startsWith('CF_Authorization='));
+ const token=header||(accessCookie?accessCookie.slice('CF_Authorization='.length):'');
+ if(!token)return 'jwt-missing';
+ const parts=token.split('.');
+ if(parts.length!==3||token.length>16000)return 'jwt-format';
  try{
   const head=json(parts[0]),p=json(parts[1]),now=Math.floor(Date.now()/1000);
-  if(head.alg!=='RS256'||!head.kid||p.type!=='app'||p.iss!=='https://'+domain||
-   !Array.isArray(p.aud)||!p.aud.includes(aud)||!Number.isFinite(p.exp)||p.exp<=now||
-   !Number.isFinite(p.iat)||p.iat>now+60)return false;
-  if(!keys||Date.now()>keysAt){const response=await fetch('https://'+domain+'/cdn-cgi/access/certs');
-   if(!response.ok)return false;const data=await response.json();if(!Array.isArray(data.keys))return false;
-   keys=data.keys;keysAt=Date.now()+300000;}
-  const jwk=keys.find(x=>x.kid===head.kid&&x.kty==='RSA');if(!jwk)return false;
+  if(head.alg!=='RS256'||!head.kid||p.type!=='app')return 'jwt-kind';
+  if(p.iss!=='https://'+domain)return 'jwt-issuer';
+  const audiences=Array.isArray(p.aud)?p.aud:[p.aud];
+  if(!audiences.includes(aud))return 'jwt-audience';
+  if(!Number.isFinite(p.exp)||p.exp<=now||!Number.isFinite(p.iat)||p.iat>now+60||
+   (p.nbf!==undefined&&(!Number.isFinite(p.nbf)||p.nbf>now)))return 'jwt-time';
+  // Only staff and guests authenticated by identity-provider policies.
+  if(typeof p.email!=='string'||!p.email.includes('@'))return 'jwt-identity';
+  if(!keys||Date.now()>keysAt){
+   const response=await fetch('https://'+domain+'/cdn-cgi/access/certs');
+   if(!response.ok)return 'jwks-http';
+   const data=await response.json();
+   if(!Array.isArray(data.keys))return 'jwks-format';
+   keys=data.keys;keysAt=Date.now()+300000;
+  }
+  const jwk=keys.find(x=>x.kid===head.kid&&x.kty==='RSA');
+  if(!jwk)return 'jwks-key';
   const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
-  return crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,bytes(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
- }catch{return false;}
+  const verified=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,bytes(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
+  return verified?'ok':'jwt-signature';
+ }catch{return 'jwt-processing';}
 }
 async function cover(name,token){
  const response=await fetch('https://api.github.com/repos/'+repo+'/contents/covers/'+name+'?ref=main',
@@ -59,7 +80,8 @@ export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(path!==base&&!path.startsWith(base+'/'))return env.ASSETS.fetch(request);
  if(!['GET','HEAD'].includes(request.method))return closed(405,'Method not allowed');
- if(!await authorized(request,env))return closed(403,'Authorized school staff only');
+ const access=await authorized(request,env);
+ if(access!=='ok')return closed(403,'Teaching Table access check: '+access);
  if(path.startsWith(base+'/covers/')){
   if(request.method!=='GET')return closed(405,'Method not allowed');
   const name=path.slice((base+'/covers/').length),original=name.replace(/\.webp$/i,'.epub');
