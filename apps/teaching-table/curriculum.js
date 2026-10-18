@@ -17,6 +17,7 @@
   const pick = $('#curriculum-pick');
   const input = $('#curriculumFile');
   const library = $('#curriculum-library');
+  const coverShelf = $('#curriculum-cover-shelf');
   const tocEl = $('#curriculum-toc');
   const search = $('#curriculum-search');
   const pageInput = $('#curriculum-page-input');
@@ -164,6 +165,47 @@
       return display + ' — ' + source.replace(/^iRCM(?:0K|\d{2})_NN_EN_SW$/i, 'i-Ready Math');
     }
     return source;
+  }
+
+  function renderCoverShelf() {
+    if (!coverShelf) return;
+    coverShelf.replaceChildren();
+    IREADY_PACKAGED_BOOKS.forEach(book => {
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'curriculum-cover-tile';
+      tile.dataset.book = book.name;
+      tile.setAttribute('aria-label', 'Open i-Ready Classroom Mathematics Grade ' + book.grade);
+      tile.title = 'Grade ' + book.grade;
+
+      const art = document.createElement('span');
+      art.className = 'curriculum-cover-art';
+      const fallback = document.createElement('span');
+      fallback.className = 'curriculum-cover-fallback';
+      fallback.textContent = 'Mathematics';
+      const grade = document.createElement('span');
+      grade.className = 'curriculum-cover-grade';
+      grade.textContent = book.grade === 'K' ? 'K' : book.grade;
+      const image = document.createElement('img');
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.src = new URL('./covers/' + book.name.replace(/\\.epub$/i, '.webp'), BOOKS_BASE_URL).href;
+      image.addEventListener('load', () => art.classList.add('has-cover'));
+      image.addEventListener('error', () => image.remove());
+      art.append(fallback, image, grade);
+
+      const caption = document.createElement('span');
+      caption.className = 'curriculum-cover-caption';
+      caption.textContent = book.grade === 'K' ? 'Kindergarten' : 'Grade ' + book.grade;
+      tile.append(art, caption);
+      tile.addEventListener('click', () => {
+        if (!library || tile.disabled) return;
+        library.value = 'packaged:' + book.name;
+        library.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      coverShelf.appendChild(tile);
+    });
   }
 
   async function refreshLibrary(selectedId = '') {
@@ -840,6 +882,7 @@
     }
   });
 
+  renderCoverShelf();
   requestPersistentStorage();
   refreshLibrary().catch(err => console.warn('Could not load saved curriculum library:', err));
   renderToc();
