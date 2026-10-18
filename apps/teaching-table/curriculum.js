@@ -49,14 +49,64 @@
   ];
   async function fetchPackagedBook(book) {
     const url = new URL(encodeURIComponent(book.name), BOOKS_BASE_URL);
-    setStatus('Loading Grade ' + book.grade + ' from Teaching Table…');
-    const response = await fetch(url, { credentials: 'same-origin' });
-    if (response.status === 401 || response.status === 403) throw Error('Access to this textbook library requires an authorized session.');
-    if (response.status === 404) throw Error('Grade ' + book.grade + ' is not installed on this Teaching Table server.');
-    if (!response.ok) throw Error('Textbook request failed (' + response.status + ').');
-    const blob = await response.blob();
-    const bytes = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-    if (bytes[0] !== 80 || bytes[1] !== 75 || ![3, 5, 7].includes(bytes[2])) throw Error('The server did not return an EPUB.');
+    const expectedSizes = {
+      K: 260866814, '1': 219147927, '2': 254660290,
+      '3': 150737463, '4': 113912690, '5': 142733845,
+      '6': 199036068, '7': 222962162, '8': 213820188,
+    };
+    const expected = expectedSizes[book.grade];
+    const chunkSize = 4 * 1024 * 1024;
+    const chunks = [];
+    let received = 0;
+
+    while (received < expected) {
+      const end = Math.min(received + chunkSize, expected) - 1;
+      let failure;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          setStatus('Downloading Grade ' + book.grade + ': ' +
+            Math.round(received * 100 / expected) + '%');
+          const response = await fetch(url, {
+            credentials: 'same-origin',
+            headers: { Range: 'bytes=' + received + '-' + end },
+            cache: 'no-store',
+          });
+          if (response.status === 401 || response.status === 403)
+            throw new Error('Your Teaching Table sign-in has expired. Please sign in again.');
+          if (response.status === 404)
+            throw new Error('Grade ' + book.grade + ' is not installed.');
+          if (!response.ok) {
+            const reason = (await response.text().catch(() => '')).slice(0, 150);
+            throw new Error('Textbook download error ' + response.status +
+              (reason ? ': ' + reason : ''));
+          }
+          if (response.status !== 206 ||
+              response.headers.get('Content-Range') !==
+              'bytes ' + received + '-' + end + '/' + expected)
+            throw new Error('Textbook server returned an unexpected byte range.');
+          const bytes = await response.arrayBuffer();
+          if (bytes.byteLength !== end - received + 1)
+            throw new Error('Incomplete textbook download chunk.');
+          chunks.push(bytes);
+          received = end + 1;
+          failure = null;
+          break;
+        } catch (err) {
+          failure = err;
+          if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 800));
+        }
+      }
+      if (failure) throw new Error(
+        'Grade ' + book.grade + ' download stopped at ' +
+        Math.round(received * 100 / expected) + '%: ' + failure.message
+      );
+    }
+
+    const blob = new Blob(chunks, { type: 'application/epub+zip' });
+    const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+    if (header[0] !== 80 || header[1] !== 75 || ![3, 5, 7].includes(header[2]))
+      throw Error('The server did not return an EPUB.');
+    setStatus('Grade ' + book.grade + ' downloaded. Opening textbook…');
     return new File([blob], book.name, { type: 'application/epub+zip', lastModified: Date.now() });
   }
 
