@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Place Value Blocks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ones: #DC143C;
+      --tens: #4169E1;
+      --hundreds: #FFD700;
+      --thousands: #4CBB17;
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BOARD (pieces float above everything so they can be carried back to the bins) ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .train { cursor: grab; outline: none; }
+    #board .train use { pointer-events: visiblePainted; }
+    #board .train.dragging { cursor: grabbing; }
+    #board .fx { transform-box: fill-box; transform-origin: 50% 100%; }
+    #board .train:focus-visible .fx { outline: 3px solid #007AFF; outline-offset: 4px; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .bin {
+      --bin-w: clamp(60px, 15vw, 100px);
+      --bin-h: clamp(64px, 15vw, 96px);
+      width: var(--bin-w);
+      height: var(--bin-h);
+      border: none; border-radius: 18px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: calc(var(--bin-h) * 0.1);
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg {
+      width: calc(var(--bin-w) * 0.74); height: calc(var(--bin-h) * 0.7);
+      overflow: visible; pointer-events: none;
+      filter: drop-shadow(0 3px 3px rgba(60,40,20,0.28));
+    }
+    .bin[data-kind="0"] svg { width: calc(var(--bin-w) * 0.48); height: calc(var(--bin-h) * 0.44); }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── RECORD (optional, follows the blocks) ── */
+    #record {
+      position: fixed; top: 14px; left: 50%; transform: translate(-50%, -6px);
+      z-index: 4; pointer-events: none;
+      display: flex; align-items: baseline; gap: 0.3em;
+      font-weight: 900; font-size: clamp(22px, 3.2vw, 34px); letter-spacing: -0.02em;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s var(--spring);
+    }
+    #record.on { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-width: 600px) { #record { top: 58px; } }
+    #record .op { color: var(--text-light); font-weight: 400; }
+    #record .k0 { color: var(--ones); }
+    #record .k1 { color: var(--tens); }
+    #record .k2 { color: var(--hundreds); -webkit-text-stroke: 0.5px rgba(150,110,0,0.55); }
+    #record .k3 { color: var(--thousands); }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Base-ten block mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Block bins">
+    <button class="bin" data-kind="3" aria-label="Thousand cubes bin"></button>
+    <button class="bin" data-kind="2" aria-label="Hundred flats bin"></button>
+    <button class="bin" data-kind="1" aria-label="Ten rods bin"></button>
+    <button class="bin" data-kind="0" aria-label="Units bin"></button>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the number" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Clear the mat">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<div id="record" aria-hidden="true"></div>
+
+<!-- Enamel paints, shared by the mat and the bins -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.45"/>
+      <stop offset="0.35" stop-color="#fff" stop-opacity="0.1"/>
+      <stop offset="0.6" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- ones -->
+    <linearGradient id="gf0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EE4466"/><stop offset="0.5" stop-color="#DC143C"/><stop offset="1" stop-color="#B50F31"/></linearGradient>
+    <linearGradient id="gt0" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FF5A75"/><stop offset="1" stop-color="#FF3B5C"/></linearGradient>
+    <linearGradient id="gs0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A0102A"/><stop offset="1" stop-color="#7A081A"/></linearGradient>
+    <!-- tens -->
+    <linearGradient id="gf1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5F84F0"/><stop offset="0.5" stop-color="#4169E1"/><stop offset="1" stop-color="#3052C2"/></linearGradient>
+    <linearGradient id="gt1" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#829AFF"/><stop offset="1" stop-color="#6682FF"/></linearGradient>
+    <linearGradient id="gs1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2238AA"/><stop offset="1" stop-color="#16288A"/></linearGradient>
+    <!-- hundreds -->
+    <linearGradient id="gf2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE55C"/><stop offset="0.5" stop-color="#FFD700"/><stop offset="1" stop-color="#E5B900"/></linearGradient>
+    <linearGradient id="gt2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FFF08A"/><stop offset="1" stop-color="#FFE44D"/></linearGradient>
+    <linearGradient id="gs2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8960F"/><stop offset="1" stop-color="#A67808"/></linearGradient>
+    <!-- thousands -->
+    <linearGradient id="gf3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#66D232"/><stop offset="0.5" stop-color="#4CBB17"/><stop offset="1" stop-color="#3D9B12"/></linearGradient>
+    <linearGradient id="gt3" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7BEA45"/><stop offset="1" stop-color="#5EE024"/></linearGradient>
+    <linearGradient id="gs3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#368812"/><stop offset="1" stop-color="#28660B"/></linearGradient>
+  </defs>
+</svg>
+
+<svg id="board" aria-hidden="false">
+  <defs id="defs"></defs>
+  <g id="layer"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ═══════ PIECES ═══════
+  // Sizes are in units (one unit cube = 1). Depth is drawn as a 45° oblique, so ten flats stacked
+  // front to back fill exactly the space of one thousand cube.
+  const KINDS = [
+    { name: 'unit',          plural: 'units',          w: 1,  h: 1,  depth: 1,  value: 1 },
+    { name: 'ten rod',       plural: 'ten rods',       w: 1,  h: 10, depth: 1,  value: 10 },
+    { name: 'hundred flat',  plural: 'hundred flats',  w: 10, h: 10, depth: 1,  value: 100 },
+    { name: 'thousand cube', plural: 'thousand cubes', w: 10, h: 10, depth: 10, value: 1000 },
+  ];
+  const DS = 0.354;    // on-screen depth of one unit, as a fraction of a unit
+  const SNAP = 0.35;   // how close a piece must come to a same-size piece to join it
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ms = t => (reduceMotion ? 0 : t);
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const fmt = n => n.toLocaleString('en-US');
+
+  const $ = id => document.getElementById(id);
+  const defs = $('defs'), layer = $('layer'), dock = $('dock'), footer = $('footer');
+  const record = $('record'), live = $('live'), recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+  let U = 20;                    // pixels per unit
+  const trains = new Map();      // id → a piece, or a run of same-size pieces joined together
+  let nextId = 1;
+  let recordOn = false;
+
+  // Where member i of a joined run sits, relative to the run's first piece:
+  // units stack into a column, rods line up into a row, flats stack back into depth.
+  function slot(k, i) {
+    if (k === 0) return { x: 0, y: i };
+    if (k === 1) return { x: i, y: 0 };
+    if (k === 2) return { x: i * DS, y: -i * DS };
+    return { x: 0, y: 0 };
+  }
+
+  function bbox(t, x = t.x, y = t.y) {
+    const K = KINDS[t.kind], o = slot(t.kind, t.count - 1), d = K.depth * DS;
+    return {
+      l: x + Math.min(0, o.x),
+      t: y + Math.min(0, o.y) - d,
+      r: x + Math.max(0, o.x) + K.w + d,
+      b: y + Math.max(0, o.y) + K.h,
+    };
+  }
+
+  // ═══════ DRAWING ═══════
+  // Enameled cast iron: beveled front face with a specular sheen, lit top, shaded side,
+  // engraved unit divisions on every visible face.
+  function pieceMarkup(k, u) {
+    const K = KINDS[k], W = K.w * u, H = K.h * u, d = K.depth * DS * u, e = DS * u;
+    const rad = r2(Math.min(u * 0.13, 5)), sw = r2(Math.max(0.5, Math.min(1.1, u / 20)));
+    const top = `M0,0H${r2(W)}L${r2(W + d)},${r2(-d)}H${r2(d)}Z`;
+    const side = `M${r2(W)},0L${r2(W + d)},${r2(-d)}V${r2(H - d)}L${r2(W)},${r2(H)}Z`;
+    let g = '';
+    for (let i = 1; i < K.w; i++) { const x = r2(i * u); g += `M${x},0V${r2(H)}M${x},0l${r2(d)},${r2(-d)}`; }
+    for (let j = 1; j < K.h; j++) { const y = r2(j * u); g += `M0,${y}H${r2(W)}M${r2(W)},${y}l${r2(d)},${r2(-d)}`; }
+    for (let s = 1; s < K.depth; s++) { const o = r2(s * e); g += `M${o},${-o}H${r2(W + o)}M${r2(W + o)},${-o}V${r2(H - o)}`; }
+    const edge = 'rgba(40,20,10,0.22)';
+    return (
+      `<path d="${top}" fill="url(#gt${k})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+      `<path d="${side}" fill="url(#gs${k})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+      // fill the two back corners behind the rounded front face so no light leaks through
+      `<rect width="${rad}" height="${rad}" fill="url(#gt${k})"/>` +
+      `<rect x="${r2(W - rad)}" width="${rad}" height="${rad}" fill="url(#gs${k})"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#gf${k})"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#sheen)"/>` +
+      (g
+        ? `<path d="${g}" fill="none" stroke="rgba(30,10,5,0.28)" stroke-width="${sw}"/>` +
+          `<path d="${g}" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="${sw}" transform="translate(${sw} ${sw})"/>`
+        : '') +
+      `<rect x="${r2(sw / 2)}" y="${r2(sw / 2)}" width="${r2(W - sw)}" height="${r2(H - sw)}" rx="${rad}" fill="none" stroke="rgba(255,255,255,0.38)" stroke-width="${sw}"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="none" stroke="${edge}" stroke-width="${sw}"/>`
+    );
+  }
+
+  function setU() {
+    // Big enough that a number like 1,234 fits on the mat, laid out in one row or in two.
+    const w = innerWidth - 48, h = innerHeight - dock.offsetHeight - footer.offsetHeight - 72;
+    U = Math.max(12, Math.min(28, Math.max(Math.min(w / 46, h / 18), Math.min(w / 24, h / 32))));
+    const shadow = (dx, dy, s, o) =>
+      `<feDropShadow dx="${r2(dx * U)}" dy="${r2(dy * U)}" stdDeviation="${r2(s * U)}" flood-color="#3B2A1A" flood-opacity="${o}"/>`;
+    defs.innerHTML =
+      `<filter id="rest" x="-60%" y="-60%" width="240%" height="280%">${shadow(0.1, 0.3, 0.2, 0.34)}</filter>` +
+      `<filter id="lift" x="-120%" y="-120%" width="380%" height="460%">${shadow(0.25, 0.85, 0.45, 0.24)}</filter>` +
+      KINDS.map((K, k) => `<g id="p${k}">${pieceMarkup(k, U)}</g>`).join('');
+  }
+
+  function mini(k) {
+    const spec = [
+      { u: 15,  at: [[0, 0], [1.18, 0], [0.59, -1]] },   // a small pile of units
+      { u: 6.6, at: [[0, 0], [1.55, 0.15]] },
+      { u: 6.2, at: [[0.9, -0.9], [0, 0]] },
+      { u: 5.6, at: [[0, 0]] },
+    ][k];
+    const K = KINDS[k], d = K.depth * DS;
+    let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity, body = '';
+    for (const [x, y] of spec.at) {
+      l = Math.min(l, x); t = Math.min(t, y - d); r = Math.max(r, x + K.w + d); b = Math.max(b, y + K.h);
+      body += `<g transform="translate(${r2(x * spec.u)} ${r2(y * spec.u)})">${pieceMarkup(k, spec.u)}</g>`;
+    }
+    const p = 2, vx = l * spec.u - p, vy = t * spec.u - p, vw = (r - l) * spec.u + 2 * p, vh = (b - t) * spec.u + 2 * p;
+    return `<svg viewBox="${r2(vx)} ${r2(vy)} ${r2(vw)} ${r2(vh)}" width="${r2(vw)}" height="${r2(vh)}" aria-hidden="true" focusable="false">${body}</svg>`;
+  }
+
+  // ═══════ TRAINS ═══════
+  function addTrain(kind, count, x, y) {
+    const t = { id: nextId++, kind, count, x, y, el: null, fx: null, busy: false, held: false };
+    trains.set(t.id, t);
+    buildTrain(t);
+    return t;
+  }
+
+  function buildTrain(t) {
+    const old = t.el, hadFocus = old && document.activeElement === old;
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'train');
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('filter', 'url(#rest)');
+    g.dataset.id = t.id;
+    const fx = document.createElementNS(NS, 'g');
+    fx.setAttribute('class', 'fx');
+    g.appendChild(fx);
+    // lower units and farther flats are drawn first so nearer faces cover them
+    const backFirst = t.kind === 0 || t.kind === 2;
+    for (let n = 0; n < t.count; n++) {
+      const i = backFirst ? t.count - 1 - n : n, o = slot(t.kind, i);
+      const use = document.createElementNS(NS, 'use');
+      use.setAttribute('href', `#p${t.kind}`);
+      use.setAttribute('x', r2(o.x * U));
+      use.setAttribute('y', r2(o.y * U));
+      use.dataset.i = i;
+      fx.appendChild(use);
+    }
+    const K = KINDS[t.kind];
+    g.setAttribute('aria-label',
+      t.count === 10 ? `10 ${K.plural} joined, a full ten` :
+      t.count > 1 ? `${t.count} ${K.plural} joined` : `one ${K.name}`);
+    if (old) old.replaceWith(g); else layer.appendChild(g);
+    t.el = g;
+    t.fx = fx;
+    place(t);
+    if (hadFocus) g.focus({ preventScroll: true });
+  }
+
+  function place(t, dur = 0) {
+    t.el.style.transition = dur && !reduceMotion ? `transform ${dur}ms cubic-bezier(.2,.85,.25,1.04)` : 'none';
+    t.el.style.transform = `translate(${r2(t.x * U)}px,${r2(t.y * U)}px)`;
+  }
+
+  function lift(t, on) {
+    t.held = on;
+    t.el.setAttribute('filter', on ? 'url(#lift)' : 'url(#rest)');
+    t.el.classList.toggle('dragging', on);
+  }
+
+  function bounds() {
+    return { l: 0.3, t: 0.3, r: innerWidth / U - 0.3, b: dock.getBoundingClientRect().top / U - 0.25 };
+  }
+
+  function fitShift(box) {
+    const B = bounds();
+    let dx = 0, dy = 0;
+    if (box.r > B.r) dx = B.r - box.r;
+    if (box.l + dx < B.l) dx = B.l - box.l;
+    if (box.b > B.b) dy = B.b - box.b;
+    if (box.t + dy < B.t) dy = B.t - box.t;
+    return { dx, dy };
+  }
+
+  function clampXY(t, x, y) {
+    const s = fitShift(bbox(t, x, y));
+    return { x: x + s.dx, y: y + s.dy };
+  }
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  // ═══════ MOTION ═══════
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+
+  function pop(t) {
+    anim(t.fx, [{ transform: 'scale(0.86)' }, { transform: 'scale(1.03)', offset: 0.6 }, { transform: 'scale(1)' }], 170);
+    buzz(6);
+  }
+  function thud(t, s) {
+    anim(t.fx, [
+      { transform: `translateY(${-0.12 * s * U}px)` },
+      { transform: `translateY(${0.03 * s * U}px)`, offset: 0.7 },
+      { transform: 'translateY(0)' },
+    ], 200 + 120 * s, 'cubic-bezier(.3,0,.3,1)');
+  }
+  function resist(t) {
+    anim(t.fx, [0, -0.18, 0.18, -0.12, 0.12, 0].map(v => ({ transform: `translateX(${v * U}px)` })), 260, 'linear');
+    buzz(4);
+  }
+
+  // ═══════ STRUCTURE ═══════
+  function removeTrain(t) {
+    trains.delete(t.id);
+    t.busy = true;
+    t.el.style.pointerEvents = 'none';
+    t.el.removeAttribute('tabindex');
+    if (reduceMotion) t.el.remove();
+    else t.fx.animate(
+      [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: `scale(0.8) translateY(${0.5 * U}px)` }],
+      { duration: 180, easing: 'ease-in', fill: 'forwards' }
+    ).onfinish = () => t.el.remove();
+    changed();
+  }
+
+  function findPartner(t) {
+    const K = KINDS[t.kind];
+    const front = { l: t.x, t: t.y, r: t.x + K.w, b: t.y + K.h };
+    let best = null, bestD = Infinity;
+    for (const b of trains.values()) {
+      if (b === t || b.kind !== t.kind || b.busy || b.held) continue;
+      const n = slot(b.kind, b.count);   // the next open spot in b's run
+      const zone = {
+        l: b.x + Math.min(0, n.x) - SNAP, t: b.y + Math.min(0, n.y) - SNAP,
+        r: b.x + Math.max(0, n.x) + K.w + SNAP, b: b.y + Math.max(0, n.y) + K.h + SNAP,
+      };
+      if (front.l < zone.r && front.r > zone.l && front.t < zone.b && front.b > zone.t) {
+        // a run with room beats a full one
+        const dist = Math.hypot(t.x - (b.x + n.x), t.y - (b.y + n.y)) + (b.count >= 10 ? 1000 : 0);
+        if (dist < bestD) { bestD = dist; best = b; }
+      }
+    }
+    return best;
+  }
+
+  function drop(t, cx, cy) {
+    if (cx != null && overDock(cx, cy)) { removeTrain(t); return; }
+    const c = clampXY(t, t.x, t.y), shifted = c.x !== t.x || c.y !== t.y;
+    t.x = c.x; t.y = c.y;
+    place(t, shifted ? 200 : 0);
+    // a complete run of ten is finished: it doesn't join anything
+    if (t.kind < 3 && t.count < 10) {
+      const b = findPartner(t);
+      if (b && b.count < 10) { join(t, b); return; }
+      if (b) { bounce(t, b); return; }
+    }
+    thud(t, 0.35);
+    changed();
+  }
+
+  // A spot just beside run b where t can sit without touching it.
+  function asidePos(t, b) {
+    const bb = bbox(b), tb = bbox(t, 0, 0), B = bounds();
+    let x = bb.r + 0.6 - tb.l;
+    if (x + tb.r > B.r) x = bb.l - 0.6 - tb.r;
+    return clampXY(t, x, b.y);
+  }
+
+  // A run already holds ten: anything more is turned away.
+  function bounce(t, b) {
+    const p = asidePos(t, b);
+    t.x = p.x; t.y = p.y;
+    place(t, 240);
+    resist(t);
+    changed();
+  }
+
+  // t slides into the open end of b's run. A run holds ten at most; the rest slide off beside it.
+  function join(t, b) {
+    const hadFocus = document.activeElement === t.el;
+    t.busy = b.busy = true;
+    const n = slot(b.kind, b.count);
+    t.x = b.x + n.x; t.y = b.y + n.y;
+    if (t.kind !== 1) layer.insertBefore(t.el, b.el);
+    place(t, 170);
+    buzz(5);
+    setTimeout(() => {
+      if (!trains.has(b.id) || !trains.has(t.id)) { t.busy = b.busy = false; return; }
+      const moved = Math.min(10 - b.count, t.count), left = t.count - moved;
+      b.count += moved;
+      buildTrain(b);
+      if (left > 0) {
+        // the extras sit just past the end of the full run, then slide off beside it
+        const o = slot(b.kind, 10);
+        t.count = left;
+        t.x = b.x + o.x; t.y = b.y + o.y;
+        buildTrain(t);
+        t.el.getBoundingClientRect();
+        const p = asidePos(t, b);
+        t.x = p.x; t.y = p.y;
+        place(t, 280);
+        t.busy = false;
+      } else {
+        trains.delete(t.id);
+        t.el.remove();
+      }
+      const c = clampXY(b, b.x, b.y);
+      if (c.x !== b.x || c.y !== b.y) { b.x = c.x; b.y = c.y; place(b, 220); }
+      if (b.count === 10) complete(b); else thud(b, 0.4);
+      b.busy = false;
+      if (hadFocus) b.el.focus({ preventScroll: true });
+      changed();
+    }, ms(180));
+  }
+
+  // Ten in a run: it settles hard and catches the light once. Trading it is the student's move.
+  function complete(t) {
+    thud(t, 1);
+    buzz(12);
+    if (reduceMotion) return;
+    const K = KINDS[t.kind], o = slot(t.kind, t.count - 1);
+    const flash = document.createElementNS(NS, 'rect');
+    flash.setAttribute('x', r2(Math.min(0, o.x) * U));
+    flash.setAttribute('y', r2(Math.min(0, o.y) * U));
+    flash.setAttribute('width', r2((Math.abs(o.x) + K.w) * U));
+    flash.setAttribute('height', r2((Math.abs(o.y) + K.h) * U));
+    flash.setAttribute('rx', r2(Math.min(U * 0.13, 5)));
+    flash.setAttribute('fill', '#fff');
+    flash.setAttribute('opacity', '0');
+    flash.style.pointerEvents = 'none';
+    t.fx.appendChild(flash);
+    flash.animate([{ opacity: 0 }, { opacity: 0.35, offset: 0.35 }, { opacity: 0 }], { duration: 460, easing: 'ease-out' })
+      .onfinish = () => flash.remove();
+  }
+
+  // Double-tap trades: a full run of ten becomes one bigger piece, a whole piece becomes ten smaller.
+  // Anything else has no trade to make.
+  function trade(t) {
+    if (t.busy || t.held) return;
+    if (t.count === 10 && t.kind < 3) {
+      const hadFocus = document.activeElement === t.el;
+      t.busy = true;
+      fuse(t, hadFocus);
+    } else if (t.count === 1 && t.kind > 0) {
+      breakApart(t);
+    } else {
+      resist(t);
+    }
+  }
+
+  function fuse(b, hadFocus) {
+    const k = b.kind, ghost = b.el;
+    ghost.style.pointerEvents = 'none';
+    ghost.removeAttribute('tabindex');
+    ghost.removeAttribute('data-id');
+    b.el = null;
+    b.kind = k + 1;
+    b.count = 1;
+    buildTrain(b);
+    if (reduceMotion) ghost.remove();
+    else {
+      ghost.animate([{ opacity: 1 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: 380, fill: 'forwards' })
+        .onfinish = () => ghost.remove();
+      b.fx.animate([
+        { opacity: 0, transform: `translateY(${-0.22 * U}px)` },
+        { opacity: 1, transform: `translateY(${0.05 * U}px)`, offset: 0.7 },
+        { opacity: 1, transform: 'translateY(0)' },
+      ], { duration: 440, easing: 'cubic-bezier(.3,0,.25,1)' });
+    }
+    buzz(18);
+    const c = clampXY(b, b.x, b.y);
+    if (c.x !== b.x || c.y !== b.y) { b.x = c.x; b.y = c.y; place(b, 220); }
+    b.busy = false;
+    if (hadFocus) b.el.focus({ preventScroll: true });
+    changed();
+  }
+
+  // A whole rod, flat or cube cracks into ten of the next size down, spread so each can be picked up.
+  function breakApart(t) {
+    const hadFocus = document.activeElement === t.el;
+    const k = t.kind - 1, n = 10;
+    const gap = [[0, 1.32], [1.7, 0], [1.25, -1.25]][k];
+    const probe = { kind: k, count: 1 };
+    const spread = [];
+    const box = { l: Infinity, t: Infinity, r: -Infinity, b: -Infinity };
+    for (let i = 0; i < n; i++) {
+      const p = { x: t.x + i * gap[0], y: t.y + i * gap[1] }, bb = bbox(probe, p.x, p.y);
+      spread.push(p);
+      box.l = Math.min(box.l, bb.l); box.t = Math.min(box.t, bb.t);
+      box.r = Math.max(box.r, bb.r); box.b = Math.max(box.b, bb.b);
+    }
+    const s = fitShift(box);
+    const next = t.el.nextSibling;
+    trains.delete(t.id);
+    t.el.remove();
+    const made = [];
+    const order = [...Array(n).keys()];
+    if (k !== 1) order.reverse();
+    for (const i of order) {
+      const o = slot(k, i);
+      const nt = addTrain(k, 1, t.x + o.x, t.y + o.y);
+      layer.insertBefore(nt.el, next);
+      made[i] = nt;
+    }
+    made[0].el.getBoundingClientRect();
+    made.forEach((nt, i) => { nt.x = spread[i].x + s.dx; nt.y = spread[i].y + s.dy; place(nt, 260); });
+    buzz(12);
+    if (hadFocus) made[0].el.focus({ preventScroll: true });
+    changed();
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    const c = [0, 0, 0, 0];
+    for (const t of trains.values()) c[t.kind] += t.count;
+    const total = c[0] + 10 * c[1] + 100 * c[2] + 1000 * c[3];
+    const parts = [3, 2, 1, 0].filter(k => c[k]);
+    record.innerHTML = !parts.length
+      ? '<span>0</span>'
+      : parts.map(k => `<span class="k${k}">${fmt(c[k] * KINDS[k].value)}</span>`).join('<span class="op">+</span>') +
+        (parts.length > 1 ? `<span class="op">=</span><span>${fmt(total)}</span>` : '');
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const said = parts.map(k => `${c[k]} ${c[k] === 1 ? KINDS[k].name : KINDS[k].plural}`).join(', ');
+      live.textContent = (said || 'The mat is empty') + (recordOn && parts.length ? `. ${fmt(total)}.` : '.');
+    }, 400);
+  }
+
+  // ═══════ BINS ═══════
+  // A tapped bin sets its piece on the mat just above itself, beside anything already there.
+  function stagePos(k) {
+    const r = dock.querySelector(`.bin[data-kind="${k}"]`).getBoundingClientRect(), K = KINDS[k];
+    const x0 = (r.left + r.width / 2) / U - (K.w + K.depth * DS) / 2;
+    const y0 = dock.getBoundingClientRect().top / U - K.h - 0.8;
+    const probe = { kind: k, count: 1 };
+    const step = K.w + K.depth * DS + 0.6;
+    for (let j = 0; j < 12; j++) {
+      const x = x0 + (j % 2 ? -1 : 1) * Math.ceil(j / 2) * step;
+      const c = clampXY(probe, x, y0), bb = bbox(probe, c.x, c.y);
+      const blocked = [...trains.values()].some(o => {
+        if (o.kind === k && k < 3 && o.count < 10) return false;   // landing on its own kind is welcome: it joins
+        const ob = bbox(o);
+        return bb.l < ob.r && bb.r > ob.l && bb.t < ob.b && bb.b > ob.t;
+      });
+      if (!blocked) return c;
+    }
+    return clampXY(probe, x0, y0);
+  }
+
+  function spawnOnMat(k) {
+    const p = stagePos(k), t = addTrain(k, 1, p.x, p.y);
+    pop(t);
+    setTimeout(() => { if (trains.has(t.id)) drop(t); }, ms(120));
+    return t;
+  }
+
+  dock.querySelectorAll('.bin').forEach(bin => { bin.innerHTML = mini(+bin.dataset.kind); });
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();   // pointerId → drag state
+  let lastTap = null;
+  const toUnits = e => ({ x: e.clientX / U, y: e.clientY / U });
+
+  layer.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.train');
+    const t = g && trains.get(+g.dataset.id);
+    if (!t || t.busy || t.held) return;
+    e.preventDefault();
+    layer.appendChild(t.el);
+    try { t.el.setPointerCapture(e.pointerId); } catch (err) {}
+    const use = e.target.closest('use'), p = toUnits(e);
+    drags.set(e.pointerId, { t, i: use ? +use.dataset.i : 0, sx: p.x, sy: p.y, ox: p.x - t.x, oy: p.y - t.y, moved: false, bin: null });
+  });
+
+  dock.addEventListener('pointerdown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin) return;
+    e.preventDefault();
+    const k = +bin.dataset.kind, K = KINDS[k], p = toUnits(e);
+    const ox = (K.w + K.depth * DS) / 2, oy = K.h / 2;
+    const t = addTrain(k, 1, p.x - ox, p.y - oy);
+    pop(t);
+    lift(t, true);
+    try { t.el.setPointerCapture(e.pointerId); } catch (err) {}
+    drags.set(e.pointerId, { t, i: 0, sx: p.x, sy: p.y, ox, oy, moved: false, bin: k });
+  });
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    const p = toUnits(e);
+    if (!s.moved) {
+      if (Math.hypot(p.x - s.sx, p.y - s.sy) * U < 6) return;
+      s.moved = true;
+      // grabbing the end piece of a joined run pulls just that piece off
+      if (s.bin === null && s.t.count > 1 && s.i === s.t.count - 1) {
+        const run = s.t, o = slot(run.kind, s.i);
+        const piece = addTrain(run.kind, 1, run.x + o.x, run.y + o.y);
+        run.count--;
+        buildTrain(run);
+        s.t = piece;
+        s.ox = s.sx - piece.x;
+        s.oy = s.sy - piece.y;
+        try { piece.el.setPointerCapture(e.pointerId); } catch (err) {}
+        changed();
+      }
+      lift(s.t, true);
+    }
+    s.t.x = p.x - s.ox;
+    s.t.y = p.y - s.oy;
+    place(s.t);
+  });
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    const t = s.t;
+    lift(t, false);
+    if (s.moved) { drop(t, e.clientX, e.clientY); return; }
+    if (s.bin !== null) {
+      // a tap on a bin: the piece hops out onto the mat
+      const p = stagePos(s.bin);
+      t.x = p.x; t.y = p.y;
+      place(t, 200);
+      setTimeout(() => { if (trains.has(t.id)) drop(t); }, ms(210));
+      return;
+    }
+    const now = performance.now();
+    if (lastTap && lastTap.id === t.id && now - lastTap.time < 380) { lastTap = null; trade(t); }
+    else lastTap = { id: t.id, time: now };
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  dock.addEventListener('keydown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    spawnOnMat(+bin.dataset.kind);
+  });
+
+  layer.addEventListener('keydown', e => {
+    const g = e.target.closest('.train');
+    const t = g && trains.get(+g.dataset.id);
+    if (!t || t.busy) return;
+    const step = e.shiftKey ? 2 : 0.5;
+    const mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+    if (mv) {
+      e.preventDefault();
+      const c = clampXY(t, t.x + mv[0], t.y + mv[1]);
+      t.x = c.x; t.y = c.y;
+      place(t, 90);
+      clearTimeout(t.settle);
+      t.settle = setTimeout(() => { if (trains.has(t.id) && !t.busy) drop(t); }, 450);
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      trade(t);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      removeTrain(t);
+    }
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    record.classList.toggle('on', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+  clearBtn.addEventListener('click', () => { [...trains.values()].forEach(removeTrain); });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      setU();
+      for (const t of trains.values()) {
+        buildTrain(t);
+        const c = clampXY(t, t.x, t.y);
+        t.x = c.x; t.y = c.y;
+        place(t);
+      }
+    });
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  setU();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
