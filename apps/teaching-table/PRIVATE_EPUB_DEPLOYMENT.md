@@ -4,6 +4,19 @@ The source on this branch implements a Cloudflare Worker that protects **all** `
 
 The nine i-Ready EPUBs are kept in **private** GitHub repository `MrH-SWES/teaching-table-books` as Git LFS objects. The Worker retrieves the LFS pointer, asks the authenticated GitHub LFS batch endpoint for a time-limited download action, and streams the binary body to the authorized browser. No book binary, access token, or signed download URL is embedded in this public source repository.
 
+## Identity policies: employees and substitutes
+
+Configure the self-hosted Cloudflare Access application with **two distinct Allow policies**:
+
+1. **District staff:** Include the district identity-provider group or verified district email domain, using the district identity provider. If relying on an email domain, confirm that the identity is verified by the district IdP and not just an email string.
+2. **Approved substitutes:** Include **only the exact, individually approved personal email addresses** using the `Emails` selector. Add a `Require > Login Methods > One-time PIN` condition so that the guest must verify possession of the address. Maintain this allowlist as assignments change; remove substitutes who should no longer have access.
+
+In Zero Trust > Integrations > Identity providers, explicitly add **One-time PIN** if it isn't already configured. Cloudflare Access supports this alongside a district IdP. Do **not** use `Include > Login Methods > One-time PIN` as the entire policy; that grants access to anyone who can receive an email. Do **not** allow all Gmail, Outlook or other personal email domains.
+
+Set an appropriately short application session lifetime (for example, one school day) and establish a process for immediate guest revocation. Verify district authorization and publisher licensing before permitting non-district-account guests.
+
+**Guest test:** With an email on the exact allowlist, receive and enter a one-time PIN and confirm the protected Table and an actual EPUB load. With a different personal email address, verify login is denied. Test that revoked emails lose access when their sessions expire (or after session revocation).
+
 ## What an operator must configure (requires Cloudflare access)
 
 1. In Cloudflare Zero Trust, create a **self-hosted Access application** that protects the host and path `/apps/teaching-table/*`, including the base path without a trailing slash. Restrict Allow policy to the specific authorized staff identities or district-managed identity provider. Review district and publisher authorization before deployment. An Access login alone is insufficient without an appropriately restrictive policy.
