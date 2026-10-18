@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Decimal Grid</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BOARD ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .cell, #board .tab, #board .frame { pointer-events: all; }
+    #board .cell { cursor: crosshair; }
+    #board .tab { cursor: pointer; }
+    #board .frame { cursor: grab; }
+    #board .held .frame { cursor: grabbing; }
+    #board .cell.h { fill: url(#hundredths); }
+    #board .cell.t { fill: url(#tenths); }
+    #board .cell.w { fill: url(#ones); }
+    #board .tab.full { fill: url(#tabDown); }
+    #board .grid { outline: none; }
+    #board .grid:focus-visible .frame { stroke: #007AFF; stroke-width: 3; }
+    #board .cursor { fill: none; stroke: #007AFF; stroke-width: 2.5; opacity: 0; pointer-events: none; }
+    #board .grid:focus-visible .cursor { opacity: 1; }
+    #board .value { opacity: 0; transition: opacity 0.3s; pointer-events: none; font-family: 'Lexend', sans-serif; text-anchor: middle; }
+    #board.rec .value { opacity: 1; }
+    #board .value .dec { font-weight: 900; fill: var(--text-main); }
+    #board .value .frac { font-weight: 700; fill: var(--text-gray); }
+    #board .fx { transform-box: fill-box; transform-origin: 50% 50%; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .bin {
+      --bin-w: clamp(64px, 17vw, 108px);
+      --bin-h: clamp(60px, 13vw, 84px);
+      width: var(--bin-w);
+      height: var(--bin-h);
+      border: none; border-radius: 18px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg {
+      width: calc(var(--bin-w) * 0.7); height: calc(var(--bin-h) * 0.72);
+      overflow: visible; pointer-events: none;
+      filter: drop-shadow(0 3px 3px rgba(60,40,20,0.2));
+    }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Decimal grid mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <button class="bin" data-bin="grid" aria-label="Grid bin. Adds another whole."></button>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the values" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Clear the shading">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<!-- Paints: enamel in the place-value colors for hundredths, tenths and ones -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="hundredths" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB547"/><stop offset="0.55" stop-color="#FF9F0A"/><stop offset="1" stop-color="#E08600"/></linearGradient>
+    <linearGradient id="tenths" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8FE0FF"/><stop offset="0.55" stop-color="#64D2FF"/><stop offset="1" stop-color="#3BB8EA"/></linearGradient>
+    <linearGradient id="ones" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EE4466"/><stop offset="0.55" stop-color="#DC143C"/><stop offset="1" stop-color="#B50F31"/></linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EEE8"/></linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F1F2F4"/><stop offset="0.5" stop-color="#DADCE1"/><stop offset="1" stop-color="#C7CACF"/></linearGradient>
+    <linearGradient id="tabUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FAFAFB"/><stop offset="1" stop-color="#C9CBD0"/></linearGradient>
+    <linearGradient id="tabDown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B7BAC0"/><stop offset="1" stop-color="#E4E6EA"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="layer"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const MAX_GRIDS = 3;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+  const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), layer = $('layer');
+  const dock = $('dock'), footer = $('footer'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn'), gridBin = dock.querySelector('[data-bin="grid"]');
+
+  // ═══════ GEOMETRY ═══════
+  // A grid is one whole: ten columns (tenths) of ten cells (hundredths). Cell i = column * 10 + row.
+  let C = 26;                       // cell size in px
+  const PAD = 0.42, TAB = 0.62;     // frame width and tab height, in cells
+  const grids = [];                 // { id, cells, x, y, el, fx, cellEls, tabEls, value, cursor }
+  let nextId = 1, recordOn = false;
+
+  const dockTop = () => dock.getBoundingClientRect().top;
+  const gridW = () => (10 + 2 * PAD) * C;
+  const gridH = () => (10 + 2 * PAD + TAB + 0.3) * C;
+
+  // Grids sit side by side or stacked, whichever lets them be bigger. Sized for at least two.
+  let COLS = 2;
+  const GW = 10 + 2 * PAD, GH = 10 + 2 * PAD + TAB + 0.3 + 2.2;
+  function setSize() {
+    const n = Math.max(2, grids.length), w = innerWidth - 48, h = dockTop() - 110;
+    let best = 0;
+    for (let k = 1; k <= n; k++) {
+      const rows = Math.ceil(n / k), c = Math.min(w / (k * GW + (k - 1)), h / (rows * GH + (rows - 1) * 0.5));
+      if (c > best) { best = c; COLS = k; }
+    }
+    C = Math.max(14, Math.min(36, best));
+    defs.innerHTML = `<filter id="rest" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="1.5" dy="5" stdDeviation="6" flood-color="#3B2A1A" flood-opacity="0.18"/></filter>`;
+  }
+
+  // ═══════ DRAWING ═══════
+  function buildGrid(g) {
+    const old = g.el, hadFocus = old && document.activeElement === old;
+    const W = 10 * C, p = PAD * C, tab = TAB * C, rad = r2(Math.min(10, C * 0.45));
+    const root = el('g', { class: 'grid', tabindex: '0', role: 'grid', filter: 'url(#rest)' });
+    root.dataset.id = g.id;
+    const fx = el('g', { class: 'fx' }, root);
+    // brushed metal frame, with a hole so the cells take the touches inside it
+    const fx0 = -p, fy0 = -p - tab - 0.3 * C, fw = W + 2 * p, fh = W + 2 * p + tab + 0.3 * C;
+    el('path', {
+      class: 'frame', 'fill-rule': 'evenodd', fill: 'url(#metal)', stroke: 'rgba(60,62,68,0.25)', 'stroke-width': '1',
+      d: `M${r2(fx0 + rad)},${r2(fy0)}H${r2(fx0 + fw - rad)}Q${r2(fx0 + fw)},${r2(fy0)} ${r2(fx0 + fw)},${r2(fy0 + rad)}V${r2(fy0 + fh - rad)}Q${r2(fx0 + fw)},${r2(fy0 + fh)} ${r2(fx0 + fw - rad)},${r2(fy0 + fh)}H${r2(fx0 + rad)}Q${r2(fx0)},${r2(fy0 + fh)} ${r2(fx0)},${r2(fy0 + fh - rad)}V${r2(fy0 + rad)}Q${r2(fx0)},${r2(fy0)} ${r2(fx0 + rad)},${r2(fy0)}Z` +
+        `M0,0V${W}H${W}V0Z`,
+    }, fx);
+    // glazed tile
+    el('rect', { x: 0, y: 0, width: W, height: W, fill: 'url(#tile)', stroke: 'rgba(60,45,30,0.25)', 'stroke-width': '1' }, fx);
+    // column tabs (one per tenth)
+    g.tabEls = [];
+    for (let c = 0; c < 10; c++) {
+      g.tabEls.push(el('rect', {
+        class: 'tab', x: r2(c * C + C * 0.12), y: r2(-tab - 0.15 * C), width: r2(C * 0.76), height: r2(tab), rx: r2(C * 0.18),
+        fill: 'url(#tabUp)', stroke: 'rgba(60,62,68,0.3)', 'stroke-width': '0.8', 'data-col': c,
+      }, fx));
+    }
+    // cells
+    g.cellEls = [];
+    const inset = Math.max(1, C * 0.06);
+    for (let i = 0; i < 100; i++) {
+      const c = Math.floor(i / 10), r = i % 10;
+      g.cellEls.push(el('rect', {
+        class: 'cell', x: r2(c * C + inset), y: r2(r * C + inset), width: r2(C - 2 * inset), height: r2(C - 2 * inset),
+        rx: r2(C * 0.08), fill: 'transparent', 'data-i': i,
+      }, fx));
+    }
+    // engraved lines: bold between columns (tenths), fine between cells (hundredths)
+    let fine = '', bold = '';
+    for (let k = 1; k < 10; k++) { fine += `M0,${r2(k * C)}H${W}`; bold += `M${r2(k * C)},0V${W}`; }
+    el('path', { d: fine, stroke: 'rgba(60,45,30,0.22)', 'stroke-width': '1', 'pointer-events': 'none' }, fx);
+    el('path', { d: bold, stroke: 'rgba(60,45,30,0.5)', 'stroke-width': r2(Math.max(1.5, C * 0.08)), 'pointer-events': 'none' }, fx);
+    el('rect', { x: 0, y: 0, width: W, height: W, fill: 'url(#gloss)', 'pointer-events': 'none' }, fx);
+    g.flash = el('rect', { x: 0, y: 0, width: C, height: W, fill: '#fff', opacity: '0', 'pointer-events': 'none' }, fx);
+    g.cursorEl = el('rect', { class: 'cursor', width: r2(C), height: r2(C), rx: r2(C * 0.12) }, fx);
+    // the value as a decimal and a stacked fraction, shown only with the record
+    const cx = W / 2, base = W + p + C * 1.25;
+    g.valueEl = el('g', { class: 'value' }, fx);
+    g.decEl = el('text', { class: 'dec', y: r2(base), 'font-size': r2(C), 'dominant-baseline': 'central' }, g.valueEl);
+    g.fracEl = el('g', { transform: `translate(${r2(cx + C * 1.35)} ${r2(base)})` }, g.valueEl);
+    g.numEl = el('text', { class: 'frac', y: r2(-C * 0.42), 'font-size': r2(C * 0.58), 'dominant-baseline': 'central' }, g.fracEl);
+    el('line', { x1: r2(-C * 0.8), x2: r2(C * 0.8), stroke: '#86868B', 'stroke-width': r2(Math.max(1.2, C * 0.05)), 'stroke-linecap': 'round' }, g.fracEl);
+    g.denEl = el('text', { class: 'frac', y: r2(C * 0.46), 'font-size': r2(C * 0.58), 'dominant-baseline': 'central' }, g.fracEl);
+    g.cx = cx;
+    if (old) old.replaceWith(root); else layer.appendChild(root);
+    g.el = root;
+    g.fx = fx;
+    paint(g);
+    place(g);
+    if (hadFocus) root.focus({ preventScroll: true });
+  }
+
+  function place(g, dur = 0) {
+    g.el.style.transition = dur && !reduceMotion ? `transform ${dur}ms cubic-bezier(.2,.85,.25,1.04)` : 'none';
+    g.el.style.transform = `translate(${r2(g.x)}px,${r2(g.y)}px)`;
+  }
+
+  // Shading takes the color of what it makes: hundredths, a full column is a tenth, a full grid is one.
+  function paint(g) {
+    const full = [];
+    for (let c = 0; c < 10; c++) full.push(g.cells.slice(c * 10, c * 10 + 10).every(Boolean));
+    const whole = full.every(Boolean);
+    g.cells.forEach((on, i) => {
+      g.cellEls[i].setAttribute('class', 'cell' + (on ? (whole ? ' w' : full[Math.floor(i / 10)] ? ' t' : ' h') : ''));
+    });
+    g.tabEls.forEach((t, c) => t.classList.toggle('full', full[c]));
+    const n = g.cells.reduce((a, b) => a + b, 0), tenths = full.filter(Boolean).length;
+    const dec = n === 100 ? '1' : n === 0 ? '0' : '0.' + String(n).padStart(2, '0').replace(/0$/, '');
+    const hasFrac = n > 0 && n < 100;
+    g.decEl.textContent = dec;
+    g.decEl.setAttribute('x', r2(hasFrac ? g.cx + C * 0.2 : g.cx));
+    g.decEl.setAttribute('text-anchor', hasFrac ? 'end' : 'middle');
+    g.fracEl.style.display = hasFrac ? '' : 'none';
+    g.numEl.textContent = n % 10 === 0 ? n / 10 : n;
+    g.denEl.textContent = n % 10 === 0 ? 10 : 100;
+    g.dec = dec;
+    g.el && g.el.setAttribute('aria-label', `Grid ${grids.indexOf(g) + 1}: ${n} of 100 shaded` + (recordOn ? `, ${dec}` : ''));
+    return { n, tenths, whole };
+  }
+
+  function flashColumns(g, cols) {
+    if (reduceMotion) return;
+    for (const c of cols) {
+      const f = g.flash.cloneNode();
+      f.setAttribute('x', r2(c * C));
+      g.fx.appendChild(f);
+      f.animate([{ opacity: 0 }, { opacity: 0.45, offset: 0.35 }, { opacity: 0 }], { duration: 420, easing: 'ease-out' }).onfinish = () => f.remove();
+    }
+  }
+
+  // Shade or clear cells, then mark any column or grid that just became complete.
+  function setCells(g, idxs, on) {
+    const before = [];
+    for (let c = 0; c < 10; c++) before.push(g.cells.slice(c * 10, c * 10 + 10).every(Boolean));
+    let changedAny = false;
+    for (const i of idxs) if (g.cells[i] !== +on) { g.cells[i] = +on; changedAny = true; }
+    if (!changedAny) return;
+    const res = paint(g);
+    const completed = [];
+    for (let c = 0; c < 10; c++) if (!before[c] && g.cells.slice(c * 10, c * 10 + 10).every(Boolean)) completed.push(c);
+    if (res.whole && completed.length) { flashColumns(g, [...Array(10).keys()]); buzz(18); }
+    else if (completed.length) { flashColumns(g, completed); buzz(8); }
+    changed();
+  }
+
+  // ═══════ GRIDS ═══════
+  function addGrid(x, y) {
+    const g = { id: nextId++, cells: new Array(100).fill(0), x, y };
+    grids.push(g);
+    buildGrid(g);
+    return g;
+  }
+
+  // Grids fill rows of COLS, each row centered on the mat.
+  function slotFor(k, n) {
+    const cols = Math.min(COLS, n), rows = Math.ceil(n / cols);
+    const row = Math.floor(k / cols), col = k % cols, inRow = Math.min(cols, n - row * cols);
+    const w = GW * C, h = GH * C, gapX = C, gapY = C * 0.5;
+    const x0 = (innerWidth - (inRow * w + (inRow - 1) * gapX)) / 2;
+    const y0 = Math.max(16, (dockTop() - (rows * h + (rows - 1) * gapY)) / 2);
+    return { x: x0 + col * (w + gapX) + PAD * C, y: y0 + row * (h + gapY) + (PAD + TAB + 0.3) * C };
+  }
+
+  function arrange(dur) {
+    grids.forEach((g, k) => { Object.assign(g, slotFor(k, grids.length)); place(g, dur); });
+  }
+
+  function relayout() {
+    setSize();
+    grids.forEach(g => buildGrid(g));
+    arrange(0);
+  }
+
+  function removeGrid(g) {
+    if (grids.length <= 1) { place(g, 200); shake(g.fx); return; }
+    grids.splice(grids.indexOf(g), 1);
+    g.el.style.pointerEvents = 'none';
+    g.el.removeAttribute('tabindex');
+    if (reduceMotion) g.el.remove();
+    else g.fx.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.85)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
+      .onfinish = () => g.el.remove();
+    relayout();
+    changed();
+  }
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    grids.forEach(paint);
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      live.textContent = grids.map((g, k) => {
+        const n = g.cells.reduce((a, b) => a + b, 0);
+        return `Grid ${k + 1}: ${n} of 100 shaded` + (recordOn ? `, ${g.dec}` : '');
+      }).join('. ') + '.';
+    }, 400);
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  const gridOf = node => { const r = node.closest('.grid'); return r && grids.find(g => g.id === +r.dataset.id); };
+
+  board.addEventListener('pointerdown', e => {
+    const t = e.target, g = gridOf(t);
+    if (!g) return;
+    e.preventDefault();
+    if (t.classList.contains('cell')) {
+      // painting: the first cell decides whether this stroke shades or clears
+      const i = +t.dataset.i, mode = !g.cells[i];
+      setCells(g, [i], mode);
+      drags.set(e.pointerId, { kind: 'paint', g, mode });
+    } else if (t.classList.contains('tab')) {
+      const c = +t.dataset.col, col = [...Array(10).keys()].map(r => c * 10 + r);
+      const mode = !col.every(i => g.cells[i]);
+      setCells(g, col, mode);
+      drags.set(e.pointerId, { kind: 'tabs', g, mode });
+    } else if (t.classList.contains('frame')) {
+      layer.appendChild(g.el);
+      drags.set(e.pointerId, { kind: 'move', g, sx: e.clientX, sy: e.clientY, ox: e.clientX - g.x, oy: e.clientY - g.y, moved: false });
+    }
+    try { t.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  dock.addEventListener('pointerdown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin) return;
+    e.preventDefault();
+    drags.set(e.pointerId, { kind: 'bin', sx: e.clientX, sy: e.clientY, moved: false });
+  });
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    if (s.kind === 'paint' || s.kind === 'tabs') {
+      const hit = document.elementFromPoint(e.clientX, e.clientY);
+      if (!hit || gridOf(hit) !== s.g) return;
+      if (s.kind === 'paint' && hit.classList.contains('cell')) setCells(s.g, [+hit.dataset.i], s.mode);
+      if (s.kind === 'tabs' && hit.classList.contains('tab')) {
+        const c = +hit.dataset.col;
+        setCells(s.g, [...Array(10).keys()].map(r => c * 10 + r), s.mode);
+      }
+      return;
+    }
+    if (!s.moved) {
+      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < 5) return;
+      s.moved = true;
+      if (s.kind === 'bin') {
+        if (grids.length >= MAX_GRIDS) { shake(gridBin); drags.delete(e.pointerId); return; }
+        const g = addGrid(e.clientX - 5 * C, e.clientY - 5 * C);
+        Object.assign(s, { kind: 'move', g, ox: 5 * C, oy: 5 * C, fromBin: true });
+      }
+      s.g.el.classList.add('held');
+    }
+    s.g.x = e.clientX - s.ox;
+    s.g.y = e.clientY - s.oy;
+    place(s.g);
+  });
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    if (s.kind === 'bin') {
+      if (!s.moved) {
+        if (grids.length >= MAX_GRIDS) { shake(gridBin); return; }
+        addGrid(0, 0);
+        relayout();
+        changed();
+      }
+      return;
+    }
+    if (s.kind !== 'move' || !s.moved) return;
+    s.g.el.classList.remove('held');
+    if (overDock(e.clientX, e.clientY)) { removeGrid(s.g); return; }
+    // a new grid joins the row; one that was moved stays where it was put, on the mat
+    if (s.fromBin) { relayout(); changed(); return; }
+    s.g.x = Math.min(Math.max(s.g.x, PAD * C + 8), innerWidth - gridW() + PAD * C - 8);
+    s.g.y = Math.min(Math.max(s.g.y, (PAD + TAB + 0.3) * C + 8), dockTop() - (10 + PAD + 1.6) * C);
+    place(s.g, 200);
+    changed();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  // A focused grid has a cursor cell: arrows move it, Space shades or clears it, Enter does its whole column.
+  board.addEventListener('keydown', e => {
+    const g = gridOf(e.target);
+    if (!g) return;
+    g.cur = g.cur || 0;
+    const c = Math.floor(g.cur / 10), r = g.cur % 10;
+    const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (mv) {
+      e.preventDefault();
+      g.cur = Math.min(9, Math.max(0, c + mv[0])) * 10 + Math.min(9, Math.max(0, r + mv[1]));
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      setCells(g, [g.cur], !g.cells[g.cur]);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const col = [...Array(10).keys()].map(k => c * 10 + k);
+      setCells(g, col, !col.every(i => g.cells[i]));
+    } else return;
+    g.cursorEl.setAttribute('x', r2(Math.floor(g.cur / 10) * C));
+    g.cursorEl.setAttribute('y', r2((g.cur % 10) * C));
+  });
+
+  dock.addEventListener('keydown', e => {
+    if (!e.target.closest('.bin') || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    if (grids.length >= MAX_GRIDS) { shake(gridBin); return; }
+    addGrid(0, 0);
+    relayout();
+    changed();
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+  clearBtn.addEventListener('click', () => {
+    grids.forEach(g => { g.cells.fill(0); });
+    changed();
+  });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(relayout);
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  // ═══════ START ═══════
+  gridBin.innerHTML = `<svg viewBox="-6 -10 112 96" aria-hidden="true" focusable="false">` +
+    `<rect x="18" y="-6" width="80" height="80" rx="6" fill="url(#metal)" stroke="rgba(60,62,68,0.3)"/>` +
+    `<rect x="24" y="0" width="68" height="68" fill="url(#tile)"/>` +
+    `<rect x="-2" y="6" width="80" height="80" rx="6" fill="url(#metal)" stroke="rgba(60,62,68,0.3)"/>` +
+    `<rect x="4" y="12" width="68" height="68" fill="url(#tile)"/>` +
+    `<rect x="4" y="12" width="20.4" height="68" fill="url(#tenths)"/>` +
+    `<rect x="24.4" y="12" width="6.8" height="27.2" fill="url(#hundredths)"/>` +
+    `<path d="${[...Array(9).keys()].map(k => `M${4 + (k + 1) * 6.8},12V80`).join('')}" stroke="rgba(60,45,30,0.45)" stroke-width="1"/>` +
+    `<path d="${[...Array(9).keys()].map(k => `M4,${12 + (k + 1) * 6.8}H72`).join('')}" stroke="rgba(60,45,30,0.18)" stroke-width="0.6"/>` +
+    `</svg>`;
+  setSize();
+  addGrid(0, 0);
+  arrange(0);
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
