@@ -1,6 +1,6 @@
 {
   "name": "math-things-app",
-  "main": "./worker/app-bootstrap.mjs",
+  "main": "./worker/private-teaching-table.mjs",
   "compatibility_date": "2026-10-16",
   "routes": [
     {
