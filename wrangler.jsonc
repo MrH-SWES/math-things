@@ -1,7 +1,13 @@
 {
   "name": "math-things",
+  "main": "./worker/private-teaching-table.mjs",
   "compatibility_date": "2026-10-16",
   "assets": {
-    "directory": "./"
+    "directory": "./",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/apps/teaching-table",
+      "/apps/teaching-table/*"
+    ]
   }
 }
