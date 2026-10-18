@@ -144,7 +144,7 @@
         const opt = document.createElement('option');
         opt.value = d;
         opt.textContent = state.mode === 'fraction' ? d :
-          d === 10 ? '0.1' : '0.01';
+          d === 10 ? 'Tenths (0.1)' : 'Hundredths (0.01)';
         parts.appendChild(opt);
       }
       parts.value = String(units());
@@ -188,7 +188,10 @@
       if (state.numerator === 0) return 'zero';
       if (state.numerator === state.denominator) return 'one whole';
       if (state.mode === 'decimal') return 'decimal position within one whole';
-      return state.numerator + ' out of ' + state.denominator + ' equal parts of one whole';
+      const d = state.fractionDen, scaled = position() * d;
+      const aligned = Math.abs(scaled - Math.round(scaled)) < 1e-8;
+      return (aligned ? Math.round(scaled) : state.numerator) + ' out of ' +
+        (aligned ? d : state.denominator) + ' equal parts of one whole';
     }
     function announce() {
       live.textContent = 'Bead at ' + formula() + '. ' + description() + '.';
@@ -305,7 +308,8 @@
       record.hidden = !state.showLabels;
       record.innerHTML = state.showLabels ? '<span>0 — 1</span>' + formula() : '';
       labels.setAttribute('aria-pressed',String(state.showLabels));
-      labels.setAttribute('aria-label',state.showLabels?'Hide fraction label':'Show fraction label');
+      labels.setAttribute('aria-label',state.showLabels?'Hide value':'Show value');
+      labels.textContent = state.mode === 'fraction' ? '½' : '0.1';
     }
     function setPosition(value) {
       const d = units(), next=clamp(Math.round(value),0,d);
