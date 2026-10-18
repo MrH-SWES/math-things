@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Hundred Chart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── CHART ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #chart { pointer-events: all; cursor: pointer; outline: none; }
+    #chart:focus-visible #cursor { opacity: 1; }
+    #cursor { opacity: 0; fill: none; stroke: #007AFF; stroke-width: 3; pointer-events: none; }
+    #board .num { font-family: 'Lexend', sans-serif; font-weight: 600; text-anchor: middle; dominant-baseline: central; fill: #34373C; pointer-events: none; }
+    #record { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #board.rec #record { opacity: 1; }
+    #record text { font-family: 'Lexend', sans-serif; font-weight: 800; dominant-baseline: central; fill: #3A3D42; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: flex; gap: clamp(6px, 1.2vw, 12px); }
+    .bin {
+      width: clamp(58px, 11vw, 88px);
+      height: clamp(52px, 9vw, 72px);
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%);
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s;
+    }
+    /* the chosen bin sits pressed into the cabinet */
+    .bin[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 72%; height: 72%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Hundred chart"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <div id="bins"></div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show chip counts" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Take all the chips and covers off">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="frameMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F5F7"/><stop offset="0.5" stop-color="#E1E3E7"/><stop offset="1" stop-color="#CFD2D7"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EEE9"/>
+    </linearGradient>
+    <linearGradient id="coverMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F6F6F8"/><stop offset="0.45" stop-color="#D5D7DB"/><stop offset="1" stop-color="#B7BABF"/>
+    </linearGradient>
+    <radialGradient id="chipGloss" cx="0.35" cy="0.3" r="0.75">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/><stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.08"/><stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+    </radialGradient>
+    <pattern id="brushed" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="transparent"/><path d="M0,1.5H6M0,4.5H6" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="chart" tabindex="0" role="application" aria-label="Hundred chart, 1 to 100. Arrow keys move, Space lays or lifts the chosen chip or cover.">
+    <g id="frame"></g>
+    <g id="tiles"></g>
+    <g id="chips"></g>
+    <g id="nums"></g>
+    <g id="covers"></g>
+    <rect id="cursor" rx="6"/>
+  </g>
+  <g id="record"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // translucent enamel chips; colors kept clear of the place-value palette
+  const CHIPS = [
+    { name: 'teal', color: '#12948B' },
+    { name: 'plum', color: '#8A3D97' },
+    { name: 'gold', color: '#C99A12' },
+  ];
+  const COVER = 3;                    // the cover tile is the fourth tool
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion || !node ? null : node.animate(frames, { duration: dur, easing });
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), chart = $('chart'), frameG = $('frame'), tilesG = $('tiles'), chipsG = $('chips'),
+        numsG = $('nums'), coversG = $('covers'), cursorEl = $('cursor'), recordG = $('record');
+  const dock = $('dock'), binsEl = $('bins'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+  // each cell: the chip colors on it (a set of indexes) and whether a cover hides it
+  const cells = [...Array(100)].map(() => ({ chips: new Set(), covered: false }));
+  let tool = 0, recordOn = false, cursor = 0;
+  let C = 48, GAP = 3, BX = 0, BY = 0;   // cell size, gap, top-left of the first cell
+
+  // a slightly wider gap after the fifth row and column, so fives and tens are easy to see
+  const off = i => i * (C + GAP) + (i >= 5 ? GAP * 2 : 0);
+  const cellXY = n => ({ x: BX + off(n % 10), y: BY + off(Math.floor(n / 10)) });
+  function cellAt(x, y) {
+    for (let r = 0; r < 10; r++) {
+      const top = BY + off(r);
+      if (y < top - GAP || y > top + C + GAP) continue;
+      for (let c = 0; c < 10; c++) {
+        const left = BX + off(c);
+        if (x >= left - GAP && x <= left + C + GAP) return r * 10 + c;
+      }
+    }
+    return -1;
+  }
+
+  // ═══════ LAYOUT ═══════
+  function layout() {
+    const W = innerWidth, top = dock.getBoundingClientRect().top;
+    const span = s => 10 * s + 9 * Math.max(2, s * 0.06) + 4 * Math.max(2, s * 0.06);
+    C = 64;
+    while (C > 22 && (span(C) + 40 > W || span(C) + 110 > top)) C -= 1;
+    GAP = Math.max(2, C * 0.06);
+    const size = off(9) + C;
+    BX = (W - size) / 2;
+    BY = Math.max(58, (top - size) / 2 + 12);
+    defs.innerHTML =
+      `<filter id="chipShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${innerHeight}"><feDropShadow dx="0.5" dy="${r2(C * 0.04)}" stdDeviation="${r2(C * 0.035)}" flood-color="#2A2018" flood-opacity="0.3"/></filter>` +
+      `<filter id="frameShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${innerHeight}"><feDropShadow dx="1" dy="6" stdDeviation="8" flood-color="#3B2A1A" flood-opacity="0.16"/></filter>`;
+    const m = Math.max(10, C * 0.3), fx = BX - m, fy = BY - m, fs = size + 2 * m;
+    frameG.innerHTML =
+      `<rect x="${r2(fx)}" y="${r2(fy)}" width="${r2(fs)}" height="${r2(fs)}" rx="${r2(m * 0.9)}" fill="url(#frameMetal)" stroke="rgba(60,62,68,0.22)" filter="url(#frameShadow)"/>` +
+      `<rect x="${r2(fx)}" y="${r2(fy)}" width="${r2(fs)}" height="${r2(fs)}" rx="${r2(m * 0.9)}" fill="url(#brushed)"/>` +
+      `<rect x="${r2(BX - GAP)}" y="${r2(BY - GAP)}" width="${r2(size + 2 * GAP)}" height="${r2(size + 2 * GAP)}" rx="${r2(C * 0.12)}" fill="#C9CBD0"/>`;
+    let t = '', nums = '';
+    const rr = r2(C * 0.12), font = r2(Math.max(11, C * 0.36));
+    for (let n = 0; n < 100; n++) {
+      const p = cellXY(n);
+      t += `<rect x="${r2(p.x)}" y="${r2(p.y)}" width="${r2(C)}" height="${r2(C)}" rx="${rr}" fill="url(#tile)" stroke="rgba(0,0,0,0.08)"/>`;
+      nums += `<text class="num" x="${r2(p.x + C / 2)}" y="${r2(p.y + C / 2 + 0.5)}" font-size="${font}">${n + 1}</text>`;
+    }
+    tilesG.innerHTML = t;
+    numsG.innerHTML = nums;
+    cursorEl.setAttribute('width', r2(C + 4));
+    cursorEl.setAttribute('height', r2(C + 4));
+    for (let n = 0; n < 100; n++) drawCell(n);
+    moveCursor(cursor);
+    drawRecord();
+  }
+
+  // ═══════ CELLS ═══════
+  const chipEls = [], coverEls = [];
+  function drawCell(n) {
+    const p = cellXY(n), cx = p.x + C / 2, cy = p.y + C / 2, r = C * 0.42, cell = cells[n];
+    if (chipEls[n]) chipEls[n].remove();
+    if (coverEls[n]) coverEls[n].remove();
+    chipEls[n] = coverEls[n] = null;
+    const on = [...cell.chips].sort();
+    if (on.length) {
+      // one chip is a disc; two or three colors on one number share it as wedges
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('filter', 'url(#chipShadow)');
+      let s = '';
+      if (on.length === 1) s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${CHIPS[on[0]].color}" fill-opacity="0.5" stroke="${CHIPS[on[0]].color}" stroke-width="${r2(Math.max(1.5, C * 0.05))}"/>`;
+      else on.forEach((k, i) => {
+        const a0 = -Math.PI / 2 + i * 2 * Math.PI / on.length, a1 = a0 + 2 * Math.PI / on.length;
+        s += `<path d="M${r2(cx)},${r2(cy)}L${r2(cx + Math.cos(a0) * r)},${r2(cy + Math.sin(a0) * r)}A${r2(r)},${r2(r)} 0 0 1 ${r2(cx + Math.cos(a1) * r)},${r2(cy + Math.sin(a1) * r)}Z" fill="${CHIPS[k].color}" fill-opacity="0.5"/>`;
+      });
+      if (on.length > 1) s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="none" stroke="rgba(40,40,46,0.45)" stroke-width="${r2(Math.max(1.2, C * 0.03))}"/>`;
+      s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="url(#chipGloss)"/>`;
+      g.innerHTML = s;
+      chipsG.appendChild(g);
+      chipEls[n] = g;
+    }
+    if (cell.covered) {
+      const g = document.createElementNS(NS, 'g');
+      g.innerHTML =
+        `<rect x="${r2(p.x - 1)}" y="${r2(p.y - 1)}" width="${r2(C + 2)}" height="${r2(C + 2)}" rx="${r2(C * 0.12)}" fill="url(#coverMetal)" stroke="rgba(50,52,58,0.35)" filter="url(#chipShadow)"/>` +
+        `<rect x="${r2(p.x - 1)}" y="${r2(p.y - 1)}" width="${r2(C + 2)}" height="${r2(C + 2)}" rx="${r2(C * 0.12)}" fill="url(#brushed)"/>` +
+        `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(Math.max(2, C * 0.06))}" fill="rgba(60,62,68,0.25)"/>`;
+      coversG.appendChild(g);
+      coverEls[n] = g;
+    }
+  }
+
+  // Lay or lift the chosen tool on one number. Returns whether anything changed.
+  function apply(n, add) {
+    const cell = cells[n];
+    if (tool === COVER) {
+      if (cell.covered === add) return false;
+      cell.covered = add;
+    } else {
+      // a covered number takes no chips until its cover comes off
+      if (cell.covered || cell.chips.has(tool) === add) return false;
+      if (add) cell.chips.add(tool); else cell.chips.delete(tool);
+    }
+    drawCell(n);
+    const el = tool === COVER ? coverEls[n] : chipEls[n];
+    if (add && el) anim(el, [{ transform: 'translateY(-4px)', opacity: 0.4 }, { transform: 'none', opacity: 1 }], 160);
+    buzz(add ? 4 : 3);
+    return true;
+  }
+  const holds = n => tool === COVER ? cells[n].covered : cells[n].chips.has(tool);
+
+  // ═══════ RECORD ═══════
+  // How many numbers each color is on, and how many carry two or more colors.
+  function drawRecord() {
+    const size = off(9) + C, y = BY - Math.max(10, C * 0.3) - Math.max(18, C * 0.36);
+    const counts = CHIPS.map((_, k) => cells.filter(c => c.chips.has(k)).length);
+    const shared = cells.filter(c => c.chips.size > 1).length;
+    const fs = r2(Math.max(13, C * 0.32)), dot = Math.max(6, C * 0.14);
+    const items = counts.map((n, k) => ({ n, k })).filter(i => i.n);
+    if (shared) items.push({ n: shared, shared: true });
+    const w = fs * 3.2;
+    let x = BX + size / 2 - (items.length * w) / 2 + dot, s = '';
+    for (const it of items) {
+      if (it.shared) {
+        const on = [...new Set(cells.filter(c => c.chips.size > 1).flatMap(c => [...c.chips]))].sort().slice(0, 3);
+        on.forEach((k, i) => {
+          const a0 = -Math.PI / 2 + i * 2 * Math.PI / on.length, a1 = a0 + 2 * Math.PI / on.length;
+          s += `<path d="M${r2(x)},${r2(y)}L${r2(x + Math.cos(a0) * dot)},${r2(y + Math.sin(a0) * dot)}A${r2(dot)},${r2(dot)} 0 0 1 ${r2(x + Math.cos(a1) * dot)},${r2(y + Math.sin(a1) * dot)}Z" fill="${CHIPS[k].color}" fill-opacity="0.75"/>`;
+        });
+      } else s += `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(dot)}" fill="${CHIPS[it.k].color}" fill-opacity="0.75"/>`;
+      s += `<text x="${r2(x + dot + 5)}" y="${r2(y + 0.5)}" font-size="${fs}">${it.n}</text>`;
+      x += w;
+    }
+    recordG.innerHTML = s;
+  }
+
+  let liveTimer = 0;
+  function changed() {
+    drawRecord();
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const parts = CHIPS.map((ch, k) => [ch.name, cells.filter(c => c.chips.has(k)).length]).filter(p => p[1]).map(([nm, n]) => `${nm} on ${n}`);
+      const cov = cells.filter(c => c.covered).length;
+      if (cov) parts.push(`${cov} covered`);
+      live.textContent = parts.length ? 'Chips: ' + parts.join(', ') + '.' : 'The chart is clear.';
+    }, 500);
+  }
+
+  // ═══════ POINTER ═══════
+  // Tap or drag across numbers with the chosen chip or cover. The first number decides: a stroke that
+  // starts on an empty number lays chips, one that starts on a chip lifts them.
+  const strokes = new Map();
+  chart.addEventListener('pointerdown', e => {
+    const n = cellAt(e.clientX, e.clientY);
+    if (n < 0) return;
+    e.preventDefault();
+    try { chart.setPointerCapture(e.pointerId); } catch (err) {}
+    const add = !holds(n);
+    strokes.set(e.pointerId, { add, last: n });
+    if (apply(n, add)) changed();
+    cursor = n; moveCursor(n);
+  });
+  chart.addEventListener('pointermove', e => {
+    const s = strokes.get(e.pointerId);
+    if (!s) return;
+    const n = cellAt(e.clientX, e.clientY);
+    if (n < 0 || n === s.last) return;
+    s.last = n;
+    if (apply(n, s.add)) changed();
+  });
+  const endStroke = e => strokes.delete(e.pointerId);
+  chart.addEventListener('pointerup', endStroke);
+  chart.addEventListener('pointercancel', endStroke);
+
+  // ═══════ KEYBOARD ═══════
+  function moveCursor(n) {
+    const p = cellXY(n);
+    cursorEl.setAttribute('x', r2(p.x - 2));
+    cursorEl.setAttribute('y', r2(p.y - 2));
+  }
+  function describe(n) {
+    const c = cells[n];
+    if (c.covered) return 'Covered.';
+    const on = [...c.chips].sort().map(k => CHIPS[k].name);
+    return `${n + 1}` + (on.length ? `, ${on.join(' and ')} chip` : '');
+  }
+  chart.addEventListener('keydown', e => {
+    const mv = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -10, ArrowDown: 10 }[e.key];
+    if (mv) {
+      e.preventDefault();
+      const n = cursor + mv;
+      if ((mv === -1 && cursor % 10 === 0) || (mv === 1 && cursor % 10 === 9) || n < 0 || n > 99) return;
+      cursor = n; moveCursor(n);
+      live.textContent = describe(n);
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      apply(cursor, !holds(cursor));
+      changed();
+      live.textContent = describe(cursor);
+    }
+  });
+
+  // ═══════ BINS ═══════
+  const bins = [];
+  [...CHIPS, { name: 'cover' }].forEach((ch, k) => {
+    const b = document.createElement('button');
+    b.className = 'bin';
+    b.setAttribute('aria-pressed', String(k === tool));
+    b.setAttribute('aria-label', k === COVER ? 'Cover tiles' : `${ch.name[0].toUpperCase() + ch.name.slice(1)} chips`);
+    b.innerHTML = k === COVER
+      ? `<svg viewBox="-30 -22 60 44" aria-hidden="true" focusable="false"><rect x="-17" y="-12" width="26" height="26" rx="4" fill="url(#coverMetal)" stroke="rgba(50,52,58,0.35)"/><rect x="-9" y="-18" width="26" height="26" rx="4" fill="url(#coverMetal)" stroke="rgba(50,52,58,0.35)"/></svg>`
+      : `<svg viewBox="-30 -22 60 44" aria-hidden="true" focusable="false">` +
+        [[-9, 4], [9, 4], [0, -8]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="11" fill="${ch.color}" fill-opacity="0.55" stroke="${ch.color}" stroke-width="1.6"/><circle cx="${x}" cy="${y}" r="11" fill="url(#chipGloss)"/>`).join('') + `</svg>`;
+    b.addEventListener('click', () => {
+      tool = k;
+      bins.forEach((o, i) => o.setAttribute('aria-pressed', String(i === k)));
+      buzz(4);
+    });
+    binsEl.appendChild(b);
+    bins.push(b);
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    if (recordOn) {
+      const counts = CHIPS.map((ch, k) => `${ch.name} ${cells.filter(c => c.chips.has(k)).length}`);
+      live.textContent = 'Counts: ' + counts.join(', ') + `, shared ${cells.filter(c => c.chips.size > 1).length}.`;
+    }
+  });
+  clearBtn.addEventListener('click', () => {
+    cells.forEach((c, n) => { if (c.chips.size || c.covered) { c.chips.clear(); c.covered = false; drawCell(n); } });
+    anim(chipsG, [{ opacity: 0.3 }, { opacity: 1 }], 200);
+    buzz(8);
+    changed();
+  });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(layout);
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  // ═══════ START ═══════
+  layout();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
