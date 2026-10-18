@@ -13,7 +13,6 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>  <style>
     :root {
       --paper: #f7efdc;
@@ -1488,7 +1487,6 @@
           <select id="curriculum-library" aria-label="curriculum books">
             <option value="">Curriculum books…</option>
           </select>
-          <button type="button" id="curriculum-drive-connect">Connect Google Drive</button>
           <button type="button" id="curriculum-pick">Add local EPUB(s)</button>
         </div>
         <input id="curriculum-search" type="search" placeholder="Find a lesson or session…" disabled />
@@ -1498,7 +1496,7 @@
           <span id="curriculum-page-total">of —</span>
           <button type="button" id="curriculum-page-go" disabled>Go</button>
         </div>
-        <div id="curriculum-status">Add a book once; Teaching Table will remember it on this device.</div>
+        <div id="curriculum-status">Select a grade to open its textbook. Books are cached on this device.</div>
       </div>
       <div id="curriculum-toc"></div>
     </section>
@@ -4054,7 +4052,7 @@
   });
 })();
 </script>
-  <script src="./curriculum.js?v=20261014a"></script>
+  <script src="./curriculum.js?v=20261016b"></script>
   <script src="./table-v2.js?v=20261014a"></script>
   <script src="./tts-client.js?v=20261001a"></script>
   <script src="./accessibility.js?v=20261001b"></script>
