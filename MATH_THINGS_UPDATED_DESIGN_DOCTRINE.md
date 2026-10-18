@@ -277,35 +277,32 @@ The numerator determines how many pieces are present; it does **not** change the
 color. Never use opacity or saturation proportional to numerator.
 
 Use the shared source: \`math-things-fractions.js\` (exports
-\`FRACTION_DENOMINATORS\`, \`FRACTION_FAMILIES\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
+\`FRACTION_DENOMINATORS\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
 This is the current **revision 2 palette**, pending classroom visual testing.
 
 Only three fraction colors are place-value colors, because only those three
 fractions *are* place values: one whole (ones red), tenths (tenths cyan) and
-hundredths (hundredths orange). Every other denominator comes from a muted
-**fraction family**, so a fraction piece never reads as a place value.
-Revision 1 used a rainbow whose fourths, fifths, eighths, twelfths and
-sixteenths sat next to the hundreds, thousands, tens, hundred-thousands and
-millions hues; revision 2 retires it.
+hundredths (hundredths orange). Every other part size has its **own distinct
+color**, so halves, fourths and eighths side by side in a fraction wall or a
+set of circles are told apart at a glance. Those colors are **dusty**:
+place-value enamel is fully saturated, fraction enamel is muted, so a fraction
+piece never reads as a place-value block. Revision 1 used saturated rainbow
+hues that sat next to the hundreds, thousands, tens, hundred-thousands and
+millions colors; revision 2 retires it.
 
-- Place-value enamel is fully saturated. Fraction-family enamel is dusty.
-- A family is one hue for one chain of splitting. Within a family, a smaller
-  piece is a deeper shade, so "a sixth is half of a third" reads as
-  "same color, cut smaller".
-
-| Part size | Family | Enamel color | Hex |
-|---|---|---|---|
-| One whole | Place value | Volume Space ones red | \`#DC143C\` |
-| Halves | Halving | Mauve, lightest | \`#D2A9C6\` |
-| Fourths | Halving | Mauve | \`#B783A8\` |
-| Eighths | Halving | Mauve | \`#96608A\` |
-| Sixteenths | Halving | Mauve, deepest | \`#74426B\` |
-| Thirds | Thirding | Sage, lightest | \`#A9C9B2\` |
-| Sixths | Thirding | Sage | \`#7CA68A\` |
-| Twelfths | Thirding | Sage, deepest | \`#5E8A72\` |
-| Fifths | Fifths | Sand | \`#C8A47E\` |
-| Tenths | Place value | Canonical decimal-tenths cyan | \`#64D2FF\` |
-| Hundredths | Place value | Canonical decimal-hundredths orange | \`#FF9F0A\` |
+| Part size | Enamel color | Hex |
+|---|---|---|
+| One whole | Volume Space ones red | \`#DC143C\` |
+| Halves | Mauve | \`#B47AA3\` |
+| Thirds | Sage | \`#8DB596\` |
+| Fourths | Sand | \`#D1AE6C\` |
+| Fifths | Slate | \`#7E93C2\` |
+| Sixths | Clay | \`#CF8E70\` |
+| Eighths | Lavender | \`#A898D3\` |
+| Tenths | Canonical decimal-tenths cyan | \`#64D2FF\` |
+| Twelfths | Moss | \`#8C9A4E\` |
+| Sixteenths | Deep teal | \`#4F8A8B\` |
+| Hundredths | Canonical decimal-hundredths orange | \`#FF9F0A\` |
 
 The deliberate overlap at tenths and hundredths teaches that 1/10 = 0.1 and
 1/100 = 0.01. A fully assembled whole stays red, regardless of the colors
