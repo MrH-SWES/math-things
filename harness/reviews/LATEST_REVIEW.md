@@ -6,42 +6,48 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook touchscreen. Testing used mouse input and scripted pointer events at desktop, tablet and phone sizes.
-- Add it to the home page and the Teaching Table when the user is ready. For now it is reachable only by URL.
+- Try it on a real iPad or Chromebook touchscreen. Testing used scripted pointer events and keyboard events at 1024×768 and 375×812.
+- Decide whether Geo Lab keeps its built-in protractor once this one is on the home page.
 
 Notes:
-- Files changed: apps/counters-and-cups/index.html (new app). No existing app was modified.
-- Behavior: A free equal-groups mat for multiplication and division (Grade 4 Lessons 7, 8, 10, 11, 12 and 14 list counters with cups, bowls or plates).
-  - A brushed-metal cabinet holds two bins: cups and counters. Tap the cups bin to set out a cup (cups fill rows below the record). Tap the counters bin for one counter, or press and hold to pour; counters gather in a pile above the bin.
-  - Drag counters into or out of cups, or straight from the bin into a cup. A cup holds up to 19, in patterns readable at a glance: a pair, a triangle, a diamond, 2 over 3, a pyramid of 6, a flower of 7, then an outer ring that fills evenly. A full cup turns extra counters away to open mat.
-  - Tapping a cup (or its counters) deals it one counter from the loose pile, so fair sharing is just tapping cups in turn. With nothing loose, the cup shakes.
-  - Drag a cup by its rim to move it; its counters ride along. Drop a cup or counter on the cabinet to put it away. ↺ clears the mat.
-  - The eye button shows an optional record that follows the cups: "6 × 4 + 3 = 27" when cups are equal (loose counters in steel gray), "5 + 5 + 5 + 4 + 4 + 4 = 27" when not. Each cup gets a small count badge.
+- Files changed: apps/protractor/index.html (new app). No existing app was modified.
+- Behavior: A free angle and a free protractor, for measuring, building, adding and subtracting angles (Grade 4 Lessons 31–33).
+  - The angle: an aluminum vertex bead with machined arms ending in knurled knobs. Each arm continues as a thin ray line to the edge of the screen. Knobs turn arms in whole degrees. Dragging the vertex moves the angle.
+  - The protractor: smoked acrylic with a standard double scale (outer 0–180 from the left, inner 0–180 from the right), a tick for every degree, and a center hole on the baseline.
+    - Drag it by its body. Dropped near the vertex, the center hole snaps onto it.
+    - Turn it by the knob on its top edge. When seated, the 0 line snaps onto a ray within a few degrees.
+    - Dragging the vertex carries a seated protractor with it.
+    - The student reads the scale; nothing reads it for them.
+  - The ray bin adds a ray that splits the biggest angle (up to 4 rays) for adding angles. Dragging a knob onto the cabinet removes that ray; with only two rays left it swings back instead.
+  - The protractor bin: drag the protractor onto the cabinet to put it away (for estimating first), and tap the bin to bring it back.
+  - Arcs mark each angle; an exact 90° gets the square corner; a dashed arc marks the whole when the angle is split.
+  - The eye button shows an optional record: "40°", or "30° + 10° = 40°" when split. Off by default.
 - Doctrine principles applied:
-  - No words or directions on the surface; labels are aria-only.
-  - The object comes first; the record follows it and is off by default.
-  - No answer checking: unequal groups are simply shown as they are.
-  - Counters are the neutral brushed-aluminum bead material, since counters are not place value. Cups are glazed ceramic seen from above.
-  - Motion: pop on arrival, glide into the cup's pattern, shake when refused.
-- Desktop behavior (1024×768): 12 cups fit in two rows of six with the pile below. No console errors.
-- Tablet (768×1024) and phone (375×812): Cups are 156px and 104px across. The cabinet fits with no horizontal scroll, and new cups avoid the brand badge, the record and the pile.
-- Accessibility notes: Bins are buttons; Enter adds a cup or a counter. Cups are focusable: Enter or Space deals one, arrow keys move (Shift moves farther), Delete puts it away. A polite live region announces cup contents and loose counters, plus the total only while the record is shown. Counters are about 16–30px depending on screen size; cups are much larger targets.
+  - No words or directions on the surface (Geo Lab's version prints "tap vertex" / "now tap the arc").
+  - Two separate physical objects that the student brings together; snapping replaces checking.
+  - The bead and the arms are brushed aluminum; the protractor is a measuring instrument in clear acrylic so the rays show through it.
+  - The record is optional and follows the object.
+- Desktop behavior (1024×768): The angle and the protractor start apart. The protractor seats exactly on the vertex. A turn to 37° snaps to the 40° ray. With the 0 line on the 0° ray, the top ray crosses the inner scale at 40 and the middle ray at 20. Split, turn, remove, refused remove, put-away and return all work. No console errors.
+- Mobile behavior (375×812): The angle sits above the protractor; the cabinet fits with no horizontal scroll.
+- Accessibility notes: Bins are buttons; Enter adds a ray or returns the protractor.
+  - The vertex is focusable: arrow keys move it.
+  - Knobs are sliders: arrow keys turn them 1° (Shift for 10°), and Delete removes a ray.
+  - The protractor is focusable: arrow keys move it, [ and ] turn it, and Enter sets it on the vertex lined up with the nearest ray (keyboard fallback).
+  - A polite live region describes the angle, plus measures only while the record is shown.
 - Remaining risks:
-  - Counters are not individually keyboard-focusable; keyboard users deal counters through the cups.
-  - The pour rate and the 240-counter cap are untested on a slow device.
+  - Two-finger rotation of the protractor is not supported; rotation is by the knob only.
+  - Reflex angles (over 180°) are not specially handled. With two rays the smaller angle is marked.
 
 Acceptance Tests:
-- Tapping the cups bin sets out cups in rows below the record. PASS
-- Tapping the counters bin adds one counter; press-and-hold pours (13 in 1.5 seconds). PASS
-- Tapping cups in turn deals one counter each from the pile. PASS
-- Taps on a cup's counters also deal into that cup. PASS
-- Dragging a counter out of a cup makes it loose, and the cup re-packs. PASS
-- Dragging a counter into a cup, or from the bin into a cup, adds it. PASS
-- A full cup (19) refuses deals and bounces dragged counters to open mat. PASS
-- A cup moved by its rim carries its counters. PASS
-- A cup dropped on the cabinet is removed with its counters. PASS
-- The record reads "4 × 3 + 2 = 14" for equal cups with 2 loose, and a sum for unequal cups. PASS
-- Enter on a focused cup deals one. PASS
+- The protractor dropped within reach of the vertex seats exactly on it. PASS
+- A turn within 5° of a ray snaps the baseline onto the ray (37° to 40°). PASS
+- The scale reads correctly against the rays (40 and 20 on the inner scale). PASS
+- The ray bin splits the angle; the record reads "20° + 20° = 40°". PASS
+- Turning the middle ray updates the parts ("30° + 10° = 40°"). PASS
+- A ray dropped on the cabinet is removed; with two rays it swings back. PASS
+- The protractor can be put away and brought back. PASS
+- Dragging the vertex carries a seated protractor. PASS
+- Keyboard: Enter seats the protractor; arrow keys turn a ray. PASS
 - No visible instruction text on the student surface. PASS
 - No console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS

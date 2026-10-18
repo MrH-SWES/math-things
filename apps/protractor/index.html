@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Protractor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --steel: #8E9196;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BOARD ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board [data-grab] { pointer-events: all; cursor: grab; outline: none; }
+    #board .held, #board .held [data-grab] { cursor: grabbing; }
+    #board .rayline { stroke: rgba(45,48,54,0.42); stroke-width: 1.6; }
+    #board .arc { fill: none; stroke: var(--steel); stroke-width: 2; stroke-linecap: round; }
+    #board .arc.whole { stroke-dasharray: 3 5; stroke-width: 1.6; }
+    #prot { outline: none; }
+    #prot text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    #prot .po { fill: #3A3D42; font-weight: 700; }
+    #prot .pi { fill: #7A7E86; font-weight: 600; }
+    #prot .marks { pointer-events: none; }
+    #board .fx { transform-box: fill-box; transform-origin: 50% 50%; }
+    #board [tabindex]:focus-visible .fx { filter: drop-shadow(0 0 2px #007AFF) drop-shadow(0 0 2px #007AFF); }
+    #prot:focus-visible .pbody { stroke: #007AFF; stroke-width: 2.5; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .bin {
+      --bin-w: clamp(64px, 17vw, 108px);
+      --bin-h: clamp(60px, 13vw, 84px);
+      width: var(--bin-w);
+      height: var(--bin-h);
+      border: none; border-radius: 18px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg {
+      width: calc(var(--bin-w) * 0.74); height: calc(var(--bin-h) * 0.7);
+      overflow: visible; pointer-events: none;
+      filter: drop-shadow(0 3px 3px rgba(60,40,20,0.2));
+    }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── RECORD (optional, follows the angle) ── */
+    #record {
+      position: fixed; top: 14px; left: 50%; transform: translate(-50%, -6px);
+      z-index: 4; pointer-events: none;
+      display: flex; align-items: baseline; gap: 0.3em; white-space: nowrap;
+      font-weight: 900; font-size: clamp(22px, 3.2vw, 34px); letter-spacing: -0.02em;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s var(--spring);
+    }
+    #record.on { opacity: 1; transform: translate(-50%, 0); }
+    #record .op { color: var(--text-light); font-weight: 400; }
+    @media (max-width: 600px) { #record { top: 58px; } }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Angle and protractor mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <button class="bin" data-bin="prot" aria-label="Protractor bin"></button>
+    <button class="bin" data-bin="ray" aria-label="Ray bin. Adds a ray to the angle."></button>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the measure" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="resetBtn" aria-label="Reset the angle and protractor">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<div id="record" aria-hidden="true"></div>
+
+<!-- Paints shared by the mat and the bins -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.24" stop-color="#F1F1F3"/>
+      <stop offset="0.55" stop-color="#C8C9CD"/>
+      <stop offset="0.82" stop-color="#A7A8AD"/>
+      <stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <!-- smoked acrylic -->
+    <linearGradient id="glass" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#F4F7FA" stop-opacity="0.62"/>
+      <stop offset="0.6" stop-color="#DCE3EA" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#C9D2DC" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="raylines"></g>
+  <g id="rods" filter="url(#rest)"></g>
+  <g id="arcs"></g>
+  <g id="prot" tabindex="0" role="button" aria-label="Protractor">
+    <g id="protShape" filter="url(#glassShadow)"></g>
+    <g id="rotor"></g>
+  </g>
+  <g id="handles" filter="url(#rest)"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+  const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
+  const pop = node => anim(node, [{ transform: 'scale(0.82)' }, { transform: 'scale(1.06)', offset: 0.6 }, { transform: 'scale(1)' }], 180);
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), raylines = $('raylines'), rods = $('rods'), arcs = $('arcs');
+  const protG = $('prot'), protShape = $('protShape'), rotor = $('rotor'), handles = $('handles');
+  const dock = $('dock'), footer = $('footer'), record = $('record'), live = $('live');
+  const recordBtn = $('recordBtn'), resetBtn = $('resetBtn');
+  const protBin = dock.querySelector('[data-bin="prot"]'), rayBin = dock.querySelector('[data-bin="ray"]');
+
+  // ═══════ STATE ═══════
+  // Angles are in degrees, measured counterclockwise from pointing right, as on a protractor.
+  let S = 600, L = 250, R = 220;      // mat scale, arm length, protractor radius (px)
+  const V = { x: 0, y: 0 };           // the vertex
+  let rays = [];                      // { id, deg, el }
+  const prot = { x: 0, y: 0, deg: 0, away: false };
+  let nextId = 1, recordOn = false;
+  const MAX_RAYS = 4;
+
+  const norm = d => ((d % 360) + 360) % 360;
+  const angDist = (a, b) => Math.abs(((a - b) % 360 + 540) % 360 - 180);
+  const dirTo = (p, o) => norm(Math.atan2(-(p.y - o.y), p.x - o.x) * 180 / Math.PI);
+  const pt = (deg, r, o = V) => ({ x: o.x + r * Math.cos(deg * Math.PI / 180), y: o.y - r * Math.sin(deg * Math.PI / 180) });
+  const dockTop = () => dock.getBoundingClientRect().top;
+
+  // ═══════ DRAWING ═══════
+  function knobMarkup(r) {
+    let knurl = '';
+    for (let k = 0; k < 18; k++) {
+      const a = k * Math.PI / 9;
+      knurl += `M${r2(Math.cos(a) * r * 0.62)},${r2(Math.sin(a) * r * 0.62)}L${r2(Math.cos(a) * r * 0.92)},${r2(Math.sin(a) * r * 0.92)}`;
+    }
+    return `<circle r="${r2(r)}" fill="url(#alum)" stroke="rgba(40,40,46,0.35)" stroke-width="1"/>` +
+      `<path d="${knurl}" stroke="rgba(30,30,35,0.22)" stroke-width="1"/>` +
+      `<circle r="${r2(r * 0.42)}" fill="url(#alum)" stroke="rgba(40,40,46,0.2)" stroke-width="0.8"/>`;
+  }
+
+  function beadMarkup(r) {
+    return `<circle r="${r2(r)}" fill="url(#alum)" stroke="rgba(40,40,46,0.32)" stroke-width="1"/>` +
+      `<ellipse cx="${r2(-r * 0.3)}" cy="${r2(-r * 0.36)}" rx="${r2(r * 0.36)}" ry="${r2(r * 0.2)}" fill="#fff" opacity="0.8" transform="rotate(-35 ${r2(-r * 0.3)} ${r2(-r * 0.36)})"/>`;
+  }
+
+  // A clear protractor seen from above: center hole on the baseline, double scale, a tick for every degree.
+  function protMarkup(R, opts = {}) {
+    const at = (d, r) => { const a = d * Math.PI / 180; return [r2(r * Math.cos(a)), r2(-r * Math.sin(a))]; };
+    let ticks = '';
+    for (let d = 0; d <= 180; d += opts.coarse ? 10 : 1) {
+      const len = d % 10 === 0 ? 0.1 : d % 5 === 0 ? 0.065 : 0.035;
+      const [x1, y1] = at(d, R - 1), [x2, y2] = at(d, R * (1 - len));
+      ticks += `M${x1},${y1}L${x2},${y2}`;
+    }
+    let nums = '';
+    if (!opts.coarse) {
+      const fo = r2(R * 0.058), fi = r2(R * 0.048);
+      for (let d = 0; d <= 180; d += 10) {
+        const [ox, oy] = at(d, R * 0.83), [ix, iy] = at(d, R * 0.71), rot = r2(90 - d);
+        nums += `<text class="po" x="${ox}" y="${oy}" font-size="${fo}" transform="rotate(${rot} ${ox} ${oy})">${180 - d}</text>`;
+        nums += `<text class="pi" x="${ix}" y="${iy}" font-size="${fi}" transform="rotate(${rot} ${ix} ${iy})">${d}</text>`;
+      }
+    }
+    const strip = r2(R * 0.07), ri = r2(R * 0.62), tw = r2(Math.max(0.6, R / 260));
+    return (
+      `<path class="pbody" ${opts.coarse ? '' : 'data-grab="prot"'} d="M${-R},${strip}L${-R},0A${R},${R} 0 0 1 ${R},0L${R},${strip}Z" fill="url(#glass)" stroke="rgba(70,80,92,0.45)" stroke-width="1.2"/>` +
+      `<g class="marks">` +
+      `<path d="M${-R + 2},0A${R - 2},${R - 2} 0 0 1 ${R - 2},0" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.2"/>` +
+      `<path d="${ticks}" stroke="rgba(40,44,50,0.75)" stroke-width="${tw}" fill="none"/>` +
+      `<path d="M${-ri},0A${ri},${ri} 0 0 1 ${ri},0" fill="none" stroke="rgba(40,44,50,0.22)" stroke-width="1"/>` +
+      nums +
+      `<line x1="${-R}" y1="0" x2="${R}" y2="0" stroke="rgba(40,44,50,0.7)" stroke-width="1.2"/>` +
+      `<circle r="${r2(R * 0.03)}" fill="none" stroke="rgba(40,44,50,0.8)" stroke-width="1.2"/>` +
+      `<path d="M0,${r2(-R * 0.08)}V${r2(R * 0.05)}" stroke="rgba(40,44,50,0.6)" stroke-width="1"/>` +
+      `</g>`
+    );
+  }
+
+  function setSizes() {
+    S = Math.min(innerWidth, dockTop());
+    L = 0.42 * S;
+    R = 0.36 * S;
+    const shadow = (dx, dy, s, o) =>
+      `<feDropShadow dx="${dx}" dy="${dy}" stdDeviation="${s}" flood-color="#3B2A1A" flood-opacity="${o}"/>`;
+    defs.innerHTML =
+      `<filter id="rest" x="-30%" y="-30%" width="160%" height="170%">${shadow(1, 3, 2.2, 0.3)}</filter>` +
+      `<filter id="glassShadow" x="-10%" y="-10%" width="120%" height="130%">${shadow(2, 6, 7, 0.12)}</filter>`;
+    protShape.innerHTML = protMarkup(R);
+    const kr = Math.max(11, R * 0.045);
+    rotor.innerHTML =
+      `<line x1="0" y1="${r2(-R)}" x2="0" y2="${r2(-R - R * 0.07)}" stroke="#9EA0A6" stroke-width="3" stroke-linecap="round"/>` +
+      `<g transform="translate(0 ${r2(-R - R * 0.07 - kr)})">` +
+      `<circle r="24" fill="transparent" data-grab="rotor"/><g class="fx">${knobMarkup(kr)}</g></g>`;
+  }
+
+  // The angle as a whole: the rays in order around the vertex, the angles between neighbors,
+  // and the whole angle they make together.
+  function analyse() {
+    const ds = rays.map(r => norm(r.deg)).sort((a, b) => a - b), n = ds.length;
+    let gapMax = -1, gi = 0;
+    for (let i = 0; i < n; i++) {
+      const g = i === n - 1 ? ds[0] + 360 - ds[i] : ds[i + 1] - ds[i];
+      if (g > gapMax) { gapMax = g; gi = i; }
+    }
+    const order = [];
+    for (let k = 0; k < n; k++) order.push(ds[(gi + 1 + k) % n]);
+    const parts = [];
+    for (let k = 0; k < n - 1; k++) parts.push(Math.round(norm(order[k + 1] - order[k])));
+    return { order, parts, span: Math.round(360 - gapMax) };
+  }
+
+  function arcPath(a1, a2, r) {
+    const p1 = pt(a1, r), p2 = pt(a2, r), sweep = norm(a2 - a1);
+    return `M${r2(p1.x)},${r2(p1.y)}A${r2(r)},${r2(r)} 0 ${sweep > 180 ? 1 : 0} 0 ${r2(p2.x)},${r2(p2.y)}`;
+  }
+
+  function drawAngle() {
+    const far = Math.hypot(innerWidth, innerHeight) * 1.5, w = r2(Math.max(5, S * 0.016));
+    let lines = '', rodMarks = '';
+    for (const r of rays) {
+      const k = pt(r.deg, L), f = pt(r.deg, far);
+      lines += `<line class="rayline" x1="${r2(k.x)}" y1="${r2(k.y)}" x2="${r2(f.x)}" y2="${r2(f.y)}"/>`;
+      rodMarks += `<line x1="${r2(V.x)}" y1="${r2(V.y)}" x2="${r2(k.x)}" y2="${r2(k.y)}" stroke="#A4A6AB" stroke-width="${w}" stroke-linecap="round"/>` +
+        `<line x1="${r2(V.x)}" y1="${r2(V.y)}" x2="${r2(k.x)}" y2="${r2(k.y)}" stroke="rgba(255,255,255,0.6)" stroke-width="${r2(w * 0.3)}" stroke-linecap="round" transform="translate(${r2(-w * 0.15)} ${r2(-w * 0.15)})"/>`;
+      r.el.setAttribute('transform', `translate(${r2(k.x)} ${r2(k.y)})`);
+    }
+    raylines.innerHTML = lines;
+    rods.innerHTML = rodMarks;
+
+    const a = analyse(), base = 0.13 * S;
+    let marks = '';
+    a.parts.forEach((p, k) => {
+      if (!p) return;
+      const a1 = a.order[k], a2 = a.order[k + 1], r = base + (k % 2) * 0.035 * S;
+      if (p === 90) {
+        // a right angle gets its square corner
+        const q = 0.075 * S, s1 = pt(a1, q), s2 = pt(a2, q);
+        const c = { x: s1.x + s2.x - V.x, y: s1.y + s2.y - V.y };
+        marks += `<path class="arc" d="M${r2(s1.x)},${r2(s1.y)}L${r2(c.x)},${r2(c.y)}L${r2(s2.x)},${r2(s2.y)}"/>`;
+      } else {
+        marks += `<path class="arc" d="${arcPath(a1, a2, r)}"/>`;
+      }
+    });
+    if (a.parts.length > 1 && a.span) marks += `<path class="arc whole" d="${arcPath(a.order[0], a.order[a.order.length - 1], base + 0.09 * S)}"/>`;
+    arcs.innerHTML = marks;
+
+    $('vertex').setAttribute('transform', `translate(${r2(V.x)} ${r2(V.y)})`);
+  }
+
+  function placeProt(dur = 0) {
+    protG.style.display = prot.away ? 'none' : '';
+    protG.style.transition = dur && !reduceMotion ? `transform ${dur}ms cubic-bezier(.2,.85,.25,1.04)` : 'none';
+    protG.style.transform = `translate(${r2(prot.x)}px,${r2(prot.y)}px) rotate(${r2(-prot.deg)}deg)`;
+  }
+
+  // ═══════ RAYS ═══════
+  function addRay(deg) {
+    const r = { id: nextId++, deg: norm(Math.round(deg)) };
+    r.el = el('g', { 'data-grab': 'knob', tabindex: '0', role: 'slider', 'aria-valuemin': '0', 'aria-valuemax': '359' }, handles);
+    r.el.dataset.ray = r.id;
+    el('circle', { r: '24', fill: 'transparent' }, r.el);
+    const fx = el('g', { class: 'fx' }, r.el);
+    fx.innerHTML = knobMarkup(Math.max(11, 0.034 * S));
+    r.fx = fx;
+    rays.push(r);
+    labelRay(r);
+    return r;
+  }
+
+  function labelRay(r) {
+    r.el.setAttribute('aria-label', 'Ray');
+    r.el.setAttribute('aria-valuenow', String(r.deg));
+    r.el.setAttribute('aria-valuetext', recordOn ? `${r.deg} degrees` : 'turn with arrow keys');
+  }
+
+  function removeRay(r) {
+    rays = rays.filter(o => o !== r);
+    r.el.remove();
+    changed();
+  }
+
+  // A new ray splits the biggest angle in two.
+  function splitAngle() {
+    if (rays.length >= MAX_RAYS) { shake(rayBin); return null; }
+    const a = analyse();
+    let k = 0;
+    a.parts.forEach((p, i) => { if (p > a.parts[k]) k = i; });
+    const r = addRay(a.order[k] + a.parts[k] / 2);
+    pop(r.fx);
+    buzz(6);
+    changed();
+    return r;
+  }
+
+  // ═══════ PROTRACTOR ═══════
+  // Close enough to the vertex, the center hole drops onto it; close enough to a ray, the 0 line turns onto it.
+  function seat(dur) {
+    if (prot.away || Math.hypot(prot.x - V.x, prot.y - V.y) > Math.max(18, R * 0.08)) return false;
+    prot.x = V.x; prot.y = V.y;
+    align(5);
+    placeProt(dur);
+    buzz(8);
+    return true;
+  }
+
+  function seated() { return !prot.away && Math.abs(prot.x - V.x) < 0.5 && Math.abs(prot.y - V.y) < 0.5; }
+
+  function align(tolerance) {
+    let best = null, bestD = tolerance;
+    for (const r of rays) {
+      for (const off of [0, 180]) {
+        const d = angDist(r.deg, prot.deg + off);
+        if (d < bestD) { bestD = d; best = norm(r.deg - off); }
+      }
+    }
+    if (best !== null) prot.deg = best;
+    return best !== null;
+  }
+
+  function protHome() {
+    const W = innerWidth, Hm = dockTop();
+    return W > Hm * 1.15 ? { x: W * 0.72, y: Hm * 0.74 } : { x: W * 0.5, y: Hm * 0.9 };
+  }
+
+  function clampVertex() {
+    V.x = Math.min(Math.max(V.x, 24), innerWidth - 24);
+    V.y = Math.min(Math.max(V.y, 24), dockTop() - 24);
+  }
+
+  function clampProt() {
+    prot.x = Math.min(Math.max(prot.x, R * 0.2), innerWidth - R * 0.2);
+    prot.y = Math.min(Math.max(prot.y, R * 0.2), dockTop() - 8);
+  }
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    drawAngle();
+    rays.forEach(labelRay);
+    const a = analyse(), op = s => `<span class="op">${s}</span>`;
+    record.innerHTML = a.parts.length === 1 ? `<span>${a.span}°</span>`
+      : a.parts.map(p => `<span>${p}°</span>`).join(op('+')) + op('=') + `<span>${a.span}°</span>`;
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      let s = `An angle with ${rays.length} rays` + (prot.away ? ', protractor put away' : seated() ? ', protractor on the vertex' : '') + '.';
+      if (recordOn) s += a.parts.length === 1 ? ` ${a.span} degrees.` : ` ${a.parts.join(' degrees plus ')} degrees equals ${a.span} degrees.`;
+      live.textContent = s;
+    }, 400);
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+
+  board.addEventListener('pointerdown', e => {
+    const g = e.target.closest('[data-grab]');
+    if (!g) return;
+    e.preventDefault();
+    const kind = g.dataset.grab, p = { x: e.clientX, y: e.clientY };
+    const s = { kind, sx: p.x, sy: p.y, moved: false };
+    if (kind === 'vertex') { s.ox = p.x - V.x; s.oy = p.y - V.y; s.carry = seated(); }
+    else if (kind === 'knob') { s.ray = rays.find(r => r.id === +g.dataset.ray); s.startDeg = s.ray.deg; handles.appendChild(s.ray.el); }
+    else if (kind === 'prot') { s.ox = p.x - prot.x; s.oy = p.y - prot.y; }
+    try { g.setPointerCapture(e.pointerId); } catch (err) {}
+    drags.set(e.pointerId, s);
+  });
+
+  dock.addEventListener('pointerdown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin) return;
+    e.preventDefault();
+    drags.set(e.pointerId, { kind: 'bin', bin: bin.dataset.bin, sx: e.clientX, sy: e.clientY, moved: false });
+  });
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    const p = { x: e.clientX, y: e.clientY };
+    if (!s.moved) {
+      if (Math.hypot(p.x - s.sx, p.y - s.sy) < 5) return;
+      s.moved = true;
+      if (s.kind === 'bin') {
+        if (s.bin === 'ray') {
+          if (rays.length >= MAX_RAYS) { shake(rayBin); drags.delete(e.pointerId); return; }
+          s.kind = 'knob';
+          s.ray = addRay(dirTo(p, V));
+          pop(s.ray.fx);
+        } else {
+          if (!prot.away) { shake(protBin); drags.delete(e.pointerId); return; }
+          prot.away = false;
+          prot.x = p.x; prot.y = p.y + R * 0.4;
+          s.kind = 'prot'; s.ox = 0; s.oy = -R * 0.4;
+        }
+      }
+      board.classList.add('held');
+    }
+    if (s.kind === 'vertex') {
+      V.x = p.x - s.ox; V.y = p.y - s.oy;
+      clampVertex();
+      if (s.carry) { prot.x = V.x; prot.y = V.y; placeProt(); }
+      drawAngle();
+    } else if (s.kind === 'knob') {
+      s.ray.deg = Math.round(dirTo(p, V)) % 360;
+      changed();
+    } else if (s.kind === 'prot') {
+      prot.x = p.x - s.ox; prot.y = p.y - s.oy;
+      placeProt();
+    } else if (s.kind === 'rotor') {
+      prot.deg = norm(Math.round(dirTo(p, prot) - 90));
+      if (seated()) align(2);
+      placeProt();
+    }
+  });
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    board.classList.remove('held');
+    if (s.kind === 'bin') {
+      if (s.moved) return;
+      if (s.bin === 'ray') splitAngle();
+      else if (prot.away) { prot.away = false; Object.assign(prot, protHome()); placeProt(); pop(protShape); changed(); }
+      else shake(protBin);
+      return;
+    }
+    if (!s.moved) return;
+    if (s.kind === 'knob' && overDock(e.clientX, e.clientY)) {
+      if (rays.length > 2) { removeRay(s.ray); return; }
+      // an angle needs two rays: this one swings back to where it was
+      if (s.startDeg !== undefined) s.ray.deg = s.startDeg;
+      shake(s.ray.fx);
+    }
+    if (s.kind === 'prot') {
+      if (overDock(e.clientX, e.clientY)) { prot.away = true; placeProt(); changed(); return; }
+      clampProt();
+      if (!seat(160)) placeProt(160);
+    }
+    if (s.kind === 'rotor' && seated()) { align(5); placeProt(120); }
+    if (s.kind === 'vertex' && !s.carry) seat(160);
+    changed();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  dock.addEventListener('keydown', e => {
+    const bin = e.target.closest('.bin');
+    if (!bin || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    if (bin.dataset.bin === 'ray') splitAngle();
+    else if (prot.away) { prot.away = false; Object.assign(prot, protHome()); placeProt(); changed(); }
+    else shake(protBin);
+  });
+
+  board.addEventListener('keydown', e => {
+    const g = e.target.closest('[tabindex]');
+    if (!g) return;
+    const big = e.shiftKey;
+    const arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (g.id === 'vertex' && arrow) {
+      e.preventDefault();
+      const carry = seated();
+      V.x += arrow[0] * (big ? 20 : 4); V.y += arrow[1] * (big ? 20 : 4);
+      clampVertex();
+      if (carry) { prot.x = V.x; prot.y = V.y; placeProt(); }
+      changed();
+    } else if (g.dataset.grab === 'knob') {
+      const r = rays.find(o => o.id === +g.dataset.ray);
+      const turn = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+      if (turn) { e.preventDefault(); r.deg = norm(r.deg + turn * (big ? 10 : 1)); changed(); }
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && rays.length > 2) { e.preventDefault(); removeRay(r); }
+    } else if (g.id === 'prot') {
+      if (arrow) {
+        e.preventDefault();
+        prot.x += arrow[0] * (big ? 20 : 4); prot.y += arrow[1] * (big ? 20 : 4);
+        clampProt(); placeProt(); changed();
+      } else if (e.key === '[' || e.key === ']') {
+        e.preventDefault();
+        prot.deg = norm(prot.deg + (e.key === '[' ? 1 : -1) * (big ? 10 : 1));
+        placeProt(); changed();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        // keyboard fallback: set the protractor on the vertex, lined up with the nearest ray
+        e.preventDefault();
+        prot.x = V.x; prot.y = V.y;
+        align(180);
+        placeProt(160); changed();
+      }
+    }
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    record.classList.toggle('on', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+
+  function reset() {
+    rays.forEach(r => r.el.remove());
+    rays = [];
+    const W = innerWidth, Hm = dockTop();
+    // the angle and the protractor start apart; setting one on the other is the student's move
+    Object.assign(V, W > Hm * 1.15 ? { x: W * 0.17, y: Hm * 0.58 } : { x: W * 0.2, y: Hm * 0.42 });
+    addRay(0);
+    addRay(40);
+    Object.assign(prot, protHome(), { deg: 0, away: false });
+    placeProt();
+    changed();
+  }
+  resetBtn.addEventListener('click', reset);
+
+  let last = { w: innerWidth, h: 0 };
+  addEventListener('resize', () => {
+    requestAnimationFrame(() => {
+      const fx = innerWidth / last.w, fy = dockTop() / last.h, carry = seated();
+      V.x *= fx; V.y *= fy;
+      prot.x *= fx; prot.y *= fy;
+      setSizes();
+      clampVertex();
+      if (carry) { prot.x = V.x; prot.y = V.y; } else clampProt();
+      rays.forEach(r => { r.fx.innerHTML = knobMarkup(Math.max(11, 0.034 * S)); });
+      $('vertex').querySelector('.fx').innerHTML = beadMarkup(Math.max(10, 0.026 * S));
+      last = { w: innerWidth, h: dockTop() };
+      placeProt();
+      changed();
+    });
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  // ═══════ START ═══════
+  protBin.innerHTML = `<svg viewBox="-40 -42 80 50" aria-hidden="true" focusable="false">${protMarkup(36, { coarse: true })}</svg>`;
+  rayBin.innerHTML = `<svg viewBox="-6 -30 70 38" aria-hidden="true" focusable="false">` +
+    `<line x1="0" y1="0" x2="50" y2="-18" stroke="#A4A6AB" stroke-width="5" stroke-linecap="round"/>` +
+    `<g transform="translate(50 -18)">${knobMarkup(8)}</g><g>${beadMarkup(6)}</g></svg>`;
+
+  setSizes();
+  const vg = el('g', { id: 'vertex', 'data-grab': 'vertex', tabindex: '0', role: 'button', 'aria-label': 'Vertex' }, handles);
+  el('circle', { r: '24', fill: 'transparent' }, vg);
+  el('g', { class: 'fx' }, vg).innerHTML = beadMarkup(Math.max(10, 0.026 * S));
+  last = { w: innerWidth, h: dockTop() };
+  reset();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
