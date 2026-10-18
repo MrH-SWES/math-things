@@ -129,14 +129,14 @@
     const live = document.getElementById('announcer');
     const LEFT = 38, HEIGHT = 390, CONTEXT_Y = 93, RAIL_Y = 300;
     const state = {
-      mode:'fraction', fractionDen:4, decimalDen:100,
+      mode:'fraction', fractionDen:4, decimalDen:10,
       denominator:4, numerator:1, showLabels:true
     };
     const clamp = (n,lo,hi) => Math.min(hi,Math.max(lo,n));
     const position = () => state.numerator / state.denominator;
     const units = () => state.mode === 'fraction' ? state.fractionDen : state.decimalDen;
-    const fractionChoices = [2,3,4,5,6,8,10,12];
-    const decimalChoices = [10,100,1000];
+    const fractionChoices = [2,3,4,5,6,8,10,12,100];
+    const decimalChoices = [10,100];
     function updateChoice() {
       const opts = state.mode === 'fraction' ? fractionChoices : decimalChoices;
       parts.replaceChildren();
@@ -144,7 +144,7 @@
         const opt = document.createElement('option');
         opt.value = d;
         opt.textContent = state.mode === 'fraction' ? d :
-          d === 10 ? '0.1' : d === 100 ? '0.01' : '0.001';
+          d === 10 ? '0.1' : '0.01';
         parts.appendChild(opt);
       }
       parts.value = String(units());
@@ -240,8 +240,8 @@
         '" y="227" width="' + (span*position()) +
         '" height="65" fill="url(#active)"/>');
 
-      // At thousandths, 1000 vertical paths would alias on mobile. Draw
-      // hundredth seams and strong tenth seams; the bead still snaps to .001.
+      // In hundredths, keep subtle unit seams and stronger tenth seams.
+      // The same point stays anchored when switching fractional or decimal scales.
       const visualParts = Math.min(count,100);
       for(let i=1;i<visualParts;i++) {
         const x=LEFT+span*i/visualParts;
