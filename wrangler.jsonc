@@ -15,5 +15,6 @@
       "/apps/teaching-table",
       "/apps/teaching-table/*"
     ]
-  }
+  },
+  "keep_vars": true
 }
