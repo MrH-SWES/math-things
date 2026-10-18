@@ -135,7 +135,7 @@
     const clamp = (n,lo,hi) => Math.min(hi,Math.max(lo,n));
     const position = () => state.numerator / state.denominator;
     const units = () => state.mode === 'fraction' ? state.fractionDen : state.decimalDen;
-    const fractionChoices = [2,3,4,5,6,8,10,12,100];
+    const fractionChoices = [2,3,4,5,6,8,10,12,16,100];
     const decimalChoices = [10,100];
     function updateChoice() {
       const opts = state.mode === 'fraction' ? fractionChoices : decimalChoices;
