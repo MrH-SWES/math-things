@@ -55,10 +55,20 @@ async function cover(name,token){
  for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
  return new Response(out,{headers:{'Content-Type':'image/webp','Cache-Control':'private, max-age=86400','X-Content-Type-Options':'nosniff'}});
 }
-async function book(name,size,token){
+// Stream up to 8 MiB per authenticated range; no private URL ever reaches the browser.
+async function book(name,size,token,request){
+ const rangeHeader=request.headers.get('Range');
+ let start=0,end=size-1,ranged=false;
+ if(rangeHeader){
+  const match=/^bytes=(\d+)-(\d+)$/.exec(rangeHeader);
+  if(!match)return closed(416,'Invalid textbook range');
+  start=Number(match[1]);end=Number(match[2]);ranged=true;
+  if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||
+   end>=size||end-start+1>8*1024*1024)return closed(416,'Invalid textbook range');
+ }
  const p=await fetch('https://api.github.com/repos/'+repo+'/contents/books/'+name+'?ref=main',
   {headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','User-Agent':'school-teaching-table'}});
- if(!p.ok)return closed(502,'Textbook repository unavailable');
+ if(!p.ok)return closed(502,'Textbook repository unavailable ('+p.status+')');
  const data=await p.json();if(data.encoding!=='base64'||!data.content)return closed(502,'Missing LFS pointer');
  const pointer=atob(data.content.replace(/\s/g,'')),oid=/^oid sha256:([0-9a-f]{64})$/m.exec(pointer)?.[1],
  pointerSize=Number(/^size (\d+)$/m.exec(pointer)?.[1]);
@@ -68,13 +78,30 @@ async function book(name,size,token){
   headers:{Authorization:'Basic '+btoa('x-access-token:'+token),'Content-Type':'application/vnd.git-lfs+json',
    Accept:'application/vnd.git-lfs+json','User-Agent':'school-teaching-table'},
   body:JSON.stringify({operation:'download',transfers:['basic'],ref:{name:'refs/heads/main'},objects:[{oid,size}]})});
- if(!batch.ok)return closed(502,'LFS authorization failed');
+ if(!batch.ok)return closed(502,'LFS authorization failed ('+batch.status+')');
  const payload=await batch.json(),object=payload.objects?.find(x=>x.oid===oid&&x.size===size),
  action=object?.actions?.download;
  if(object?.error||!action?.href||new URL(action.href).protocol!=='https:')return closed(502,'LFS file unavailable');
- const media=await fetch(action.href,{headers:action.header||{}});
- if(!media.ok||!media.body)return closed(502,'EPUB download failed');
- return new Response(media.body,{headers:{'Content-Type':'application/epub+zip','Content-Disposition':'inline; filename="'+name+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
+ const headers={...(action.header||{})};
+ if(ranged)headers.Range='bytes='+start+'-'+end;
+ const media=await fetch(action.href,{headers});
+ if(!media.body||!media.ok)return closed(502,'EPUB download failed ('+media.status+')');
+ if(ranged){
+  const contentRange=media.headers.get('Content-Range');
+  if(media.status!==206||contentRange!=='bytes '+start+'-'+end+'/'+size){
+   await media.body.cancel();
+   return closed(502,'LFS range response mismatch');
+  }
+ }
+ const responseHeaders={
+  'Content-Type':'application/epub+zip',
+  'Content-Disposition':'inline; filename="'+name+'"',
+  'Cache-Control':'private, no-store',
+  'Accept-Ranges':'bytes','X-Content-Type-Options':'nosniff',
+  'Content-Length':String(ranged?end-start+1:size)
+ };
+ if(ranged)responseHeaders['Content-Range']='bytes '+start+'-'+end+'/'+size;
+ return new Response(media.body,{status:ranged?206:200,headers:responseHeaders});
 }
 // Minimal, authorized diagnostic: probes the selected LFS object without downloading it.
 // Never returns the GitHub token, LFS signed download URL, or private metadata.
@@ -158,7 +185,7 @@ export default {async fetch(request,env){
   const name=path.slice((base+'/books/').length),size=sizes.get(name);
   if(!size)return closed(404,'Unknown textbook');
   if(!env.GITHUB_BOOKS_READ_TOKEN)return closed(503,'Textbook library not configured');
-  try{return await book(name,size,env.GITHUB_BOOKS_READ_TOKEN);}catch{return closed(502,'Book temporarily unavailable');}
+  try{return await book(name,size,env.GITHUB_BOOKS_READ_TOKEN,request);}catch{return closed(502,'Book temporarily unavailable');}
  }
  const r=await env.ASSETS.fetch(request),safe=new Response(r.body,r);
  safe.headers.set('Cache-Control','private, no-store');return safe;
