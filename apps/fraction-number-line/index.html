@@ -514,6 +514,14 @@ const unitGeometry=new RoundedBoxGeometry(1-2*GAP,1-2*GAP,1-2*GAP,3,.1);
 unitGeometry.translate(.5,.5,.5);
 const fullCube=new THREE.Mesh(unitGeometry,ones);
 fullCube.castShadow=fullCube.receiveShadow=true;scene.add(fullCube);
+// The faintest ghost of the whole cube, so a part-filled cube is always seen against its one.
+// Only its inside faces are drawn, so it never lays a film over the pieces; hairline edges trace it.
+const ghost=new THREE.Mesh(unitGeometry,new THREE.MeshStandardMaterial({
+  color:0x8E8E93,roughness:.3,transparent:true,opacity:.05,depthWrite:false,side:THREE.BackSide}));
+const ghostBox=new THREE.BoxGeometry(1-2*GAP,1-2*GAP,1-2*GAP);ghostBox.translate(.5,.5,.5);
+ghost.add(new THREE.LineSegments(new THREE.EdgesGeometry(ghostBox),
+  new THREE.LineBasicMaterial({color:0x1D1D1F,transparent:true,opacity:.06,depthWrite:false})));
+ghost.renderOrder=1;scene.add(ghost);
 const pieces=new THREE.Group();scene.add(pieces);
 const geos=new Map();
 function pieceGeometry(width){
@@ -573,6 +581,7 @@ function renderBlocks(){
   const p=position(),d=scale();
   bead.position.set(p,-LANE,beadR+.06);
   fullCube.visible=p>=1-1e-10;
+  ghost.visible=!fullCube.visible;
   if(p<=1e-10||fullCube.visible)return;
   if(state.mode==='fraction'){
     const n=Math.floor(p*d+1e-8);
