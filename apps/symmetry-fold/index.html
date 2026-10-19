@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Symmetry Fold</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── SHEET ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .sheet-hit { pointer-events: all; }
+    body.pencil #board .sheet-hit { cursor: crosshair; }
+    #board .shape-hit { pointer-events: none; }
+    body.hand #board .shape-hit { pointer-events: all; cursor: grab; }
+    #board .bead, #board .tab { pointer-events: all; cursor: grab; outline: none; }
+    #board .bead:focus-visible circle.face, #board .tab:focus-visible rect.face { stroke: #007AFF; stroke-width: 3; }
+    #board .shape-hit:focus-visible { stroke: #007AFF; stroke-width: 3; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #tools, #shapes { display: grid; gap: clamp(6px, 1.2vw, 10px); }
+    #tools { grid-template-columns: repeat(2, auto); padding-right: clamp(4px, 1vw, 10px); border-right: 1px solid rgba(0,0,0,0.07); }
+    #shapes { grid-template-columns: repeat(6, auto); }
+    @media (max-width: 700px) {
+      #tools { grid-template-columns: 1fr; }
+      #shapes { grid-template-columns: repeat(3, auto); }
+    }
+    .bin {
+      width: clamp(50px, 7.4vw, 72px);
+      height: clamp(46px, 6.6vw, 62px);
+      border: 2px solid transparent; border-radius: 14px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s;
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 70%; height: 70%; overflow: visible; pointer-events: none; }
+    /* tools stand up out of the cabinet; the chosen one sits pressed in */
+    .tool { background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%); box-shadow: var(--shadow-raised); }
+    .tool[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body class="pencil">
+<main id="surface" aria-label="Tracing paper with a fold"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <div id="tools"></div>
+    <div id="shapes"></div>
+    <div class="hardware">
+      <button class="icon-btn" id="gridBtn" aria-label="Show the grid" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="New sheet: erase the drawing and take the shapes off">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.24" stop-color="#F1F1F3"/><stop offset="0.55" stop-color="#C8C9CD"/><stop offset="0.82" stop-color="#A7A8AD"/><stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <linearGradient id="tabMetal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6F6F8"/><stop offset="0.5" stop-color="#D5D7DB"/><stop offset="1" stop-color="#BABDC2"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="stay"></g>
+  <g id="fold"></g>
+  <g id="crease"></g>
+  <g id="hardware"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion || !node ? null : node.animate(frames, { duration: dur, easing });
+  const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
+
+  // Shapes drawn on the sheet in ink, in sheet units (the sheet is 1 across), centred on their corners' average.
+  const H3 = Math.sqrt(3) / 2;
+  const SHAPES = [
+    { name: 'square', pts: [[-.2, -.2], [.2, -.2], [.2, .2], [-.2, .2]] },
+    { name: 'rectangle', pts: [[-.27, -.15], [.27, -.15], [.27, .15], [-.27, .15]] },
+    { name: 'equilateral triangle', pts: [[-.23, .46 * H3 / 3], [.23, .46 * H3 / 3], [0, -.46 * H3 * 2 / 3]] },
+    { name: 'right triangle', pts: [[0, 0], [.44, 0], [0, -.28]] },
+    { name: 'parallelogram', pts: [[-.27, .13], [.13, .13], [.27, -.13], [-.13, -.13]] },
+    { name: 'kite', pts: [[0, -.28], [.17, -.08], [0, .26], [-.17, -.08]] },
+  ].map(s => {
+    const n = s.pts.length, cx = s.pts.reduce((a, p) => a + p[0], 0) / n, cy = s.pts.reduce((a, p) => a + p[1], 0) / n;
+    return { name: s.name, local: s.pts.map(p => ({ x: p[0] - cx, y: p[1] - cy })) };
+  });
+
+  const INK = '#2B4C8C', LEAD = '#3A3D42';
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), stayG = $('stay'), foldG = $('fold'), creaseG = $('crease'), hwG = $('hardware');
+  const dock = $('dock'), toolsEl = $('tools'), shapesEl = $('shapes'), live = $('live');
+  const gridBtn = $('gridBtn'), clearBtn = $('clearBtn');
+
+  // Everything on the sheet is kept in sheet units, measured from its middle.
+  let L = 400, CX = 0, CY = 0;
+  let angle = 90;                 // the crease, in degrees: 90 is straight up and down
+  let side = 1;                   // which half folds: +1 or -1 along the crease's normal
+  let s = 1;                      // the folding half: 1 flat, 0 standing up, -1 folded over
+  let tool = 'pencil', gridOn = false;
+  const strokes = [];             // [{ pts: [{x, y}] }]
+  const shapes = [];              // [{ id, type, x, y }]
+  let nextShape = 1;
+
+  const toSheet = (px, py) => ({ x: (px - CX) / L, y: (py - CY) / L });
+  const toPx = p => ({ x: CX + p.x * L, y: CY + p.y * L });
+  const dir = () => { const a = angle * Math.PI / 180; return { x: Math.cos(a), y: -Math.sin(a) }; };   // along the crease, on screen
+  const nrm = () => { const d = dir(); return { x: -d.y, y: d.x }; };                                     // across it
+  const across = p => { const n = nrm(); return p.x * n.x + p.y * n.y; };                                  // signed distance from the crease
+  const mirror = p => { const n = nrm(), k = 2 * across(p); return { x: p.x - k * n.x, y: p.y - k * n.y }; };
+  const folded = () => s < 0;
+
+  // ═══════ LAYOUT ═══════
+  function layout() {
+    const W = innerWidth, top = dock.getBoundingClientRect().top;
+    L = Math.max(200, Math.min(560, W - 110, top - 120));
+    CX = W / 2; CY = top / 2 + 6;
+    defs.innerHTML =
+      `<filter id="sheetShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${innerHeight}"><feDropShadow dx="1" dy="5" stdDeviation="7" flood-color="#3B2A1A" flood-opacity="0.14"/></filter>` +
+      `<filter id="liftShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${innerHeight}"><feDropShadow dx="2" dy="7" stdDeviation="9" flood-color="#3B2A1A" flood-opacity="0.2"/></filter>` +
+      `<clipPath id="clipStay" clipPathUnits="userSpaceOnUse"><path id="clipStayPath"/></clipPath>` +
+      `<clipPath id="clipFold" clipPathUnits="userSpaceOnUse"><path id="clipFoldPath"/></clipPath>`;
+    render();
+  }
+
+  // The sheet cut along the crease: the part on one side, as a polygon in px.
+  function half(sign) {
+    const c = [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]].map(p => ({ x: p[0], y: p[1] }));
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      const a = c[i], b = c[(i + 1) % 4], da = sign * across(a), db = sign * across(b);
+      if (da >= 0) out.push(a);
+      if ((da >= 0) !== (db >= 0)) { const t = da / (da - db); out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }); }
+    }
+    return out.map(toPx);
+  }
+  const poly = vs => vs.length ? 'M' + vs.map(v => `${r2(v.x)},${r2(v.y)}`).join('L') + 'Z' : '';
+
+  // ═══════ DRAWING THE SHEET ═══════
+  // Each half is the same sheet, clipped to its side of the crease. The folding half swings over the
+  // crease by squashing its distance from the crease from 1 down through 0 to -1; past 0 we see its back,
+  // so its marks show through the paper.
+  function sheetLayer(g, clipId, back) {
+    const corner = toPx({ x: -.5, y: -.5 });
+    const paper = `<rect x="${r2(corner.x)}" y="${r2(corner.y)}" width="${r2(L)}" height="${r2(L)}" fill="#FBFAF6" fill-opacity="${back ? 0.62 : 0.94}"/>`;
+    const fibres = `<rect x="${r2(corner.x)}" y="${r2(corner.y)}" width="${r2(L)}" height="${r2(L)}" fill="url(#paperTex)" opacity="${back ? 0.25 : 0.5}"/>`;
+    const marks = gridMarks() + shapeMarks() + strokeMarks();
+    g.innerHTML = `<g clip-path="url(#${clipId})">` + (back ? marks + paper + fibres : paper + fibres + marks) + `</g>`;
+  }
+  function gridMarks() {
+    let d = '';
+    const step = L / 20, c = toPx({ x: -.5, y: -.5 });
+    for (let i = 1; i < 20; i++) for (let j = 1; j < 20; j++) d += `M${r2(c.x + i * step)},${r2(c.y + j * step)}h0.01`;
+    return `<path d="${d}" stroke="rgba(60,70,90,0.35)" stroke-width="${r2(Math.max(2, L * 0.006))}" stroke-linecap="round" opacity="${gridOn ? 1 : 0}"/>`;
+  }
+  function shapeVerts(sh) { return SHAPES[sh.type].local.map(v => toPx({ x: sh.x + v.x, y: sh.y + v.y })); }
+  function shapeMarks() {
+    return shapes.map(sh => `<path d="${poly(shapeVerts(sh))}" fill="${INK}" fill-opacity="0.06" stroke="${INK}" stroke-opacity="0.85" stroke-width="${r2(Math.max(2, L * 0.006))}" stroke-linejoin="round"/>`).join('');
+  }
+  function strokeMarks() {
+    const w = r2(Math.max(2.2, L * 0.0065));
+    return strokes.map(st => st.pts.length === 1
+      ? `<circle cx="${r2(toPx(st.pts[0]).x)}" cy="${r2(toPx(st.pts[0]).y)}" r="${r2(w / 2)}" fill="${LEAD}" fill-opacity="0.85"/>`
+      : `<path d="M${st.pts.map(toPx).map(p => `${r2(p.x)},${r2(p.y)}`).join('L')}" fill="none" stroke="${LEAD}" stroke-opacity="0.85" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  }
+  const foldTransform = () => `translate(${r2(CX)} ${r2(CY)}) rotate(${-angle}) scale(1 ${r2(s)}) rotate(${angle}) translate(${r2(-CX)} ${r2(-CY)})`;
+
+  function render() {
+    if (!$('paperTex')) {
+      const p = el('pattern', { id: 'paperTex', width: 7, height: 7, patternUnits: 'userSpaceOnUse' }, defs);
+      p.innerHTML = '<path d="M0,2H7M0,5.5H7" stroke="rgba(150,140,120,0.08)" stroke-width="0.7"/>';
+    }
+    $('clipStayPath').setAttribute('d', poly(half(-side)));
+    $('clipFoldPath').setAttribute('d', poly(half(side)));
+    stayG.setAttribute('filter', 'url(#sheetShadow)');
+    sheetLayer(stayG, 'clipStay', false);
+    // the folding half: lifted, shaded as it turns, seen from the back once past upright
+    foldG.setAttribute('transform', foldTransform());
+    foldG.setAttribute('filter', s < 1 ? 'url(#liftShadow)' : 'url(#sheetShadow)');
+    sheetLayer(foldG, 'clipFold', folded());
+    const shade = 1 - Math.abs(s);
+    if (shade > 0.02) el('path', { d: poly(half(side)), fill: '#2A2018', 'fill-opacity': r2(shade * 0.18), 'pointer-events': 'none' }, foldG);
+    el('path', { class: 'sheet-hit', d: poly(half(side)), fill: 'transparent' }, foldG);
+    stayG.appendChild(el('path', { class: 'sheet-hit', d: poly(half(-side)), fill: 'transparent' }));
+    // shapes can be picked up with the hand, on the flat sheet
+    if (s === 1) shapes.forEach(sh => {
+      const h = el('path', { class: 'shape-hit', d: poly(shapeVerts(sh)), fill: 'transparent', stroke: 'transparent', 'stroke-width': 14, tabindex: tool === 'hand' ? 0 : -1, role: 'img', 'aria-label': SHAPES[sh.type].name[0].toUpperCase() + SHAPES[sh.type].name.slice(1) }, foldG);
+      h.dataset.id = sh.id;
+    });
+    drawCrease();
+    drawHardware();
+  }
+
+  // the crease: a fine pressed line with a lit edge
+  function drawCrease() {
+    // the crease runs through the middle of the sheet to its edges
+    const d = dir(), t = 0.5 / Math.max(Math.abs(d.x), Math.abs(d.y));
+    const p1 = toPx({ x: d.x * t, y: d.y * t }), p2 = toPx({ x: -d.x * t, y: -d.y * t });
+    creaseG.innerHTML =
+      `<line x1="${r2(p1.x)}" y1="${r2(p1.y)}" x2="${r2(p2.x)}" y2="${r2(p2.y)}" stroke="rgba(255,255,255,0.95)" stroke-width="2.4" transform="translate(0.8 0.8)"/>` +
+      `<line x1="${r2(p1.x)}" y1="${r2(p1.y)}" x2="${r2(p2.x)}" y2="${r2(p2.y)}" stroke="rgba(70,62,52,0.38)" stroke-width="1.2"/>`;
+  }
+
+  // Hardware: a bead at each end of the crease turns it; a metal tab on each half folds that half.
+  function drawHardware() {
+    const d = dir(), n = nrm(), R = Math.max(12, L * 0.03), reach = 0.5 / Math.max(Math.abs(d.x), Math.abs(d.y));
+    let h = '';
+    if (s === 1) for (const k of [1, -1]) {
+      const p = toPx({ x: d.x * k * reach, y: d.y * k * reach }), q = { x: p.x + d.x * k * (R + 8), y: p.y + d.y * k * (R + 8) };
+      h += `<g class="bead" data-end="${k}" tabindex="0" role="slider" aria-label="Crease turning bead" aria-valuemin="0" aria-valuemax="165" aria-valuenow="${angle % 180}" aria-valuetext="Crease at ${angle % 180} degrees">` +
+        `<circle cx="${r2(q.x + 0.8)}" cy="${r2(q.y + 1.8)}" r="${r2(R)}" fill="rgba(40,30,20,0.22)"/>` +
+        `<circle class="face" cx="${r2(q.x)}" cy="${r2(q.y)}" r="${r2(R)}" fill="url(#alum)" stroke="rgba(40,40,46,0.4)" stroke-width="0.8"/>` +
+        `<circle cx="${r2(q.x)}" cy="${r2(q.y)}" r="${r2(R + 10)}" fill="transparent"/></g>`;
+    }
+    hwG.innerHTML = h;
+    // the tabs ride on their halves; the folding half's tab turns over with it
+    for (const k of [1, -1]) {
+      if (s !== 1 && k !== side) continue;
+      const reachN = 0.5 / Math.max(Math.abs(n.x), Math.abs(n.y));
+      const c = toPx({ x: n.x * k * reachN, y: n.y * k * reachN }), w = Math.max(44, L * 0.11), t = Math.max(16, L * 0.04);
+      const rot = Math.atan2(n.y * k, n.x * k) * 180 / Math.PI + 90;
+      const g = el('g', { class: 'tab', 'data-side': k, tabindex: 0, role: 'button', 'aria-pressed': String(k === side && folded()), 'aria-label': k === side && folded() ? 'Fold tab: unfold the sheet' : 'Fold tab: fold this half over the crease' }, k === side ? foldG : hwG);
+      g.innerHTML =
+        `<g transform="translate(${r2(c.x)} ${r2(c.y)}) rotate(${r2(rot)})">` +
+        `<rect x="${r2(-w / 2)}" y="${r2(-t * 0.15)}" width="${r2(w)}" height="${r2(t)}" rx="${r2(t * 0.4)}" fill="rgba(40,30,20,0.2)" transform="translate(1 2)"/>` +
+        `<rect class="face" x="${r2(-w / 2)}" y="${r2(-t * 0.15)}" width="${r2(w)}" height="${r2(t)}" rx="${r2(t * 0.4)}" fill="url(#tabMetal)" stroke="rgba(50,52,58,0.35)"/>` +
+        `<path d="M${r2(-w * 0.18)},${r2(t * 0.42)}h${r2(w * 0.36)}" stroke="rgba(60,62,68,0.35)" stroke-width="2" stroke-linecap="round"/>` +
+        `<rect x="${r2(-w / 2 - 8)}" y="${r2(-t * 0.6)}" width="${r2(w + 16)}" height="${r2(t * 1.9)}" fill="transparent"/></g>`;
+    }
+  }
+
+  // ═══════ FOLDING ═══════
+  let foldAnim = 0;
+  function foldTo(target, k = side) {
+    if (s === 1) side = k;
+    cancelAnimationFrame(foldAnim);
+    const from = s, t0 = performance.now(), dur = reduceMotion ? 0 : 520;
+    const step = now => {
+      const t = dur ? Math.min(1, (now - t0) / dur) : 1, e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      s = from + (target - from) * e;
+      if (t >= 1) s = target;
+      render();
+      if (t < 1) foldAnim = requestAnimationFrame(step);
+      else { buzz(target < 0 ? 12 : 6); announce(); }
+    };
+    foldAnim = requestAnimationFrame(step);
+  }
+  function announce() {
+    live.textContent = folded() ? `Folded along the crease at ${angle % 180} degrees.` : `Unfolded. Crease at ${angle % 180} degrees.`;
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  board.addEventListener('pointerdown', e => {
+    const t = e.target;
+    const bead = t.closest('.bead'), tab = t.closest('.tab'), shapeHit = t.closest('.shape-hit');
+    if (bead) {
+      e.preventDefault();
+      drags.set(e.pointerId, { kind: 'turn', end: +bead.dataset.end });
+    } else if (tab) {
+      e.preventDefault();
+      const k = +tab.dataset.side;
+      if (s === 1) side = k;
+      drags.set(e.pointerId, { kind: 'fold', sx: e.clientX, sy: e.clientY, s0: s, moved: false });
+    } else if (shapeHit && tool === 'hand' && s === 1) {
+      e.preventDefault();
+      const sh = shapes.find(o => o.id === +shapeHit.dataset.id), p = toSheet(e.clientX, e.clientY);
+      drags.set(e.pointerId, { kind: 'shape', sh, ox: sh.x - p.x, oy: sh.y - p.y });
+    } else if (t.classList.contains('sheet-hit') && tool === 'pencil') {
+      e.preventDefault();
+      // While folded, a mark made on the folded-over half is made on its back: it belongs to that half.
+      let p = toSheet(e.clientX, e.clientY);
+      const onTop = folded() && side * across(p) < 0 && inSheet(mirror(p));
+      if (onTop) p = mirror(p);
+      if (!inSheet(p)) return;
+      const st = { pts: [p] };
+      strokes.push(st);
+      drags.set(e.pointerId, { kind: 'draw', st, onTop });
+      render();
+    } else return;
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  const inSheet = p => Math.abs(p.x) <= 0.5 && Math.abs(p.y) <= 0.5;
+
+  addEventListener('pointermove', e => {
+    const g = drags.get(e.pointerId);
+    if (!g) return;
+    if (g.kind === 'draw') {
+      let p = toSheet(e.clientX, e.clientY);
+      if (g.onTop) p = mirror(p);
+      p = { x: Math.max(-.5, Math.min(.5, p.x)), y: Math.max(-.5, Math.min(.5, p.y)) };
+      const last = g.st.pts[g.st.pts.length - 1];
+      if (Math.hypot(p.x - last.x, p.y - last.y) * L < 2) return;
+      g.st.pts.push(p);
+      render();
+    } else if (g.kind === 'turn') {
+      // turn the crease in 15° steps; a line has no direction, so 0–165°
+      const v = toSheet(e.clientX, e.clientY);
+      let deg = Math.atan2(-v.y * g.end, v.x * g.end) * 180 / Math.PI;
+      deg = ((Math.round(deg / 15) * 15) % 180 + 180) % 180;
+      if (deg !== angle % 180) { angle = deg; buzz(3); render(); }
+    } else if (g.kind === 'fold') {
+      // the tab follows the finger: its distance across the crease sets how far the half has turned
+      if (!g.moved && Math.hypot(e.clientX - g.sx, e.clientY - g.sy) < 6) return;
+      g.moved = true;
+      cancelAnimationFrame(foldAnim);
+      const n = nrm(), reachN = 0.5 / Math.max(Math.abs(n.x), Math.abs(n.y));
+      s = Math.max(-1, Math.min(1, side * across(toSheet(e.clientX, e.clientY)) / reachN));
+      render();
+    } else if (g.kind === 'shape') {
+      const p = toSheet(e.clientX, e.clientY);
+      g.sh.x = Math.max(-.45, Math.min(.45, p.x + g.ox));
+      g.sh.y = Math.max(-.45, Math.min(.45, p.y + g.oy));
+      render();
+    }
+  });
+
+  function endDrag(e) {
+    const g = drags.get(e.pointerId);
+    if (!g) return;
+    drags.delete(e.pointerId);
+    if (g.kind === 'fold') {
+      if (!g.moved) foldTo(g.s0 > 0 ? -1 : 1);
+      else foldTo(s < 0 ? -1 : 1);
+    } else if (g.kind === 'turn') {
+      announce();
+    } else if (g.kind === 'shape') {
+      // a shape let go near the crease's middle settles on it
+      if (Math.hypot(g.sh.x, g.sh.y) < 0.05) { g.sh.x = 0; g.sh.y = 0; buzz(8); }
+      render();
+    } else if (g.kind === 'draw') {
+      buzz(2);
+    }
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  board.addEventListener('keydown', e => {
+    const bead = e.target.closest('.bead'), tab = e.target.closest('.tab'), shapeHit = e.target.closest('.shape-hit');
+    if (bead) {
+      const turn = { ArrowLeft: 15, ArrowUp: 15, ArrowRight: -15, ArrowDown: -15 }[e.key];
+      if (!turn) return;
+      e.preventDefault();
+      angle = ((angle + turn) % 180 + 180) % 180;
+      render();
+      document.querySelector(`.bead[data-end="${bead.dataset.end}"]`).focus();
+      announce();
+    } else if (tab && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      if (s === 1) side = +tab.dataset.side;
+      foldTo(s > 0 ? -1 : 1);
+    } else if (shapeHit) {
+      const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      const sh = shapes.find(o => o.id === +shapeHit.dataset.id);
+      if (mv) {
+        e.preventDefault();
+        const step = e.shiftKey ? 0.1 : 0.02;
+        sh.x = Math.max(-.45, Math.min(.45, sh.x + mv[0] * step));
+        sh.y = Math.max(-.45, Math.min(.45, sh.y + mv[1] * step));
+        if (Math.hypot(sh.x, sh.y) < 0.015) { sh.x = 0; sh.y = 0; }
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        shapes.splice(shapes.indexOf(sh), 1);
+      } else return;
+      render();
+      const again = document.querySelector(`.shape-hit[data-id="${sh.id}"]`);
+      if (again) again.focus();
+    }
+  });
+  // Ctrl+Z takes back the last pencil stroke
+  addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && strokes.length) { e.preventDefault(); strokes.pop(); render(); }
+  });
+
+  // ═══════ CABINET ═══════
+  const toolBtns = [];
+  [['pencil', 'Pencil', `<path d="M-14,14 L-10,2 L8,-16 L16,-8 L-2,10 Z" fill="#E8B04A" stroke="#7A5A22" stroke-width="1.4" stroke-linejoin="round"/><path d="M-14,14 L-10,2 L-2,10 Z" fill="#F3E0BE" stroke="#7A5A22" stroke-width="1.2" stroke-linejoin="round"/><path d="M-14,14 L-12.4,9.2 L-9.2,12.4 Z" fill="${LEAD}"/><path d="M8,-16 L16,-8 L13,-5 L5,-13 Z" fill="#D9A3A3"/>`],
+   ['hand', 'Hand: move shapes', `<path d="M-8,14 C-14,8 -16,0 -12,-2 C-10,-3 -8,-1 -6,2 L-6,-12 C-6,-16 -1,-16 -1,-12 L-1,-3 L-1,-15 C-1,-19 4,-19 4,-15 L4,-3 L4,-13 C4,-17 9,-17 9,-13 L9,-2 L9,-9 C9,-13 14,-13 14,-9 L14,4 C14,11 9,15 3,15 Z" fill="#F4F4F6" stroke="#6E7076" stroke-width="1.5" stroke-linejoin="round"/>`]]
+    .forEach(([k, label, icon]) => {
+      const b = document.createElement('button');
+      b.className = 'bin tool';
+      b.setAttribute('aria-label', label);
+      b.setAttribute('aria-pressed', String(k === tool));
+      b.innerHTML = `<svg viewBox="-20 -20 40 40" aria-hidden="true" focusable="false">${icon}</svg>`;
+      b.addEventListener('click', () => {
+        tool = k;
+        document.body.classList.toggle('pencil', k === 'pencil');
+        document.body.classList.toggle('hand', k === 'hand');
+        toolBtns.forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+        render();
+        buzz(4);
+      });
+      toolsEl.appendChild(b);
+      toolBtns.push(b);
+    });
+
+  SHAPES.forEach((sh, k) => {
+    const b = document.createElement('button');
+    b.className = 'bin';
+    b.setAttribute('aria-label', `${sh.name[0].toUpperCase() + sh.name.slice(1)} bin`);
+    const m = 46;
+    b.innerHTML = `<svg viewBox="-16 -16 32 32" aria-hidden="true" focusable="false"><path d="${poly(sh.local.map(v => ({ x: v.x * m, y: v.y * m })))}" fill="${INK}" fill-opacity="0.08" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+    b.addEventListener('click', () => {
+      if (s !== 1) { shake(b); return; }
+      // a new shape is drawn across the middle of the crease
+      const ns = { id: nextShape++, type: k, x: 0, y: 0 };
+      shapes.push(ns);
+      render();
+      anim(foldG, [{ opacity: 0.7 }, { opacity: 1 }], 200);
+      buzz(6);
+      live.textContent = `${sh.name[0].toUpperCase() + sh.name.slice(1)} on the sheet, across the crease.`;
+    });
+    shapesEl.appendChild(b);
+  });
+
+  gridBtn.addEventListener('click', () => {
+    gridOn = !gridOn;
+    gridBtn.classList.toggle('active', gridOn);
+    gridBtn.setAttribute('aria-pressed', String(gridOn));
+    render();
+  });
+  clearBtn.addEventListener('click', () => {
+    strokes.length = 0; shapes.length = 0;
+    if (s !== 1) foldTo(1); else render();
+    anim(stayG, [{ opacity: 0.4 }, { opacity: 1 }], 220);
+    buzz(8);
+    live.textContent = 'A new sheet.';
+  });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  layout();
+  announce();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
