@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="./curriculum.css?v=20261018cover1">
   <link rel="stylesheet" href="./table-v2.css?v=20261014a">
   <link rel="stylesheet" href="./accessibility.css?v=20260930c">
-  <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.111.1/mathlive.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>  <style>
@@ -2065,7 +2065,7 @@
       const hasDecimal = raw.includes('.');
       let [whole = '', frac = ''] = raw.split('.');
       if (hasDecimal && whole === '') whole = '0';
-      frac = frac.slice(0, ADD_FRACTION_COLUMNS);
+      frac = frac.slice(0, ADD_MAX_FRACTION_COLUMNS);
 
       const wholeNeeded = Math.max(1, whole.length);
       const fractionNeeded = hasDecimal
