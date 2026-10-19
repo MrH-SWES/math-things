@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Liquid Volume</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── COUNTER, FAUCET, CONTAINERS ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .vessel { outline: none; cursor: grab; }
+    #board .vessel .hit { pointer-events: all; }
+    #board .vessel:focus-visible .glass { stroke: #007AFF; stroke-width: 3; }
+    #board .lever { pointer-events: all; cursor: pointer; outline: none; }
+    #board .lever:focus-visible .lever-face { stroke: #007AFF; stroke-width: 3; }
+    #board .print { font-family: 'Lexend', sans-serif; font-weight: 600; fill: #4E535B; dominant-baseline: central; pointer-events: none; }
+    #labels { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #board.rec #labels { opacity: 1; }
+    #labels text { font-family: 'Lexend', sans-serif; font-weight: 800; text-anchor: middle; dominant-baseline: central; fill: #3A3D42; paint-order: stroke; stroke: rgba(255,255,255,0.9); stroke-width: 4px; stroke-linejoin: round; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: grid; grid-template-columns: repeat(5, auto); gap: clamp(6px, 1.2vw, 12px); }
+    .bin {
+      width: clamp(54px, 9vw, 84px);
+      height: clamp(56px, 9vw, 78px);
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 78%; height: 78%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+    @media (max-width: 480px) {
+      #cabinet { padding: 10px 10px; gap: 8px; }
+      #bins { gap: 5px; }
+      .bin { width: 50px; height: 54px; border-radius: 13px; }
+    }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Counter with a faucet, a sink and measuring containers"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <div id="bins"></div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show how much is in each container" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Empty everything and put the containers away">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B9BCC2"/><stop offset="0.35" stop-color="#F4F5F7"/><stop offset="0.6" stop-color="#D3D5DA"/><stop offset="1" stop-color="#A9ACB2"/>
+    </linearGradient>
+    <linearGradient id="chromeV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4F5F7"/><stop offset="0.55" stop-color="#CFD2D7"/><stop offset="1" stop-color="#A9ACB2"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7CC6F0" stop-opacity="0.62"/><stop offset="1" stop-color="#2E7FC4" stop-opacity="0.78"/>
+    </linearGradient>
+    <linearGradient id="glassSheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.05"/><stop offset="0.18" stop-color="#FFFFFF" stop-opacity="0.55"/><stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0.08"/><stop offset="0.85" stop-color="#FFFFFF" stop-opacity="0.04"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="counterTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7F4EF"/><stop offset="1" stop-color="#E6E1D8"/>
+    </linearGradient>
+    <linearGradient id="counterFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E2DCD2"/><stop offset="1" stop-color="#D3CCC0"/>
+    </linearGradient>
+    <linearGradient id="basinSteel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9DA1A8"/><stop offset="1" stop-color="#C9CCD1"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="back"></g>
+  <g id="vessels"></g>
+  <g id="front"></g>
+  <g id="streams"></g>
+  <g id="labels"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // Containers, in mat units (u). Glass: inner width w and height h, bottom at 0. Spoons: a bowl.
+  // Every printed mark is part of the object, as on a real beaker or spoon.
+  const TYPES = {
+    jug:    { name: '2-liter jug', kind: 'glass', cap: 2000, w: 1.25, h: 2.05, tick: 100, major: 500, handle: true, spout: true,
+              label: v => v % 1000 === 0 ? `${v / 1000} L` : null },
+    beaker: { name: '1-liter beaker', kind: 'glass', cap: 1000, w: 0.9, h: 1.5, tick: 100, major: 100, spout: true,
+              label: (v, roomy) => v === 1000 ? '1000 mL' : (roomy || v % 200 === 0) ? String(v) : null },
+    cup:    { name: '250-milliliter cup', kind: 'glass', cap: 250, w: 0.62, h: 0.82, tick: 50, major: 50, handle: true,
+              label: v => v === 250 ? '250 mL' : String(v) },
+    tbsp:   { name: 'tablespoon', kind: 'spoon', cap: 15, rx: 0.24, ry: 0.12, len: 0.92, stamp: '15 mL' },
+    tsp:    { name: 'teaspoon', kind: 'spoon', cap: 5, rx: 0.17, ry: 0.09, len: 0.78, stamp: '5 mL' },
+  };
+  const ORDER = ['jug', 'beaker', 'cup', 'tbsp', 'tsp'];
+  const MAX = 6;
+  const WALL = 0.05;
+  const FAUCET_HOLD = 350, FAUCET_FILL = 900;   // mL per second
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion || !node ? null : node.animate(frames, { duration: dur, easing });
+  const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), backG = $('back'), vesselsG = $('vessels'), frontG = $('front'),
+        streamsG = $('streams'), labelsG = $('labels');
+  const dock = $('dock'), binsEl = $('bins'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+  // the amount in words: mL below a liter, liters and milliliters from a liter up
+  function amountText(ml) {
+    const v = Math.round(ml);
+    if (v < 1000) return `${v} mL`;
+    const L = Math.floor(v / 1000), m = v % 1000;
+    return m ? `${L} L ${m} mL` : `${L} L`;
+  }
+
+  let u = 80, W = 0, counterY = 0, restY = 0, floorY = 0, basin = { x0: 0, x1: 0, cx: 0 }, columnX = 0, spout = { x: 0, y: 0 };
+  let vessels = [];   // { id, type, cx, by, amt, shown, tilt, tiltTo, inBasin, g, liquid, surface, hit, flash }
+  let nextId = 1, recordOn = false;
+
+  const T = c => TYPES[c.type];
+  const extent = t => t.kind === 'spoon' ? { L: t.rx, R: t.rx + t.len } : { L: t.w / 2 + WALL + (t.spout ? 0.07 : 0), R: t.w / 2 + WALL + (t.handle ? 0.3 : 0) };
+  const topLocal = t => t.kind === 'spoon' ? -t.ry : -t.h;
+  const halfMouth = t => t.kind === 'spoon' ? t.rx : t.w / 2;
+  const pivotY = t => (t.kind === 'spoon' ? -t.ry : -t.h) / 2;
+
+  // ═══════ LAYOUT ═══════
+  function layout() {
+    const oldW = W;
+    W = innerWidth;
+    const top = dock.getBoundingClientRect().top;
+    u = Math.max(40, Math.min(100, W / 7.2, (top - 80) / 4.35));
+    counterY = top - 0.55 * u - 30;
+    restY = counterY - 0.05 * u;
+    floorY = counterY + 0.24 * u;
+    columnX = 14 + 0.22 * u;
+    basin.x0 = columnX + 0.2 * u; basin.x1 = basin.x0 + 1.95 * u; basin.cx = (basin.x0 + basin.x1) / 2;
+    spout = { x: basin.cx, y: counterY - 2.75 * u };
+    defs.innerHTML =
+      // each container is drawn in its own frame (origin at its base), so the shadow's region must reach
+      // well past that origin in every direction, or the glass above the base is cut away
+      `<filter id="soft" filterUnits="userSpaceOnUse" x="${-2 * W}" y="${-2 * innerHeight}" width="${4 * W}" height="${4 * innerHeight}"><feDropShadow dx="1" dy="${r2(u * 0.05)}" stdDeviation="${r2(u * 0.05)}" flood-color="#2A2018" flood-opacity="0.22"/></filter>` +
+      ORDER.map(k => {
+        const t = TYPES[k];
+        if (t.kind === 'spoon') {
+          // the bowl: the lower half of an ellipse
+          const rx = t.rx * u, ry = t.ry * u;
+          return `<clipPath id="clip-${k}" clipPathUnits="userSpaceOnUse"><path d="M${r2(-rx)},${r2(-ry)}A${r2(rx)},${r2(ry)} 0 0 0 ${r2(rx)},${r2(-ry)}Z"/></clipPath>`;
+        }
+        const w = t.w * u / 2, h = t.h * u, r = 0.08 * u;
+        return `<clipPath id="clip-${k}" clipPathUnits="userSpaceOnUse"><path d="M${r2(-w)},${r2(-h)}L${r2(w)},${r2(-h)}L${r2(w)},${r2(-r)}Q${r2(w)},0 ${r2(w - r)},0L${r2(-w + r)},0Q${r2(-w)},0 ${r2(-w)},${r2(-r)}Z"/></clipPath>`;
+      }).join('');
+    drawFixtures();
+    for (const c of vessels) {
+      if (oldW && !c.inBasin) c.cx *= W / oldW;
+      if (c.inBasin) { c.cx = basin.cx; c.by = floorY; } else { c.by = restY; c.cx = anySpot(c, c.cx); }
+      build(c);
+    }
+    paint();
+  }
+
+  // The counter runs the width of the mat; the sink is cut into it at the left, the faucet stands behind it.
+  function drawFixtures() {
+    const band = 0.14 * u, face = 0.36 * u;
+    const x0 = basin.x0, x1 = basin.x1;
+    let back = '';
+    // faucet: a column behind the sink, a gooseneck over it, a lever on top
+    const colTop = counterY - 3.05 * u, cw = 0.16 * u;
+    back += `<rect x="${r2(columnX - cw / 2)}" y="${r2(colTop)}" width="${r2(cw)}" height="${r2(counterY - band - colTop)}" fill="url(#chrome)" stroke="rgba(60,62,68,0.3)"/>`;
+    back += `<path d="M${r2(columnX)},${r2(colTop + 0.02 * u)} Q${r2(columnX)},${r2(colTop - 0.32 * u)} ${r2((columnX + spout.x) / 2)},${r2(colTop - 0.32 * u)} Q${r2(spout.x)},${r2(colTop - 0.32 * u)} ${r2(spout.x)},${r2(spout.y - 0.05 * u)}" fill="none" stroke="url(#chromeV)" stroke-width="${r2(cw * 0.85)}" stroke-linecap="round"/>`;
+    back += `<rect x="${r2(spout.x - cw * 0.55)}" y="${r2(spout.y - 0.16 * u)}" width="${r2(cw * 1.1)}" height="${r2(0.16 * u)}" rx="${r2(cw * 0.25)}" fill="url(#chrome)" stroke="rgba(60,62,68,0.3)"/>`;
+    // counter top surface and the sink's opening in it
+    back += `<rect x="0" y="${r2(counterY - band)}" width="${r2(W)}" height="${r2(band)}" fill="url(#counterTop)"/>`;
+    back += `<rect x="${r2(x0)}" y="${r2(counterY - band * 0.85)}" width="${r2(x1 - x0)}" height="${r2(band * 0.85 + face * 0.7)}" rx="${r2(u * 0.05)}" fill="url(#basinSteel)"/>`;
+    back += `<ellipse cx="${r2((x0 + x1) / 2)}" cy="${r2(floorY - 0.02 * u)}" rx="${r2(0.09 * u)}" ry="${r2(0.03 * u)}" fill="#6F737A"/>`;
+    backG.innerHTML = back;
+    // the lever: press and hold to run water, tap to fill to the brim
+    const lw = 0.55 * u, lh = Math.max(14, 0.13 * u);
+    const lever = el('g', { class: 'lever', tabindex: 0, role: 'button', 'aria-label': 'Faucet. Tap to fill the container in the sink to the brim; press and hold to run water.' }, backG);
+    lever.innerHTML =
+      `<rect x="${r2(columnX - 0.06 * u)}" y="${r2(colTop - lh * 1.7)}" width="${r2(0.12 * u)}" height="${r2(lh * 1.7)}" fill="url(#chrome)"/>` +
+      `<rect class="lever-face" x="${r2(columnX - lw * 0.2)}" y="${r2(colTop - lh * 2.2)}" width="${r2(lw)}" height="${r2(lh)}" rx="${r2(lh / 2)}" fill="url(#chromeV)" stroke="rgba(60,62,68,0.35)"/>` +
+      `<rect x="${r2(columnX - lw * 0.4)}" y="${r2(colTop - lh * 3)}" width="${r2(lw * 1.4)}" height="${r2(lh * 3.2)}" fill="transparent"/>`;
+    lever.id = 'lever';
+    // the counter's front face, in front of whatever stands in the sink
+    frontG.innerHTML =
+      `<rect x="0" y="${r2(counterY)}" width="${r2(W)}" height="${r2(face)}" fill="url(#counterFront)"/>` +
+      `<rect x="0" y="${r2(counterY)}" width="${r2(W)}" height="1.2" fill="rgba(255,255,255,0.8)"/>` +
+      `<rect x="${r2(x0 - 0.04 * u)}" y="${r2(counterY - 0.01 * u)}" width="${r2(x1 - x0 + 0.08 * u)}" height="${r2(0.05 * u)}" rx="${r2(0.025 * u)}" fill="url(#chromeV)"/>`;
+  }
+
+  // ═══════ CONTAINERS ═══════
+  function addVessel(type, cx, by, amt = 0) {
+    const c = { id: nextId++, type, cx, by, amt, shown: amt, tilt: 0, tiltTo: 0, inBasin: false };
+    c.g = el('g', { class: 'vessel', tabindex: 0, role: 'img' }, vesselsG);
+    c.g.dataset.id = c.id;
+    c.g.dataset.type = type;
+    vessels.push(c);
+    build(c);
+    return c;
+  }
+
+  // the parts of a container that never change: glass, printed scale, handle; the water is redrawn each frame
+  function build(c) {
+    const t = T(c);
+    c.g.innerHTML = '';
+    c.g.setAttribute('filter', 'url(#soft)');
+    const inner = el('g', {}, c.g);
+    c.inner = inner;
+    if (t.kind === 'spoon') {
+      const rx = t.rx * u, ry = t.ry * u, L = t.len * u;
+      // handle first, so the bowl sits over it
+      el('path', { d: `M${r2(rx * 0.85)},${r2(-ry * 0.95)} Q${r2(rx + L * 0.4)},${r2(-ry * 1.25)} ${r2(rx + L)},${r2(-ry * 2.1)}`, fill: 'none', stroke: 'url(#chromeV)', 'stroke-width': r2(Math.max(5, 0.075 * u)), 'stroke-linecap': 'round' }, inner);
+      el('text', { class: 'print', x: r2(rx + L * 0.55), y: r2(-ry * 1.25 - Math.max(7, 0.1 * u)), 'font-size': r2(Math.max(8, 0.11 * u)), 'text-anchor': 'middle', transform: `rotate(${r2(-Math.atan2(ry * 0.85, L * 0.6) * 180 / Math.PI)} ${r2(rx + L * 0.55)} ${r2(-ry * 1.4)})` }, inner).textContent = t.stamp;
+      el('path', { class: 'glass', d: `M${r2(-rx)},${r2(-ry)}A${r2(rx)},${r2(ry)} 0 0 0 ${r2(rx)},${r2(-ry)}Z`, fill: 'url(#chromeV)', stroke: 'rgba(60,62,68,0.45)', 'stroke-width': 1.2 }, inner);
+      el('ellipse', { cx: 0, cy: r2(-ry), rx: r2(rx), ry: r2(ry * 0.32), fill: '#E9EBEE', stroke: 'rgba(60,62,68,0.35)', 'stroke-width': 1 }, inner);
+      c.liquid = el('path', { 'clip-path': `url(#clip-${c.type})`, fill: 'url(#water)' }, inner);
+      c.surface = el('path', { fill: 'none', stroke: 'rgba(255,255,255,0.85)', 'stroke-width': 1.4, 'stroke-linecap': 'round' }, inner);
+      c.hit = el('path', { class: 'hit', d: `M${r2(-rx - 6)},${r2(-ry * 2.4)}L${r2(rx + L + 6)},${r2(-ry * 2.4)}L${r2(rx + L + 6)},6L${r2(-rx - 6)},6Z`, fill: 'transparent' }, inner);
+    } else {
+      const w = t.w * u / 2, h = t.h * u, wl = WALL * u, r = 0.08 * u, rim = 0.04 * u;
+      const W2 = w + wl, B = wl;
+      // handle behind the glass
+      if (t.handle) {
+        const hy0 = -h * 0.82, hy1 = -h * 0.22, hx = W2 + 0.26 * u;
+        el('path', { d: `M${r2(W2 - 1)},${r2(hy0)} C${r2(hx)},${r2(hy0)} ${r2(hx)},${r2(hy1)} ${r2(W2 - 1)},${r2(hy1)}`, fill: 'none', stroke: 'rgba(200,214,226,0.9)', 'stroke-width': r2(Math.max(4, 0.07 * u)), 'stroke-linecap': 'round' }, inner);
+        el('path', { d: `M${r2(W2 - 1)},${r2(hy0)} C${r2(hx)},${r2(hy0)} ${r2(hx)},${r2(hy1)} ${r2(W2 - 1)},${r2(hy1)}`, fill: 'none', stroke: 'rgba(110,125,140,0.55)', 'stroke-width': 1.2 }, inner);
+      }
+      // the water, inside the glass
+      c.liquid = el('path', { 'clip-path': `url(#clip-${c.type})`, fill: 'url(#water)' }, inner);
+      c.surface = el('path', { fill: 'none', stroke: 'rgba(255,255,255,0.85)', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, inner);
+      // the glass body: a heavy base, thin walls, a rolled rim, a pouring lip at the top left
+      const lip = t.spout ? `L${r2(-W2 - 0.07 * u)},${r2(-h - rim - 0.05 * u)}` : '';
+      const body = `M${r2(-W2)},${r2(-h - rim)}${lip}L${r2(-W2)},${r2(-h - rim + (t.spout ? 0.06 * u : 0))}L${r2(-W2)},${r2(B - r)}Q${r2(-W2)},${r2(B)} ${r2(-W2 + r)},${r2(B)}L${r2(W2 - r)},${r2(B)}Q${r2(W2)},${r2(B)} ${r2(W2)},${r2(B - r)}L${r2(W2)},${r2(-h - rim)}`;
+      el('path', { d: body, fill: 'rgba(235,242,248,0.28)', stroke: 'none' }, inner);
+      el('path', { d: `M${r2(-W2)},${r2(-h - rim)}L${r2(-W2)},${r2(B - r)}Q${r2(-W2)},${r2(B)} ${r2(-W2 + r)},${r2(B)}L${r2(W2 - r)},${r2(B)}Q${r2(W2)},${r2(B)} ${r2(W2)},${r2(B - r)}L${r2(W2)},${r2(-h - rim)}`, fill: 'url(#glassSheen)', stroke: 'none' }, inner);
+      el('path', { class: 'glass', d: body, fill: 'none', stroke: 'rgba(105,118,132,0.62)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, inner);
+      el('path', { d: `M${r2(-W2)},${r2(-h - rim)}L${r2(W2)},${r2(-h - rim)}`, stroke: 'rgba(105,118,132,0.5)', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, inner);
+      // the printed scale
+      const per = h / t.cap, roomy = t.tick * per >= 13, fs = r2(Math.max(8, Math.min(13, 0.12 * u)));
+      let ticks = '', text = '';
+      for (let v = t.tick; v <= t.cap; v += t.tick) {
+        const y = -v * per, major = v % t.major === 0, len = (major ? 0.32 : 0.18) * t.w * u;
+        ticks += `M${r2(-w + 2)},${r2(y)}h${r2(len)}`;
+        const lab = major && t.label(v, roomy);
+        if (lab) text += `<text class="print" x="${r2(-w + 4 + len)}" y="${r2(y)}" font-size="${fs}">${lab}</text>`;
+      }
+      el('path', { d: ticks, stroke: '#4E535B', 'stroke-opacity': 0.8, 'stroke-width': 1.2, fill: 'none' }, inner);
+      const tg = el('g', {}, inner);
+      tg.innerHTML = text;
+      c.hit = el('path', { class: 'hit', d: `M${r2(-W2 - 8)},${r2(-h - 10)}L${r2(W2 + (t.handle ? 0.3 * u : 0) + 8)},${r2(-h - 10)}L${r2(W2 + (t.handle ? 0.3 * u : 0) + 8)},8L${r2(-W2 - 8)},8Z`, fill: 'transparent' }, inner);
+    }
+    draw(c);
+  }
+
+  // The water's outline in the container's own frame, for any tilt: the part of the inside below a level
+  // line, with the line found so the water keeps its amount.
+  function water(c) {
+    const t = T(c), f = Math.max(0, Math.min(1, c.shown / t.cap));
+    if (f <= 0.0005) return null;
+    const hw = (t.kind === 'spoon' ? t.rx : t.w / 2) * u, h = (t.kind === 'spoon' ? t.ry : t.h) * u;
+    const rect = [{ x: -hw, y: -h }, { x: hw, y: -h }, { x: hw, y: 0 }, { x: -hw, y: 0 }];
+    const a = c.tilt * Math.PI / 180, up = { x: -Math.sin(a), y: -Math.cos(a) };
+    const dot = p => p.x * up.x + p.y * up.y;
+    const cut = k => {
+      const out = [], line = [];
+      for (let i = 0; i < 4; i++) {
+        const p = rect[i], q = rect[(i + 1) % 4], dp = dot(p) - k, dq = dot(q) - k;
+        if (dp <= 0) out.push(p);
+        if ((dp <= 0) !== (dq <= 0)) { const s = dp / (dp - dq), m = { x: p.x + (q.x - p.x) * s, y: p.y + (q.y - p.y) * s }; out.push(m); line.push(m); }
+      }
+      return { out, line };
+    };
+    const area = ps => Math.abs(ps.reduce((s, p, i) => { const q = ps[(i + 1) % ps.length]; return s + p.x * q.y - q.x * p.y; }, 0)) / 2;
+    const ds = rect.map(dot), goal = f * 2 * hw * h;   // the inside is 2·hw wide and h tall
+    let lo = Math.min(...ds), hi = Math.max(...ds);
+    for (let i = 0; i < 26; i++) { const mid = (lo + hi) / 2; if (area(cut(mid).out) < goal) lo = mid; else hi = mid; }
+    return cut(hi);
+  }
+
+  function draw(c) {
+    const t = T(c), py = pivotY(t) * u;
+    c.g.setAttribute('transform', `translate(${r2(c.cx)} ${r2(c.by)})`);
+    c.inner.setAttribute('transform', c.tilt ? `rotate(${r2(c.tilt)} 0 ${r2(py)})` : '');
+    const wv = water(c);
+    c.liquid.setAttribute('d', wv && wv.out.length > 2 ? 'M' + wv.out.map(p => `${r2(p.x)},${r2(p.y)}`).join('L') + 'Z' : '');
+    c.surface.setAttribute('d', wv && wv.line.length === 2 && c.shown < t.cap - 0.5 ? `M${r2(wv.line[0].x)},${r2(wv.line[0].y)}L${r2(wv.line[1].x)},${r2(wv.line[1].y)}` : '');
+    c.g.dataset.amt = Math.round(c.amt);
+    c.g.setAttribute('aria-label', `${t.name[0].toUpperCase() + t.name.slice(1)}${c.inBasin ? ', in the sink' : ''}, ${c.amt < 0.5 ? 'empty' : c.amt > t.cap - 0.5 ? 'full, ' + amountText(t.cap) : amountText(c.amt)}`);
+  }
+
+  // where a point in a container's frame ends up on the mat
+  function toWorld(c, p) {
+    const a = c.tilt * Math.PI / 180, py = pivotY(T(c)) * u, x = p.x, y = p.y - py;
+    return { x: c.cx + x * Math.cos(a) - y * Math.sin(a), y: c.by + py + x * Math.sin(a) + y * Math.cos(a) };
+  }
+  const mouth = c => { const t = T(c); return { x0: c.cx - halfMouth(t) * u, x1: c.cx + halfMouth(t) * u, y: c.by + topLocal(t) * u }; };
+  const surfaceY = c => { const t = T(c); return c.by + topLocal(t) * u * Math.min(1, c.shown / t.cap); };
+
+  // ═══════ THE COUNTER ═══════
+  const footprint = (c, cx) => { const e = extent(T(c)); return [cx - e.L * u, cx + e.R * u]; };
+  function freeSpot(c, want) {
+    const e = extent(T(c)), lo = basin.x1 + 0.12 * u + e.L * u, hi = W - 12 - e.R * u;
+    if (hi < lo) return null;
+    const others = vessels.filter(o => o !== c && !o.inBasin && !o.held && o.by === restY).map(o => footprint(o, o.cx));
+    const clear = x => { const [a, b] = footprint(c, x); return others.every(([p, q]) => b + 0.06 * u <= p || a >= q + 0.06 * u); };
+    const start = Math.max(lo, Math.min(hi, want));
+    for (let d = 0; d <= hi - lo; d += 2) {
+      if (start + d <= hi && clear(start + d)) return start + d;
+      if (start - d >= lo && clear(start - d)) return start - d;
+    }
+    return null;
+  }
+  // when no gap is free (a crowded counter on a phone), a container stands in front of its neighbour
+  function anySpot(c, want) {
+    const e = extent(T(c)), lo = basin.x1 + 0.12 * u + e.L * u, hi = W - 12 - e.R * u;
+    return freeSpot(c, want) ?? Math.max(lo, Math.min(Math.max(lo, hi), want));
+  }
+  const basinTaken = c => vessels.some(o => o !== c && o.inBasin);
+
+  // ═══════ RECORD ═══════
+  function paint() {
+    labelsG.innerHTML = '';
+    const fs = r2(Math.max(11, Math.min(16, 0.17 * u)));
+    for (const c of vessels) {
+      if (c.held) continue;
+      const tx = c.inBasin ? basin.cx : c.cx + (T(c).kind === 'spoon' ? T(c).len * u * 0.35 : 0);
+      el('text', { x: r2(tx), y: r2(counterY + 0.36 * u + fs * 0.9), 'font-size': fs }, labelsG).textContent = amountText(c.amt);
+    }
+  }
+  let liveTimer = 0;
+  function announce(now) {
+    clearTimeout(liveTimer);
+    const say = () => { live.textContent = vessels.length ? vessels.map(c => `${T(c).name}: ${c.amt < 0.5 ? 'empty' : amountText(c.amt)}`).join('. ') + '.' : 'The counter is clear.'; };
+    if (now) say(); else liveTimer = setTimeout(say, 500);
+  }
+
+  // ═══════ MOTION: tilting, pouring, the faucet ═══════
+  const faucet = { on: false, mode: null, t0: 0, until: 0 };
+  let streams = [];
+  let running = false, last = 0;
+  function wake() { if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); } }
+
+  // A held container over another tilts toward it and pours from its lip until it is empty or the
+  // other is full. Over the empty sink, it pours down the drain.
+  function pourTarget(c) {
+    const t = T(c), hm = halfMouth(t) * u;
+    let best = null;
+    for (const side of [-1, 1]) {
+      const lipX = c.cx + side * hm;
+      for (const o of vessels) {
+        if (o === c || o.held) continue;
+        const m = mouth(o), pad = 0.12 * u;
+        if (lipX >= m.x0 - pad && lipX <= m.x1 + pad && c.by <= m.y + 0.12 * u) {
+          const d = Math.abs(c.cx - (m.x0 + m.x1) / 2);
+          if (!best || d < best.d) best = { o, side: (m.x0 + m.x1) / 2 >= c.cx ? 1 : -1, d };
+        }
+      }
+      if (!best && !basinTaken(c) && lipX > basin.x0 && lipX < basin.x1 && c.by < counterY - 0.2 * u) best = { drain: true, side, d: 0 };
+    }
+    return best;
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    let busy = false;
+    streams = [];
+    for (const c of vessels) {
+      const t = T(c);
+      // pouring while held
+      if (c.held) {
+        const tg = pourTarget(c);
+        c.tiltTo = tg ? tg.side * (t.kind === 'spoon' ? 68 : 58) : 0;
+        c.target = tg;
+        busy = true;
+      } else { c.tiltTo = 0; c.target = null; }
+      const dTilt = c.tiltTo - c.tilt;
+      if (Math.abs(dTilt) > 0.3) { c.tilt += Math.sign(dTilt) * Math.min(Math.abs(dTilt), (reduceMotion ? 900 : 240) * dt); busy = true; }
+      else c.tilt = c.tiltTo;
+      if (c.target && Math.abs(c.tilt) >= 40 && c.amt > 0.0001) {
+        const o = c.target.o, rate = Math.max(t.cap * 1.1, 6) * dt;
+        const room = o ? T(o).cap - o.amt : Infinity;
+        const moved = Math.min(rate, c.amt, room);
+        const lipL = { x: c.target.side * halfMouth(t) * u, y: topLocal(t) * u };
+        const lip = toWorld(c, lipL);
+        if (moved > 0) {
+          c.amt -= moved; c.shown = c.amt;
+          if (o) { o.amt += moved; o.shown = o.amt; }
+          const m = o ? mouth(o) : null;
+          const tx = o ? Math.max(m.x0 + 3, Math.min(m.x1 - 3, lip.x + c.target.side * 0.06 * u)) : Math.max(basin.x0 + 6, Math.min(basin.x1 - 6, lip.x));
+          streams.push({ x0: lip.x, y0: lip.y, x1: tx, y1: o ? surfaceY(o) : floorY, w: t.kind === 'spoon' ? 0.035 * u : 0.07 * u });
+          if (c.amt < 0.0001) c.amt = c.shown = 0;
+          if (o && o.amt > T(o).cap - 0.0001) { o.amt = o.shown = T(o).cap; brim(o); }
+          busy = true;
+        } else if (o && room <= 0.0001) brim(o);
+      }
+      // keyboard pours and fills ease the drawn level toward the amount
+      if (Math.abs(c.shown - c.amt) > 0.01) { c.shown += (c.amt - c.shown) * Math.min(1, dt * 7); busy = true; }
+      else c.shown = c.amt;
+      draw(c);
+    }
+    // the faucet runs into whatever stands in the sink, and stops at its brim
+    if (faucet.on) {
+      busy = true;
+      const c = vessels.find(o => o.inBasin);
+      const rate = (faucet.mode === 'fill' ? FAUCET_FILL : FAUCET_HOLD) * dt;
+      if (c) {
+        const t = T(c), room = t.cap - c.amt;
+        if (room > 0.0001) {
+          c.amt += Math.min(rate, room); c.shown = c.amt;
+          streams.push({ x0: spout.x, y0: spout.y, x1: spout.x, y1: surfaceY(c), w: 0.06 * u });
+          if (c.amt >= t.cap - 0.0001) { c.amt = c.shown = t.cap; brim(c); if (faucet.mode === 'fill') stopFaucet(); }
+        } else if (faucet.mode === 'fill') stopFaucet();
+        draw(c);
+      } else {
+        streams.push({ x0: spout.x, y0: spout.y, x1: spout.x, y1: floorY, w: 0.06 * u });
+        if (faucet.mode === 'fill' && now > faucet.until) stopFaucet();
+      }
+    }
+    drawStreams(now);
+    if (busy || streams.length) requestAnimationFrame(loop);
+    else { running = false; paint(); announce(); }
+  }
+
+  function drawStreams(now) {
+    streamsG.innerHTML = streams.map(s => {
+      const mx = (s.x0 + s.x1) / 2, my = Math.min(s.y0, s.y1) + 0.02 * u;
+      const d = `M${r2(s.x0)},${r2(s.y0)} Q${r2(s.x1)},${r2(my)} ${r2(s.x1)},${r2(s.y1)}`;
+      void mx;
+      return `<path d="${d}" fill="none" stroke="#5FAEE3" stroke-opacity="0.75" stroke-width="${r2(s.w)}" stroke-linecap="round"/>` +
+        `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="${r2(Math.max(1, s.w * 0.25))}" stroke-linecap="round" stroke-dasharray="${r2(s.w * 1.5)} ${r2(s.w * 2.5)}" stroke-dashoffset="${r2(-(now / 12) % (s.w * 4))}"/>`;
+    }).join('');
+  }
+
+  // A container that just reached its brim shows a quick glint at the rim.
+  function brim(c) {
+    if (c.flashAt && performance.now() - c.flashAt < 900) return;
+    c.flashAt = performance.now();
+    const t = T(c), m = mouth(c);
+    const g = el('path', { d: `M${r2(m.x0)},${r2(m.y)}L${r2(m.x1)},${r2(m.y)}`, stroke: '#FFFFFF', 'stroke-width': 4, 'stroke-linecap': 'round', opacity: 0 }, frontG);
+    const a = anim(g, [{ opacity: 0 }, { opacity: 1 }, { opacity: 0 }], 600);
+    if (a) a.onfinish = () => g.remove(); else g.remove();
+    buzz(10);
+    void t;
+  }
+
+  function startFaucet(mode) { faucet.on = true; faucet.mode = mode; faucet.t0 = performance.now(); faucet.until = faucet.t0 + 700; wake(); }
+  function stopFaucet() { faucet.on = false; faucet.mode = null; announce(); }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  board.addEventListener('pointerdown', e => {
+    const lever = e.target.closest('.lever');
+    if (lever) {
+      e.preventDefault();
+      startFaucet('hold');
+      drags.set(e.pointerId, { kind: 'faucet', t0: performance.now() });
+      try { board.setPointerCapture(e.pointerId); } catch (err) {}
+      return;
+    }
+    const g = e.target.closest('.vessel'), c = g && vessels.find(o => o.id === +g.dataset.id);
+    if (!c) return;
+    e.preventDefault();
+    vesselsG.appendChild(c.g);
+    drags.set(e.pointerId, { kind: 'move', c, sx: e.clientX, sy: e.clientY, ox: c.cx - e.clientX, oy: c.by - e.clientY, cx0: c.cx, by0: c.by, basin0: c.inBasin, moved: false });
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  function binDown(e) {
+    e.preventDefault();
+    drags.set(e.pointerId, { kind: 'bin', type: e.currentTarget.dataset.type, btn: e.currentTarget, sx: e.clientX, sy: e.clientY, moved: false });
+  }
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s || s.kind === 'faucet') return;
+    if (!s.moved) {
+      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < 5) return;
+      s.moved = true;
+      if (s.kind === 'bin') {
+        // a container pulled out of its bin comes up under the finger
+        if (vessels.length >= MAX) { shake(s.btn); drags.delete(e.pointerId); return; }
+        s.c = addVessel(s.type, e.clientX, e.clientY + 0.3 * u);
+        s.kind = 'move'; s.fresh = true; s.ox = 0; s.oy = 0.3 * u;
+      }
+      s.c.held = true; s.c.inBasin = false;
+      paint();
+      wake();
+    }
+    s.c.cx = e.clientX + s.ox;
+    s.c.by = Math.min(e.clientY + s.oy, restY);
+    draw(s.c);
+  });
+
+  function overDock(x, y) { const r = dock.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    if (s.kind === 'faucet') {
+      // a quick tap fills to the brim; a hold runs only while held
+      if (performance.now() - s.t0 < 260) startFaucet('fill'); else stopFaucet();
+      return;
+    }
+    if (s.kind === 'bin') { if (!s.moved) placeFromBin(s.type, s.btn); return; }
+    const c = s.c;
+    if (!s.moved) return;
+    c.held = false;
+    if (overDock(e.clientX, e.clientY)) { putAway(c); return; }
+    settle(c, s);
+    wake();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // a container let go sets down in the sink (under the faucet) or on the counter
+  function settle(c, s) {
+    const from = { x: c.cx, y: c.by };
+    if (c.cx > basin.x0 && c.cx < basin.x1 && !basinTaken(c)) {
+      c.inBasin = true; c.cx = basin.cx; c.by = floorY;
+    } else {
+      c.cx = anySpot(c, c.cx); c.by = restY; c.inBasin = false;
+    }
+    draw(c);
+    anim(c.g, [{ transform: `translate(${r2(from.x)}px, ${r2(from.y)}px)` }, { transform: `translate(${r2(c.cx)}px, ${r2(c.by)}px)` }], 160);
+    buzz(6);
+    paint();
+    announce();
+  }
+
+  function putAway(c) {
+    vessels = vessels.filter(o => o !== c);
+    if (reduceMotion) c.g.remove();
+    else c.g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }).onfinish = () => c.g.remove();
+    buzz(6);
+    paint();
+    announce();
+  }
+
+  function placeFromBin(type, btn) {
+    if (vessels.length >= MAX) { shake(btn); return null; }
+    const c = addVessel(type, 0, restY);
+    c.cx = anySpot(c, (basin.x1 + W) / 2);
+    draw(c);
+    anim(c.g, [{ opacity: 0 }, { opacity: 1 }], 200);
+    buzz(6);
+    paint();
+    announce();
+    return c;
+  }
+
+  // ═══════ KEYBOARD ═══════
+  // A focused container: F fills it at the faucet, P pours it into the next container along the counter,
+  // Delete empties it into the sink, Shift+Delete puts it away, arrows slide it along the counter.
+  board.addEventListener('keydown', e => {
+    if (e.target.closest('.lever') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startFaucet('fill'); return; }
+    const g = e.target.closest('.vessel'), c = g && vessels.find(o => o.id === +g.dataset.id);
+    if (!c) return;
+    const t = T(c), k = e.key.toLowerCase();
+    if (k === 'f') {
+      e.preventDefault();
+      c.amt = t.cap;
+      brim(c);
+    } else if (k === 'p') {
+      e.preventDefault();
+      const order = vessels.slice().sort((a, b) => (a.inBasin ? -1 : a.cx) - (b.inBasin ? -1 : b.cx));
+      const o = order[(order.indexOf(c) + 1) % order.length];
+      if (o === c) { shake(c.g); return; }
+      const moved = Math.min(c.amt, T(o).cap - o.amt);
+      if (moved <= 0) { shake(c.g); live.textContent = c.amt <= 0 ? `The ${t.name} is empty.` : `The ${T(o).name} is full.`; return; }
+      c.amt -= moved; o.amt += moved;
+      if (o.amt >= T(o).cap - 0.0001) { o.amt = T(o).cap; brim(o); }
+      live.textContent = `Poured ${amountText(moved)} into the ${T(o).name}.`;
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      if (e.shiftKey) { putAway(c); return; }
+      c.amt = 0;
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (c.inBasin) { c.inBasin = false; c.by = restY; }
+      const x = freeSpot(c, c.cx + (e.key === 'ArrowLeft' ? -1 : 1) * 0.3 * u);
+      if (x == null) { shake(c.g); return; }
+      c.cx = x;
+    } else if (e.key === 'ArrowDown' && !c.inBasin && !basinTaken(c)) {
+      // down sets it in the sink, under the faucet
+      e.preventDefault();
+      c.inBasin = true; c.cx = basin.cx; c.by = floorY;
+    } else if (e.key === 'ArrowUp' && c.inBasin) {
+      e.preventDefault();
+      c.inBasin = false; c.by = restY;
+      c.cx = anySpot(c, basin.x1 + extent(t).L * u + 0.2 * u);
+    } else return;
+    draw(c);
+    paint();
+    wake();
+    if (k !== 'p') announce();
+  });
+
+  // ═══════ CABINET ═══════
+  function binIcon(type) {
+    const t = TYPES[type];
+    if (t.kind === 'spoon') {
+      const s = type === 'tbsp' ? 1 : 0.72;
+      return `<svg viewBox="-24 -20 48 40" aria-hidden="true" focusable="false"><path d="M${-2 * s},0 Q${10},-4 ${22 * s},-12" fill="none" stroke="url(#chromeV)" stroke-width="${3.4 * s}" stroke-linecap="round"/><path d="M${-16 * s},0 A${12 * s},${6.5 * s} 0 0 0 ${8 * s},0Z" transform="translate(${4 * s - 4} 2)" fill="url(#chromeV)" stroke="rgba(60,62,68,0.45)"/></svg>`;
+    }
+    const k = 22 / Math.max(t.h, 1), w = t.w * k / 2, h = t.h * k;
+    return `<svg viewBox="-24 -22 48 46" aria-hidden="true" focusable="false"><g transform="translate(0 ${r2(h / 2)})">` +
+      (t.handle ? `<path d="M${r2(w)},${r2(-h * 0.8)} C${r2(w + 7)},${r2(-h * 0.8)} ${r2(w + 7)},${r2(-h * 0.25)} ${r2(w)},${r2(-h * 0.25)}" fill="none" stroke="rgba(120,135,150,0.8)" stroke-width="2"/>` : '') +
+      `<rect x="${r2(-w)}" y="${r2(-h * 0.45)}" width="${r2(2 * w)}" height="${r2(h * 0.45)}" fill="url(#water)"/>` +
+      `<path d="M${r2(-w)},${r2(-h)}L${r2(-w)},0L${r2(w)},0L${r2(w)},${r2(-h)}" fill="rgba(235,242,248,0.4)" stroke="rgba(105,118,132,0.75)" stroke-width="1.4"/></g></svg>`;
+  }
+  for (const k of ORDER) {
+    const b = document.createElement('button');
+    b.className = 'bin';
+    b.dataset.type = k;
+    b.setAttribute('aria-label', `${TYPES[k].name[0].toUpperCase() + TYPES[k].name.slice(1)} bin`);
+    b.innerHTML = binIcon(k);
+    b.addEventListener('pointerdown', binDown);
+    b.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      const c = placeFromBin(k, b);
+      if (c) c.g.focus();
+    });
+    binsEl.appendChild(b);
+  }
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    paint();
+    if (recordOn) announce(true);
+  });
+  clearBtn.addEventListener('click', () => { [...vessels].forEach(putAway); stopFaucet(); });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  // ═══════ START ═══════
+  // a liter beaker and a cup wait on the counter
+  layout();
+  const firstX = basin.x1 + 0.2 * u;
+  const bk = addVessel('beaker', 0, restY); bk.cx = freeSpot(bk, firstX + 0.7 * u) ?? firstX;
+  const cp = addVessel('cup', 0, restY); cp.cx = freeSpot(cp, bk.cx + 1.4 * u) ?? bk.cx + u;
+  [bk, cp].forEach(draw);
+  paint();
+  announce();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
