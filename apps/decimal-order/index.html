@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Math Things | Decimal Alignment & Operations</title>
+  <title>Math Things. | Decimal Order</title>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -71,21 +71,10 @@
       background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
     }
 
-    .app-title {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.85rem;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--text-light);
-      pointer-events: none;
-    }
-
     .controls { display: flex; gap: 20px; align-items: center; }
     
-    .toggle-wrap { display: flex; align-items: center; gap: 10px; color: var(--text-gray); cursor: pointer; }
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; color: var(--text-gray); cursor: pointer; background: none; border: none; padding: 4px; border-radius: 12px; font: inherit; }
+    .toggle-wrap:focus-visible, .icon-btn:focus-visible, .num-entry:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
     .toggle { width: 44px; height: 24px; background: #E5E5EA; border-radius: 12px; position: relative; transition: background 0.3s; }
     .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.3s var(--spring); }
     .toggle.active { background: #34C759; }
@@ -108,9 +97,17 @@
     .icon-btn.btn-secondary { background: rgba(0,0,0,0.05); color: var(--text-main); }
     .icon-btn.btn-secondary:hover { background: rgba(0,0,0,0.1); }
     .icon-btn.btn-secondary:active { transform: scale(0.92); }
-    
-    .icon-btn.check-btn { background: var(--kelly); color: white; box-shadow: 0 4px 12px rgba(76,187,23,0.3); }
-    .icon-btn.check-btn:active { transform: scale(0.92); box-shadow: 0 2px 6px rgba(76,187,23,0.2); }
+
+    /* A blank card to type a decimal on */
+    .num-entry {
+      width: 6.4em; height: 44px;
+      border: none; border-radius: 12px;
+      background: rgba(0,0,0,0.05);
+      font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 700;
+      text-align: center; color: var(--text-main);
+      outline: none;
+    }
+    .num-entry::placeholder { color: var(--text-light); }
 
     main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; gap: 30px; position: relative; }
 
@@ -216,53 +213,22 @@
     body.color-code .slot.hth:not(.ghost) { color: var(--hth); }
     body.color-code .slot.thth:not(.ghost) { color: var(--thth); }
 
-    /* Validation Animations */
+    /* A number that can't become a card shakes it off */
     @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-    .error { animation: shake 0.4s var(--spring); background-color: #FFE5E5 !important; }
-    .success { background-color: #E5FDE5 !important; }
-    .dec-error .slot.dec { color: #DC143C !important; }
+    .refuse { animation: shake 0.4s var(--spring); }
 
-    /* Empty Row Pulse Animation */
-    @keyframes pulseYellow {
-      0% { background-color: rgba(0,0,0,0.03); }
-      15% { background-color: rgba(255, 215, 0, 0.4); }
-      30% { background-color: rgba(0,0,0,0.03); }
-      45% { background-color: rgba(255, 215, 0, 0.4); }
-      60% { background-color: rgba(0,0,0,0.03); }
-      75% { background-color: rgba(255, 215, 0, 0.4); }
-      100% { background-color: rgba(0,0,0,0.03); }
-    }
-    .empty-warning { animation: pulseYellow 1.2s ease-in-out; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-    /* Neon Celebration Banner */
-    #celebration {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      font-size: 5rem;
-      font-weight: 900;
-      color: #fff;
-      background: var(--kelly);
-      padding: 20px 80px;
-      border-radius: 24px;
-      text-transform: uppercase;
-      letter-spacing: 10px;
-      pointer-events: none;
-      z-index: 9999;
-      opacity: 0;
-    }
-
-    .celebrate-anim { animation: boomPulseFade 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-    @keyframes boomPulseFade {
-      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; box-shadow: none; }
-      15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); }
-      30% { transform: translate(-50%, -50%) scale(1); background: var(--kelly); box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); }
-      40% { background: #6eff29; color: #fff; text-shadow: 0 0 10px #fff; box-shadow: 0 0 60px 20px rgba(110, 255, 41, 0.8); }
-      50% { background: var(--kelly); color: #fff; text-shadow: none; box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); }
-      60% { background: #6eff29; color: #fff; text-shadow: 0 0 10px #fff; box-shadow: 0 0 60px 20px rgba(110, 255, 41, 0.8); }
-      75% { background: var(--kelly); color: #fff; text-shadow: none; box-shadow: 0 10px 40px rgba(76, 187, 23, 0.5); transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; box-shadow: none; }
+    /* Phones: narrower columns so the rows fit the screen */
+    @media (max-width: 640px) {
+      :root { --char-w: 22px; }
+      header { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+      .controls { width: 100%; justify-content: center; flex-wrap: wrap; gap: 10px; }
+      main { padding: 24px 12px; gap: 20px; }
+      .grid-row { height: 44px; border-radius: 9px; }
+      .card { height: 40px; }
+      .slot { font-size: 1.2rem; }
+      .staging-area { gap: 10px; padding: 12px; min-height: 64px; }
     }
 
     footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); }
@@ -272,30 +238,31 @@
 
 <header>
   <div class="logo">Math Things<span class="logo-bead"></span></div>
-  
-  <div class="app-title">Align & Stack</div>
-  
+
   <div class="controls">
-    <div class="toggle-wrap" onclick="toggleOption('zeros')" title="Toggle Ghost Zeros">
+    <button type="button" class="toggle-wrap" onclick="toggleOption('zeros')" title="Ghost zeros" aria-label="Ghost zeros" aria-pressed="false" id="zerosBtn">
       <span style="font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 700; letter-spacing: -1px; color: var(--text-main);">000</span>
       <div id="toggle-zeros" class="toggle"></div>
-    </div>
-    
-    <div class="toggle-wrap" onclick="toggleOption('color')" title="Toggle Color Code">
-      <div class="color-wheel-icon"></div>
-      <div id="toggle-color" class="toggle"></div>
-    </div>
-    
-    <button class="icon-btn btn-secondary" onclick="generateNumbers()" title="New Numbers">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-        <path d="M3 3v5h5"/>
-      </svg>
     </button>
     
-    <button class="icon-btn check-btn" onclick="checkAnswer()" title="Check Answer">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
+    <button type="button" class="toggle-wrap" onclick="toggleOption('color')" title="Place-value colors" aria-label="Place-value colors" aria-pressed="false" id="colorBtn">
+      <div class="color-wheel-icon"></div>
+      <div id="toggle-color" class="toggle"></div>
+    </button>
+
+    <input id="numEntry" class="num-entry" type="text" inputmode="decimal" maxlength="7" placeholder="0.0" autocomplete="off" aria-label="Type a decimal, then press Enter to make a card">
+    
+    <button class="icon-btn btn-secondary" onclick="dealNumbers()" title="Deal new cards" aria-label="Deal five new cards">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="6" width="11" height="15" rx="2" transform="rotate(-12 8.5 13.5)"/>
+        <rect x="10" y="3" width="11" height="15" rx="2" transform="rotate(10 15.5 10.5)"/>
+      </svg>
+    </button>
+
+    <button class="icon-btn btn-secondary" onclick="clearTable()" title="Clear the table" aria-label="Clear the table">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
       </svg>
     </button>
   </div>
@@ -310,22 +277,26 @@
     <div class="grid-row" data-row="4"></div>
   </div>
   <div class="staging-area" id="staging"></div>
-  <div id="celebration">Correct</div>
 </main>
+<div id="live" class="sr-only" aria-live="polite"></div>
 
 <footer>Math Things<span class="logo-bead" style="width:0.2em;height:0.2em"></span> &nbsp;|&nbsp; Math, in your hands</footer>
 
 <script>
-  const charW = 38; 
   const rowCols = 15;
-  
-  function generateNumbers() {
-    document.getElementById('staging').innerHTML = '';
-    document.getElementById('celebration').classList.remove('celebrate-anim');
-    document.querySelectorAll('.grid-row').forEach(r => { 
-      r.innerHTML = ''; 
-      r.classList.remove('success', 'error', 'dec-error', 'empty-warning'); 
-    });
+  const MAX_CARDS = 8;            // five rows plus a few waiting on the table
+  // column width comes from the stylesheet, so phones get narrower columns
+  const charW = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--char-w')) || 38;
+  const live = document.getElementById('live');
+
+  function clearTable() {
+    document.querySelectorAll('.card').forEach(c => c.remove());
+    live.textContent = 'The table is clear.';
+  }
+
+  // Deal five random decimals, from thousandths to hundreds
+  function dealNumbers() {
+    clearTable();
 
     let numbers = [];
     for(let i=0; i<5; i++) {
@@ -341,7 +312,29 @@
       numbers.push(num);
       createCard(valStr);
     }
+    live.textContent = 'Five new cards: ' + numbers.join(', ') + '.';
   }
+
+  // A typed decimal becomes a card: up to three whole digits and three decimal places
+  const entry = document.getElementById('numEntry');
+  function refuse() {
+    entry.classList.remove('refuse'); void entry.offsetWidth; entry.classList.add('refuse');
+  }
+  function cardFromEntry() {
+    let s = entry.value.trim().replace(',', '.');
+    if (!s) return;
+    if (s.startsWith('.')) s = '0' + s;
+    if (s.endsWith('.')) s = s.slice(0, -1);
+    const m = s.match(/^(\d{1,3})(?:\.(\d{1,3}))?$/);
+    if (!m || document.querySelectorAll('.card').length >= MAX_CARDS) { refuse(); return; }
+    const valStr = String(parseInt(m[1], 10)) + (m[2] ? '.' + m[2] : '');
+    createCard(valStr);
+    entry.value = '';
+    live.textContent = valStr + ' is on the table.';
+  }
+  // Enter on a keyboard, or the check key on the Math Things number pad (it commits with a change event)
+  entry.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cardFromEntry(); } });
+  entry.addEventListener('change', cardFromEntry);
 
   function createCard(valStr) {
     let [whole, frac] = valStr.split('.');
@@ -388,7 +381,8 @@
   }
 
   function toggleOption(type) {
-    document.getElementById(`toggle-${type}`).classList.toggle('active');
+    const on = document.getElementById(`toggle-${type}`).classList.toggle('active');
+    document.getElementById(type === 'zeros' ? 'zerosBtn' : 'colorBtn').setAttribute('aria-pressed', String(on));
     document.body.classList.toggle(type === 'zeros' ? 'show-zeros' : 'color-code');
   }
 
@@ -445,7 +439,7 @@
       const rowRect = row.getBoundingClientRect();
       const dropX = (e.clientX - offsetX) - rowRect.left;
       
-      let startCol = Math.round(dropX / charW);
+      let startCol = Math.round(dropX / charW());
       let activeCols = parseInt(currentCard.dataset.activeCols);
       let maxOffsetCol = rowCols - activeCols;
       startCol = Math.max(0, Math.min(maxOffsetCol, startCol));
@@ -479,10 +473,11 @@
         if (currentCards[idx]) {
           const c = currentCards[idx];
           c.style.position = 'absolute';
-          c.style.left = `${c.dataset.startCol * charW}px`;
+          c.style.left = `calc(${c.dataset.startCol} * var(--char-w))`;
           r.appendChild(c);
         }
       });
+      live.textContent = currentCard.dataset.val + ' in row ' + (targetIndex + 1) + '.';
 
     } else {
       currentCard.style.position = 'relative';
@@ -494,66 +489,7 @@
     currentCard = null;
   });
 
-  function checkAnswer() {
-    const rows = document.querySelectorAll('.grid-row');
-    let cards = [];
-    let hasEmptyRow = false;
-    
-    document.getElementById('celebration').classList.remove('celebrate-anim');
-    
-    rows.forEach(row => {
-      row.classList.remove('error', 'success', 'dec-error', 'empty-warning');
-      void row.offsetWidth; 
-      
-      const card = row.querySelector('.card');
-      if(card) {
-        cards.push(card);
-      } else {
-        hasEmptyRow = true;
-        row.classList.add('empty-warning');
-      }
-    });
-
-    if (hasEmptyRow) {
-      return;
-    }
-
-    let placedVals = cards.map(c => parseFloat(c.dataset.val));
-    let sortedVals = [...placedVals].sort((a,b) => b - a); 
-
-    let decCols = cards.map(c => parseInt(c.dataset.startCol) + (3 - parseInt(c.dataset.firstActive)));
-    
-    let colCounts = {};
-    decCols.forEach(c => colCounts[c] = (colCounts[c] || 0) + 1);
-    let targetDecCol = parseInt(Object.keys(colCounts).reduce((a, b) => colCounts[a] > colCounts[b] ? a : b));
-
-    let allCorrect = true;
-
-    for(let i = 0; i < cards.length; i++) {
-      const c = cards[i];
-      const val = parseFloat(c.dataset.val);
-      const myDecCol = decCols[i];
-
-      const isValCorrect = (val === sortedVals[i]);
-      const isAligned = (myDecCol === targetDecCol);
-
-      if (isValCorrect && isAligned) {
-        c.parentElement.classList.add('success');
-      } else {
-        c.parentElement.classList.add('error');
-        if (!isAligned) c.parentElement.classList.add('dec-error');
-        allCorrect = false;
-      }
-    }
-
-    if(allCorrect) {
-      const celeb = document.getElementById('celebration');
-      void celeb.offsetWidth; 
-      celeb.classList.add('celebrate-anim');
-    }
-  }
-
-  generateNumbers();
+  dealNumbers();
 </script>
   <script src="../../math-things-home.js"></script>
 </body>
