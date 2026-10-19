@@ -77,6 +77,26 @@
   .item.editing{background:rgba(0,122,255,.06);box-shadow:0 0 0 2px rgba(0,122,255,.45);border-radius:.18em}
   .item.selected{box-shadow:0 0 0 2px rgba(0,122,255,.45);border-radius:.18em}
   .item.empty:not(.editing){display:none}
+  /* A number box holds one or more lines; Enter starts the next line in the same box. */
+  .item.math{display:flex;flex-direction:column;align-items:flex-start}
+  .item.math math-field{display:block}
+
+  /* ── COLUMN SETUPS: + − × and long division, one digit to a place ── */
+  /* --u is the setup's size in page units, so carries can be small and still stay in their column. */
+  .item.algo{transform:none;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);padding:calc(var(--u)*.2) calc(var(--u)*.3)}
+  .arow{display:flex;justify-content:flex-end;align-items:center;gap:calc(var(--u)*.1);min-height:calc(var(--u)*1.2)}
+  .arow .opc{width:calc(var(--u)*1.1);text-align:center}
+  .cell{width:calc(var(--u)*1.05);height:calc(var(--u)*1.15);flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:calc(var(--u)*.16);position:relative}
+  .item.algo.editing .cell{background:rgba(0,0,0,.04);cursor:pointer}
+  .item.algo .cell.on{background:rgba(0,122,255,.16);box-shadow:inset 0 calc(var(--u)*-.08) 0 var(--accent)}
+  .cell.dot::after{content:".";position:absolute;right:calc(var(--u)*-.2);bottom:calc(var(--u)*.02)}
+  .arow.ans,.arow.part1{border-top:calc(var(--u)*.07) solid currentColor;margin-top:calc(var(--u)*.08);padding-top:calc(var(--u)*.08)}
+  .arow.carry{min-height:calc(var(--u)*.8);margin-bottom:calc(var(--u)*-.06)}
+  .arow.carry .cell{height:calc(var(--u)*.8);font-size:.58em;color:#1F5FD1}
+  .item.algo.sub .arow.carry .cell{color:#C0392B}
+  .lead,.dvsr{display:flex;gap:calc(var(--u)*.1);width:calc(var(--u)*2.2);justify-content:flex-end}
+  .pad,.dvnd{display:flex;gap:calc(var(--u)*.1);padding-left:calc(var(--u)*.18);border-left:calc(var(--u)*.07) solid transparent}
+  .dvnd{border-left-color:currentColor;border-top:calc(var(--u)*.07) solid currentColor;border-top-left-radius:calc(var(--u)*.16)}
 
   /* ── DOCK: one row of board-sized controls, within reach ── */
   #dock{
@@ -145,18 +165,42 @@
   .key.op{background:#F2F2F5}
   .key.soft{background:transparent;box-shadow:none;color:#5A5A5F}
   .key.done{background:var(--accent);color:#fff}
+  .key.wide{grid-column:span 3;font-size:18px;gap:8px}
+  /* In a column setup only digits, the point and moving about make sense. */
+  #keypad.cells .key:not(.c){opacity:.25;pointer-events:none}
   .key svg{width:28px;height:28px}
   .frac-glyph{display:flex;flex-direction:column;align-items:center;line-height:1;font-size:15px;font-weight:800}
   .frac-glyph i{display:block;width:20px;height:2.5px;background:currentColor;margin:3px 0;border-radius:2px}
 
   /* ── SELECTION BUTTON (delete) ── */
   #trash{
-    position:fixed;z-index:44;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+    position:fixed;z-index:46;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
     background:#fff;color:#C0392B;box-shadow:0 4px 14px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);
     display:none;align-items:center;justify-content:center;
   }
   #trash.show{display:flex}
   #trash svg{width:26px;height:26px}
+  /* The handle for moving the box being written in (or the one selected). */
+  #mover{
+    position:fixed;z-index:46;width:56px;height:56px;border-radius:50%;border:none;cursor:grab;touch-action:none;
+    background:#fff;color:var(--accent);box-shadow:0 4px 14px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);
+    display:none;align-items:center;justify-content:center;
+  }
+  #mover.show{display:flex}
+  #mover:active{cursor:grabbing}
+  #mover svg{width:28px;height:28px}
+  #algoBar{
+    position:fixed;z-index:46;display:none;gap:6px;padding:6px;border-radius:16px;
+    background:var(--glass);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+    box-shadow:0 8px 24px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.08);
+  }
+  #algoBar.show{display:flex}
+  .ab{height:52px;padding:0 16px;border:none;border-radius:12px;background:#fff;cursor:pointer;font:inherit;font-weight:700;font-size:16px;color:var(--text-main);
+    box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.05)}
+  .ab:active{transform:scale(.95)}
+  .ab:disabled{opacity:.35;cursor:default}
+  .ab[hidden]{display:none}
+  .alg-glyph{font-size:34px;font-weight:800;color:#3A3A3F;line-height:1}
 
   /* ── MATH THINGS ── */
   #chest{
@@ -302,35 +346,54 @@
 
 <!-- The keypad: everything needed to write grade-school math without handwriting -->
 <div id="keypad" role="group" aria-label="Math keypad">
-  <button class="key" data-in="7">7</button><button class="key" data-in="8">8</button><button class="key" data-in="9">9</button>
+  <button class="key c" data-in="7">7</button><button class="key c" data-in="8">8</button><button class="key c" data-in="9">9</button>
   <button class="key op" data-in="\div" aria-label="divided by">÷</button>
-  <button class="key soft" data-cmd="deleteBackward" aria-label="Delete">
+  <button class="key soft c" data-cmd="deleteBackward" aria-label="Delete">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M11 7h16v18H11l-8-9z"/><path d="m15 12 8 8m0-8-8 8"/></svg></button>
-  <button class="key" data-in="4">4</button><button class="key" data-in="5">5</button><button class="key" data-in="6">6</button>
+  <button class="key c" data-in="4">4</button><button class="key c" data-in="5">5</button><button class="key c" data-in="6">6</button>
   <button class="key op" data-in="\times" aria-label="times">×</button>
   <button class="key op" data-in="(" aria-label="open parenthesis">(</button>
-  <button class="key" data-in="1">1</button><button class="key" data-in="2">2</button><button class="key" data-in="3">3</button>
+  <button class="key c" data-in="1">1</button><button class="key c" data-in="2">2</button><button class="key c" data-in="3">3</button>
   <button class="key op" data-in="-" aria-label="minus">−</button>
   <button class="key op" data-in=")" aria-label="close parenthesis">)</button>
-  <button class="key" data-in="0">0</button><button class="key" data-in="." aria-label="decimal point">.</button>
+  <button class="key c" data-in="0">0</button><button class="key c" data-in="." aria-label="decimal point">.</button>
   <button class="key op" data-in="=" aria-label="equals">=</button>
   <button class="key op" data-in="+" aria-label="plus">+</button>
   <button class="key op" data-in="\frac" aria-label="fraction"><span class="frac-glyph">▢<i></i>▢</span></button>
-  <button class="key soft" data-cmd="moveToPreviousChar" aria-label="Move left">
+  <button class="key soft c" data-cmd="moveToPreviousChar" aria-label="Move left">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-9 9 9 9"/></svg></button>
-  <button class="key soft" data-cmd="moveToNextChar" aria-label="Move right">
+  <button class="key soft c" data-cmd="moveToNextChar" aria-label="Move right">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7l9 9-9 9"/></svg></button>
-  <button class="key soft" data-size="-1" aria-label="Smaller">
+  <button class="key op wide c" data-nl aria-label="New line">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M25 7v8a4 4 0 0 1-4 4H8"/><path d="m13 14-5 5 5 5"/></svg>New line</button>
+  <button class="key soft c" data-size="-1" aria-label="Smaller">
     <svg viewBox="0 0 32 32" fill="currentColor"><text x="16" y="22" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="14">A</text></svg></button>
-  <button class="key soft" data-size="1" aria-label="Larger">
+  <button class="key soft c" data-size="1" aria-label="Larger">
     <svg viewBox="0 0 32 32" fill="currentColor"><text x="16" y="25" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="24">A</text></svg></button>
-  <button class="key done" data-done aria-label="Done">
-    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.5l6 6L25 10"/></svg></button>
+  <button class="key done wide c" data-done aria-label="Done: close the keypad">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.5l6 6L25 10"/></svg>Done</button>
 </div>
 
 <button id="trash" aria-label="Remove this from the page">
   <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h20M13 9V6h6v3M9 9l1.2 17h11.6L23 9"/></svg>
 </button>
+
+<button id="mover" aria-label="Drag to move this box" title="Drag to move">
+  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v24M4 16h24M16 4l-4 4m4-4 4 4M16 28l-4-4m4 4 4-4M4 16l4-4m-4 4 4 4M28 16l-4-4m4 4-4 4"/></svg>
+</button>
+<div id="algoBar" role="group" aria-label="Change this setup">
+  <button class="ab" id="algoWider" aria-label="Add a place-value column">+ Place</button>
+  <button class="ab" id="addendMore" aria-label="Add another addend">+ Addend</button>
+  <button class="ab" id="addendLess" aria-label="Remove the last addend">− Addend</button>
+</div>
+
+<!-- Setup tray: column arithmetic laid out one digit to a place -->
+<div class="tray" id="setupTray" role="dialog" aria-label="Set up a problem">
+  <button class="tile" data-alg="add" aria-label="Column addition" title="Addition"><span class="alg-glyph">+</span></button>
+  <button class="tile" data-alg="sub" aria-label="Column subtraction" title="Subtraction"><span class="alg-glyph">−</span></button>
+  <button class="tile" data-alg="mul" aria-label="Column multiplication" title="Multiplication"><span class="alg-glyph">×</span></button>
+  <button class="tile" data-alg="div" aria-label="Long division" title="Long division"><span class="alg-glyph">⟌</span></button>
+</div>
 
 <div id="chest" role="dialog" aria-label="Math Things"><div class="shelf" id="shelf"></div></div>
 
@@ -365,6 +428,9 @@
     </button>
   </div>
   <div class="group">
+    <button class="db" id="setupBtn" aria-label="Set up a problem: add, subtract, multiply, divide" title="Set up a problem">
+      <svg viewBox="0 0 32 32" fill="currentColor"><text x="21" y="12.5" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="10">37</text><text x="21" y="22" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="10">25</text><text x="8" y="22" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="11">+</text><rect x="4" y="25" width="25" height="2.2" rx="1"/></svg>
+    </button>
     <button class="db" id="chestBtn" aria-label="Math Things" title="Math Things">
       <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="4" y="5" width="24" height="22" rx="2.5"/><path d="M4 12h24M4 19h24"/><path d="M13 8.5h6M13 15.5h6M13 22.5h6" stroke-linecap="round"/></svg>
     </button>
@@ -419,9 +485,10 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 // doc.pages[i] = {id, w, h, paper, hasImage, lesson?, items:[...]}
 // A textbook document holds one lesson page at a time: doc.book = {name, title, total}.
 // Work on each lesson page is kept by book and page, so it returns when you do.
-// item: {id, type:'math', x, y, size, latex} | {id, type:'mark', shape, ink, x1, y1, x2, y2}
+// item: {id, type:'math', x, y, size, lines:[latex…]} | {id, type:'mark', shape, ink, x1, y1, x2, y2}
+//     | {id, type:'algo', alg:'add'|'sub'|'mul'|'div', x, y, size, cols, frac, rows:[{k, v?|c?, s?}]}
 let doc={pages:[{id:uid(),w:PAGE_W,h:BLANK_H,paper:'plain',hasImage:false,items:[]}],page:0};
-const ui={tool:'type',shape:'ellipse',ink:'graphite',size:34,editing:null,selected:null};
+const ui={tool:'type',shape:'ellipse',ink:'graphite',size:34,editing:null,selected:null,line:0,cell:null};
 const view={x:0,y:0,z:1};
 const page=()=>doc.pages[doc.page];
 // Scratch paper lives on the desk, not in the document: it stays while pages turn and
@@ -569,36 +636,56 @@ function layoutScratch(){
   scratchEl.style.cssText=`left:${SURF.scratch.x()}px;width:${sc.w}px;height:${sc.h}px`;
   sizeMarks(marks2,sc);
 }
+// Boxes saved before a box could hold several lines kept one latex string.
+function normMath(it){if(!Array.isArray(it.lines)){it.lines=[it.latex||''];delete it.latex}return it}
+const hasText=it=>it.lines.some(l=>l.trim());
+// A box's y is the middle of its first line, so new lines grow downward like writing.
+function anchor(el){const f=el.querySelector('math-field');el.style.transform=`translateY(${-(f?.offsetHeight||0)/2}px)`}
 function drawItem(it,k=ownerOf(it.id)||'main'){
   if(it.type==='math'){
+    normMath(it);
     let el=els.get(it.id);
     if(!el){
       el=document.createElement('div');el.className='item math';el.dataset.id=it.id;
-      const mf=document.createElement('math-field');
-      el.append(mf,Object.assign(document.createElement('div'),{className:'grip'}));
+      el.append(Object.assign(document.createElement('div'),{className:'grip'}));
       SURF[k].el.append(el);els.set(it.id,el);
-      setupField(mf,it);
     }
     el.style.left=it.x+'px';el.style.top=it.y+'px';el.style.fontSize=it.size+'px';
-    const mf=el.querySelector('math-field');
-    if(mf.value!==it.latex)mf.value=it.latex;
-    el.classList.toggle('empty',!it.latex);
-  }else drawMark(it,k);
+    const fields=[...el.querySelectorAll('math-field')];
+    while(fields.length<it.lines.length){
+      const mf=document.createElement('math-field');el.insertBefore(mf,el.querySelector('.grip'));setupField(mf,it);fields.push(mf);
+    }
+    while(fields.length>it.lines.length)fields.pop().remove();
+    fields.forEach((mf,i)=>{if(mf.value!==it.lines[i])mf.value=it.lines[i]});
+    el.classList.toggle('empty',!hasText(it));
+    anchor(el);
+  }else if(it.type==='algo')drawAlgo(it,k);
+  else drawMark(it,k);
 }
 function setupField(mf,it){
   // Our keypad replaces MathLive's own keyboard and menu; physical keyboards still work.
   mf.mathVirtualKeyboardPolicy='manual';
   mf.menuItems=[];
   mf.smartFence=false;mf.smartSuperscript=false;
-  mf.addEventListener('focusin',()=>mf.shadowRoot?.querySelector('textarea')?.setAttribute('inputmode','none'));
+  const line=()=>[...(mf.parentElement?.querySelectorAll('math-field')||[])].indexOf(mf);
+  mf.addEventListener('focusin',()=>{
+    mf.shadowRoot?.querySelector('textarea')?.setAttribute('inputmode','none');
+    if(ui.editing===it.id)ui.line=line();
+  });
   mf.addEventListener('input',()=>{
     const item=findItem(it.id);if(!item)return;
-    item.latex=mf.value;els.get(it.id)?.classList.toggle('empty',!item.latex);
+    item.lines[line()]=mf.value;
+    const el=els.get(it.id);if(el){el.classList.toggle('empty',!hasText(item));anchor(el)}
     placeOverlays();
   });
+  // Caught on the way in, before MathLive sees the key: by then a Backspace has already
+  // deleted the line's last character and the line would look empty one keystroke early.
   mf.addEventListener('keydown',e=>{
-    if(e.key==='Escape'||(e.key==='Enter'&&!e.shiftKey)){e.preventDefault();finishEdit()}
-  });
+    const stop=()=>{e.preventDefault();e.stopPropagation()};
+    if(e.key==='Escape'){stop();finishEdit()}
+    else if(e.key==='Enter'){stop();newLine()}
+    else if(e.key==='Backspace'&&!mf.value&&findItem(it.id)?.lines.length>1){stop();dropLine()}
+  },true);
 }
 // Clean marks: drawn from a drag's two corners, never from the stroke itself.
 function markPaths(m){
@@ -638,30 +725,188 @@ function removeItem(id){const k=ownerOf(id);if(!k)return;const d=SURF[k].data();
 
 // ── EDITING TYPED MATH ──
 let editBefore=null;
-function startEdit(id){
+// at: the line of a number box, or the {r, i} place of a setup, that was tapped.
+function startEdit(id,at){
   if(ui.editing===id)return;
   finishEdit();select(null);
+  const it=findItem(id);if(!it)return;
   ui.editing=id;editBefore=snap();fracPart=null;
-  const el=els.get(id);el.classList.add('editing');
-  const mf=el.querySelector('math-field');
-  requestAnimationFrame(()=>{mf.focus();openKeypad()});
+  els.get(id).classList.add('editing');
+  if(it.type==='algo'){
+    ui.cell=at&&at.r!=null?fixCell(it,at):firstCell(it);drawAlgo(it);
+    keypad.classList.add('cells');requestAnimationFrame(openKeypad);return;
+  }
+  keypad.classList.remove('cells');
+  ui.line=clamp(at|0,0,it.lines.length-1);
+  const mf=lineFields()[ui.line];
+  requestAnimationFrame(()=>{mf?.focus();openKeypad()});
 }
 function finishEdit(){
   const id=ui.editing;if(!id)return;
   ui.editing=null;
   const el=els.get(id),it=findItem(id);
-  el?.classList.remove('editing');el?.querySelector('math-field')?.blur();
-  if(it&&!it.latex.trim())removeItem(id);
-  closeKeypad();
+  el?.classList.remove('editing');
+  if(it?.type==='math'){
+    el?.querySelectorAll('math-field').forEach(mf=>mf.blur());
+    it.lines=it.lines.filter(l=>l.trim());
+    if(!it.lines.length)removeItem(id);else drawItem(it);
+  }else if(it?.type==='algo'){ui.cell=null;drawAlgo(it)}
+  closeKeypad();placeOverlays();
   if(editBefore){const b=editBefore;editBefore=null;record(b)}
 }
 function newMathAt(at){
   const before=snap();lastSurf=at.k;
-  const it={id:uid(),type:'math',x:at.x-ui.size*.12,y:at.y,size:ui.size,latex:''};
+  const it={id:uid(),type:'math',x:at.x-ui.size*.12,y:at.y,size:ui.size,lines:['']};
   SURF[at.k].data().items.push(it);drawItem(it,at.k);
-  startEdit(it.id);editBefore=before;   // creation and typing are one undo step
+  startEdit(it.id,0);editBefore=before;   // creation and typing are one undo step
 }
-function activeField(){return ui.editing?els.get(ui.editing)?.querySelector('math-field'):null}
+function lineFields(){const el=ui.editing&&els.get(ui.editing);return el?[...el.querySelectorAll('math-field')]:[]}
+function activeField(){const f=lineFields();return f[ui.line]||f[0]||null}
+// Enter (or the New line key) starts a new line in the same box, under the line being written.
+function newLine(){
+  const it=findItem(ui.editing);if(it?.type!=='math')return;
+  const i=clamp(ui.line|0,0,it.lines.length-1);
+  it.lines.splice(i+1,0,'');drawItem(it);ui.line=i+1;fracPart=null;
+  lineFields()[i+1]?.focus();placeOverlays();
+}
+// Deleting on an empty line takes the line away and goes back to the end of the one above.
+function dropLine(){
+  const it=findItem(ui.editing);if(it?.type!=='math'||it.lines.length<2)return;
+  const i=clamp(ui.line|0,0,it.lines.length-1);
+  it.lines.splice(i,1);drawItem(it);ui.line=Math.max(0,i-1);fracPart=null;
+  const mf=lineFields()[ui.line];if(mf){mf.focus();mf.executeCommand('moveToMathfieldEnd')}
+  placeOverlays();
+}
+
+// ── COLUMN SETUPS ── addition, subtraction, multiplication and long division, laid out one
+// digit to a place. Number rows (and the divisor and dividend) fill from the ones place as
+// digits are typed, and addition lines up decimal points; carries, partial products, the
+// quotient and division work go exactly where tapped.
+const ALG_MAX=14,FRAC_MAX=3;
+const blank=n=>Array(n).fill('');
+const autoRow=(it,row)=>row.k==='op'||row.k==='dvsr'||row.k==='dvnd'||(it.alg==='add'&&row.k==='ans');
+function makeAlgo(alg){
+  const n=alg==='add'?3:4,c=()=>blank(n);
+  const rows={
+    add:[{k:'carry',c:c()},{k:'op',v:''},{k:'op',v:'',s:'+'},{k:'ans',v:''}],
+    sub:[{k:'carry',c:c()},{k:'op',v:''},{k:'op',v:'',s:'−'},{k:'ans',c:c()}],
+    mul:[{k:'carry',c:c()},{k:'op',v:''},{k:'op',v:'',s:'×'},{k:'part',c:c()},{k:'part',c:c()},{k:'ans',c:c()}],
+    div:[{k:'quot',c:c()},{k:'dvsr',v:''},{k:'dvnd',v:''},{k:'work',c:c()},{k:'work',c:c()},{k:'work',c:c()},{k:'work',c:c()}],
+  }[alg];
+  return {id:uid(),type:'algo',alg,x:0,y:0,size:Math.max(ui.size,40),cols:n,frac:0,rows};
+}
+function cellsOf(it,row){
+  if(!autoRow(it,row))return row.c;
+  const n=row.k==='dvsr'?2:it.cols,out=blank(n),v=row.v||'';
+  if(it.alg==='add'){
+    const [w='',f='']=v.split('.'),ones=it.cols-it.frac-1;
+    for(let i=w.length-1,j=ones;i>=0&&j>=0;i--,j--)out[j]=w[i];
+    for(let i=0;i<f.length&&ones+1+i<it.cols;i++)out[ones+1+i]=f[i];
+  }else for(let i=v.length-1,j=n-1;i>=0&&j>=0;i--,j--)out[j]=v[i];
+  return out;
+}
+// More places on the left (tens, hundreds…), or decimal places on the right for addition.
+function widen(it,n){
+  n=Math.min(n,ALG_MAX-it.cols);if(n<=0)return false;
+  it.cols+=n;
+  it.rows.forEach((r,ri)=>{if(autoRow(it,r))return;r.c=blank(n).concat(r.c);
+    if(ui.editing===it.id&&ui.cell?.r===ri)ui.cell.i+=n});
+  return true;
+}
+function widenFrac(it,n){
+  n=Math.min(n,FRAC_MAX-it.frac,ALG_MAX-it.cols);if(n<=0)return false;
+  it.frac+=n;it.cols+=n;
+  for(const r of it.rows)if(!autoRow(it,r))r.c=r.c.concat(blank(n));
+  return true;
+}
+function setAuto(it,row,v){
+  if(it.alg==='add'){
+    let [w='',f='']=v.split('.');const dot=v.includes('.');
+    if(dot&&Math.max(1,f.length)>it.frac)widenFrac(it,Math.max(1,f.length)-it.frac);
+    f=f.slice(0,it.frac);
+    if(w.length>it.cols-it.frac)widen(it,w.length-(it.cols-it.frac));
+    w=w.slice(-(it.cols-it.frac));
+    row.v=w+(dot&&it.frac?'.'+f:'');
+  }else if(row.k==='dvsr')row.v=v.slice(-2);
+  else{
+    if(v.length>it.cols)widen(it,v.length-it.cols);
+    row.v=v.slice(-it.cols);
+  }
+}
+// Where the cursor sits in a number row: the ones place, or the next decimal place.
+function autoCursor(it,row){
+  if(it.alg!=='add')return row.k==='dvsr'?1:it.cols-1;
+  const ones=it.cols-it.frac-1,v=row.v||'';
+  return v.includes('.')?Math.min(it.cols-1,ones+1+(v.split('.')[1]||'').length):ones;
+}
+function fixCell(it,c){
+  const r=clamp(c.r,0,it.rows.length-1),row=it.rows[r];
+  return {r,i:autoRow(it,row)?autoCursor(it,row):clamp(c.i,0,cellsOf(it,row).length-1)};
+}
+function firstCell(it){
+  if(it.alg==='div')return {r:it.rows.findIndex(r=>r.k==='dvsr'),i:0};
+  const r=it.rows.findIndex(r=>r.k==='op');return {r,i:autoCursor(it,it.rows[r])};
+}
+function cellKey(key){
+  const it=findItem(ui.editing);if(it?.type!=='algo'||!ui.cell)return;
+  let {r,i}=ui.cell;const row=it.rows[r],len=ri=>cellsOf(it,it.rows[ri]).length;
+  if(autoRow(it,row)&&(/^[0-9.]$/.test(key)||key==='back')){
+    let v=row.v||'';
+    if(key==='back')v=v.slice(0,-1);
+    else if(key==='.'){if(it.alg!=='add'||v.includes('.'))return;v+=v?'.':'0.'}
+    else v+=key;
+    setAuto(it,row,v);i=autoCursor(it,row);
+  }else if(/^[0-9]$/.test(key)){
+    // The quotient and division work are written left to right; carries stay where they are put.
+    row.c[i]=key;if(it.alg==='div')i=Math.min(len(r)-1,i+1);
+  }else if(key==='back'){
+    if(row.c[i])row.c[i]='';
+    else if(it.alg==='div'&&i>0)row.c[--i]='';
+  }
+  else if(key==='left')i=Math.max(0,i-1);
+  else if(key==='right')i=Math.min(len(r)-1,i+1);
+  else if(key==='down'&&row.k==='dvsr')({r,i}=fixCell(it,{r:r+1,i:0}));   // divisor, then the dividend
+  else if(key==='down'||key==='up'){
+    const nr=clamp(r+(key==='down'?1:-1),0,it.rows.length-1),n1=len(r),n2=len(nr);
+    ({r,i}=fixCell(it,{r:nr,i:n2-n1+i}));
+  }else return;
+  ui.cell={r,i};drawAlgo(it);placeOverlays();
+}
+function addend(it,d){
+  const ops=it.rows.filter(r=>r.k==='op');
+  if(d>0&&ops.length<5)it.rows.splice(it.rows.findIndex(r=>r.k==='ans'),0,{k:'op',v:''});
+  else if(d<0&&ops.length>2)it.rows.splice(it.rows.indexOf(ops[ops.length-1]),1);
+  else return false;
+  const now=it.rows.filter(r=>r.k==='op');
+  now.forEach((r,i)=>{r.s=i===now.length-1?'+':''});
+  const last=it.rows.indexOf(now[now.length-1]);
+  if(d>0||ui.cell.r>=it.rows.length-1||!it.rows[ui.cell.r])ui.cell={r:last,i:autoCursor(it,now[now.length-1])};
+  return true;
+}
+function drawAlgo(it,k=ownerOf(it.id)||'main'){
+  let el=els.get(it.id);
+  if(!el){el=document.createElement('div');el.dataset.id=it.id;SURF[k].el.append(el);els.set(it.id,el)}
+  el.className='item algo '+it.alg+(ui.editing===it.id?' editing':'')+(ui.selected===it.id?' selected':'');
+  el.style.left=it.x+'px';el.style.top=it.y+'px';el.style.fontSize=it.size+'px';el.style.setProperty('--u',it.size+'px');
+  const on=ui.editing===it.id?ui.cell:null,ones=it.alg==='add'?it.cols-it.frac-1:-1;
+  const cells=ri=>{
+    const row=it.rows[ri],dot=it.alg==='add'&&autoRow(it,row)&&(row.v||'').includes('.');
+    return cellsOf(it,row).map((d,i)=>`<span class="cell${on&&on.r===ri&&on.i===i?' on':''}${dot&&i===ones?' dot':''}" data-r="${ri}" data-i="${i}">${String(d).replace(/[^0-9]/g,'')}</span>`).join('');
+  };
+  let h='',part=true;
+  it.rows.forEach((row,ri)=>{
+    if(it.alg==='div'){
+      if(row.k==='dvsr')return;
+      if(row.k==='dvnd')h+=`<div class="arow main"><span class="dvsr">${cells(it.rows.findIndex(r=>r.k==='dvsr'))}</span><span class="dvnd">${cells(ri)}</span></div>`;
+      else h+=`<div class="arow ${row.k}"><span class="lead"></span><span class="pad">${cells(ri)}</span></div>`;
+    }else{
+      const cls=row.k+(row.k==='part'&&part?' part1':'');if(row.k==='part')part=false;
+      h+=`<div class="arow ${cls}"><span class="opc">${row.s||''}</span>${cells(ri)}</div>`;
+    }
+  });
+  el.innerHTML=h+'<div class="grip"></div>';
+}
+function setCell(r,i){const it=findItem(ui.editing);if(it?.type!=='algo')return;ui.cell=fixCell(it,{r,i});drawAlgo(it);placeOverlays()}
 
 // ── KEYPAD ──
 function openKeypad(){keypad.classList.add('open');placeOverlays()}
@@ -669,13 +914,22 @@ function closeKeypad(){keypad.classList.remove('open')}
 keypad.addEventListener('pointerdown',e=>e.preventDefault());   // keep focus in the field
 keypad.addEventListener('click',e=>{
   const k=e.target.closest('.key');if(!k)return;
-  const mf=activeField();if(!mf)return;
   if(k.dataset.done!==undefined){finishEdit();return}
+  const it=findItem(ui.editing);if(!it)return;
   if(k.dataset.size){
-    const it=findItem(ui.editing);
-    it.size=clamp(it.size+Number(k.dataset.size)*4,14,120);ui.size=it.size;
-    drawItem(it);placeOverlays();save();mf.focus();return;
+    it.size=clamp(it.size+Number(k.dataset.size)*4,14,120);if(it.type==='math')ui.size=it.size;
+    drawItem(it);placeOverlays();save();activeField()?.focus();return;
   }
+  if(it.type==='algo'){
+    const cmds={deleteBackward:'back',moveToPreviousChar:'left',moveToNextChar:'right'};
+    if(k.dataset.nl!==undefined)cellKey('down');
+    else if(k.dataset.cmd)cellKey(cmds[k.dataset.cmd]);
+    else if(/^[0-9.]$/.test(k.dataset.in||''))cellKey(k.dataset.in);
+    return;
+  }
+  const mf=activeField();if(!mf)return;
+  if(k.dataset.nl!==undefined){newLine();return}
+  if(k.dataset.cmd==='deleteBackward'&&!mf.value&&it.lines.length>1){dropLine();return}
   mf.focus();
   // Fractions are written the way they are by hand: the fraction key gives an empty
   // stacked fraction with the cursor on top; → goes from top to bottom; an operator typed
@@ -702,7 +956,8 @@ function placeOverlays(){
   if(ui.editing&&keypad.classList.contains('open')){
     const r=els.get(ui.editing).getBoundingClientRect();
     const kw=keypad.offsetWidth,kh=keypad.offsetHeight,W=innerWidth,H=innerHeight-DOCK_SPACE;
-    let x=r.right+24,y=r.top+r.height/2-kh/2;
+    // Beside the box, level with its top, so the move and delete handles above it stay clear.
+    let x=r.right+24,y=r.top;
     if(x+kw>W-12)x=r.left-kw-24;                       // no room on the right: go left
     if(x<12){x=clamp(r.left,12,W-kw-12);y=r.bottom+18;  // no room either side: go below
       if(y+kh>H)y=r.top-kh-18;}
@@ -710,14 +965,46 @@ function placeOverlays(){
   }
   showTrash();
 }
+// The box being written in (or the one selected) carries a move handle and a delete button
+// above it, finger-sized whatever the zoom; a setup also gets its place and addend buttons.
+const mover=$('mover'),algoBar=$('algoBar');
 function showTrash(){
-  const id=ui.selected,el=id&&els.get(id);
-  if(!el){trash.classList.remove('show');return}
+  const id=ui.editing||ui.selected,el=id&&els.get(id);
+  const isBox=!!el&&el.classList.contains('item');
+  if(!el){trash.classList.remove('show');mover.classList.remove('show');algoBar.classList.remove('show');return}
   const r=el.getBoundingClientRect();
-  trash.style.left=clamp(r.right+10,8,innerWidth-64)+'px';
-  trash.style.top=clamp(r.top-66,8,innerHeight-64)+'px';
+  const top=clamp(r.top-66,8,innerHeight-64);
+  trash.style.left=clamp(Math.max(r.right+10,r.left+66),8,innerWidth-64)+'px';trash.style.top=top+'px';
   trash.classList.add('show');
+  mover.classList.toggle('show',isBox);
+  if(isBox){mover.style.left=clamp(r.left-10,8,innerWidth-64)+'px';mover.style.top=top+'px'}
+  const it=ui.editing&&findItem(ui.editing);
+  algoBar.classList.toggle('show',it?.type==='algo');
+  if(it?.type==='algo'){
+    const ops=it.rows.filter(x=>x.k==='op').length;
+    $('addendMore').hidden=$('addendLess').hidden=it.alg!=='add';
+    $('addendMore').disabled=ops>=5;$('addendLess').disabled=ops<=2;$('algoWider').disabled=it.cols>=ALG_MAX;
+    algoBar.style.left=clamp(r.left,8,innerWidth-algoBar.offsetWidth-8)+'px';
+    algoBar.style.top=clamp(r.bottom+12,8,innerHeight-DOCK_SPACE-64)+'px';
+  }
 }
+let moving=null;
+for(const b of [mover,trash,algoBar])b.addEventListener('pointerdown',e=>e.preventDefault());   // keep the keypad's focus
+mover.addEventListener('pointerdown',e=>{
+  const id=ui.editing||ui.selected,it=id&&findItem(id);if(!it||it.type==='mark')return;
+  e.stopPropagation();mover.setPointerCapture(e.pointerId);
+  moving={id,sx:e.clientX,sy:e.clientY,ox:it.x,oy:it.y,before:ui.editing?null:snap()};
+});
+mover.addEventListener('pointermove',e=>{
+  const it=moving&&findItem(moving.id);if(!it)return;
+  it.x=moving.ox+(e.clientX-moving.sx)/view.z;it.y=moving.oy+(e.clientY-moving.sy)/view.z;
+  drawItem(it);placeOverlays();
+});
+const endMove=()=>{if(!moving)return;const m=moving;moving=null;if(m.before)record(m.before);else save()};
+mover.addEventListener('pointerup',endMove);mover.addEventListener('pointercancel',endMove);
+$('algoWider').onclick=()=>{const it=findItem(ui.editing);if(it?.type==='algo'&&widen(it,1)){drawAlgo(it);placeOverlays()}};
+$('addendMore').onclick=()=>{const it=findItem(ui.editing);if(it?.type==='algo'&&addend(it,1)){drawAlgo(it);placeOverlays()}};
+$('addendLess').onclick=()=>{const it=findItem(ui.editing);if(it?.type==='algo'&&addend(it,-1)){drawAlgo(it);placeOverlays()}};
 function select(id){
   const prev=ui.selected;ui.selected=id;
   for(const x of [prev,id]){if(!x)continue;const el=els.get(x);if(!el)continue;
@@ -725,6 +1012,11 @@ function select(id){
   showTrash();
 }
 trash.addEventListener('click',()=>{
+  if(ui.editing){
+    // Deleting the box being written in is one undo step with its creation and typing.
+    const id=ui.editing,before=editBefore||snap();ui.editing=null;editBefore=null;
+    closeKeypad();removeItem(id);placeOverlays();record(before);return;
+  }
   const id=ui.selected;if(!id)return;
   const before=snap();removeItem(id);select(null);record(before);
 });
@@ -732,6 +1024,17 @@ trash.addEventListener('click',()=>{
 // ── POINTER: tap to write, drag to pan or draw, pinch to zoom ──
 const ptrs=new Map();
 let gesture=null;
+// Which line of a box, or which place of a setup, a tap landed on.
+function pickAt(id,cx,cy){
+  const el=els.get(id),it=findItem(id);if(!el||!it)return null;
+  if(it.type==='algo'){
+    for(const c of el.querySelectorAll('.cell')){const r=c.getBoundingClientRect();
+      if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom)return {r:+c.dataset.r,i:+c.dataset.i}}
+    return null;
+  }
+  if(it.type==='math'){const f=[...el.querySelectorAll('math-field')],i=f.findIndex(m=>cy<=m.getBoundingClientRect().bottom);return i<0?f.length-1:i}
+  return null;
+}
 function itemAt(target){
   const el=target.closest?.('.item');if(el)return el.dataset.id;
   const g=target.closest?.('.marks > g');return g?g.dataset.id:null;
@@ -749,9 +1052,10 @@ table.addEventListener('pointerdown',e=>{
   }
   if(ptrs.size>2)return;
   const at=surfaceAt(toPage(e.clientX,e.clientY)),hit=itemAt(e.target);
+  if(hit&&hit===ui.editing){const c=e.target.closest?.('.cell');if(c)setCell(+c.dataset.r,+c.dataset.i)}
   if(hit&&hit!==ui.editing){
     const it=findItem(hit);
-    gesture={kind:'item',id:hit,sx:e.clientX,sy:e.clientY,orig:JSON.parse(JSON.stringify(it)),moved:false};
+    gesture={kind:'item',id:hit,sx:e.clientX,sy:e.clientY,orig:JSON.parse(JSON.stringify(it)),moved:false,at:pickAt(hit,e.clientX,e.clientY)};
   }else if(ui.tool==='mark'&&at&&!hit){
     finishEdit();select(null);lastSurf=at.k;
     gesture={kind:'draw',k:at.k,start:{x:at.x,y:at.y},sx:e.clientX,sy:e.clientY,mark:null};
@@ -776,7 +1080,7 @@ table.addEventListener('pointermove',e=>{
   }else if(g.kind==='item'&&(far||g.moved)){
     if(!g.moved){g.moved=true;g.before=snap();finishEdit();select(g.id);lastSurf=ownerOf(g.id)||lastSurf}
     const it=findItem(g.id),o=g.orig,ux=dx/view.z,uy=dy/view.z;
-    if(it.type==='math'){it.x=o.x+ux;it.y=o.y+uy}
+    if(it.type!=='mark'){it.x=o.x+ux;it.y=o.y+uy}
     else{it.x1=o.x1+ux;it.y1=o.y1+uy;it.x2=o.x2+ux;it.y2=o.y2+uy}
     drawItem(it);showTrash();
   }else if(g.kind==='draw'){
@@ -803,7 +1107,7 @@ function endPointer(e){
   if(g.kind==='item'){
     if(g.moved){record(g.before);return}
     const it=findItem(g.id);
-    if(it.type==='math'&&ui.tool==='type')startEdit(it.id);
+    if(it.type!=='mark'&&ui.tool==='type')startEdit(it.id,g.at);
     else{finishEdit();select(ui.selected===g.id?null:g.id)}
   }else if(g.kind==='draw'){
     if(g.mark){
@@ -817,6 +1121,7 @@ function endPointer(e){
       SURF[g.k].data().items.push(m);drawMark(m,g.k);record(before);
     }
   }else if(g.kind==='pan'&&!g.moved){
+    if(g.onItem)return;   // a tap inside the box being written in only moves its cursor
     const at=surfaceAt(toPage(e.clientX,e.clientY));
     if(ui.tool==='type'&&at)newMathAt(at);
     else{finishEdit();select(null)}
@@ -849,6 +1154,27 @@ $('markBtn').onclick=()=>{
   setTool('mark');toggleTray('markTray',true);
 };
 $('pageBtn').onclick=()=>toggleTray('paperTray');
+$('setupBtn').onclick=()=>toggleTray('setupTray');
+// A setup is laid in the middle of what is in view, on the sheet last worked on.
+for(const b of document.querySelectorAll('[data-alg]'))b.onclick=()=>{
+  toggleTray(null);setTool('type');
+  const it=makeAlgo(b.dataset.alg),c=toPage(innerWidth/2,(innerHeight-DOCK_SPACE)/2);
+  const at=surfaceAt(c),k=at?.k||(desk.open?lastSurf:'main'),d=SURF[k].data();
+  const x=at?at.x:c.x-SURF[k].x(),y=at?at.y:c.y;
+  it.x=clamp(x-it.size*3,0,Math.max(0,d.w-it.size*7));it.y=clamp(y-it.size*2.5,0,Math.max(0,d.h-it.size*8));
+  const before=snap();d.items.push(it);drawItem(it,k);lastSurf=k;
+  // Never on top of other work: step down, then across, until the spot is clear.
+  const el=els.get(it.id),gap=16;
+  const boxes=d.items.filter(o=>o!==it&&o.type!=='mark').map(o=>els.get(o.id)).filter(Boolean)
+    .map(e=>({l:e.offsetLeft,t:e.offsetTop+(e.classList.contains('math')?-e.offsetHeight/2:0),w:e.offsetWidth,h:e.offsetHeight}));
+  const hits=()=>boxes.some(o=>it.x<o.l+o.w+gap&&o.l<it.x+el.offsetWidth+gap&&it.y<o.t+o.h+gap&&o.t<it.y+el.offsetHeight+gap);
+  for(let n=0;n<60&&hits();n++){
+    it.y+=el.offsetHeight/3;
+    if(it.y+el.offsetHeight>d.h){it.y=gap;it.x+=el.offsetWidth+gap;if(it.x+el.offsetWidth>d.w)it.x=0}
+  }
+  drawItem(it,k);
+  startEdit(it.id,firstCell(it));editBefore=before;
+};
 $('undoBtn').onclick=undo;$('redoBtn').onclick=redo;
 $('zoomIn').onclick=()=>zoomAt(1.25,innerWidth/2,(innerHeight-DOCK_SPACE)/2);
 $('zoomOut').onclick=()=>zoomAt(.8,innerWidth/2,(innerHeight-DOCK_SPACE)/2);
@@ -1141,7 +1467,15 @@ function dragHandle(handle,win,move){
 
 // ── KEYBOARD (for a laptop at the board) ──
 addEventListener('keydown',e=>{
-  if(ui.editing)return;
+  if(ui.editing){
+    // A setup has no text field of its own, so typed digits come here.
+    if(findItem(ui.editing)?.type!=='algo')return;
+    const keys={Backspace:'back',Delete:'back',ArrowLeft:'left',ArrowRight:'right',ArrowDown:'down',ArrowUp:'up',Enter:'down'};
+    if(e.key==='Escape'){e.preventDefault();finishEdit()}
+    else if(/^[0-9.]$/.test(e.key)){e.preventDefault();cellKey(e.key)}
+    else if(keys[e.key]){e.preventDefault();cellKey(keys[e.key])}
+    return;
+  }
   const mod=e.ctrlKey||e.metaKey;
   if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo()}
   else if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo()}
