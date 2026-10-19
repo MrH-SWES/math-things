@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Prime Altar | Math Things.</title>
+  <title>Math Things. | Prime Altar</title>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -74,12 +74,6 @@
     .gmt-btn.active { background:var(--brand-surface); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
     .gmt-btn svg { width:32px; height:28px; opacity:0.45; transition:opacity 0.2s; }
     .gmt-btn.active svg { opacity:0.85; }
-    .reset-btn {
-      width:34px; height:34px; border-radius:10px; border:none; background:rgba(0,0,0,0.06); cursor:pointer;
-      display:flex; align-items:center; justify-content:center; transition:background 0.2s;
-    }
-    .reset-btn:hover { background:rgba(0,0,0,0.1); }
-    .reset-btn svg { width:16px; height:16px; opacity:0.5; }
 
     .num-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(72px, 1fr)); gap:16px; padding:24px 20px; flex:1; align-content:start; overflow-y:auto; }
     .nc {
@@ -89,11 +83,7 @@
     }
     .nc.avail:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04); }
     .nc.avail:active { transform:scale(0.95) translateY(2px); box-shadow:inset 4px 4px 10px rgba(0,0,0,0.05); }
-    .nc.done { border:1px solid rgba(1,176,105,0.3); background:#fdfdfd; }
-    .nc.locked { background:rgba(255,255,255,0.5); opacity:0.5; box-shadow:none; pointer-events:none; }
-    .nc.done::after { content:''; position:absolute; width:6px; height:6px; border-radius:50%; background:var(--solved); top:10px; right:10px; box-shadow:0 0 6px rgba(1,176,105,0.4); }
     .nc-num { position:relative; font-size:30px; font-weight:800; color:var(--brand-text-main); margin-bottom:auto; letter-spacing:-1px; }
-    .nc.locked .nc-num { color:var(--brand-text-light); }
     .nc-trinkets { position:relative; display:flex; justify-content:center; flex-wrap:wrap; gap:4px; width:100%; margin-top:8px; }
     .nc-t { width:20px; height:24px; font-size:10px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0; position:relative; }
     /* composite chip: dark machined steel */
@@ -129,7 +119,9 @@
       display:flex; justify-content:center; align-items:center; padding:10px 0;
       pointer-events:none;
     }
-    .altar-numeral { font-weight:900; font-size:48px; letter-spacing:-2px; color:rgba(255,255,255,0.13); line-height:1; position:relative; pointer-events:auto; transition:color 0.4s ease; }
+    .altar-numeral { font-weight:900; font-size:48px; letter-spacing:-2px; color:rgba(255,255,255,0.78); line-height:1; position:relative; pointer-events:none; text-shadow:0 2px 12px rgba(0,0,0,0.5); }
+    /* on narrow screens the number drops below the logo instead of running into it */
+    @media (max-width:520px) { .altar-header { padding-top:52px; } }
     .altar-numeral.solved { color:var(--solved); animation:solvedBreathe 5s ease-in-out infinite; cursor:pointer; }
     @keyframes solvedBreathe {
       0%, 100% { color:rgba(1,176,105,0.3); text-shadow:0 0 4px rgba(1,176,105,0.1),0 0 8px rgba(1,176,105,0.05); }
@@ -592,8 +584,6 @@
     /* ═══════════ CEREMONY / FX ═══════════ */
     .fade-overlay { position:fixed; inset:0; background:#161715; opacity:0; pointer-events:none; z-index:8000; transition:opacity 0.4s ease; }
     .fade-overlay.fading { opacity:1; }
-    .affirm-flash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:9999; transition:opacity 0.3s; }
-    .affirm-flash.show { opacity:0.1; }
     .shatter-piece { position:absolute; pointer-events:none; z-index:8500; border-radius:1px; }
     .shatter-piece.shard { background:linear-gradient(135deg,rgba(210,225,235,0.92),rgba(150,170,185,0.7)); border:1px solid rgba(255,255,255,0.35); }
     .shatter-piece.spark { border-radius:50%; background:radial-gradient(circle,#fff 0%,rgba(255,200,80,0.9) 40%,rgba(255,100,20,0.6) 70%,transparent 100%); box-shadow:0 0 4px rgba(255,160,40,0.8),0 0 8px rgba(255,80,20,0.4); }
@@ -615,7 +605,6 @@
 </head>
 <body>
 <div class="fade-overlay" id="fade-overlay"></div>
-<div class="affirm-flash" id="affirm"></div>
 
 <!-- ═══════════ GRID ═══════════ -->
 <div class="screen hidden" id="grid-screen">
@@ -656,10 +645,6 @@
           </g>
         </svg></button>
       </div>
-      <button class="reset-btn" id="reset-btn" aria-label="Reset progress"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M13.7 1.8v3h-3" stroke="#1D1D1F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg></button>
     </div>
   </div>
   <div class="num-grid" id="num-grid"></div>
@@ -737,7 +722,8 @@ const isPrime = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++)
 const allFactors = n => { const f = [1]; for (let i = 2; i <= n; i++) if (n % i === 0) f.push(i); return f; };
 const properFactors = n => { const f = []; for (let i = 2; i < n; i++) if (n % i === 0) f.push(i); return f; };
 const getPrimeFactors = n => { const f = []; let x = n; for (let p = 2; p * p <= x; p++) { while (x % p === 0) { f.push(p); x /= p; } } if (x > 1) f.push(x); return f; };
-const haptic = p => { try { navigator.vibrate?.(p); } catch (e) {} };
+/* vibrate only once someone has touched the page (the opening grow-in plays before that) */
+const haptic = p => { try { if (navigator.userActivation?.hasBeenActive !== false) navigator.vibrate?.(p); } catch (e) {} };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -787,49 +773,20 @@ function tween(opts) {
 const after = (ms, fn) => setTimeout(fn, REDUCED ? ms * 0.45 : ms);
 
 // ════════════════════════════════════════
-// STATE + PERSISTENCE
+// STATE (this visit only; nothing is saved)
 // ════════════════════════════════════════
+const GRID_MAX = 144;   /* the grid and the dex run 1–144 (12 × 12) */
 const S = {
-  primeDex: new Set(), maxLevel: 1,
+  primeDex: new Set(Array.from({ length: GRID_MAX }, (_, i) => i + 1).filter(isPrime)),
   fDone: new Set([1]), fNum: null, fDisc: new Set(), fDiscMap: {},
   segs: [], unitH: 44, unitW: 44, folding: false,
   foldDir: -1, segSize: 0,
   handleTimer: null, hingeIdleTimer: null, handleIndex: 0, handleInverted: false,
-  gridMode: 'factor', bDone: new Set([1]), bNum: null, bStack: [], bProduct: 0, bAnimating: false,
+  gridMode: 'factor', bNum: null, bStack: [], bProduct: 0, bAnimating: false,
   fZoom: 1, bZoom: 1, currentZoom: { fa: 1, ba: 1 },
   trayIdentityReady: true,
-  _deferredRoomCelebration: null,
   _settleTw: null,
 };
-
-const SAVE_KEY = 'math-things-prime-altar-v2';
-function saveState() {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      primeDex: [...S.primeDex], fDone: [...S.fDone], bDone: [...S.bDone], maxLevel: S.maxLevel,
-      fDiscMap: Object.fromEntries(Object.entries(S.fDiscMap).map(([k, v]) => [k, [...v]])),
-    }));
-  } catch (e) {}
-}
-function loadState() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return;
-    const d = JSON.parse(raw);
-    S.primeDex = new Set(d.primeDex || []);
-    S.fDone = new Set(d.fDone || [1]); S.fDone.add(1);
-    S.bDone = new Set(d.bDone || [1]); S.bDone.add(1);
-    S.maxLevel = d.maxLevel || 1;
-    S.fDiscMap = {};
-    Object.entries(d.fDiscMap || {}).forEach(([k, v]) => { S.fDiscMap[k] = new Set(v); });
-  } catch (e) {}
-}
-function resetProgress() {
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-  S.primeDex = new Set(); S.fDone = new Set([1]); S.bDone = new Set([1]);
-  S.maxLevel = 1; S.fDiscMap = {};
-  renderGrid(); buildDex('grid-vp');
-}
 
 // ════════════════════════════════════════
 // ROOM LAYOUT — one deterministic source of truth
@@ -849,7 +806,7 @@ function obeliskBase(roomId) {
 }
 function availHeight(roomId) {
   const altar = $id(roomId);
-  const headroom = 88; /* keep the tip clear of the header numeral */
+  const headroom = window.innerWidth <= 520 ? 132 : 88; /* keep the tip clear of the header numeral (lower on phones) */
   return Math.max(80, (altar.clientHeight || 400) - obeliskBase(roomId) - headroom);
 }
 function setZoomImmediate(roomId, z) {
@@ -975,34 +932,8 @@ function bindAltarIdleHintReset(el) {
 }
 
 // ════════════════════════════════════════
-// CELEBRATIONS
+// THUD
 // ════════════════════════════════════════
-function showAffirm() {
-  const e = $id('affirm');
-  e.classList.add('show'); haptic([20, 25, 20, 25, 40]);
-  setTimeout(() => e.classList.remove('show'), 350);
-}
-function runAltarRoomSolvedVision(opts) {
-  opts = opts || {};
-  const numEl = $id('altar-numeral');
-  if (!numEl) return;
-  after(300, () => {
-    showAffirm();
-    if (opts.wasAlreadySolved) numEl.classList.remove('solved');
-    numEl.classList.add('celebrate');
-    haptic([20, 25, 20, 25, 40]);
-    after(1400, () => {
-      numEl.classList.remove('celebrate');
-      numEl.classList.add('solved');
-      numEl.onclick = () => goToGrid();
-    });
-  });
-}
-function flushDeferredRoomCelebration() {
-  const fn = S._deferredRoomCelebration;
-  S._deferredRoomCelebration = null;
-  if (typeof fn === 'function') fn();
-}
 /* heavy thud when pieces land */
 function thud(roomId) {
   const zoomEl = roomId === 'fa' ? $id('fz') : $id('bz');
@@ -1066,64 +997,18 @@ $id('gmt-build').addEventListener('click', () => {
   $id('gmt-factor').classList.remove('active');
   renderGrid();
 });
-$id('reset-btn').addEventListener('click', () => {
-  if (window.confirm('Reset all Prime Altar progress?')) resetProgress();
-});
 
 // ════════════════════════════════════════
 // GRID SCREEN
 // ════════════════════════════════════════
-function makeGridChip(f) {
-  if (f !== 1 && isPrime(f)) {
-    const t = makeMirror(f);
-    t.classList.add('nc-t');
-    t.style.fontSize = '24px';
-    return t;
-  }
-  const t = document.createElement('div');
-  t.className = 'nc-t ' + (f === 1 ? 'nc-tm' : 'nc-tc');
-  t.textContent = f;
-  return t;
-}
-function makeCellSolved(n, factors, clickFn) {
-  const c = document.createElement('div'); c.className = 'nc done';
-  const num = document.createElement('div'); num.className = 'nc-num'; num.textContent = n; c.appendChild(num);
-  if (factors.length > 0) {
-    const wrap = document.createElement('div'); wrap.className = 'nc-trinkets';
-    factors.slice(0, 12).forEach(f => wrap.appendChild(makeGridChip(f)));
-    if (factors.length > 12) { const ov = document.createElement('div'); ov.className = 'nc-overflow'; ov.textContent = '+'; wrap.appendChild(ov); }
-    c.appendChild(wrap);
-  }
-  if (clickFn) c.addEventListener('click', clickFn);
-  return c;
-}
 function renderGrid() {
   const g = $id('num-grid'); g.innerHTML = '';
-  const max = S.maxLevel * 12;
-  const addPlain = (i, cls, clickFn) => {
-    const c = document.createElement('div'); c.className = 'nc ' + cls;
+  const open = S.gridMode === 'factor' ? goToAltar : goToBuild;
+  for (let i = 1; i <= GRID_MAX; i++) {
+    const c = document.createElement('div'); c.className = 'nc avail';
     const num = document.createElement('div'); num.className = 'nc-num'; num.textContent = i; c.appendChild(num);
-    if (clickFn) c.addEventListener('click', clickFn);
+    if (S.gridMode === 'factor' || i > 1) c.addEventListener('click', () => open(i));
     g.appendChild(c);
-    return c;
-  };
-  if (S.gridMode === 'factor') {
-    for (let i = 1; i <= max; i++) {
-      if (S.fDone.has(i)) g.appendChild(makeCellSolved(i, allFactors(i), () => goToAltar(i)));
-      else addPlain(i, 'avail', () => goToAltar(i));
-    }
-    for (let i = max + 1; i <= max + 12; i++) addPlain(i, 'locked');
-  } else {
-    for (let i = 1; i <= max; i++) {
-      const canBuild = i === 1 || S.bDone.has(i) || (i > 1 && S.bDone.has(i - 1));
-      const built = S.bDone.has(i);
-      const neededPrimes = i > 1 ? getPrimeFactors(i) : [];
-      const hasAllPrimes = neededPrimes.every(p => S.primeDex.has(p));
-      if (built || i === 1) g.appendChild(makeCellSolved(i, i === 1 ? [1] : getPrimeFactors(i), i > 1 ? () => goToBuild(i) : null));
-      else if (canBuild && hasAllPrimes) addPlain(i, 'avail', () => goToBuild(i));
-      else addPlain(i, 'locked');
-    }
-    for (let i = max + 1; i <= max + 12; i++) addPlain(i, 'locked');
   }
 }
 
@@ -1134,7 +1019,7 @@ function buildDex(vpId = 'altar-dex-vp') {
   const vp = $id(vpId);
   if (!vp) return;
   vp.innerHTML = '';
-  for (let i = 1; i <= 144; i++) {
+  for (let i = 1; i <= GRID_MAX; i++) {
     const slot = document.createElement('div');
     slot.className = 'dex-slot';
     slot.dataset.n = i;
@@ -1173,108 +1058,6 @@ function scrollDexToSlot(n, vpId, cb) {
 }
 
 // ════════════════════════════════════════
-// THE TWIN CEREMONY — an ignited prime cools into a mirror and drops to the dex
-// ════════════════════════════════════════
-function launchTrinketDrop(primeN, segCount, onDone) {
-  const inBuild = S.gridMode === 'build' && !$id('build-screen').classList.contains('hidden');
-  const vpId = inBuild ? 'build-dex-vp' : 'altar-dex-vp';
-  const stage = $id(inBuild ? 'bo' : 'fo');
-  const vp = $id(vpId);
-  if (!stage || !vp) { onDone && onDone(); return; }
-
-  const segEls = Array.from(stage.querySelectorAll('.blk'));
-  let srcEl = null;
-  if (segCount <= 1) srcEl = segEls[0];
-  else if (segCount % 2 === 1) srcEl = segEls[Math.floor(segCount / 2)];
-  else srcEl = segEls[segCount / 2 - 1];
-  if (!srcEl) { onDone && onDone(); return; }
-
-  // 1. Ignition
-  if (!srcEl.classList.contains('blk-p')) {
-    srcEl.classList.remove('blk-c', 'blk-m', 'glass-cube');
-    srcEl.classList.add('blk-p');
-    const oldStamp = srcEl.querySelector('.n-stamp, .n-mirror');
-    if (oldStamp) oldStamp.className = 'n-glow';
-  }
-
-  // 2. The twin emerges — ember shell around a mirror core
-  const srcRect = srcEl.getBoundingClientRect();
-  const srcW = srcRect.width, srcH = srcRect.height;
-  const srcCX = srcRect.left + srcW / 2, srcCY = srcRect.top + srcH / 2;
-  const tw = 36, th = 36;
-
-  const clone = document.createElement('div');
-  clone.className = 'twin-clone';
-  clone.style.cssText = `width:${srcW}px;height:${srcH}px;left:${srcRect.left}px;top:${srcRect.top}px;`;
-  const emberLayer = document.createElement('div');
-  emberLayer.className = 'cl-layer blk-p lite';
-  emberLayer.style.borderRadius = '5px';
-  const mirrorLayer = makeMirror(primeN, Math.max(srcW, 36));
-  mirrorLayer.classList.add('cl-layer');
-  mirrorLayer.style.width = '100%'; mirrorLayer.style.height = '100%';
-  mirrorLayer.style.opacity = '0';
-  const numEl = document.createElement('div');
-  numEl.className = 'cl-num';
-  numEl.textContent = primeN;
-  numEl.style.fontSize = Math.min(srcW * 0.6, srcH * 0.45, 38) + 'px';
-  numEl.style.color = '#fff';
-  numEl.style.textShadow = '0 0 2px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.9), 0 0 18px rgba(255,200,110,0.6)';
-  clone.append(emberLayer, mirrorLayer, numEl);
-  document.body.appendChild(clone);
-
-  vp.querySelectorAll('.dex-slot[data-n]').forEach(sl => {
-    sl.classList.toggle('dimmed', parseInt(sl.dataset.n) !== primeN);
-  });
-  scrollDexToSlot(primeN, vpId, null);
-
-  // 3. Compression + cooling (ember → silvered glass)
-  const compressDur = 620;
-  const scaleX = tw / srcW, scaleY = th / srcH;
-  tween({ dur: compressDur, ease: 'p2inout',
-    update: e => {
-      clone.style.transform = `scaleX(${lerp(1, scaleX, e)}) scaleY(${lerp(1, scaleY, e)})`;
-      emberLayer.style.opacity = String(1 - e);
-      mirrorLayer.style.opacity = String(e);
-      numEl.style.opacity = String(1 - e);
-    },
-    done: () => {
-      // 4. The float down to its socket
-      after(140, () => {
-        const slot = vp.querySelector(`.dex-slot[data-n="${primeN}"]`);
-        const container = vp.closest('.dex-container');
-        const dexRect = container.getBoundingClientRect();
-        let landX = dexRect.left + dexRect.width / 2;
-        let landY = dexRect.top + dexRect.height / 2;
-        if (slot) {
-          const r = slot.getBoundingClientRect();
-          landX = r.left + r.width / 2; landY = r.top + r.height / 2;
-        }
-        const dropDur = 420;
-        const dx = landX - srcCX, dy = landY - srcCY;
-        tween({ dur: dropDur, ease: 'p2inout',
-          update: e => {
-            clone.style.transform = `translate(${dx * e}px, ${dy * e}px) scaleX(${scaleX}) scaleY(${scaleY})`;
-          },
-          done: () => {
-            // 5. Registration
-            haptic([15, 10, 40]);
-            clone.remove();
-            S.primeDex.add(primeN);
-            saveState();
-            buildDex(vpId);
-            const targetSlot = vp.querySelector(`.dex-slot[data-n="${primeN}"]`);
-            if (targetSlot) targetSlot.classList.add('land-flash');
-            setTimeout(() => scrollDexToSlot(primeN, vpId, null), 50);
-            after(800, () => {
-              vp.querySelectorAll('.dex-slot').forEach(sl => sl.classList.remove('dimmed'));
-              onDone && onDone();
-            });
-          } });
-      });
-    } });
-}
-
-// ════════════════════════════════════════
 // FACTOR ALTAR
 // ════════════════════════════════════════
 function enterAltar(n) {
@@ -1282,18 +1065,12 @@ function enterAltar(n) {
   layoutRoom('fa');
   S.fNum = n; S.segSize = 0; S.handleIndex = 0; S.handleInverted = false;
   S.fDisc = S.fDiscMap[n] ? new Set(S.fDiscMap[n]) : new Set([1, n]);
-  S.trayIdentityReady = n === 1; /* primes: defer identity chip until after the grow reveal */
-  S._deferredRoomCelebration = null;
+  S.trayIdentityReady = n === 1; /* the number's own chip joins the tray once it has grown */
   S._settleTw?.cancel();
   const numEl = $id('altar-numeral');
   numEl.textContent = n;
   numEl.classList.remove('solved', 'celebrate');
-
-  const presolvedOnEnter = (n === 1 || isPrime(n));
-  if (presolvedOnEnter) { S.fDone.add(n); saveState(); }
-  const isSolved = S.fDone.has(n);
-  if (isSolved) numEl.classList.add('solved');
-  numEl.onclick = isSolved ? () => goToGrid() : null;
+  if (n === 1 || isPrime(n)) S.fDone.add(n);  /* nothing to fold: no hinge hints */
 
   bindAltarIdleHintReset($id('altar-screen'));
   const avail = availHeight('fa');
@@ -1304,24 +1081,8 @@ function enterAltar(n) {
   renderFT();
 
   growFromUnits(n, () => {
-    if (isPrime(n)) {
-      const isNew = !S.primeDex.has(n);
-      if (isNew) {
-        renderSegs();
-        launchTrinketDrop(n, 1, () => {
-          S.trayIdentityReady = true;
-          renderFT();
-          runAltarRoomSolvedVision({ wasAlreadySolved: true });
-        });
-      } else {
-        S.trayIdentityReady = true;
-        renderSegs(); renderFT();
-        runAltarRoomSolvedVision({ wasAlreadySolved: true });
-      }
-    } else {
-      if (n > 1) S.trayIdentityReady = true;
-      renderSegs(); renderFT();
-    }
+    if (n > 1) S.trayIdentityReady = true;
+    renderSegs(); renderFT();
   });
 }
 
@@ -1535,12 +1296,10 @@ function finishFold(f, numPieces, overlay, sweepZoom) {
   thud('fa');
 
   const isNewFactor = !S.fDisc.has(f);
-  const isNewPrime = isPrime(f) && !S.primeDex.has(f);
   if (isNewFactor) S.fDisc.add(f);
-  if (isNewPrime) S.trayIdentityReady = false;
 
   renderFT();
-  checkFSolved({ deferVision: isNewPrime });
+  noteFactorsFound();
 
   S.segs = [];
   for (let i = 0; i < numPieces; i++) S.segs.push({ units: f });
@@ -1568,14 +1327,6 @@ function finishFold(f, numPieces, overlay, sweepZoom) {
       }
     });
   }
-
-  if (isNewPrime) {
-    after(isPrime(f) ? 950 : 250, () => launchTrinketDrop(f, numPieces, () => {
-      S.trayIdentityReady = true;
-      renderFT();
-      flushDeferredRoomCelebration();
-    }));
-  } else buildDex('altar-dex-vp');
 }
 
 // ════════════════════════════════════════
@@ -1698,26 +1449,13 @@ function completeUS(onMove, onUp) {
   document.removeEventListener('pointerup', onUp);
 }
 
-function checkFSolved(opts) {
-  opts = opts || {};
+/* The tray remembers what this number has shown for the rest of the visit. Once every way to fold it
+   has been tried, the hinge hints stop; nothing else happens. */
+function noteFactorsFound() {
   const n = S.fNum;
-  if (!n || S.fDone.has(n)) return;
-  if (allFactors(n).every(f => S.fDisc.has(f))) {
-    S.fDone.add(n);
-    S.fDiscMap[n] = new Set(S.fDisc);
-    checkLvl();
-    saveState();
-    const numEl = $id('altar-numeral');
-    numEl.onclick = () => goToGrid();
-    const runVision = () => runAltarRoomSolvedVision({});
-    if (opts.deferVision) S._deferredRoomCelebration = runVision;
-    else runVision();
-  }
-}
-function checkLvl() {
-  const max = S.maxLevel * 12;
-  for (let i = 1; i <= max; i++) if (!S.fDone.has(i)) return;
-  S.maxLevel++;
+  if (!n) return;
+  S.fDiscMap[n] = new Set(S.fDisc);
+  if (allFactors(n).every(f => S.fDisc.has(f))) S.fDone.add(n);
 }
 
 // ════════════════════════════════════════
@@ -1781,9 +1519,6 @@ function enterBuild(n) {
   const numEl = $id('build-numeral');
   numEl.textContent = n;
   numEl.classList.remove('solved', 'celebrate');
-  const isSolved = S.bDone.has(n);
-  if (isSolved) numEl.classList.add('solved');
-  numEl.onclick = isSolved ? () => goToGrid() : null;
 
   const avail = availHeight('ba');
   S.bZoom = Math.min(1, avail / (n * S.unitH));
@@ -1973,7 +1708,6 @@ function placeBuildPrime(p) {
       animateBuildFirstPrime(p, n, () => {
         S.bAnimating = false;
         renderBuildTray(); renderBuildStage(); renderBuildLedger();
-        if (newProduct === n) checkBuildSolved();
       });
     }
   } else if (newProduct > n) {
@@ -1985,7 +1719,6 @@ function placeBuildPrime(p) {
     animateBuildHinge(prevProduct, p, newProduct, n, () => {
       S.bAnimating = false;
       renderBuildTray(); renderBuildStage(); renderBuildLedger();
-      if (newProduct === n) checkBuildSolved();
     });
   }
 }
@@ -2251,21 +1984,6 @@ function undoBuild() {
   });
 }
 
-function checkBuildSolved() {
-  const n = S.bNum;
-  if (!n || S.bDone.has(n)) return;
-  S.bDone.add(n);
-  saveState();
-  const numEl = $id('build-numeral');
-  numEl.onclick = () => goToGrid();
-  after(300, () => {
-    showAffirm();
-    numEl.classList.add('celebrate');
-    haptic([20, 25, 20, 25, 40]);
-    after(1100, () => { numEl.classList.remove('celebrate'); numEl.classList.add('solved'); });
-  });
-}
-
 // ════════════════════════════════════════
 // RESIZE
 // ════════════════════════════════════════
@@ -2294,21 +2012,11 @@ window.addEventListener('resize', () => {
 // INIT
 // ════════════════════════════════════════
 window.S = S; /* debug/testing handle */
-loadState();
-S.fDone.add(1);
 buildDex('altar-dex-vp');
 buildDex('grid-vp');
 layoutRoom('fa');
 layoutRoom('ba');
-const hasHistory = S.primeDex.size > 0 || S.fDone.size > 1 || S.bDone.size > 1;
-if (hasHistory) {
-  $id('altar-screen').classList.add('hidden');
-  $id('grid-screen').classList.remove('hidden');
-  renderGrid();
-  buildDex('grid-vp');
-} else {
-  requestAnimationFrame(() => { layoutRoom('fa'); enterAltar(12); });
-}
+requestAnimationFrame(() => { layoutRoom('fa'); enterAltar(12); });
 </script>
   <script src="../../math-things-home.js"></script>
 </body>
