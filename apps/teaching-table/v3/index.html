@@ -17,6 +17,8 @@
 </script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script defer src="textbooks.js"></script>
 <style>
   :root{
     --glass:rgba(247,246,243,.86);
@@ -81,7 +83,7 @@
     background:var(--glass);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
     box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 30px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.08);
   }
-  .group{display:flex;gap:4px;background:#E5E5EA;border-radius:16px;padding:4px}
+  .group{display:flex;align-items:center;gap:4px;background:#E5E5EA;border-radius:16px;padding:4px}
   .db{
     width:var(--key);height:var(--key);border:none;border-radius:13px;background:transparent;
     display:flex;align-items:center;justify-content:center;color:#4A4A4F;cursor:pointer;
@@ -207,6 +209,33 @@
   .logo-bead{width:.22em;height:.22em;margin-left:.04em;margin-bottom:.08em;border-radius:50%;display:inline-block;
     background:radial-gradient(circle at 33% 28%,rgba(255,255,255,.92) 0%,rgba(255,255,255,.3) 40%,transparent 65%),linear-gradient(135deg,#efefef 0%,#d0d0d0 25%,#a8a8a8 50%,#c0c0c0 75%,#e0e0e0 100%);
     box-shadow:inset 1px 1px 2px rgba(255,255,255,.8),inset -1px -1px 2px rgba(0,0,0,.2),0 2px 5px rgba(0,0,0,.22)}
+  /* A textbook page is the sheet: taps go to the table, so the page itself stays still. */
+  #sheet iframe.page-frame{position:absolute;left:0;top:0;width:100%;border:0;pointer-events:none;background:#fff;border-radius:3px}
+
+  /* ── THE TEXTBOOK SHELF ── */
+  #library{position:fixed;inset:0;z-index:50;background:rgba(40,36,30,.22);display:flex;align-items:flex-end;justify-content:center;
+    padding:0 16px 104px;opacity:0;pointer-events:none;transition:opacity .2s}
+  #library.open{opacity:1;pointer-events:auto}
+  #library .shelf{width:min(1100px,100%);max-height:calc(100vh - 140px);display:flex;flex-direction:column;border-radius:24px;
+    background:var(--glass);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);box-shadow:0 20px 60px rgba(0,0,0,.22);overflow:hidden}
+  .covers{display:flex;gap:12px;padding:18px 20px;overflow-x:auto;flex:none}
+  .cover{flex:none;width:96px;height:128px;border:none;border-radius:10px;cursor:pointer;position:relative;overflow:hidden;
+    background:linear-gradient(160deg,#F4F3F0,#E2E0DB);box-shadow:0 2px 6px rgba(0,0,0,.16),0 0 0 .5px rgba(0,0,0,.08);
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-weight:900;font-size:30px;color:#4A4A4F}
+  .cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cover.on{box-shadow:0 0 0 4px var(--accent)}
+  .cover .saved{position:absolute;top:6px;right:6px;width:12px;height:12px;border-radius:50%;background:#34C759;box-shadow:0 0 0 2px #fff}
+  .cover.file{font-size:13px;font-weight:700;align-items:center;padding:0}
+  .lib-head{display:flex;align-items:center;gap:10px;padding:0 20px 10px}
+  .lib-head .title{flex:1;font-weight:800;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lib-head input{width:220px;height:48px;border-radius:12px;border:1px solid rgba(0,0,0,.12);padding:0 14px;font:inherit;font-size:16px;background:#fff}
+  .lib-status{padding:0 20px 10px;font-size:14px;font-weight:600;color:var(--text-gray);min-height:20px}
+  .lessons{overflow-y:auto;padding:0 12px 16px;flex:1}
+  .lesson{display:block;width:100%;min-height:52px;border:none;background:transparent;text-align:left;cursor:pointer;
+    padding:12px 14px 12px calc(14px + var(--d,0)*22px);border-radius:12px;font-size:16px;font-weight:500;color:var(--text-main)}
+  .lesson[data-depth="0"]{font-weight:800}
+  .lesson:hover,.lesson:focus-visible{background:rgba(0,0,0,.05)}
+  .lesson.on{background:rgba(0,122,255,.12)}
   #drop{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,122,255,.08);border:4px dashed rgba(0,122,255,.5);pointer-events:none}
   #drop.show{display:flex}
 
@@ -232,6 +261,9 @@
   </button>
   <button class="tile" id="openPhone" aria-label="Scan a worksheet with a phone" title="Scan with a phone">
     <svg viewBox="0 0 48 48" fill="none" stroke="#3A3A3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="20" height="40" rx="4"/><circle cx="24" cy="21" r="5"/><path d="M21 38h6"/></svg>
+  </button>
+  <button class="tile" id="openBook" aria-label="Open a textbook page" title="Textbook">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#3A3A3F" stroke-width="2.6" stroke-linejoin="round"><path d="M24 12c-4-3-10-4-16-3v28c6-1 12 0 16 3 4-3 10-4 16-3V9c-6-1-12 0-16 3z"/><path d="M24 12v28"/></svg>
   </button>
   <div class="sep"></div>
   <button class="tile" data-paper="plain" aria-label="Plain paper" title="Plain paper"><div class="mini"></div></button>
@@ -292,6 +324,15 @@
 
 <div id="chest" role="dialog" aria-label="Math Things"><div class="shelf" id="shelf"></div></div>
 
+<div id="library" role="dialog" aria-label="Textbooks">
+  <div class="shelf">
+    <div class="covers" id="covers"></div>
+    <div class="lib-head"><div class="title" id="bookTitle"></div><input id="lessonSearch" type="search" placeholder="Find a lesson" aria-label="Find a lesson" hidden></div>
+    <div class="lib-status" id="libStatus" aria-live="polite"></div>
+    <div class="lessons" id="lessons"></div>
+  </div>
+</div>
+<input type="file" id="epubInput" accept=".epub,application/epub+zip" hidden>
 <div id="scan" role="dialog" aria-label="Scan a worksheet with a phone">
   <div class="card"><div id="qr"></div><div class="status" id="scanStatus"></div></div>
 </div>
@@ -364,7 +405,9 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const uid=()=>Math.random().toString(36).slice(2,10);
 
 // ── DOCUMENT ──
-// doc.pages[i] = {id, w, h, paper, hasImage, items:[...]}
+// doc.pages[i] = {id, w, h, paper, hasImage, lesson?, items:[...]}
+// A textbook document holds one lesson page at a time: doc.book = {name, title, total}.
+// Work on each lesson page is kept by book and page, so it returns when you do.
 // item: {id, type:'math', x, y, size, latex} | {id, type:'mark', shape, ink, x1, y1, x2, y2}
 let doc={pages:[{id:uid(),w:PAGE_W,h:BLANK_H,paper:'plain',hasImage:false,items:[]}],page:0};
 const ui={tool:'type',shape:'ellipse',ink:'graphite',size:34,editing:null,selected:null};
@@ -388,9 +431,14 @@ async function imageURL(p){
   const u=URL.createObjectURL(b);urls.set(p.id,u);return u;
 }
 
+const lessonKey=l=>STORE+':lesson:'+l.book+':'+l.index;
 function save(){
-  try{localStorage.setItem(STORE,JSON.stringify({doc,size:ui.size,ink:ui.ink}))}catch{}
+  try{
+    localStorage.setItem(STORE,JSON.stringify({doc,size:ui.size,ink:ui.ink}));
+    const l=page().lesson;if(l)localStorage.setItem(lessonKey(l),JSON.stringify(page().items));
+  }catch{}
 }
+function lessonItems(l){try{return JSON.parse(localStorage.getItem(lessonKey(l))||'[]')}catch{return []}}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem(STORE)||'null');
@@ -445,11 +493,18 @@ const els=new Map();   // item id → element
 async function renderPage(){
   const p=page();
   sheet.style.width=p.w+'px';sheet.style.height=p.h+'px';
-  sheet.className=p.hasImage?'':p.paper;
-  sheet.querySelector('img.page-img')?.remove();
-  if(p.hasImage){
-    const u=await imageURL(p);
-    if(u&&page()===p){const img=new Image();img.className='page-img';img.src=u;img.alt='';sheet.prepend(img)}
+  sheet.className=p.hasImage||p.lesson?'':p.paper;
+  // The page's surface (scan or textbook page) is rebuilt only when the page changes,
+  // so undo and redo never flash it.
+  if(sheet.dataset.page!==p.id){
+    sheet.dataset.page=p.id;
+    sheet.querySelector('img.page-img')?.remove();
+    sheet.querySelector('iframe.page-frame')?.remove();
+    if(p.lesson)showLesson(p);
+    if(p.hasImage){
+      const u=await imageURL(p);
+      if(u&&page()===p){const img=new Image();img.className='page-img';img.src=u;img.alt='';sheet.prepend(img)}
+    }
   }
   marksSvg.setAttribute('width',p.w);marksSvg.setAttribute('height',p.h);
   marksSvg.setAttribute('viewBox',`0 0 ${p.w} ${p.h}`);
@@ -457,10 +512,11 @@ async function renderPage(){
   els.clear();marksSvg.replaceChildren();
   for(const it of p.items)drawItem(it);
   ui.editing=null;ui.selected=null;closeKeypad();showTrash();
-  const n=doc.pages.length;
-  $('pager').hidden=n<2;$('pageNo').textContent=(doc.page+1)+'/'+n;
-  $('prevPage').disabled=doc.page===0;$('nextPage').disabled=doc.page===n-1;
-  for(const t of document.querySelectorAll('[data-paper]'))t.classList.toggle('on',!p.hasImage&&t.dataset.paper===p.paper);
+  // The pager turns worksheet pages, or textbook pages when a book is open.
+  const n=doc.book?doc.book.total:doc.pages.length,at=doc.book?p.lesson.index:doc.page;
+  $('pager').hidden=n<2;$('pageNo').textContent=(at+1)+'/'+n;
+  $('prevPage').disabled=at===0;$('nextPage').disabled=at===n-1;
+  for(const t of document.querySelectorAll('[data-paper]'))t.classList.toggle('on',!p.hasImage&&!p.lesson&&t.dataset.paper===p.paper);
 }
 function drawItem(it){
   if(it.type==='math'){
@@ -729,10 +785,13 @@ $('undoBtn').onclick=undo;$('redoBtn').onclick=redo;
 $('zoomIn').onclick=()=>zoomAt(1.25,innerWidth/2,(innerHeight-DOCK_SPACE)/2);
 $('zoomOut').onclick=()=>zoomAt(.8,innerWidth/2,(innerHeight-DOCK_SPACE)/2);
 $('fitBtn').onclick=fit;
-$('prevPage').onclick=()=>goPage(doc.page-1);
-$('nextPage').onclick=()=>goPage(doc.page+1);
+const at=()=>doc.book?page().lesson.index:doc.page;
+$('prevPage').onclick=()=>goPage(at()-1);
+$('nextPage').onclick=()=>goPage(at()+1);
 function goPage(i){
-  finishEdit();if(i<0||i>=doc.pages.length)return;
+  finishEdit();
+  if(doc.book){openLesson(i);return}
+  if(i<0||i>=doc.pages.length)return;
   doc.page=i;renderPage().then(fit);save();say('Page '+(i+1));
 }
 for(const b of document.querySelectorAll('[data-shape]'))b.onclick=()=>{ui.shape=b.dataset.shape;syncTrays()};
@@ -745,17 +804,17 @@ for(const b of document.querySelectorAll('[data-paper]'))b.onclick=()=>{
   // Blank paper replaces the document with one fresh sheet; undo cannot cross documents, so
   // only switch the pattern if the current page is already blank paper.
   const p=page();
-  if(!p.hasImage&&doc.pages.length===1){const before=snap();p.paper=b.dataset.paper;renderPage();record(before)}
+  if(!p.hasImage&&!p.lesson&&doc.pages.length===1){const before=snap();p.paper=b.dataset.paper;renderPage();record(before)}
   else newDocument([{id:uid(),w:PAGE_W,h:BLANK_H,paper:b.dataset.paper,hasImage:false,items:[]}]);
   toggleTray('paperTray',false);
 };
 $('clearPage').onclick=()=>{
   const before=snap();page().items=[];renderPage();record(before);toggleTray('paperTray',false);say('Page wiped. Undo brings it back.');
 };
-function newDocument(pages){
+function newDocument(pages,book=null){
   finishEdit();
   for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();
-  doc={pages,page:0};undoStack.length=redoStack.length=0;syncHistory();
+  doc={pages,page:0,book};undoStack.length=redoStack.length=0;syncHistory();
   renderPage().then(fit);save();
 }
 
@@ -844,6 +903,98 @@ async function pollScan(){
 function closeScan(){clearInterval(scanTimer);scanTimer=null;scanId=null;$('scan').classList.remove('open')}
 $('scan').addEventListener('click',e=>{if(e.target.id==='scan')closeScan()});
 
+// ── TEXTBOOKS ──
+// A lesson page is drawn by the book's own HTML at the page's width; its height is
+// measured once it has laid out, and the marks layer grows to match.
+let lessonGen=0;
+async function showLesson(p){
+  const gen=++lessonGen,B=window.TTBooks;
+  if(!B?.book||B.book.name!==p.lesson.book){
+    const ok=await B?.openSaved(p.lesson.book).catch(()=>null);
+    if(!ok||gen!==lessonGen){if(gen===lessonGen)say('Open the textbook again to show this page.');return}
+  }
+  let html;
+  try{html=await B.renderSection(p.lesson.index)}catch(e){say(e.message);return}
+  if(gen!==lessonGen||page()!==p)return;
+  const f=document.createElement('iframe');
+  f.className='page-frame';f.title=p.lesson.label;f.tabIndex=-1;
+  f.setAttribute('sandbox','allow-same-origin');
+  f.style.height=p.h+'px';
+  f.onload=()=>{
+    const measure=()=>{
+      try{
+        // The body's height, not the document's: a document is never shorter than its frame.
+        const d=f.contentDocument,h=Math.max(Math.ceil(d.body?.scrollHeight||0),600);
+        if(Math.abs(h-p.h)>2){
+          const first=p.h===BLANK_H&&!p.measured;p.h=h;p.measured=true;f.style.height=h+'px';
+          sheet.style.height=h+'px';marksSvg.setAttribute('height',h);marksSvg.setAttribute('viewBox',`0 0 ${p.w} ${h}`);
+          if(first)fit();save();
+        }
+      }catch{}
+    };
+    measure();setTimeout(measure,250);setTimeout(measure,1200);
+    f.contentDocument?.querySelectorAll('img').forEach(i=>i.addEventListener('load',measure));
+  };
+  f.srcdoc=html;
+  sheet.prepend(f);
+}
+function openLesson(i){
+  const B=window.TTBooks,b=B?.book;if(!b||i<0||i>=b.toc.length)return;
+  if(page().lesson)save();   // keep the page we are leaving
+  const lesson={book:b.name,index:i,label:b.toc[i].label};
+  const p={id:uid(),w:PAGE_W,h:BLANK_H,paper:'plain',hasImage:false,lesson,items:lessonItems(lesson)};
+  newDocument([p],{name:b.name,title:b.title,total:b.toc.length});
+  closeLibrary();say(lesson.label);
+}
+
+const lib={el:$('library'),covers:$('covers'),lessons:$('lessons'),status:$('libStatus'),title:$('bookTitle'),search:$('lessonSearch')};
+async function openLibrary(){
+  toggleTray(null);finishEdit();
+  lib.el.classList.add('open');
+  const B=window.TTBooks;if(!B){lib.status.textContent='The textbook reader did not load.';return}
+  const saved=await B.savedNames();
+  lib.covers.replaceChildren();
+  for(const b of B.PACKAGED){
+    const c=document.createElement('button');c.className='cover';c.setAttribute('aria-label','Grade '+b.grade+' textbook');
+    c.textContent=b.grade;
+    const img=new Image();img.alt='';img.onerror=()=>img.remove();img.src=new URL(b.name.replace('.epub','.webp'),B.COVERS).href;c.prepend(img);
+    if(saved.has(b.name))c.append(Object.assign(document.createElement('span'),{className:'saved'}));
+    c.classList.toggle('on',B.book?.name===b.name);
+    c.onclick=()=>pickBook(()=>B.openPackaged(b.grade,f=>{lib.status.textContent='Downloading Grade '+b.grade+': '+Math.round(f*100)+'%'}),saved.has(b.name)?'Opening Grade '+b.grade+'…':'Downloading Grade '+b.grade+'…');
+    lib.covers.append(c);
+  }
+  const f=document.createElement('button');f.className='cover file';f.textContent='EPUB file';
+  f.setAttribute('aria-label','Open an EPUB textbook from this computer');
+  f.onclick=()=>{$('epubInput').value='';$('epubInput').click()};
+  lib.covers.append(f);
+  showLessons();
+}
+$('epubInput').onchange=e=>{const file=e.target.files?.[0];if(file)pickBook(()=>window.TTBooks.openLocal(file),'Opening '+file.name+'…')};
+async function pickBook(open,msg){
+  lib.status.textContent=msg;lib.lessons.replaceChildren();
+  try{await open();lib.status.textContent='';showLessons()}
+  catch(e){lib.status.textContent=e.message||'That textbook could not be opened.'}
+}
+function showLessons(){
+  const b=window.TTBooks?.book;
+  lib.title.textContent=b?b.title:'';lib.search.hidden=!b;
+  for(const c of lib.covers.children)c.classList.toggle('on',!!b&&c.getAttribute('aria-label')==='Grade '+b.grade+' textbook');
+  lib.lessons.replaceChildren();if(!b)return;
+  const q=lib.search.value.trim().toLowerCase(),cur=doc.book?.name===b.name?page().lesson?.index:-1;
+  b.toc.forEach((t,i)=>{
+    if(q&&!t.label.toLowerCase().includes(q))return;
+    const r=document.createElement('button');r.className='lesson';r.textContent=t.label;
+    r.dataset.depth=t.depth;r.style.setProperty('--d',Math.min(t.depth,5));
+    r.classList.toggle('on',i===cur);r.onclick=()=>openLesson(i);
+    lib.lessons.append(r);
+  });
+  lib.lessons.querySelector('.on')?.scrollIntoView({block:'center'});
+}
+lib.search.addEventListener('input',showLessons);
+function closeLibrary(){lib.el.classList.remove('open')}
+lib.el.addEventListener('click',e=>{if(e.target===lib.el)closeLibrary()});
+$('openBook').onclick=openLibrary;
+
 // ── MATH THINGS ──
 // The shelf reads the home page, so new Math Things appear here as soon as they ship.
 const HOME=new URL('../../../',location.href);
@@ -910,7 +1061,7 @@ addEventListener('keydown',e=>{
   if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo()}
   else if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo()}
   else if((e.key==='Delete'||e.key==='Backspace')&&ui.selected){e.preventDefault();trash.click()}
-  else if(e.key==='Escape'){select(null);closeChest();closeScan();toggleTray(null)}
+  else if(e.key==='Escape'){select(null);closeChest();closeScan();closeLibrary();toggleTray(null)}
 });
 
 const announcer=$('announce');
@@ -920,9 +1071,11 @@ function say(t){announcer.textContent=t}
 load();syncTrays();setTool('type');
 addEventListener('resize',()=>{placeOverlays()});
 function start(){renderPage().then(fit);syncHistory()}
-// Typed math needs MathLive; wait for it so restored math renders, but never forever.
-const ready=customElements.whenDefined('math-field');
-Promise.race([ready,new Promise(r=>setTimeout(r,4000))]).then(start);
+// Start once every deferred script (textbooks, PDF, MathLive) has run, and MathLive has
+// defined its element so restored math renders; never wait more than a few seconds.
+const domReady=new Promise(r=>document.readyState==='loading'?addEventListener('DOMContentLoaded',r,{once:true}):r());
+const mathReady=Promise.race([customElements.whenDefined('math-field'),new Promise(r=>setTimeout(r,4000))]);
+Promise.all([domReady,mathReady]).then(start);
 window.__table={doc:()=>doc,ui,view,undo,redo,openImages,goPage};
 })();
 </script>
