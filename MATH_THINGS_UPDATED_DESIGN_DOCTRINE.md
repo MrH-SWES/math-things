@@ -269,6 +269,50 @@ Current palette:
 
 Whole-number places grow leftward from ones. Decimal places shrink rightward from ones. Color should reinforce structure, not decorate randomly.
 
+## 10A. Canonical Fraction Palette
+
+The denominator is the visual identity of a fractional part across the entire
+Math Things family: number line, fraction bars, fraction circles, and future tools.
+The numerator determines how many pieces are present; it does **not** change their
+color. Never use opacity or saturation proportional to numerator.
+
+Use the shared source: \`math-things-fractions.js\` (exports
+\`FRACTION_DENOMINATORS\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
+This is the current **revision 2 palette**, pending classroom visual testing.
+
+Only three fraction colors are place-value colors, because only those three
+fractions *are* place values: one whole (ones red), tenths (tenths cyan) and
+hundredths (hundredths orange). Every other part size has its **own distinct
+color**, so halves, fourths and eighths side by side in a fraction wall or a
+set of circles are told apart at a glance. Those colors are **dusty**:
+place-value enamel is fully saturated, fraction enamel is muted, so a fraction
+piece never reads as a place-value block. Revision 1 used saturated rainbow
+hues that sat next to the hundreds, thousands, tens, hundred-thousands and
+millions colors; revision 2 retires it.
+
+| Part size | Enamel color | Hex |
+|---|---|---|
+| One whole | Volume Space ones red | \`#DC143C\` |
+| Halves | Mauve | \`#B47AA3\` |
+| Thirds | Sage | \`#8DB596\` |
+| Fourths | Sand | \`#D1AE6C\` |
+| Fifths | Slate | \`#7E93C2\` |
+| Sixths | Clay | \`#CF8E70\` |
+| Eighths | Lavender | \`#A898D3\` |
+| Ninths | Cocoa | \`#8B6A58\` |
+| Tenths | Canonical decimal-tenths cyan | \`#64D2FF\` |
+| Twelfths | Moss | \`#8C9A4E\` |
+| Sixteenths | Deep teal | \`#4F8A8B\` |
+| Hundredths | Canonical decimal-hundredths orange | \`#FF9F0A\` |
+
+The deliberate overlap at tenths and hundredths teaches that 1/10 = 0.1 and
+1/100 = 0.01. A fully assembled whole stays red, regardless of the colors
+of its component pieces. When ten orange hundredths are bundled together,
+the bundle becomes one cyan tenth. Individual fractional parts remain fully
+opaque, with physically distinct edges. The number/denominator must remain
+available in ruler labels and screen-reader text: color is supporting structure,
+not the only way to recognize the part.
+
 ## 11. Motion Doctrine
 
 Motion should teach.

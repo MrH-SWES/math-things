@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <title>Volume Space | Math Things.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass: rgba(247,246,243,0.82);
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.06);
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --tens: #4169E1;
+            --ones: #DC143C;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Lexend', system-ui, sans-serif;
+            color: var(--text-main);
+            /* Warm showroom backdrop — the 3D canvas is transparent over it */
+            background: radial-gradient(130% 95% at 50% 40%, #FBFAF8 0%, #F3F1ED 55%, #E7E3DC 100%);
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none;
+        }
+
+        #stage { position: fixed; inset: 0; }
+        #stage canvas { display: block; outline: none; }
+
+        /* ── HEADER ── */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 20px;
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        /* The Bead */
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ── WORDLESS SEGMENTED CONTROL: Line | Grid | Solid ── */
+        .seg {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .seg-btn, .tool {
+            width: 38px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            padding: 0;
+            transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, opacity 0.2s ease;
+        }
+        .seg-btn.active, .tool.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06);
+        }
+        .seg-btn svg, .tool svg { display: block; }
+        .seg-btn:focus-visible, .tool:focus-visible, .pv-pill input:focus-visible + .pv-pill-track {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .tools {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .tool:disabled { opacity: 0.35; cursor: default; }
+        .tool .digits { font-weight: 800; font-size: 12px; letter-spacing: -0.02em; }
+
+        /* ── PLACE VALUE PILL TOGGLE (same as Number Line) ── */
+        .pv-toggle-wrap { display: flex; align-items: center; }
+        .pv-icon { display: flex; align-items: center; margin-right: 6px; opacity: 0.75; flex-shrink: 0; }
+        .pv-pill { position: relative; width: 48px; height: 28px; cursor: pointer; flex-shrink: 0; }
+        .pv-pill input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .pv-pill-track {
+            position: absolute; inset: 0;
+            background: #E5E5EA;
+            border-radius: 14px;
+            transition: background 0.25s ease;
+            display: block;
+        }
+        .pv-pill-thumb {
+            position: absolute;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px; left: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+            transition: left 0.25s var(--spring);
+        }
+        .pv-pill input:checked + .pv-pill-track { background: var(--accent); }
+        .pv-pill input:checked + .pv-pill-track .pv-pill-thumb { left: 22px; }
+
+        /* ── THE RECORD (follows the object) ── */
+        .record {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .record.off { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        .record.off .f { pointer-events: none; }
+
+        .rec-expr {
+            display: flex;
+            align-items: baseline;
+            white-space: nowrap;
+            font-weight: 900;
+            font-size: clamp(2rem, 4.8vw, 3.8rem);
+            letter-spacing: -0.035em;
+            line-height: 1.05;
+        }
+        /* Line mode: one big numeral, as on the Number Line */
+        .record.single .rec-expr { font-size: clamp(2.8rem, 6.4vw, 5rem); letter-spacing: -0.04em; }
+        /* Native [hidden] must win over the explicit display on editable factors/results. */
+        .rec-expr [hidden] { display: none !important; }
+        .rec-expr .op { color: var(--text-light); font-weight: 600; margin: 0 0.2em; }
+        .rec-expr .res { display: inline-block; }
+
+        /* Every factor is typeable: enter a dimension and the object rebuilds to match */
+        .rec-expr .f {
+            display: inline-block;
+            width: 0.8em;                 /* JS sizes each factor to its digits */
+            font: inherit;
+            letter-spacing: inherit;
+            color: var(--text-main);
+            background: transparent;
+            border: 0; outline: 0;
+            margin: 0;
+            padding: 0 0.06em;
+            border-radius: 0.14em;
+            text-align: center;
+            pointer-events: auto;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+            appearance: none;
+            -webkit-appearance: none;
+            text-shadow: inherit;
+            transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .rec-expr .f:hover { background: rgba(0,0,0,0.035); }
+        .rec-expr .f:focus {
+            background: rgba(255,255,255,0.85);
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.35), 0 4px 14px rgba(0,0,0,0.06);
+        }
+        .rec-expr .f.live { color: var(--accent); }
+        .rec-pop { animation: recPop 0.3s var(--spring); }
+        @keyframes recPop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.14); }
+            100% { transform: scale(1); }
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            text-align: center;
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            pointer-events: none;
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            margin-bottom: 0.08em;
+            background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: baseline;
+        }
+
+        .sr-only {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .rec-pop { animation: none !important; }
+        }
+
+        @media (max-width: 720px) {
+            header { padding: 0 10px; gap: 8px; }
+            .logo { font-size: 1.1rem; }
+            .header-controls { gap: 8px; }
+            .pv-icon { display: none; }
+            .seg-btn, .tool { width: 32px; height: 30px; }
+        }
+        @media (max-width: 480px) {
+            header { padding: 0 6px; gap: 6px; }
+            .header-controls { gap: 6px; }
+            .logo { font-size: 0.95rem; }
+            .seg-btn, .tool { width: 28px; }
+        }
+        @media (max-height: 500px) {
+            header { height: 48px; }
+            .record { top: 56px; }
+            .record.single .rec-expr { font-size: 2.6rem; }
+            .rec-expr { font-size: 2rem; }
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="stage" aria-label="Three-dimensional workspace with a number line" role="application"></div>
+
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+        <div class="header-controls">
+            <!-- Wordless dimension permissions: which axes can be pulled -->
+            <div class="seg" role="group" aria-label="Dimensions">
+                <button class="seg-btn" id="modeLine" aria-label="Line" title="Line" aria-pressed="false">
+                    <svg width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true" focusable="false">
+                        <line x1="1" y1="7" x2="19" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <line x1="1" y1="4" x2="1" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <line x1="19" y1="4" x2="19" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="13" cy="7" r="2.5" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button class="seg-btn" id="modeGrid" aria-label="Grid" title="Grid" aria-pressed="false">
+                    <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true" focusable="false">
+                        <rect x="1"  y="1" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="8"  y="1" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="14" y="1" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="1"  y="9" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="8"  y="9" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="14" y="9" width="5" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                </button>
+                <button class="seg-btn active" id="modeSolid" aria-label="Solid" title="Solid" aria-pressed="true">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+                        <path d="M10 1.8l7.2 3.9v8.6L10 18.2l-7.2-3.9V5.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        <path d="M2.8 5.7L10 9.6l7.2-3.9M10 9.6v8.6" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="pv-toggle-wrap">
+                <!-- Wordless icon: small red unit cubes fusing into a blue ten-stick -->
+                <svg class="pv-icon" width="38" height="18" viewBox="0 0 38 18" fill="none" aria-hidden="true" focusable="false">
+                    <rect x="0" y="4" width="7" height="10" rx="1.5" fill="#DC143C"/>
+                    <rect x="9" y="4" width="7" height="10" rx="1.5" fill="#DC143C"/>
+                    <polyline points="18,9 21,9" stroke="#86868B" stroke-width="1.5" stroke-linecap="round"/>
+                    <polyline points="19.5,6.5 22,9 19.5,11.5" stroke="#86868B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="23" y="4" width="15" height="10" rx="1.5" fill="#4169E1"/>
+                    <line x1="28.5" y1="4" x2="28.5" y2="14" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+                    <line x1="33"   y1="4" x2="33"   y2="14" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+                </svg>
+                <label class="pv-pill" title="Place value grouping">
+                    <input type="checkbox" id="pvToggle" aria-label="Place value grouping">
+                    <span class="pv-pill-track"><span class="pv-pill-thumb"></span></span>
+                </label>
+            </div>
+
+            <div class="tools" role="group" aria-label="View">
+                <button class="tool" id="sepBtn" aria-label="Unstack unit-cube layers" title="Unstack unit-cube layers" aria-pressed="false">
+                    <svg width="22" height="20" viewBox="0 0 22 20" fill="none" aria-hidden="true" focusable="false">
+                        <path d="M11 1.5l8.5 3.4L11 8.3 2.5 4.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        <path d="M2.5 10.2l8.5 3.4 8.5-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2.5 15.1l8.5 3.4 8.5-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="tool active" id="recBtn" aria-label="Number record" title="Number record" aria-pressed="true">
+                    <span class="digits" aria-hidden="true">123</span>
+                </button>
+                <button class="tool" id="fitBtn" aria-label="Frame everything" title="Frame everything">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+                        <path d="M2 7V2h5M13 2h5v5M18 13v5h-5M7 18H2v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 6.2l3.4 1.8v4L10 13.8 6.6 12V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="tool" id="resetBtn" aria-label="Clear" title="Clear">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+                        <path d="M4.6 10.4a5.6 5.6 0 1 0 1.7-4.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M4.2 2.9v3.8H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- The record: each factor can be typed into, and the object rebuilds to match -->
+    <div class="record" id="record">
+        <div class="rec-expr" id="recExpr">
+            <input class="f" id="fx" data-axis="x" type="text" inputmode="numeric" pattern="[0-9]*" value="0"
+                   aria-label="Length" autocomplete="off" spellcheck="false">
+            <span class="op" id="opY" aria-hidden="true">×</span>
+            <input class="f" id="fy" data-axis="y" type="text" inputmode="numeric" pattern="[0-9]*" value="1"
+                   aria-label="Width, in rows" autocomplete="off" spellcheck="false">
+            <span class="op" id="opZ" aria-hidden="true">×</span>
+            <input class="f" id="fz" data-axis="z" type="text" inputmode="numeric" pattern="[0-9]*" value="1"
+                   aria-label="Height, in layers" autocomplete="off" spellcheck="false">
+            <span class="op" id="opEq" aria-hidden="true">=</span>
+            <span class="res" id="recRes">0</span>
+        </div>
+    </div>
+
+    <div class="sr-only" id="live" aria-live="polite"></div>
+
+    <footer>
+        Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span>
+    </footer>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+        // Z is up, like SketchUp. Must be set before any camera or light exists.
+        THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+
+        const V3 = THREE.Vector3;
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+        // ── CONSTANTS ──
+        // World units: 1 unit = 1 cube. X runs along the number line, Y back into the
+        // array, Z up into the prism. The prism always fills [0,x]×[0,y]×[0,z].
+        const MAX = { x: 100, y: 100, z: 100 };
+        const GAP = 0.05;          // inset on every side of a piece → 0.1 seam between neighbours
+        const TRAY_D = 0.14;       // thickness of the number-line body; the floor sits beneath it
+        const BAND = 1.9;          // depth of the printed number band in front of the track
+        const LANE = 0.22;         // distance of each bead rail from the prism faces
+        const Y_SLOT_W = 0.97;     // numbered part of the y scale (outer side)
+        const Y_PLATE_W = 1.4;     // plus the bead lane against the rows
+        const BEAD_R = 0.2;
+        const ZC = 0.4;            // z carriage stands this far past the end of the line (clears the x bead)
+        const PX = 128;            // label texture pixels per unit
+        const SEP_MAX = 0.55;      // gap between separated layers
+        const SEP_LIMIT = 40000;   // separating needs every cube drawn; cap it
+        const ANIM_LIMIT = 20000;  // skip per-cube animation on very large builds
+        const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const FONT = 'Lexend, system-ui, sans-serif';
+        const ZONE = ['#FFFFFF', '#D1D1D6'];   // alternating ten-zones, as on the Number Line
+        // Place-value palette, indexed by how many of a piece's dimensions are ten
+        const PLACE = [0xDC143C, 0x4169E1, 0xFFD700, 0x4CBB17];
+        const AXES = ['x', 'y', 'z'];
+        const AXIS_DIR = { x: new V3(1, 0, 0), y: new V3(0, 1, 0), z: new V3(0, 0, 1) };
+        // Piece shapes; the index is the shape code
+        const SHAPES = [
+            [1, 1, 1],
+            [10, 1, 1], [1, 10, 1], [1, 1, 10],
+            [10, 10, 1], [10, 1, 10], [1, 10, 10],
+            [10, 10, 10],
+        ];
+        const tensIn = (code) => SHAPES[code].filter(d => d === 10).length;
+        const KEY_SHAPE = 2097152; // 2^21
+        const cellKey = (code, x, y, z) => code * KEY_SHAPE + x + y * 128 + z * 16384;
+        // Home view: in front and 30° to the left (so the Y and Z scales show), raised 36°
+        const HOME_DIR = new V3(-0.4045, -0.7006, 0.5878).normalize();
+
+        // ── STATE ──
+        const state = { n: 0, rows: 1, layers: 1, mode: 'solid', pv: false, record: true, separate: false };
+        let sep = 0;              // animated layer separation
+
+        // Effective dimensions: the mode decides which axes are allowed to have depth.
+        function eff() {
+            return {
+                a: state.n,
+                b: state.mode === 'line' ? 1 : state.rows,
+                c: state.mode === 'solid' ? state.layers : 1,
+            };
+        }
+        const canY = () => state.mode !== 'line' && state.n > 0;
+        const canZ = () => state.mode === 'solid' && state.n > 0;
+        const valueOf = (axis) => axis === 'x' ? state.n : axis === 'y' ? state.rows : state.layers;
+        const rangeOf = (axis) => axis === 'x' ? [0, MAX.x] : [1, MAX[axis]];
+
+        // Track shows one more decade than the built length (Number Line rule)
+        function visX() { return Math.min(MAX.x, Math.max(20, Math.ceil(state.n / 10) * 10 + 10)); }
+        // Y and Z scales always show at least one open slot past the bead
+        function visYZ(v, max) { return Math.min(max, Math.max(5, Math.ceil((v + 1) / 5) * 5)); }
+
+        // ── RENDERER ──
+        const stage = document.getElementById('stage');
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.NeutralToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        stage.appendChild(renderer.domElement);
+        const canvas = renderer.domElement;
+        const MAX_ANISO = renderer.capabilities.getMaxAnisotropy();
+
+        const scene = new THREE.Scene();
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environmentIntensity = 0.36;
+        scene.environmentRotation.set(Math.PI / 2, 0, 0);   // studio env is Y-up; our world is Z-up
+
+        // ── LIGHTS ── key light from upper left-front so the visible faces read as separate planes.
+        // Kept low enough that white and gray ten-zones stay distinct after tone mapping.
+        const hemi = new THREE.HemisphereLight(0xffffff, 0xd6cfc4, 0.38);
+        scene.add(hemi);
+        const sun = new THREE.DirectionalLight(0xfff8ee, 0.9);
+        const SUN_DIR = new V3(-0.55, -0.42, 1.25).normalize();
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        sun.shadow.bias = -0.0004;
+        scene.add(sun, sun.target);
+
+        // Infinite floor: only shadows show, so the canvas stays blank
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(1, 1),
+            new THREE.ShadowMaterial({ color: 0x2b2116, opacity: 0.16 })
+        );
+        ground.scale.set(8000, 8000, 1);
+        ground.position.z = -TRAY_D;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // ── CAMERA ──
+        const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.05, 6000);
+        camera.position.set(4, -24, 18);
+
+        // Our pointer handler must be registered BEFORE OrbitControls so a bead or
+        // face grab can claim the gesture before an orbit starts.
+        canvas.addEventListener('pointerdown', onPointerDown);
+        canvas.addEventListener('pointermove', onPointerMove);
+        canvas.addEventListener('pointerup', onPointerUp);
+        canvas.addEventListener('pointercancel', onPointerUp);
+        canvas.addEventListener('lostpointercapture', onPointerUp);
+        canvas.addEventListener('pointerleave', () => { if (!drag) clearHover(); });
+
+        // SketchUp-style navigation: left/middle drag orbits, shift-drag or right drag pans,
+        // wheel zooms toward the cursor. Touch: one finger orbits, two fingers pinch/pan.
+        const controls = new OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.12;
+        controls.zoomToCursor = true;
+        controls.screenSpacePanning = true;
+        controls.rotateSpeed = 0.75;
+        controls.zoomSpeed = 1.1;
+        controls.minDistance = 1.5;
+        controls.maxDistance = 1800;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;   // stay above the floor
+        controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+        controls.addEventListener('start', () => { camTween = null; interacted = true; });
+
+        // ── MATERIALS ──
+        // Enameled cast iron. Pieces keep their unit seams (fusion never erases ancestry):
+        // a groove is drawn wherever the piece crosses a whole-unit boundary.
+        function enamelMaterial(color) {
+            const m = new THREE.MeshPhysicalMaterial({
+                color, roughness: 0.4, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.12,
+            });
+            m.onBeforeCompile = (sh) => {
+                sh.vertexShader = sh.vertexShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vSeamP;\nvarying vec3 vSeamN;')
+                    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeamP = position;\nvSeamN = normal;');
+                sh.fragmentShader = sh.fragmentShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vSeamP;\nvarying vec3 vSeamN;')
+                    .replace('#include <color_fragment>', `#include <color_fragment>
+                    {
+                        vec3 dist = abs(fract(vSeamP + 0.5) - 0.5);
+                        vec3 aa = fwidth(vSeamP) * 1.25;
+                        vec3 groove = 1.0 - smoothstep(vec3(0.02) - aa, vec3(0.02) + aa, dist);
+                        vec3 along = 1.0 - step(vec3(0.55), abs(vSeamN));
+                        float seam = max(max(groove.x * along.x, groove.y * along.y), groove.z * along.z);
+                        diffuseColor.rgb *= 1.0 - 0.42 * seam;
+                    }`);
+            };
+            return m;
+        }
+        const enamel = PLACE.map(enamelMaterial);
+        const coreMat = new THREE.MeshStandardMaterial({ color: 0x3d0610, roughness: 0.9 });
+        const trayMat = new THREE.MeshStandardMaterial({ color: 0xE5E5EA, roughness: 0.62 });
+        const metalMat = new THREE.MeshPhysicalMaterial({ color: 0xC4C6CB, metalness: 1, roughness: 0.3, anisotropy: 0.6 });
+        const beadMat = new THREE.MeshPhysicalMaterial({
+            color: 0xD8D9DD, metalness: 1, roughness: 0.24, anisotropy: 0.8, clearcoat: 0.4, clearcoatRoughness: 0.2,
+        });
+        const gripMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3f, metalness: 0.6, roughness: 0.5 });
+
+        // ── LABEL TEXTURES ──
+        const texCache = new Map();
+        function makeTex(key, w, h, draw) {
+            let t = texCache.get(key);
+            if (t) return t;
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            draw(cv.getContext('2d'), w, h);
+            t = new THREE.CanvasTexture(cv);
+            t.colorSpace = THREE.SRGBColorSpace;
+            t.anisotropy = MAX_ANISO;
+            texCache.set(key, t);
+            return t;
+        }
+
+        function drawNumber(g, text, cx, cy, rot, weight, size, color, maxW) {
+            g.save();
+            g.translate(cx, cy);
+            g.rotate(rot);
+            g.font = `${weight} ${size}px ${FONT}`;
+            const w = g.measureText(text).width;
+            if (w > maxW) g.font = `${weight} ${Math.floor(size * maxW / w)}px ${FONT}`;
+            const m = g.measureText(text);
+            g.fillStyle = color;
+            g.textAlign = 'center';
+            g.textBaseline = 'alphabetic';
+            g.fillText(text, 0, (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
+            g.restore();
+        }
+
+        // Continuous count: decades are anchors, as on the Number Line
+        function countStyle(num, scale = 1) {
+            return num % 10 === 0
+                ? { weight: 800, size: 0.56 * PX * scale, color: '#1D1D1F' }
+                : { weight: 500, size: 0.48 * PX * scale, color: '#4A4A4F' };
+        }
+
+        const gridTex = makeTex('grid', 128, 128, (g) => {
+            g.fillStyle = '#FFFFFF';
+            g.fillRect(0, 0, 128, 128);
+            g.fillStyle = 'rgba(0,0,0,0.14)';
+            g.fillRect(0, 0, 128, 2); g.fillRect(0, 126, 128, 2);
+            g.fillRect(0, 0, 2, 128); g.fillRect(126, 0, 2, 128);
+        });
+        gridTex.wrapS = gridTex.wrapT = THREE.RepeatWrapping;
+
+        // One printed band per decade: bead stop-marks, continuous count, local 1–10 count.
+        // `o` is 0 (read from the front) or 2 (numerals turned to read from behind).
+        function bandTex(d, o) {
+            const H = Math.round((BAND - 0.035) * PX);
+            return makeTex(`band:${d}:${o}`, 10 * PX, H, (g, W) => {
+                g.fillStyle = ZONE[d % 2];
+                g.fillRect(0, 0, W, H);
+                g.fillStyle = 'rgba(0,0,0,0.12)';
+                g.fillRect(0, 0, W, 3);                     // seam against the track
+                for (let i = 0; i <= 10; i++) {             // where the bead can stop
+                    const major = i === 0 || i === 10;
+                    const w = major ? 4 : 2.5;
+                    g.fillStyle = major ? 'rgba(0,0,0,0.26)' : 'rgba(0,0,0,0.15)';
+                    g.fillRect(i * PX - w / 2, 4, w, major ? 0.6 * PX : 0.42 * PX);
+                }
+                const rot = o * Math.PI / 2;
+                for (let i = 0; i < 10; i++) {
+                    const num = d * 10 + i + 1;
+                    const cx = (i + 0.5) * PX;
+                    const st = countStyle(num);
+                    drawNumber(g, String(num), cx, 0.85 * PX, rot, st.weight, st.size, st.color, 0.94 * PX);
+                    drawNumber(g, String(i + 1), cx, 1.5 * PX, rot, 600, 0.36 * PX, '#8E8E93', 0.9 * PX);
+                }
+            });
+        }
+
+        // Y scale, per decade: numbered slots on the outside, the bead lane against the rows
+        // (mirrors the x band). `o` = quarter turns so numerals read upright from where you stand.
+        function yTex(e, count, o) {
+            const W = Math.round(Y_PLATE_W * PX), H = count * PX, slotW = Math.round(Y_SLOT_W * PX);
+            return makeTex(`y:${e}:${count}:${o}`, W, H, (g) => {
+                g.fillStyle = ZONE[e % 2];
+                g.fillRect(0, 0, W, H);
+                g.fillStyle = 'rgba(0,0,0,0.12)';
+                g.fillRect(W - 3, 0, 3, H);                       // seam against the rows
+                g.fillStyle = 'rgba(0,0,0,0.10)';
+                for (let s = 0; s <= count; s++) g.fillRect(0, H - s * PX - 1, slotW, 2);
+                for (let s = 0; s <= count; s++) {                 // where the bead can stop
+                    const major = (e * 10 + s) % 10 === 0;
+                    const w = major ? 4 : 2.5;
+                    g.fillStyle = major ? 'rgba(0,0,0,0.26)' : 'rgba(0,0,0,0.15)';
+                    g.fillRect(slotW + 4, H - s * PX - w / 2, W - slotW - 8, w);
+                }
+                const rot = -o * Math.PI / 2;
+                for (let s = 0; s < count; s++) {
+                    const num = e * 10 + s + 1;
+                    const st = countStyle(num, 0.95);
+                    drawNumber(g, String(num), slotW / 2, H - (s + 0.5) * PX, rot, st.weight, st.size, st.color, 0.88 * PX);
+                }
+            });
+        }
+
+        // Z scale: one enamel tag per layer, always turned toward the viewer.
+        // Tags alternate by decade like the number line.
+        const tagMats = new Map();
+        function tagMaterial(num) {
+            let m = tagMats.get(num);
+            if (m) return m;
+            const tex = makeTex(`tag:${num}`, 128, 96, (g, W, H) => {
+                g.beginPath();
+                g.roundRect(5, 5, W - 10, H - 10, 22);
+                g.fillStyle = ZONE[Math.floor((num - 1) / 10) % 2];
+                g.fill();
+                g.lineWidth = 2.5;
+                g.strokeStyle = 'rgba(0,0,0,0.16)';
+                g.stroke();
+                const st = countStyle(num, 0.95);
+                drawNumber(g, String(num), W / 2, H / 2, 0, st.weight, st.size, st.color, W - 30);
+            });
+            m = new THREE.SpriteMaterial({ map: tex, transparent: true });
+            tagMats.set(num, m);
+            return m;
+        }
+
+        // ── INFRASTRUCTURE: number line (x), y scale, z column, origin hub ──
+        const xGroup = new THREE.Group(), yGroup = new THREE.Group(), zGroup = new THREE.Group(), hubGroup = new THREE.Group();
+        scene.add(xGroup, yGroup, zGroup, hubGroup);
+        // The y and z scales start collapsed; stepGrow raises them when their axis opens
+        yGroup.scale.y = zGroup.scale.z = 0.0001;
+        yGroup.visible = zGroup.visible = false;
+        const bandMeshes = [], yPlates = [], zTags = [];
+        let bandOrient = 0, yOrient = 0;
+        let xSig = '', ySig = '', zSig = '';
+        const grow = { y: { v: 0, target: 0 }, z: { v: 0, target: 0 } };
+
+        const decalProps = { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 };
+        const trackMats = ZONE.map(c => new THREE.MeshStandardMaterial({ color: c, map: gridTex, roughness: 0.55, ...decalProps }));
+
+        function disposeGroup(g) {
+            g.traverse(o => {
+                if (!o.isMesh) return;
+                o.geometry.dispose();
+                if (o.userData.own) o.userData.own.forEach(m => m.dispose());
+            });
+            g.clear();
+        }
+
+        function box(x0, x1, y0, y1, mat) {
+            const m = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, y1 - y0, TRAY_D, 2, 0.035), mat);
+            m.position.set((x0 + x1) / 2, (y0 + y1) / 2, -TRAY_D / 2);
+            m.castShadow = m.receiveShadow = true;
+            return m;
+        }
+
+        function plate(w, h, cx, cy, mat) {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            m.position.set(cx, cy, 0.0015);
+            m.receiveShadow = true;
+            return m;
+        }
+
+        function rail(axis, from, to) {
+            const len = to - from;
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, len, 12), metalMat);
+            m.castShadow = m.receiveShadow = true;
+            if (axis === 'x') { m.rotation.z = -Math.PI / 2; m.position.set(from + len / 2, -LANE, 0.03); }
+            else if (axis === 'y') m.position.set(-LANE, from + len / 2, 0.03);
+            else { m.rotation.x = Math.PI / 2; m.position.set(ZC, -LANE, from + len / 2); }   // on the carriage
+            return m;
+        }
+
+        function buildHub() {
+            hubGroup.add(box(-1.45, -0.02, -BAND, -0.02, trayMat));
+            // The origin: where the three rails meet
+            const node = new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 16), metalMat);
+            node.position.set(-LANE, -LANE, 0.04);
+            node.castShadow = true;
+            hubGroup.add(node);
+        }
+
+        function buildX(vx, R) {
+            disposeGroup(xGroup);
+            bandMeshes.length = 0;
+            xGroup.add(box(-0.02, vx + 0.15, -BAND, R + 0.15, trayMat));
+            gridTex.repeat.set(10, R);
+            for (let d = 0; d < vx / 10; d++) {
+                xGroup.add(plate(10, R, 10 * d + 5, R / 2, trackMats[d % 2]));
+                const mat = new THREE.MeshStandardMaterial({ map: bandTex(d, bandOrient), roughness: 0.62, ...decalProps });
+                const band = plate(10, BAND - 0.035, 10 * d + 5, -(BAND - 0.035) / 2, mat);
+                band.userData = { own: [mat], d };
+                xGroup.add(band);
+                bandMeshes.push(band);
+            }
+            xGroup.add(rail('x', -LANE, vx + 0.05));
+        }
+
+        function buildY(vy) {
+            disposeGroup(yGroup);
+            yPlates.length = 0;
+            yGroup.add(box(-1.45, -0.02, -0.02, vy + 0.15, trayMat));
+            for (let e = 0; e * 10 < vy; e++) {
+                const count = Math.min(10, vy - e * 10);
+                const mat = new THREE.MeshStandardMaterial({ map: yTex(e, count, yOrient), roughness: 0.62, ...decalProps });
+                const p = plate(Y_PLATE_W, count, -0.02 - Y_PLATE_W / 2, 10 * e + count / 2, mat);
+                p.userData = { own: [mat], e, count };
+                yGroup.add(p);
+                yPlates.push(p);
+            }
+            yGroup.add(rail('y', -LANE, vy + 0.05));
+        }
+
+        // Z scale: a standing rail on a carriage that rides the x rail at the end of the line,
+        // so it always stands at the prism's front-right corner. Tick ring at every whole
+        // number (bigger at tens) and a number tag beside each layer. zGroup.position.x
+        // follows the x bead; everything inside is relative to it.
+        function buildZ(vz) {
+            disposeGroup(zGroup);
+            zTags.length = 0;
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.07, 20), metalMat);
+            foot.rotation.x = Math.PI / 2;
+            foot.position.set(ZC, -LANE, 0.035);
+            foot.castShadow = true;
+            zGroup.add(foot);
+            zGroup.add(rail('z', 0, vz + 0.08));
+            const top = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 12), metalMat);
+            top.position.set(ZC, -LANE, vz + 0.08);
+            zGroup.add(top);
+            const ticks = new THREE.InstancedMesh(new THREE.TorusGeometry(0.06, 0.013, 8, 24), metalMat, vz);
+            const m = new THREE.Matrix4();
+            for (let k = 1; k <= vz; k++) {
+                const s = k % 10 === 0 ? 1.6 : 1;
+                ticks.setMatrixAt(k - 1, m.makeScale(s, s, s).setPosition(ZC, -LANE, k));
+            }
+            ticks.castShadow = true;
+            zGroup.add(ticks);
+            for (let k = 0; k < vz; k++) {
+                const tag = new THREE.Sprite(tagMaterial(k + 1));
+                tag.scale.set(0.6, 0.45, 1);
+                tag.position.set(ZC + 0.44, -0.6, k * (1 + sep) + 0.5);   // tags travel with separated layers
+                zGroup.add(tag);
+                zTags.push(tag);
+            }
+        }
+
+        function updateInfra() {
+            const { a, b } = eff();
+            const vx = visX(), R = a > 0 ? b : 1;
+            const sx = `${vx}|${R}`;
+            if (sx !== xSig) { buildX(vx, R); xSig = sx; }
+            if (canY()) {
+                const vy = String(visYZ(state.rows, MAX.y));
+                if (vy !== ySig) { buildY(+vy); ySig = vy; }
+            }
+            if (canZ()) {
+                const vz = String(visYZ(state.layers, MAX.z));
+                if (vz !== zSig) { buildZ(+vz); zSig = vz; }
+            }
+            grow.y.target = canY() ? 1 : 0;
+            grow.z.target = canZ() ? 1 : 0;
+        }
+
+        // Keep printed numerals upright from wherever the camera stands (with hysteresis)
+        function updateLabelOrient() {
+            const hx = camera.position.x - controls.target.x, hy = camera.position.y - controls.target.y;
+            if (hx * hx + hy * hy < 1e-6) return;
+            const phi = Math.atan2(hx, -hy);
+            const angDist = (a1, a2) => Math.abs(Math.atan2(Math.sin(a1 - a2), Math.cos(a1 - a2)));
+            if (angDist(phi, yOrient * Math.PI / 2) > Math.PI / 4 + 0.08) {
+                yOrient = ((Math.round(phi / (Math.PI / 2)) % 4) + 4) % 4;
+                yPlates.forEach(p => { p.material.map = yTex(p.userData.e, p.userData.count, yOrient); });
+            }
+            if (angDist(phi, bandOrient * Math.PI / 2) > Math.PI / 2 + 0.08) {
+                bandOrient = Math.cos(phi) >= 0 ? 0 : 2;
+                bandMeshes.forEach(m => { m.material.map = bandTex(m.userData.d, bandOrient); });
+            }
+        }
+
+        // ── PIECES (the prism) ──
+        const pieceRoot = new THREE.Group();
+        scene.add(pieceRoot);
+        const slots = SHAPES.map(() => ({ mesh: null, detail: -1, capacity: 0, cells: [], count: 0 }));
+        const pieceGeoCache = new Map();
+        const core = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1).translate(0.5, 0.5, 0.5), coreMat);
+        core.receiveShadow = true;
+        core.visible = false;
+        scene.add(core);
+
+        function pieceGeometry(code, detail) {
+            const key = code + ':' + detail;
+            let g = pieceGeoCache.get(key);
+            if (!g) {
+                const [dx, dy, dz] = SHAPES[code];
+                const sx = dx - 2 * GAP, sy = dy - 2 * GAP, sz = dz - 2 * GAP;
+                g = detail === 0 ? new THREE.BoxGeometry(sx, sy, sz) : new RoundedBoxGeometry(sx, sy, sz, detail, 0.1);
+                g.translate(dx / 2, dy / 2, dz / 2);   // local origin at the piece's min corner
+                pieceGeoCache.set(key, g);
+            }
+            return g;
+        }
+        // Fewer bevel segments as the count climbs; tiny cubes don't need them
+        const detailFor = (count) => count <= 1500 ? 3 : count <= 6000 ? 2 : count <= 20000 ? 1 : 0;
+
+        function splitTens(n) {
+            const out = [];
+            let s = 0;
+            while (n - s >= 10) { out.push([s, 10]); s += 10; }
+            if (n > s) out.push([s, n - s]);
+            return out;
+        }
+
+        // Every piece in an a×b×c prism. Place value off: unit cubes (only the outer shell
+        // when `cull`, since the inside can't be seen). Place value on: each full ten along
+        // an axis fuses — 10 ones → ten-stick, 10 sticks → hundred-flat, 10 flats → thousand-cube.
+        function enumeratePieces(a, b, c, pv, cull) {
+            const out = SHAPES.map(() => []);
+            if (!a || !b || !c) return out;
+            if (!pv) {
+                const u = out[0];
+                for (let z = 0; z < c; z++) {
+                    const zEdge = !cull || z === 0 || z === c - 1;
+                    for (let y = 0; y < b; y++) {
+                        if (zEdge || y === 0 || y === b - 1) {
+                            for (let x = 0; x < a; x++) u.push(x, y, z);
+                        } else {
+                            u.push(0, y, z);
+                            if (a > 1) u.push(a - 1, y, z);
+                        }
+                    }
+                }
+                return out;
+            }
+            const xs = splitTens(a), ys = splitTens(b), zs = splitTens(c);
+            for (const [z0, lz] of zs) for (const [y0, ly] of ys) for (const [x0, lx] of xs) {
+                const fx = lx === 10, fy = ly === 10, fz = lz === 10;
+                const full = fx + fy + fz;
+                if (full === 3) out[7].push(x0, y0, z0);
+                else if (full === 2) {
+                    if (!fz) for (let t = 0; t < lz; t++) out[4].push(x0, y0, z0 + t);
+                    else if (!fy) for (let t = 0; t < ly; t++) out[5].push(x0, y0 + t, z0);
+                    else for (let t = 0; t < lx; t++) out[6].push(x0 + t, y0, z0);
+                } else if (full === 1) {
+                    if (fx) { for (let u = 0; u < lz; u++) for (let t = 0; t < ly; t++) out[1].push(x0, y0 + t, z0 + u); }
+                    else if (fy) { for (let u = 0; u < lz; u++) for (let t = 0; t < lx; t++) out[2].push(x0 + t, y0, z0 + u); }
+                    else { for (let u = 0; u < ly; u++) for (let t = 0; t < lx; t++) out[3].push(x0 + t, y0 + u, z0); }
+                } else {
+                    for (let u = 0; u < lz; u++) for (let t = 0; t < ly; t++) for (let s = 0; s < lx; s++) out[0].push(x0 + s, y0 + t, z0 + u);
+                }
+            }
+            return out;
+        }
+
+        function ensureMesh(code, count) {
+            const s = slots[code];
+            const detail = code === 0 ? detailFor(count) : 3;
+            if (!s.mesh || s.detail !== detail || s.capacity < count) {
+                if (s.mesh) { pieceRoot.remove(s.mesh); s.mesh.dispose(); }
+                const cap = Math.max(16, Math.ceil(count * 1.4));
+                const mesh = new THREE.InstancedMesh(pieceGeometry(code, detail), enamel[tensIn(code)], cap);
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                mesh.castShadow = mesh.receiveShadow = true;
+                mesh.frustumCulled = false;
+                pieceRoot.add(mesh);
+                s.mesh = mesh; s.detail = detail; s.capacity = cap;
+            }
+            return s.mesh;
+        }
+
+        // Translation + uniform scale about the piece centre (geometry origin = min corner)
+        function writeMatrix(arr, i, x, y, z, code, sxy, sz, dz) {
+            const o = i * 16, d = SHAPES[code];
+            arr[o] = sxy; arr[o + 5] = sxy; arr[o + 10] = sz;
+            arr[o + 12] = x + d[0] * (1 - sxy) / 2;
+            arr[o + 13] = y + d[1] * (1 - sxy) / 2;
+            arr[o + 14] = z + d[2] * (1 - sz) / 2 + dz;
+        }
+
+        let lastDims = { a: 0, b: 0, c: 0 }, lastPV = false, lastKeys = new Set();
+        const anims = new Map();      // piece key → { t0, kind }
+        let activeAnims = [];         // { code, i, x, y, z, key }
+        const ghosts = [];            // removed pieces shrinking away
+
+        function rebuildPieces(animate) {
+            const { a, b, c } = eff();
+            // Unstacking means revealing actual unit-height layers. A fused 10-stick
+            // must temporarily resolve into unit cubes or it appears to float over gaps.
+            // Re-fuse only after the layers have finished closing (sep === 0).
+            const pv = state.pv && !state.separate && sep === 0;
+            const cull = !pv && !state.separate && sep === 0;
+            const lists = enumeratePieces(a, b, c, pv, cull);
+            const total = lists.reduce((s, l) => s + l.length / 3, 0);
+            const doAnim = animate && !REDUCED && total <= ANIM_LIMIT;
+            const now = performance.now();
+            const prev = lastDims;
+            const pvChanged = pv !== lastPV;
+            const keys = pv ? new Set() : null;
+
+            if (!doAnim) anims.clear();
+            else {
+                for (const [k, an] of anims) if (now - an.t0 > 1000) anims.delete(k);
+                spawnGhosts(prev, { a, b, c }, pv, pvChanged, now);
+            }
+            activeAnims = [];
+            const grewUp = !pvChanged && prev.a > 0 && c > prev.c;
+
+            for (let code = 0; code < SHAPES.length; code++) {
+                const cells = lists[code], count = cells.length / 3, s = slots[code];
+                s.cells = cells; s.count = count;
+                if (!count) { if (s.mesh) s.mesh.count = 0; continue; }
+                const mesh = ensureMesh(code, count);
+                mesh.count = count;
+                const arr = mesh.instanceMatrix.array;
+                const needKey = pv || doAnim;
+                for (let i = 0; i < count; i++) {
+                    const x = cells[3 * i], y = cells[3 * i + 1], z = cells[3 * i + 2];
+                    writeMatrix(arr, i, x, y, z * (1 + sep), code, 1, 1, 0);
+                    if (!needKey) continue;
+                    const key = cellKey(code, x, y, z);
+                    if (pv) keys.add(key);
+                    if (!doAnim) continue;
+                    const isNew = pvChanged || (pv ? !lastKeys.has(key) : (x >= prev.a || y >= prev.b || z >= prev.c));
+                    if (isNew) {
+                        const kind = grewUp && z >= prev.c ? 'drop' : code > 0 ? 'merge' : 'pop';
+                        anims.set(key, { t0: now, kind });
+                    }
+                    if (anims.has(key)) activeAnims.push({ code, i, x, y, z, key });
+                }
+                mesh.instanceMatrix.needsUpdate = true;
+            }
+
+            core.visible = cull && a > 2 && b > 2 && c > 2;
+            if (core.visible) {
+                core.position.set(1.05, 1.05, 1.05);
+                core.scale.set(a - 2.1, b - 2.1, c - 2.1);
+            }
+
+            lastDims = { a, b, c };
+            lastPV = pv;
+            lastKeys = keys || new Set();
+        }
+
+        // Rewrite every instance's position (used while layers slide apart/together)
+        function rewriteAll() {
+            for (let code = 0; code < SHAPES.length; code++) {
+                const s = slots[code];
+                if (!s.count || !s.mesh) continue;
+                const arr = s.mesh.instanceMatrix.array, cells = s.cells;
+                for (let i = 0; i < s.count; i++) {
+                    writeMatrix(arr, i, cells[3 * i], cells[3 * i + 1], cells[3 * i + 2] * (1 + sep), code, 1, 1, 0);
+                }
+                s.mesh.instanceMatrix.needsUpdate = true;
+            }
+        }
+
+        // Removed pieces leave rather than vanish
+        function spawnGhosts(prev, cur, pv, pvChanged, now) {
+            if (pvChanged) return;
+            const lists = SHAPES.map(() => []);
+            if (!pv) {
+                const { a: pa, b: pb, c: pc } = prev;
+                const a = Math.min(cur.a, pa), b = Math.min(cur.b, pb), c = Math.min(cur.c, pc);
+                const n = (pa - a) * pb * pc + a * (pb - b) * pc + a * b * (pc - c);
+                if (!n || n > 12000) return;
+                const u = lists[0];
+                for (let z = 0; z < pc; z++) for (let y = 0; y < pb; y++) for (let x = a; x < pa; x++) u.push(x, y, z);
+                for (let z = 0; z < pc; z++) for (let y = b; y < pb; y++) for (let x = 0; x < a; x++) u.push(x, y, z);
+                for (let z = c; z < pc; z++) for (let y = 0; y < b; y++) for (let x = 0; x < a; x++) u.push(x, y, z);
+            } else {
+                for (const key of lastKeys) {
+                    const code = Math.floor(key / KEY_SHAPE);
+                    let r = key - code * KEY_SHAPE;
+                    const z = Math.floor(r / 16384); r -= z * 16384;
+                    const y = Math.floor(r / 128), x = r - y * 128;
+                    if (x >= cur.a || y >= cur.b || z >= cur.c) lists[code].push(x, y, z);
+                }
+            }
+            lists.forEach((cells, code) => {
+                const count = cells.length / 3;
+                if (!count) return;
+                const mesh = new THREE.InstancedMesh(pieceGeometry(code, code ? 3 : detailFor(count)), enamel[tensIn(code)], count);
+                mesh.frustumCulled = false;
+                mesh.castShadow = true;
+                pieceRoot.add(mesh);
+                ghosts.push({ mesh, cells, code, t0: now });
+            });
+        }
+
+        const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+        const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        // Unit snap: small, snappy pop (0.65 → 1.14 → 1)
+        function popCurve(t) {
+            return t < 0.6 ? 0.65 + 0.49 * easeOutCubic(t / 0.6) : 1.14 - 0.14 * easeInOut((t - 0.6) / 0.4);
+        }
+        // Fusion: heavier thud and settle (0.88 → 1.05 → 0.97 → 1)
+        function mergeCurve(t) {
+            if (t < 0.5) return 0.88 + 0.17 * easeOutCubic(t / 0.5);
+            if (t < 0.78) return 1.05 - 0.08 * easeInOut((t - 0.5) / 0.28);
+            return 0.97 + 0.03 * easeInOut((t - 0.78) / 0.22);
+        }
+
+        function stepPieceAnims(now) {
+            if (!activeAnims.length) return false;
+            const touched = new Set(), remaining = [];
+            for (const A of activeAnims) {
+                const mesh = slots[A.code].mesh, an = anims.get(A.key);
+                if (!mesh || !an) continue;
+                const dur = an.kind === 'merge' ? 380 : an.kind === 'drop' ? 330 : 210;
+                const t = Math.max(0, (now - an.t0) / dur);
+                const arr = mesh.instanceMatrix.array, zb = A.z * (1 + sep);
+                if (t >= 1) {
+                    writeMatrix(arr, A.i, A.x, A.y, zb, A.code, 1, 1, 0);
+                    anims.delete(A.key);
+                } else {
+                    let sxy = 1, sz = 1, dz = 0;
+                    if (an.kind === 'pop') sxy = sz = popCurve(t);
+                    else if (an.kind === 'merge') sxy = sz = mergeCurve(t);
+                    else if (t < 0.72) { const u = t / 0.72; dz = 0.7 * (1 - u * u); }   // a layer drops in…
+                    else { const w = Math.sin((t - 0.72) / 0.28 * Math.PI); sz = 1 - 0.1 * w; sxy = 1 + 0.04 * w; } // …and thuds
+                    writeMatrix(arr, A.i, A.x, A.y, zb, A.code, sxy, sz, dz);
+                    remaining.push(A);
+                }
+                touched.add(mesh);
+            }
+            touched.forEach(m => { m.instanceMatrix.needsUpdate = true; });
+            activeAnims = remaining;
+            return true;
+        }
+
+        function stepGhosts(now) {
+            if (!ghosts.length) return false;
+            for (let g = ghosts.length - 1; g >= 0; g--) {
+                const G = ghosts[g];
+                const t = (now - G.t0) / 170;
+                if (t >= 1) {
+                    pieceRoot.remove(G.mesh);
+                    G.mesh.dispose();
+                    ghosts.splice(g, 1);
+                    continue;
+                }
+                const s = 1 - t * t, arr = G.mesh.instanceMatrix.array, n = G.cells.length / 3;
+                for (let i = 0; i < n; i++) {
+                    writeMatrix(arr, i, G.cells[3 * i], G.cells[3 * i + 1], G.cells[3 * i + 2] * (1 + sep), G.code, s, s, -0.15 * t);
+                }
+                G.mesh.instanceMatrix.needsUpdate = true;
+            }
+            return true;
+        }
+
+        // ── BEADS (brushed aluminum pulls, one per axis) ──
+        const beadGeo = new THREE.SphereGeometry(BEAD_R, 48, 32);
+        function makeBead(axis) {
+            const g = new THREE.Group();
+            const sphere = new THREE.Mesh(beadGeo, beadMat);
+            sphere.castShadow = true;
+            g.add(sphere);
+            // Three grip grooves across the direction of travel
+            for (const off of [-0.075, 0, 0.075]) {
+                const r = Math.sqrt(BEAD_R * BEAD_R - off * off) + 0.001;
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.009, 8, 48), gripMat);
+                if (axis === 'x') { ring.rotation.y = Math.PI / 2; ring.position.x = off; }
+                else if (axis === 'y') { ring.rotation.x = Math.PI / 2; ring.position.y = off; }
+                else ring.position.z = off;
+                g.add(ring);
+            }
+            g.visible = false;
+            scene.add(g);
+            return { axis, group: g, pos: 0, vel: 0, scale: 0, scaleVel: 0, hover: false, dragging: false };
+        }
+        const beads = { x: makeBead('x'), y: makeBead('y'), z: makeBead('z') };
+        beads.y.pos = beads.z.pos = 1;
+
+        function beadWorld(axis, pos, out) {
+            if (axis === 'x') return out.set(pos, -LANE, BEAD_R);
+            if (axis === 'y') return out.set(-LANE, pos, BEAD_R);
+            return out.set(beads.x.pos + ZC, -LANE, pos);    // rides the carriage at the x end
+        }
+        const beadActive = (axis) => axis === 'x' || (axis === 'y' ? canY() : canZ() && !state.separate);
+
+        // Detent: the bead clings to whole numbers and moves quickly between them
+        function detent(raw) {
+            const r = Math.round(raw), f = raw - r;
+            return r + 4 * f * f * f;
+        }
+
+        function stepBeads(dt) {
+            let moving = false;
+            for (const ax of AXES) {
+                const B = beads[ax];
+                const st = beadActive(ax) ? (B.hover || B.dragging ? 1.22 : 1) : 0;
+                // scale spring
+                const ka = 380, ca = 2 * Math.sqrt(ka) * 0.6;
+                B.scaleVel += (ka * (st - B.scale) - ca * B.scaleVel) * dt;
+                B.scale += B.scaleVel * dt;
+                if (Math.abs(st - B.scale) < 0.001 && Math.abs(B.scaleVel) < 0.01) { B.scale = st; B.scaleVel = 0; }
+                else moving = true;
+                // position: follows the finger while dragging, springs to the whole number after
+                if (B.dragging && drag) {
+                    const p = detent(drag.raw);
+                    if (p !== B.pos) moving = true;
+                    B.pos = p; B.vel = 0;
+                } else {
+                    const target = valueOf(ax), k = 420, c = 2 * Math.sqrt(k) * 0.62;
+                    B.vel += (k * (target - B.pos) - c * B.vel) * dt;
+                    B.pos += B.vel * dt;
+                    if (Math.abs(target - B.pos) < 0.0005 && Math.abs(B.vel) < 0.005) { B.pos = target; B.vel = 0; }
+                    else moving = true;
+                }
+                B.group.visible = B.scale > 0.01;
+                B.group.scale.setScalar(Math.max(0.0001, B.scale));
+                beadWorld(ax, B.pos, B.group.position);
+                if (ax === 'x') zGroup.position.x = B.pos;       // the z carriage rides with the x bead
+            }
+            return moving;
+        }
+
+        // ── FACE GLOW (push/pull feedback, SketchUp style) ──
+        const faceGlow = new THREE.Mesh(
+            new THREE.PlaneGeometry(1, 1),
+            new THREE.MeshBasicMaterial({ color: 0x007AFF, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
+        );
+        faceGlow.visible = false;
+        scene.add(faceGlow);
+        let hoverFace = null;
+
+        function updateFaceGlow() {
+            const ax = drag ? (drag.source === 'face' ? drag.axis : null) : hoverFace;
+            const { a, b, c } = eff();
+            if (!ax || !a || sep > 0.001) { faceGlow.visible = false; return; }
+            faceGlow.visible = true;
+            if (ax === 'x') { faceGlow.rotation.set(0, Math.PI / 2, 0); faceGlow.scale.set(c, b, 1); faceGlow.position.set(a + 0.012, b / 2, c / 2); }
+            else if (ax === 'y') { faceGlow.rotation.set(-Math.PI / 2, 0, 0); faceGlow.scale.set(a, c, 1); faceGlow.position.set(a / 2, b + 0.012, c / 2); }
+            else { faceGlow.rotation.set(0, 0, 0); faceGlow.scale.set(a, b, 1); faceGlow.position.set(a / 2, b / 2, c + 0.012); }
+        }
+
+        // ── PICKING ──
+        const raycaster = new THREE.Raycaster();
+        const ndc = new THREE.Vector2();
+        const tmpV = new V3(), tmpV2 = new V3();
+        const prismBox = new THREE.Box3();
+
+        function rayAt(cx, cy) {
+            const r = canvas.getBoundingClientRect();
+            ndc.set((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+            raycaster.setFromCamera(ndc, camera);
+            return raycaster.ray;
+        }
+
+        function toScreen(p) {
+            const r = canvas.getBoundingClientRect();
+            const v = tmpV2.copy(p).project(camera);
+            return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height, behind: v.z > 1 };
+        }
+
+        // Ray against the prism's bounding box: cheap, exact for an axis-aligned solid
+        function prismHit(ray) {
+            const { a, b, c } = eff();
+            if (!a) return null;
+            prismBox.min.set(0, 0, 0);
+            prismBox.max.set(a, b, c * (1 + sep) - sep);
+            const p = ray.intersectBox(prismBox, new V3());
+            return p ? { point: p, dist: p.distanceTo(ray.origin) } : null;
+        }
+
+        function faceAxisAt(hit) {
+            if (!hit || sep > 0.001) return null;
+            const { a, b, c } = eff(), p = hit.point, eps = 1e-3;
+            if (Math.abs(p.x - a) < eps) return 'x';
+            if (Math.abs(p.y - b) < eps && canY()) return 'y';
+            if (Math.abs(p.z - c) < eps && canZ() && !state.separate) return 'z';
+            return null;
+        }
+
+        function pickBead(cx, cy, ray) {
+            const hit = prismHit(ray);
+            const h = canvas.getBoundingClientRect().height;
+            let best = null, bestD = Infinity;
+            for (const ax of AXES) {
+                const B = beads[ax];
+                if (!beadActive(ax) || B.scale < 0.5) continue;
+                const p = toScreen(B.group.position);
+                if (p.behind) continue;
+                const dist = camera.position.distanceTo(B.group.position);
+                if (hit && hit.dist < dist - BEAD_R * 1.5) continue;      // hidden behind the prism
+                const rPx = BEAD_R * B.scale * (h / 2) / (dist * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+                const d = Math.hypot(p.x - cx, p.y - cy);
+                if (d < Math.max(26, rPx * 1.6) && d < bestD) { best = B; bestD = d; }
+            }
+            return best;
+        }
+
+        // Parameter along an axis line closest to the pointer ray
+        function rayAxisParam(ray, origin, dir) {
+            const w0 = tmpV.copy(origin).sub(ray.origin);
+            const b = dir.dot(ray.direction), d = dir.dot(w0), e = ray.direction.dot(w0);
+            const denom = 1 - b * b;
+            if (denom < 0.02) return null;   // looking straight down the axis: can't pull along it
+            return (b * e - d) / denom;
+        }
+
+        // ── DRAGGING ──
+        let drag = null;
+        let interacted = false;
+        let lastGrab = 0;
+
+        function onPointerDown(e) {
+            interacted = true;
+            if (!e.isPrimary || e.button !== 0) return;
+            const ray = rayAt(e.clientX, e.clientY);
+            const bead = pickBead(e.clientX, e.clientY, ray);
+            let axis = null, origin = null, source = 'bead';
+            if (bead) { axis = bead.axis; origin = bead.group.position.clone(); }
+            else {
+                const hit = prismHit(ray);
+                axis = faceAxisAt(hit);
+                if (axis) { origin = hit.point; source = 'face'; }
+            }
+            if (!axis) return;                       // empty space or a non-pulling face: orbit
+            const dir = AXIS_DIR[axis];
+            const t0 = rayAxisParam(ray, origin, dir);
+            if (t0 === null) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();            // OrbitControls never sees this gesture
+            controls.enabled = false;
+            camTween = null;
+            canvas.setPointerCapture(e.pointerId);
+            drag = { axis, origin, dir, t0, start: valueOf(axis), raw: valueOf(axis), pointerId: e.pointerId, x: e.clientX, y: e.clientY, source };
+            lastGrab = performance.now();
+            beads[axis].dragging = true;
+            hoverFace = null;
+            canvas.style.cursor = 'grabbing';
+            updateFaceGlow();
+            updateRecord();
+            requestRender();
+        }
+
+        function updateDrag() {
+            if (!drag) return;
+            const ray = rayAt(drag.x, drag.y);
+            const t = rayAxisParam(ray, drag.origin, drag.dir);
+            if (t === null) return;
+            const [lo, hi] = rangeOf(drag.axis);
+            drag.raw = clamp(drag.start + (t - drag.t0), lo, hi);
+            const v = Math.round(drag.raw);
+            if (v !== valueOf(drag.axis)) setValue(drag.axis, v);
+            requestRender();
+        }
+
+        function onPointerMove(e) {
+            if (drag) {
+                if (e.pointerId !== drag.pointerId) return;
+                drag.x = e.clientX; drag.y = e.clientY;
+                updateDrag();
+                return;
+            }
+            if (e.pointerType === 'mouse' && !e.buttons) updateHover(e.clientX, e.clientY);
+        }
+
+        function onPointerUp(e) {
+            if (!drag || (e && e.pointerId !== drag.pointerId)) return;
+            const ax = drag.axis;
+            drag = null;
+            beads[ax].dragging = false;
+            controls.enabled = true;
+            try { canvas.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
+            canvas.style.cursor = '';
+            if (e && e.pointerType === 'mouse') updateHover(e.clientX, e.clientY);
+            updateFaceGlow();
+            updateRecord();
+            requestRender();
+        }
+
+        function updateHover(cx, cy) {
+            const ray = rayAt(cx, cy);
+            const bead = pickBead(cx, cy, ray);
+            let changed = false;
+            for (const ax of AXES) {
+                const h = beads[ax] === bead;
+                if (beads[ax].hover !== h) { beads[ax].hover = h; changed = true; }
+            }
+            const face = bead ? null : faceAxisAt(prismHit(ray));
+            if (face !== hoverFace) { hoverFace = face; changed = true; updateFaceGlow(); }
+            canvas.style.cursor = bead || face ? 'grab' : '';
+            if (changed) requestRender();
+        }
+
+        function clearHover() {
+            AXES.forEach(ax => { beads[ax].hover = false; });
+            hoverFace = null;
+            updateFaceGlow();
+            canvas.style.cursor = '';
+            requestRender();
+        }
+
+        // Holding a bead near the edge of the screen slides the view along that axis,
+        // so a line, array or tower can keep growing past what's on screen.
+        function stepEdgePan(dt) {
+            if (!drag) return false;
+            const r = canvas.getBoundingClientRect();
+            const M = 60, top = 64;
+            const px = drag.x - r.left, py = drag.y - r.top;
+            let ex = 0, ey = 0;
+            if (px < M) ex = -(M - px) / M; else if (px > r.width - M) ex = (px - (r.width - M)) / M;
+            if (py < top + M) ey = -(top + M - py) / M; else if (py > r.height - M) ey = (py - (r.height - M)) / M;
+            ex = clamp(ex, -1, 1); ey = clamp(ey, -1, 1);
+            if (!ex && !ey) return false;
+            const B = beads[drag.axis];
+            const p0 = toScreen(beadWorld(drag.axis, valueOf(drag.axis), new V3()));
+            const p1 = toScreen(beadWorld(drag.axis, valueOf(drag.axis) + 1, new V3()));
+            const sx = p1.x - p0.x, sy = p1.y - p0.y, len = Math.hypot(sx, sy);
+            if (len < 1e-3 || !B) return false;
+            const push = (ex * sx + ey * sy) / len;
+            if (Math.abs(push) < 0.02) return false;
+            const v = valueOf(drag.axis), [lo, hi] = rangeOf(drag.axis);
+            if ((push > 0 && v >= hi) || (push < 0 && v <= lo)) return false;
+            // Slide the view in screen space (like scrolling) toward where the axis is heading
+            const dist = camera.position.distanceTo(controls.target);
+            const worldPerPx = 2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / r.height;
+            const step = push * 520 * dt * worldPerPx;
+            const delta = new V3().setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(step * sx / len)
+                .addScaledVector(new V3().setFromMatrixColumn(camera.matrixWorld, 1), -step * sy / len);
+            camera.position.add(delta);
+            controls.target.add(delta);
+            camera.updateMatrixWorld();   // the next ray must come from the moved camera
+            updateDrag();
+            return true;
+        }
+
+        // ── CHANGING THE OBJECT ──
+        function fusedCount() { return slots.reduce((s, sl, code) => s + (code ? sl.count : 0), 0); }
+
+        function setValue(axis, v) {
+            const [lo, hi] = rangeOf(axis);
+            v = clamp(Math.round(v), lo, hi);
+            if (v === valueOf(axis)) return;
+            const before = eff();
+            if (axis === 'x') state.n = v; else if (axis === 'y') state.rows = v; else state.layers = v;
+            onDimsChanged(before);
+        }
+
+        function onDimsChanged(before) {
+            const { a, b, c } = eff();
+            if (state.separate && (state.mode !== 'solid' || a * b * c > SEP_LIMIT)) setSeparate(false, true);
+            const fusedBefore = fusedCount();
+            rebuildPieces(true);
+            updateInfra();
+            updateFaceGlow();
+            updateRecord(before);
+            syncControls();
+            fitShadows();
+            if (before && a * b * c > before.a * before.b * before.c) {
+                vibrate(state.pv && fusedCount() > fusedBefore ? [18] : [8]);
+            }
+            requestRender();
+        }
+
+        function setMode(m) {
+            if (m === state.mode) return;
+            const before = eff();
+            state.mode = m;
+            ['Line', 'Grid', 'Solid'].forEach(k => {
+                const el = document.getElementById('mode' + k);
+                const on = k.toLowerCase() === m;
+                el.classList.toggle('active', on);
+                el.setAttribute('aria-pressed', on);
+            });
+            onDimsChanged(before);
+        }
+
+        function setSeparate(on, silent) {
+            const { a, b, c } = eff();
+            if (on && (state.mode !== 'solid' || a * b * c > SEP_LIMIT)) on = false;
+            if (on === state.separate) return;
+            state.separate = on;
+            if (on) rebuildPieces(false);              // every layer's cubes must exist to be seen
+            if (!silent) { syncControls(); fitShadows(); updateFaceGlow(); requestRender(); }
+        }
+
+        function stepSep(dt) {
+            const target = state.separate ? SEP_MAX : 0;
+            if (sep === target) return false;
+            const speed = REDUCED ? 100 : 2.2 * SEP_MAX;
+            sep = target > sep ? Math.min(target, sep + speed * dt) : Math.max(target, sep - speed * dt);
+            if (sep === 0) rebuildPieces(false);      // back together: draw only the shell again
+            else rewriteAll();
+            zTags.forEach((t, k) => { t.position.z = k * (1 + sep) + 0.5; });
+            fitShadows();
+            updateFaceGlow();                         // no push/pull while layers are apart
+            return true;
+        }
+
+        function stepGrow(dt) {
+            let moving = false;
+            for (const [k, g] of Object.entries(grow)) {
+                if (g.v === g.target) continue;
+                const step = REDUCED ? 1 : dt * 3.2;
+                g.v = g.target > g.v ? Math.min(g.target, g.v + step) : Math.max(g.target, g.v - step);
+                const s = Math.max(0.0001, easeOutCubic(g.v));
+                const grp = k === 'y' ? yGroup : zGroup;
+                if (k === 'y') grp.scale.y = s; else grp.scale.z = s;
+                grp.visible = g.v > 0.001;
+                moving = true;
+            }
+            return moving;
+        }
+
+        function vibrate(pattern) {
+            if (!('vibrate' in navigator) || REDUCED) return;
+            try { navigator.vibrate(pattern); } catch (_) { /* ignore */ }
+        }
+
+        // ── THE RECORD ──
+        // The equation follows the object, and each factor can also be typed into:
+        // enter a length, width and height and the prism builds itself.
+        const recordEl = document.getElementById('record');
+        const recRes = document.getElementById('recRes');
+        const live = document.getElementById('live');
+        const factorEls = { x: document.getElementById('fx'), y: document.getElementById('fy'), z: document.getElementById('fz') };
+        const opY = document.getElementById('opY'), opZ = document.getElementById('opZ'), opEq = document.getElementById('opEq');
+        const fmt = (n) => n >= 10000 ? n.toLocaleString('en-US') : String(n);
+        const measureCtx = document.createElement('canvas').getContext('2d');
+        let liveTimer = null;
+
+        // Inputs don't shrink-wrap their text, so size each factor to its digits
+        function sizeFactor(el) {
+            const cs = getComputedStyle(el);
+            const px = parseFloat(cs.fontSize);
+            measureCtx.font = `900 ${px}px ${FONT}`;
+            const text = el.value || '0';
+            const ls = parseFloat(cs.letterSpacing) || 0;
+            el.style.width = Math.ceil(measureCtx.measureText(text).width + ls * text.length + px * 0.12 + 2) + 'px';
+        }
+
+        function pop(el) {
+            if (!el) return;
+            el.classList.remove('rec-pop');
+            void el.offsetWidth;
+            el.classList.add('rec-pop');
+        }
+
+        function updateRecord(before) {
+            const { a, b, c } = eff();
+            const single = state.mode === 'line';
+            recordEl.classList.toggle('single', single);
+            factorEls.y.hidden = opY.hidden = single;
+            factorEls.z.hidden = opZ.hidden = state.mode !== 'solid';
+            opEq.hidden = recRes.hidden = single;
+            const vals = { x: a, y: b, z: c };
+            for (const ax of AXES) {
+                const el = factorEls[ax], v = String(vals[ax]);
+                if (el.value !== v) {
+                    el.value = v;
+                    if (before && document.activeElement !== el) pop(el);
+                }
+                el.classList.toggle('live', !!drag && drag.axis === ax);
+                sizeFactor(el);
+            }
+            const total = fmt(a * b * c);
+            if (recRes.textContent !== total) {
+                recRes.textContent = total;
+                if (before) pop(recRes);
+            }
+            clearTimeout(liveTimer);
+            liveTimer = setTimeout(() => {
+                live.textContent = single ? String(a)
+                    : state.mode === 'grid' ? `${a} by ${b} array. ${a * b} cubes.`
+                    : `${a} by ${b} by ${c} prism. ${a * b * c} cubes.`;
+            }, 400);
+        }
+
+        // Typing a factor rebuilds the object right away, as typing jumps the Number Line;
+        // once typing pauses, the view reframes around the new object.
+        let frameTimer = null;
+        function frameAfterTyping() {
+            clearTimeout(frameTimer);
+            frameTimer = setTimeout(() => frameAll(camera.position.clone().sub(controls.target).normalize()), 450);
+        }
+        for (const ax of AXES) {
+            const el = factorEls[ax];
+            // Every click selects the whole factor, so typing replaces it (otherwise the
+            // caret lands where you clicked and digits append: 5, click, 6 → 56)
+            el.addEventListener('focus', () => el.select());
+            el.addEventListener('mouseup', (e) => { e.preventDefault(); el.select(); });
+            el.addEventListener('input', () => {
+                const digits = el.value.replace(/\D/g, '');
+                if (digits !== el.value) el.value = digits;
+                sizeFactor(el);
+                if (digits === '') return;
+                const [lo, hi] = rangeOf(ax);
+                const v = clamp(Number(digits), lo, hi);
+                if (String(v) !== digits) { el.value = String(v); sizeFactor(el); }
+                if (v !== valueOf(ax)) {
+                    setValue(ax, v);
+                    frameAfterTyping();
+                }
+            });
+            el.addEventListener('blur', () => setTimeout(updateRecord, 0));   // restores an emptied field
+            el.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                // Enter steps to the next factor: 4 ⏎ 3 ⏎ 2 ⏎ builds 4 × 3 × 2
+                const order = AXES.filter(k => !factorEls[k].hidden);
+                const next = factorEls[order[order.indexOf(ax) + 1]];
+                if (next) { next.focus(); return; }
+                el.blur();
+                // Done typing: close the shared Math Things number pad so it isn't left over the scene
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+            });
+        }
+
+        // ── CONTROLS ──
+        const pvToggle = document.getElementById('pvToggle');
+        const sepBtn = document.getElementById('sepBtn');
+        const recBtn = document.getElementById('recBtn');
+
+        function syncControls() {
+            const { a, b, c } = eff();
+            sepBtn.disabled = state.mode !== 'solid' || a * b * c > SEP_LIMIT || a === 0;
+            sepBtn.classList.toggle('active', state.separate);
+            sepBtn.setAttribute('aria-pressed', state.separate);
+        }
+
+        document.getElementById('modeLine').addEventListener('click', () => setMode('line'));
+        document.getElementById('modeGrid').addEventListener('click', () => setMode('grid'));
+        document.getElementById('modeSolid').addEventListener('click', () => setMode('solid'));
+
+        pvToggle.addEventListener('change', () => {
+            state.pv = pvToggle.checked;
+            const before = fusedCount();
+            rebuildPieces(true);
+            if (state.pv && fusedCount() > before) vibrate([18]);
+            requestRender();
+        });
+
+        sepBtn.addEventListener('click', () => setSeparate(!state.separate));
+
+        recBtn.addEventListener('click', () => {
+            state.record = !state.record;
+            recordEl.classList.toggle('off', !state.record);
+            recordEl.setAttribute('aria-hidden', !state.record);
+            recBtn.classList.toggle('active', state.record);
+            recBtn.setAttribute('aria-pressed', state.record);
+        });
+
+        document.getElementById('fitBtn').addEventListener('click', () => frameAll(HOME_DIR));
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            const before = eff();
+            state.n = 0; state.rows = 1; state.layers = 1;
+            setSeparate(false, true);
+            onDimsChanged(before);
+            frameAll(HOME_DIR);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target && e.target.closest && e.target.closest('input')) return;
+            const step = (ax, d) => {
+                if ((ax === 'y' && !canY()) || (ax === 'z' && !canZ())) return;
+                setValue(ax, valueOf(ax) + d);
+                keepInView();
+            };
+            let handled = true;
+            switch (e.key) {
+                case 'ArrowRight': step('x', 1); break;
+                case 'ArrowLeft': step('x', -1); break;
+                case 'ArrowUp': e.shiftKey ? step('z', 1) : step('y', 1); break;
+                case 'ArrowDown': e.shiftKey ? step('z', -1) : step('y', -1); break;
+                case 'PageUp': step('z', 1); break;
+                case 'PageDown': step('z', -1); break;
+                case 'f': case 'F': case 'Home': frameAll(HOME_DIR); break;
+                case '+': case '=': dolly(0.85); break;
+                case '-': case '_': dolly(1 / 0.85); break;
+                default: handled = false;
+            }
+            if (handled) { interacted = true; e.preventDefault(); }
+        });
+
+        canvas.addEventListener('dblclick', () => {
+            if (performance.now() - lastGrab < 600) return;   // double-tapping a bead isn't a request to reframe
+            frameAll(camera.position.clone().sub(controls.target).normalize());
+        });
+
+        function dolly(k) {
+            const off = camera.position.clone().sub(controls.target);
+            const len = clamp(off.length() * k, controls.minDistance, controls.maxDistance);
+            camera.position.copy(controls.target).add(off.setLength(len));
+            requestRender();
+        }
+
+        // ── CAMERA FRAMING ──
+        let camTween = null;
+
+        function contentBox() {
+            const { a, b, c } = eff();
+            const R = a > 0 ? b : 1;
+            const top = a ? c * (1 + (state.separate ? SEP_MAX : 0)) : 0;
+            // Wide screens show the whole track; portrait screens frame the build plus open track
+            const portrait = canvas.clientWidth < canvas.clientHeight;
+            const xMax = Math.min(visX(), Math.max(a + (portrait ? 2 : 3), portrait ? 8 : 20));
+            const box = new THREE.Box3(new V3(-1.45, -BAND, -TRAY_D), new V3(xMax + 0.15, R + 0.15, Math.max(top, 3)));
+            if (canY()) box.max.y = Math.max(box.max.y, visYZ(state.rows, MAX.y) + 0.15);
+            if (canZ()) box.max.z = Math.max(box.max.z, visYZ(state.layers, MAX.z) + 0.1);
+            return box;
+        }
+
+        // Find a camera position along `dir` that fits `box` into the open part of the screen
+        function computeFit(box, dir) {
+            const W = canvas.clientWidth, H = canvas.clientHeight;
+            const recBottom = state.record ? recordEl.getBoundingClientRect().bottom : 64;
+            const topN = 1 - 2 * ((recBottom + 14) / H), botN = -1 + 2 * (40 / H);
+            const leftN = -1 + 2 * (40 / W), rightN = 1 - 2 * (40 / W);
+            const cam = camera.clone();
+            cam.aspect = W / H;
+            cam.updateProjectionMatrix();
+            const target = box.getCenter(new V3());
+            let dist = box.getBoundingSphere(new THREE.Sphere()).radius / Math.sin(THREE.MathUtils.degToRad(cam.fov) / 2);
+            const corners = [];
+            for (let i = 0; i < 8; i++) corners.push(new V3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
+            const right = new V3(), up = new V3(), p = new V3();
+            for (let it = 0; it < 8; it++) {
+                cam.position.copy(target).addScaledVector(dir, dist);
+                cam.lookAt(target);
+                cam.updateMatrixWorld();
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                for (const c of corners) {
+                    p.copy(c).project(cam);
+                    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+                }
+                const halfH = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) * dist, halfW = halfH * cam.aspect;
+                right.setFromMatrixColumn(cam.matrixWorld, 0);
+                up.setFromMatrixColumn(cam.matrixWorld, 1);
+                target.addScaledVector(right, ((minX + maxX) / 2 - (leftN + rightN) / 2) * halfW);
+                target.addScaledVector(up, ((minY + maxY) / 2 - (topN + botN) / 2) * halfH);
+                dist *= Math.max((maxX - minX) / (rightN - leftN), (maxY - minY) / (topN - botN));
+                dist = clamp(dist, controls.minDistance, controls.maxDistance);
+            }
+            return { position: target.clone().addScaledVector(dir, dist), target };
+        }
+
+        function frameAll(dir) {
+            const f = computeFit(contentBox(), dir || HOME_DIR);
+            flyTo(f.position, f.target, 800);
+        }
+
+        // After an arrow-key step, reframe only if part of the object has left the open
+        // screen, or the whole scene has shrunk well below the frame
+        function keepInView() {
+            const { a, b, c } = eff();
+            const r = canvas.getBoundingClientRect();
+            const top = (state.record ? recordEl.getBoundingClientRect().bottom : r.top + 64) + 8;
+            const pts = [beadWorld('x', state.n, new V3())];
+            for (let i = 0; i < 8; i++) pts.push(new V3(i & 1 ? a : 0, i & 2 ? b : 0, i & 4 ? c * (1 + sep) : 0));
+            const out = pts.some(pt => {
+                const p = toScreen(pt);
+                return p.behind || p.x < r.left + 30 || p.x > r.right - 30 || p.y < top || p.y > r.bottom - 36;
+            });
+            const box = contentBox();
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (let i = 0; i < 8; i++) {
+                const p = toScreen(new V3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+            }
+            const speck = Math.max((maxX - minX) / r.width, (maxY - minY) / (r.bottom - top)) < 0.4;
+            if (out || speck) frameAll(camera.position.clone().sub(controls.target).normalize());
+        }
+
+        function flyTo(position, target, ms) {
+            if (REDUCED) ms = 1;
+            camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: position, t1: target, start: performance.now(), ms };
+            requestRender();
+        }
+
+        function stepTween(now) {
+            const T = camTween;
+            const t = clamp((now - T.start) / T.ms, 0, 1), e = easeInOut(t);
+            camera.position.lerpVectors(T.p0, T.p1, e);
+            controls.target.lerpVectors(T.t0, T.t1, e);
+            camera.lookAt(controls.target);
+            if (t >= 1) { camTween = null; controls.update(); }
+        }
+
+        // Keep shadows crisp around whatever exists
+        function fitShadows() {
+            const box = contentBox();
+            const { a, b, c } = eff();
+            box.expandByPoint(new V3(a, b, c * (1 + sep)));
+            const sphere = box.getBoundingSphere(new THREE.Sphere());
+            const r = sphere.radius + 1;
+            sun.target.position.copy(sphere.center);
+            sun.position.copy(sphere.center).addScaledVector(SUN_DIR, r * 2);
+            const sc = sun.shadow.camera;
+            sc.left = -r; sc.right = r; sc.top = r; sc.bottom = -r;
+            sc.near = 0.1; sc.far = r * 4;
+            sc.updateProjectionMatrix();
+            sun.shadow.normalBias = clamp(0.012 * r / 12, 0.008, 0.15);
+            sun.target.updateMatrixWorld();
+        }
+
+        // ── RENDER LOOP (renders only when something moves) ──
+        let needsRender = true;
+        function requestRender() { needsRender = true; }
+        controls.addEventListener('change', requestRender);
+
+        function updateClip() {
+            const d = camera.position.distanceTo(controls.target);
+            camera.near = clamp(d / 300, 0.01, 2);
+            camera.far = Math.max(300, d * 30);
+            camera.updateProjectionMatrix();
+        }
+
+        let lastT = performance.now();
+        function frame(now) {
+            requestAnimationFrame(frame);
+            const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000));
+            lastT = now;
+            let dirty = needsRender;
+            needsRender = false;
+            if (camTween) { stepTween(now); dirty = true; }
+            else if (controls.update()) dirty = true;
+            if (stepEdgePan(dt)) dirty = true;
+            if (stepBeads(dt)) dirty = true;
+            if (stepSep(dt)) dirty = true;
+            if (stepGrow(dt)) dirty = true;
+            if (stepPieceAnims(now)) dirty = true;
+            if (stepGhosts(now)) dirty = true;
+            if (dirty) {
+                updateLabelOrient();
+                updateClip();
+                renderer.render(scene, camera);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            AXES.forEach(ax => sizeFactor(factorEls[ax]));   // the record's type size follows the viewport
+            requestRender();
+        });
+
+        // ── BOOT ──
+        // Printed numerals need Lexend loaded before they're painted onto textures.
+        if (document.fonts) {
+            const loads = ['500', '600', '800'].map(w => document.fonts.load(`${w} 64px Lexend`));
+            await Promise.race([Promise.all(loads), new Promise(r => setTimeout(r, 2500))]);
+        }
+
+        buildHub();
+        updateInfra();
+        rebuildPieces(false);
+        updateRecord();
+        syncControls();
+        fitShadows();
+        {
+            const f = computeFit(contentBox(), HOME_DIR);
+            camera.position.copy(f.position);
+            controls.target.copy(f.target);
+            controls.update();
+        }
+        requestAnimationFrame(frame);
+
+        // A single nudge of the bead says "I move" without a word
+        const nudge = () => {
+            if (interacted || state.n !== 0 || REDUCED) return;
+            beads.x.vel = 3.4;
+            requestRender();
+        };
+        setTimeout(nudge, 1400);
+        setTimeout(nudge, 7000);
+
+        // Inspection hook for testing in the console; nothing in the app reads it
+        window.__volume = { state, setValue, setMode, eff, camera, controls, beads, slots, frameAll, scene, renderer, sun, hemi, requestRender, grow, yGroup, zGroup, frame };
+    </script>
+    <script src="../../math-things-home.js"></script>
+</body>
+</html>
