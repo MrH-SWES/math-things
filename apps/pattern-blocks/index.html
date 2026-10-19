@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Pattern Blocks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── PIECES ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .piece { outline: none; cursor: grab; }
+    #board .piece .base { pointer-events: fill; }
+    #board .piece:focus-visible .base { stroke: #007AFF; stroke-width: 3; }
+    #board .handle { pointer-events: all; cursor: grab; }
+    #board .piece.lifted { cursor: grabbing; }
+    #board .piece.lifted .base { stroke-width: 2.4; }
+    #board .angles { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #board.rec .angles { opacity: 1; }
+    #board .angles text { font-family: 'Lexend', sans-serif; font-weight: 800; text-anchor: middle; dominant-baseline: central; fill: #2A2C30; paint-order: stroke; stroke: rgba(255,255,255,0.9); stroke-width: 3.5px; stroke-linejoin: round; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: grid; grid-template-columns: repeat(7, auto); gap: clamp(6px, 1.2vw, 12px); }
+    @media (max-width: 640px) { #bins { grid-template-columns: repeat(4, auto); } }
+    .bin.outline-bin { background: linear-gradient(180deg, #E6E2DA 0%, #F1EEE8 100%); }
+    .bin {
+      width: clamp(56px, 8.4vw, 84px);
+      height: clamp(52px, 8vw, 72px);
+      border: none; border-radius: 16px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .bin svg { width: 78%; height: 78%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Pattern block mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <div id="bins"></div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show angle measures" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Put all the blocks away">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.24" stop-color="#F1F1F3"/><stop offset="0.55" stop-color="#C8C9CD"/><stop offset="0.82" stop-color="#A7A8AD"/><stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <!-- enamel: a soft highlight from the upper left, a little depth toward the lower right -->
+    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.42"/><stop offset="0.38" stop-color="#FFFFFF" stop-opacity="0.08"/><stop offset="0.62" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.16"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="outline"></g>
+  <g id="pieces"></g>
+  <g id="handles"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const H = Math.sqrt(3) / 2;
+  const c30 = Math.cos(Math.PI / 6), s30 = 0.5;
+  // the six classic blocks, unit edge, drawn counterclockwise on screen
+  const SHAPES = {
+    hexagon:   { name: 'hexagon',   plural: 'hexagons',   color: '#F2B705', pts: [...Array(6)].map((_, k) => [Math.cos(k * Math.PI / 3), -Math.sin(k * Math.PI / 3)]) },
+    trapezoid: { name: 'trapezoid', plural: 'trapezoids', color: '#D7322B', pts: [[0, 0], [2, 0], [1.5, -H], [0.5, -H]] },
+    rhombus:   { name: 'blue rhombus', plural: 'blue rhombuses', color: '#2B5BB8', pts: [[0, 0], [1, 0], [1.5, -H], [0.5, -H]] },
+    triangle:  { name: 'triangle',  plural: 'triangles',  color: '#3D9A3A', pts: [[0, 0], [1, 0], [0.5, -H]] },
+    square:    { name: 'square',    plural: 'squares',    color: '#F07A17', pts: [[0, 0], [1, 0], [1, -1], [0, -1]] },
+    thin:      { name: 'tan rhombus', plural: 'tan rhombuses', color: '#D8B88A', pts: [[0, 0], [1, 0], [1 + c30, -s30], [c30, -s30]] },
+  };
+  const ORDER = ['hexagon', 'trapezoid', 'rhombus', 'triangle', 'square', 'thin'];
+  for (const k of ORDER) {
+    const sh = SHAPES[k], n = sh.pts.length;
+    const cx = sh.pts.reduce((a, p) => a + p[0], 0) / n, cy = sh.pts.reduce((a, p) => a + p[1], 0) / n;
+    sh.local = sh.pts.map(p => ({ x: p[0] - cx, y: p[1] - cy }));
+    sh.reach = Math.max(...sh.local.map(p => Math.hypot(p.x, p.y)));
+    sh.dark = shade(sh.color, -0.35);
+    // interior angle at each corner
+    sh.angles = sh.local.map((v, i) => {
+      const a = sh.local[(i + n - 1) % n], b = sh.local[(i + 1) % n];
+      const d = Math.atan2(a.y - v.y, a.x - v.x) - Math.atan2(b.y - v.y, b.x - v.x);
+      return Math.round(Math.abs(((d * 180 / Math.PI) + 540) % 360 - 180));
+    });
+  }
+  function shade(hex, f) {
+    const n = parseInt(hex.slice(1), 16), ch = [n >> 16, (n >> 8) & 255, n & 255];
+    return '#' + ch.map(c => Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f).toString(16).padStart(2, '0')).join('');
+  }
+
+  // outlines to fill, engraved into the mat; every one is built from whole blocks
+  const ring = (n, r, a0 = 0) => [...Array(n)].map((_, k) => [Math.cos(a0 + k * 2 * Math.PI / n) * r, -Math.sin(a0 + k * 2 * Math.PI / n) * r]);
+  const OUTLINES = [
+    null,
+    { name: 'hexagon', pts: ring(6, 1) },
+    { name: 'large triangle', pts: [[0, 0], [2, 0], [1, -2 * H]] },
+    { name: 'large rhombus', pts: [[0, 0], [2, 0], [3, -2 * H], [1, -2 * H]] },
+    { name: 'large square', pts: [[0, 0], [2, 0], [2, -2], [0, -2]] },
+    { name: 'large hexagon', pts: ring(6, 2) },
+    { name: 'star', pts: [...Array(12)].map((_, k) => { const r = k % 2 ? Math.sqrt(3) : 1, a = k * Math.PI / 6; return [Math.cos(a) * r, -Math.sin(a) * r]; }) },
+  ];
+  for (const o of OUTLINES) if (o) {
+    const n = o.pts.length, cx = o.pts.reduce((a, p) => a + p[0], 0) / n, cy = o.pts.reduce((a, p) => a + p[1], 0) / n;
+    o.local = o.pts.map(p => ({ x: p[0] - cx, y: p[1] - cy }));
+  }
+
+  const MAX_PIECES = 120;
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion ? null : node.animate(frames, { duration: dur, easing });
+  const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), outlineG = $('outline'), piecesG = $('pieces'), handles = $('handles');
+  const dock = $('dock'), binsEl = $('bins'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+  let S = 60, CX = 0, CY = 0;           // edge length and the middle of the mat, in px
+  let pieces = [];                       // { id, type, x, y (edge units from the middle), rot (degrees), g, base, gloss, bevel, angles }
+  let nextId = 1, recordOn = false, selected = null, outlineIx = 0;
+
+  const dockTop = () => dock.getBoundingClientRect().top;
+  const toPx = (x, y) => ({ x: CX + x * S, y: CY + y * S });
+  const toUnits = (px, py) => ({ x: (px - CX) / S, y: (py - CY) / S });
+
+  // corners of a piece, in px
+  function verts(p, x = p.x, y = p.y, rot = p.rot) {
+    const a = -rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), o = toPx(x, y);
+    return SHAPES[p.type].local.map(v => ({ x: o.x + (v.x * c - v.y * s) * S, y: o.y + (v.x * s + v.y * c) * S }));
+  }
+  // places other pieces can snap to: corners, plus the middle of the trapezoid's long side
+  function snapPoints(p, vs = verts(p)) {
+    const out = vs.slice();
+    if (p.type === 'trapezoid') out.push({ x: (vs[0].x + vs[1].x) / 2, y: (vs[0].y + vs[1].y) / 2 });
+    return out;
+  }
+  const poly = vs => 'M' + vs.map(v => `${r2(v.x)},${r2(v.y)}`).join('L') + 'Z';
+
+  // the outline sits in the middle of the mat; blocks snap to its corners and to each unit along its sides
+  const outlineVerts = () => OUTLINES[outlineIx] ? OUTLINES[outlineIx].local.map(v => toPx(v.x, v.y)) : [];
+  function outlinePoints() {
+    const vs = outlineVerts(), out = [];
+    vs.forEach((a, i) => {
+      const b = vs[(i + 1) % vs.length], n = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / S));
+      for (let k = 0; k < n; k++) out.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
+    });
+    return out;
+  }
+  function drawOutline() {
+    const vs = outlineVerts();
+    if (!vs.length) { outlineG.innerHTML = ''; return; }
+    const d = poly(vs), w = r2(Math.max(2, S * 0.04));
+    // a shallow recess: a darker floor, a shadowed upper edge and a lit lower edge
+    outlineG.innerHTML =
+      `<path d="${d}" fill="rgba(120,104,84,0.11)" stroke="rgba(255,255,255,0.9)" stroke-width="${r2(w * 2)}" stroke-linejoin="round" transform="translate(0 ${r2(w * 0.6)})"/>` +
+      `<path d="${d}" fill="rgba(120,104,84,0.11)" stroke="rgba(92,80,64,0.5)" stroke-width="${w}" stroke-linejoin="round"/>`;
+  }
+
+  // ═══════ LAYOUT ═══════
+  function layout() {
+    const W = innerWidth, top = dockTop();
+    S = Math.max(34, Math.min(72, W / 8, top / 7.5));
+    CX = W / 2; CY = top / 2;
+    drawOutline();
+    defs.innerHTML =
+      `<filter id="pieceShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${innerHeight}"><feDropShadow dx="1" dy="${r2(S * 0.06)}" stdDeviation="${r2(S * 0.05)}" flood-color="#2A2018" flood-opacity="0.32"/></filter>`;
+  }
+
+  // ═══════ OVERLAP ═══════
+  // Convex pieces overlap unless some edge direction separates them. Touching edges do not count.
+  function overlaps(A, B, eps = 0.04 * S) {
+    for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
+      const a = P[i], b = P[(i + 1) % P.length];
+      const nx = a.y - b.y, ny = b.x - a.x, len = Math.hypot(nx, ny);
+      let minA = Infinity, maxA = -Infinity, minB = Infinity, maxB = -Infinity;
+      for (const v of A) { const d = (v.x * nx + v.y * ny) / len; minA = Math.min(minA, d); maxA = Math.max(maxA, d); }
+      for (const v of B) { const d = (v.x * nx + v.y * ny) / len; minB = Math.min(minB, d); maxB = Math.max(maxB, d); }
+      if (maxA - minB <= eps || maxB - minA <= eps) return false;
+    }
+    return true;
+  }
+  // blocks that share an edge or a corner belong to one design
+  const touching = (A, B) => overlaps(A, B, -0.06 * S);
+  function designOf(p) {
+    const out = [p];
+    for (let i = 0; i < out.length; i++) {
+      const vs = verts(out[i]);
+      for (const o of pieces) if (!out.includes(o) && Math.hypot(o.x - out[i].x, o.y - out[i].y) < 3 && touching(vs, verts(o))) out.push(o);
+    }
+    return out;
+  }
+  const blocked = (p, vs) => pieces.some(o => o !== p && Math.hypot(o.x - p.x, o.y - p.y) < 3 && overlaps(vs, verts(o)));
+  function blockedAt(p, x, y, rot) {
+    const vs = verts(p, x, y, rot);
+    return pieces.some(o => o !== p && overlaps(vs, verts(o)));
+  }
+
+  // ═══════ SNAP ═══════
+  // Blocks let go near other blocks or the outline settle edge to edge: the move that lines up the most
+  // corners wins. A lifted design snaps as one.
+  function snap(group) {
+    const T = 0.3 * S, near = 0.06 * S;
+    const shapes = group.map(p => verts(p)), mine = group.flatMap((p, i) => snapPoints(p, shapes[i]));
+    const xs = mine.map(m => m.x), ys = mine.map(m => m.y), pad = T + 2 * S;
+    const box = { l: Math.min(...xs) - pad, r: Math.max(...xs) + pad, t: Math.min(...ys) - pad, b: Math.max(...ys) + pad };
+    const others = pieces.filter(o => !group.includes(o)).map(o => ({ o, vs: verts(o) }))
+      .filter(({ vs }) => vs.some(v => v.x > box.l && v.x < box.r && v.y > box.t && v.y < box.b));
+    const theirs = others.flatMap(({ o, vs }) => snapPoints(o, vs)).concat(outlinePoints());
+    let best = null;
+    for (const a of mine) for (const b of theirs) {
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      if (d > T) continue;
+      let score = 0;
+      for (const m of mine) if (theirs.some(t => Math.hypot(m.x + dx - t.x, m.y + dy - t.y) < near)) score++;
+      if (!best || score > best.score || (score === best.score && d < best.d)) {
+        const ok = shapes.every(vs => { const moved = vs.map(v => ({ x: v.x + dx, y: v.y + dy })); return !others.some(o => overlaps(moved, o.vs)); });
+        if (ok) best = { dx, dy, d, score };
+      }
+    }
+    if (best) { for (const p of group) { p.x += best.dx / S; p.y += best.dy / S; } return true; }
+    return false;
+  }
+
+  // ═══════ PIECES ═══════
+  function addPiece(type, x, y, rot = 0) {
+    const sh = SHAPES[type];
+    const p = { id: nextId++, type, x, y, rot };
+    p.g = el('g', { class: 'piece', tabindex: '0', role: 'img' }, piecesG);
+    p.g.dataset.id = p.id;
+    p.base = el('path', { class: 'base', fill: sh.color, stroke: sh.dark, 'stroke-width': '1.2', 'stroke-linejoin': 'round', filter: 'url(#pieceShadow)' }, p.g);
+    p.gloss = el('path', { fill: 'url(#gloss)', 'pointer-events': 'none' }, p.g);
+    p.bevel = el('path', { fill: 'none', stroke: 'rgba(255,255,255,0.38)', 'stroke-linejoin': 'round', 'pointer-events': 'none' }, p.g);
+    p.angles = el('g', { class: 'angles' }, p.g);
+    pieces.push(p);
+    draw(p);
+    return p;
+  }
+
+  function draw(p) {
+    const vs = verts(p), d = poly(vs);
+    p.base.setAttribute('d', d);
+    p.gloss.setAttribute('d', d);
+    // bevel: the outline pulled in a little toward the middle
+    const o = toPx(p.x, p.y), k = Math.max(2, S * 0.06);
+    p.bevel.setAttribute('d', poly(vs.map(v => { const l = Math.hypot(v.x - o.x, v.y - o.y); return { x: v.x + (o.x - v.x) * k / l, y: v.y + (o.y - v.y) * k / l }; })));
+    p.bevel.setAttribute('stroke-width', r2(Math.max(1, S * 0.03)));
+    const sh = SHAPES[p.type];
+    p.g.setAttribute('aria-label', `${sh.name[0].toUpperCase() + sh.name.slice(1)}` + (p.rot % 360 ? `, turned ${((p.rot % 360) + 360) % 360} degrees` : '') + (recordOn ? `, angles ${sh.angles.join(', ')} degrees` : ''));
+    p.angles.innerHTML = p === selected ? angleMarks(p, vs) : '';
+    if (p === selected) drawHandle();
+  }
+
+  // the record: each corner's angle, drawn inside the corner
+  function angleMarks(p, vs) {
+    const sh = SHAPES[p.type], o = toPx(p.x, p.y), fs = r2(Math.max(10, S * 0.2));
+    let s = '';
+    vs.forEach((v, i) => {
+      const a = vs[(i + vs.length - 1) % vs.length], b = vs[(i + 1) % vs.length];
+      const ua = Math.atan2(a.y - v.y, a.x - v.x), ub = Math.atan2(b.y - v.y, b.x - v.x);
+      const r = S * 0.2;
+      if (sh.angles[i] === 90) {
+        const q = r * 0.8;
+        s += `<path d="M${r2(v.x + Math.cos(ua) * q)},${r2(v.y + Math.sin(ua) * q)}L${r2(v.x + (Math.cos(ua) + Math.cos(ub)) * q)},${r2(v.y + (Math.sin(ua) + Math.sin(ub)) * q)}L${r2(v.x + Math.cos(ub) * q)},${r2(v.y + Math.sin(ub) * q)}" fill="none" stroke="#2A2C30" stroke-width="1.6"/>`;
+      } else {
+        const large = sh.angles[i] > 180 ? 1 : 0;
+        // sweep from one side to the other through the inside of the piece
+        const cross = Math.cos(ua) * Math.sin(ub) - Math.sin(ua) * Math.cos(ub);
+        s += `<path d="M${r2(v.x + Math.cos(ua) * r)},${r2(v.y + Math.sin(ua) * r)}A${r2(r)},${r2(r)} 0 ${large} ${cross > 0 ? 1 : 0} ${r2(v.x + Math.cos(ub) * r)},${r2(v.y + Math.sin(ub) * r)}" fill="none" stroke="#2A2C30" stroke-width="1.6"/>`;
+      }
+      // the number sits just outside the corner, on its bisector, so small blocks stay readable
+      let bx = Math.cos(ua) + Math.cos(ub), by = Math.sin(ua) + Math.sin(ub);
+      const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl;
+      if ((bx * (o.x - v.x) + by * (o.y - v.y)) < 0) { bx = -bx; by = -by; }
+      const t = -Math.max(18, S * 0.36);
+      s += `<text x="${r2(v.x + bx * t)}" y="${r2(v.y + by * t)}" font-size="${fs}">${sh.angles[i]}°</text>`;
+    });
+    return s;
+  }
+
+  function removePiece(p) {
+    pieces = pieces.filter(o => o !== p);
+    if (selected === p) select(null);
+    if (reduceMotion) p.g.remove();
+    else p.g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }).onfinish = () => p.g.remove();
+    buzz(6);
+    changed();
+  }
+
+  // a new block from a bin lands beside the outline, not in it (the outline's hull is close enough)
+  function onOutline(vs) {
+    const o = outlineVerts();
+    if (!o.length) return false;
+    const hull = OUTLINES[outlineIx].name === 'star' ? ring(6, Math.sqrt(3), Math.PI / 6).map(p => toPx(p[0], p[1])) : o;
+    return overlaps(vs, hull, -0.2 * S);
+  }
+
+  // a free spot near the middle of the mat for a piece from the bin
+  function freeSpot(type) {
+    const p = { type, rot: 0 }, top = dockTop();
+    for (let ring = 0; ring < 40; ring++) {
+      const steps = Math.max(1, ring * 6);
+      for (let k = 0; k < steps; k++) {
+        const a = k / steps * Math.PI * 2, x = Math.cos(a) * ring * 0.7, y = Math.sin(a) * ring * 0.7;
+        const px = toPx(x, y), m = SHAPES[type].reach * S;
+        if (px.x < m || px.x > innerWidth - m || px.y < m || px.y > top - m) continue;
+        // leave a gap, so a new block never joins a design by accident
+        const vs = verts(p, x, y, 0);
+        if (!pieces.some(o => overlaps(vs, verts(o), -0.2 * S)) && !onOutline(vs)) return { x, y };
+      }
+    }
+    return null;
+  }
+
+  function placeFromBin(type, btn) {
+    const spot = pieces.length < MAX_PIECES && freeSpot(type);
+    if (!spot) { shake(btn); return null; }
+    const p = addPiece(type, spot.x, spot.y);
+    anim(p.g, [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], 200);
+    buzz(6);
+    changed();
+    return p;
+  }
+
+  // ═══════ SELECTION AND TURNING ═══════
+  // A tapped piece shows an aluminum bead on an arm; dragging the bead turns the piece in 30° steps.
+  let handleG = null;
+  function select(p) {
+    const old = selected;
+    selected = p;
+    if (old && old !== p && pieces.includes(old)) draw(old);
+    if (handleG) { handleG.remove(); handleG = null; }
+    if (p) draw(p);
+  }
+  function drawHandle() {
+    const p = selected;
+    if (!handleG) handleG = el('g', {}, handles);
+    // straight up at 0°, turning counterclockwise with the piece
+    const o = toPx(p.x, p.y), a = p.rot * Math.PI / 180, L = SHAPES[p.type].reach * S + S * 0.8;
+    const hx = o.x - Math.sin(a) * L, hy = o.y - Math.cos(a) * L;
+    const br = Math.max(11, S * 0.17);
+    handleG.innerHTML =
+      `<line x1="${r2(o.x)}" y1="${r2(o.y)}" x2="${r2(hx)}" y2="${r2(hy)}" stroke="rgba(60,62,68,0.45)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 4" pointer-events="none"/>` +
+      `<circle cx="${r2(o.x)}" cy="${r2(o.y)}" r="3" fill="rgba(60,62,68,0.55)" pointer-events="none"/>` +
+      `<circle cx="${r2(hx + 0.8)}" cy="${r2(hy + 1.8)}" r="${r2(br)}" fill="rgba(40,30,20,0.22)" pointer-events="none"/>` +
+      `<circle class="handle" cx="${r2(hx)}" cy="${r2(hy)}" r="${r2(br)}" fill="url(#alum)" stroke="rgba(40,40,46,0.4)" stroke-width="0.8"/>` +
+      `<circle class="handle" cx="${r2(hx)}" cy="${r2(hy)}" r="${r2(Math.max(22, br * 1.6))}" fill="transparent"/>`;
+  }
+
+  // ═══════ RECORD ═══════
+  let liveTimer = 0;
+  function changed() {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const counts = ORDER.map(k => [k, pieces.filter(p => p.type === k).length]).filter(c => c[1]);
+      live.textContent = counts.length ? counts.map(([k, n]) => `${n} ${n === 1 ? SHAPES[k].name : SHAPES[k].plural}`).join(', ') + ' on the mat.' : 'The mat is empty.';
+    }, 400);
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+
+  board.addEventListener('pointerdown', e => {
+    const t = e.target;
+    if (t.classList.contains('handle') && selected) {
+      e.preventDefault();
+      try { t.setPointerCapture(e.pointerId); } catch (err) {}
+      drags.set(e.pointerId, { kind: 'turn', p: selected, rot0: selected.rot, moved: true });
+      return;
+    }
+    const g = t.closest('.piece'), p = g && pieces.find(o => o.id === +g.dataset.id);
+    if (!p) return;
+    e.preventDefault();
+    piecesG.appendChild(p.g);
+    const o = toPx(p.x, p.y);
+    try { t.setPointerCapture(e.pointerId); } catch (err) {}
+    const s = { kind: 'move', p, sx: e.clientX, sy: e.clientY, ox: o.x - e.clientX, oy: o.y - e.clientY, x0: p.x, y0: p.y, moved: false };
+    s.hold = setTimeout(() => { if (!s.moved && drags.get(e.pointerId) === s) lift(s); }, 450);
+    drags.set(e.pointerId, s);
+  });
+
+  // tapping the bare mat lets go of the selected piece
+  addEventListener('pointerdown', e => {
+    if (e.target === document.body || e.target.id === 'surface' || e.target === board) select(null);
+  });
+
+  function binDown(e) {
+    e.preventDefault();
+    drags.set(e.pointerId, { kind: 'bin', type: e.currentTarget.dataset.type, btn: e.currentTarget, sx: e.clientX, sy: e.clientY, moved: false });
+  }
+
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    if (!s.moved) {
+      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < 5) return;
+      s.moved = true;
+      clearTimeout(s.hold);
+      if (s.kind === 'bin') {
+        // a block pulled out of its bin comes up under the finger
+        if (pieces.length >= MAX_PIECES) { shake(s.btn); drags.delete(e.pointerId); return; }
+        const u = toUnits(e.clientX, e.clientY);
+        s.p = addPiece(s.type, u.x, u.y);
+        s.kind = 'move'; s.fresh = true; s.ox = 0; s.oy = 0;
+        buzz(4);
+      }
+      if (selected && selected !== s.p) select(null);
+    }
+    const p = s.p;
+    if (s.kind === 'move') {
+      const u = toUnits(e.clientX + s.ox, e.clientY + s.oy);
+      p.x = u.x; p.y = u.y;
+      draw(p);
+    } else if (s.kind === 'group') {
+      const u = toUnits(e.clientX, e.clientY), dx = u.x - s.ux.x, dy = u.y - s.ux.y;
+      s.group.forEach((q, i) => { q.x = s.starts[i].x + dx; q.y = s.starts[i].y + dy; draw(q); });
+    } else if (s.kind === 'turn') {
+      const o = toPx(p.x, p.y);
+      const deg = Math.atan2(-(e.clientY - o.y), e.clientX - o.x) * 180 / Math.PI;
+      const rot = ((Math.round((deg - 90) / 30) * 30) % 360 + 360) % 360;
+      if (rot !== ((p.rot % 360) + 360) % 360) { p.rot = rot; buzz(2); draw(p); }
+    }
+  });
+
+  function overDock(cx, cy) {
+    const r = dock.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+
+  // blocks that would sit on top of another one are refused and slide back
+  function refuse(group, starts) {
+    group.forEach((p, i) => {
+      const a = toPx(p.x, p.y);
+      p.x = starts[i].x; p.y = starts[i].y;
+      const b = toPx(p.x, p.y);
+      draw(p);
+      anim(p.g, [{ transform: `translate(${r2(a.x - b.x)}px, ${r2(a.y - b.y)}px)` }, { transform: 'none' }], 320, 'cubic-bezier(0.2, 0.8, 0.2, 1)');
+    });
+    buzz([4, 30, 4]);
+  }
+
+  function settle(group) {
+    const a = toPx(group[0].x, group[0].y);
+    const snapped = snap(group);
+    const b = toPx(group[0].x, group[0].y);
+    for (const p of group) {
+      draw(p);
+      if (snapped) anim(p.g, [{ transform: `translate(${r2(a.x - b.x)}px, ${r2(a.y - b.y)}px)` }, { transform: 'none' }], 140);
+    }
+    if (snapped) buzz(8);
+  }
+  const groupBlocked = group => group.some(p => { const vs = verts(p); return pieces.some(o => !group.includes(o) && overlaps(vs, verts(o))); });
+
+  // pressing and holding a block lifts its whole design
+  function lift(s) {
+    s.kind = 'group';
+    s.group = designOf(s.p);
+    s.starts = s.group.map(p => ({ x: p.x, y: p.y }));
+    s.ux = toUnits(s.sx, s.sy);
+    if (selected) select(null);
+    for (const p of s.group) { piecesG.appendChild(p.g); p.g.classList.add('lifted'); anim(p.g, [{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)' }, { transform: 'translateY(0)' }], 220); }
+    buzz(14);
+  }
+  const drop = s => s.group.forEach(p => p.g.classList.remove('lifted'));
+
+  function endDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    clearTimeout(s.hold);
+    if (s.kind === 'bin') { if (!s.moved) placeFromBin(s.type, s.btn); return; }
+    if (s.kind === 'group') {
+      drop(s);
+      if (!s.moved) return;
+      if (overDock(e.clientX, e.clientY)) { s.group.forEach(removePiece); return; }
+      // keep the design's anchor block on the mat
+      const top = dockTop(), o = toPx(s.p.x, s.p.y);
+      const cx = Math.min(innerWidth - 8, Math.max(8, o.x)) - o.x, cy = Math.min(top - 8, Math.max(8, o.y)) - o.y;
+      s.group.forEach(q => { q.x += cx / S; q.y += cy / S; });
+      settle(s.group);
+      if (groupBlocked(s.group)) refuse(s.group, s.starts);
+      changed();
+      return;
+    }
+    const p = s.p;
+    if (!pieces.includes(p)) return;
+    if (s.kind === 'turn') {
+      if (blocked(p, verts(p))) { p.rot = s.rot0; draw(p); shake(p.g); buzz([4, 30, 4]); }
+      else settle([p]);
+      if (selected === p) draw(p);
+      changed();
+      return;
+    }
+    if (!s.moved) { select(selected === p ? null : p); return; }
+    if (overDock(e.clientX, e.clientY)) { removePiece(p); return; }
+    // keep the middle of the block on the mat
+    const top = dockTop(), o = toPx(p.x, p.y);
+    const u = toUnits(Math.min(innerWidth - 8, Math.max(8, o.x)), Math.min(top - 8, Math.max(8, o.y)));
+    p.x = u.x; p.y = u.y;
+    settle([p]);
+    if (blocked(p, verts(p))) {
+      if (s.fresh) removePiece(p);
+      else refuse([p], [{ x: s.x0, y: s.y0 }]);
+    }
+    changed();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  // A focused block: arrows slide it (Shift slides a whole edge, Alt slides its whole design an edge),
+  // R turns it 30° (Shift+R the other way), Delete puts it away.
+  board.addEventListener('keydown', e => {
+    const g = e.target.closest('.piece');
+    const p = g && pieces.find(o => o.id === +g.dataset.id);
+    if (!p) return;
+    const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (mv && e.altKey) {
+      e.preventDefault();
+      const group = designOf(p), starts = group.map(q => ({ x: q.x, y: q.y }));
+      group.forEach(q => { q.x += mv[0]; q.y += mv[1]; });
+      if (groupBlocked(group)) { refuse(group, starts); return; }
+      group.forEach(draw);
+    } else if (mv) {
+      e.preventDefault();
+      const step = e.shiftKey ? 1 : 0.25, x = p.x + mv[0] * step, y = p.y + mv[1] * step;
+      if (blockedAt(p, x, y, p.rot)) { shake(p.g); return; }
+      p.x = x; p.y = y;
+      if (!e.shiftKey) settle([p]); else draw(p);
+    } else if (e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      const rot = ((p.rot + (e.shiftKey ? 30 : -30)) % 360 + 360) % 360;
+      if (blockedAt(p, p.x, p.y, rot)) { shake(p.g); return; }
+      p.rot = rot;
+      draw(p);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      removePiece(p);
+      return;
+    } else if (e.key === 'Escape') {
+      select(null);
+      return;
+    } else return;
+    changed();
+  });
+  board.addEventListener('focusin', e => {
+    const g = e.target.closest && e.target.closest('.piece');
+    const p = g && pieces.find(o => o.id === +g.dataset.id);
+    if (p && p !== selected && p.g.matches(':focus-visible')) select(p);
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    pieces.forEach(draw);
+  });
+  clearBtn.addEventListener('click', () => { [...pieces].forEach(removePiece); });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => { layout(); pieces.forEach(draw); });
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  // ═══════ START ═══════
+  for (const k of ORDER) {
+    const sh = SHAPES[k];
+    const b = document.createElement('button');
+    b.className = 'bin';
+    b.dataset.type = k;
+    b.setAttribute('aria-label', `${sh.name[0].toUpperCase() + sh.name.slice(1)} bin`);
+    // bin icons share one scale, so the blocks' sizes compare
+    const vs = sh.local.map(v => ({ x: v.x * 18, y: v.y * 18 }));
+    b.innerHTML = `<svg viewBox="-32 -24 64 48" aria-hidden="true" focusable="false"><path d="${poly(vs)}" fill="${sh.color}" stroke="${sh.dark}" stroke-width="1"/><path d="${poly(vs)}" fill="url(#gloss)"/></svg>`;
+    b.addEventListener('pointerdown', binDown);
+    b.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      const p = placeFromBin(k, b);
+      if (p) p.g.focus();
+    });
+    binsEl.appendChild(b);
+  }
+  // the outline bin: each tap engraves the next outline into the mat, then none
+  const outlineBin = document.createElement('button');
+  outlineBin.className = 'bin outline-bin';
+  binsEl.appendChild(outlineBin);
+  function paintOutlineBin() {
+    const o = OUTLINES[outlineIx], next = OUTLINES[(outlineIx + 1) % OUTLINES.length];
+    const icon = o ? o.local : SHAPES.hexagon.local, k = o ? 26 / Math.max(...o.local.map(v => Math.hypot(v.x, v.y))) / 1.1 : 14;
+    outlineBin.innerHTML = `<svg viewBox="-32 -24 64 48" aria-hidden="true" focusable="false"><path d="${poly(icon.map(v => ({ x: v.x * k * 0.8, y: v.y * k * 0.8 })))}" fill="${o ? 'rgba(120,104,84,0.14)' : 'none'}" stroke="rgba(92,80,64,${o ? 0.75 : 0.35})" stroke-width="1.6" stroke-dasharray="${o ? 'none' : '3 3'}" stroke-linejoin="round"/></svg>`;
+    outlineBin.setAttribute('aria-label', `Outline bin. ${o ? 'Outline: ' + o.name + '.' : 'No outline.'} Next: ${next ? next.name : 'none'}.`);
+  }
+  outlineBin.addEventListener('click', () => {
+    outlineIx = (outlineIx + 1) % OUTLINES.length;
+    drawOutline();
+    paintOutlineBin();
+    if (OUTLINES[outlineIx]) anim(outlineG, [{ opacity: 0 }, { opacity: 1 }], 240);
+    buzz(6);
+    live.textContent = OUTLINES[outlineIx] ? `Outline: ${OUTLINES[outlineIx].name}.` : 'No outline.';
+  });
+  paintOutlineBin();
+  layout();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
