@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <title>Fraction Pieces | Math Things.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass: rgba(247,246,243,0.82);
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.06);
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Lexend', system-ui, sans-serif;
+            color: var(--text-main);
+            /* Warm showroom backdrop — the 3D canvas is transparent over it */
+            background: radial-gradient(130% 95% at 50% 40%, #FBFAF8 0%, #F3F1ED 55%, #E7E3DC 100%);
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none;
+        }
+
+        #stage { position: fixed; inset: 0; }
+        #stage canvas { display: block; outline: none; touch-action: none; }
+
+        /* ── HEADER ── */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 20px;
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        /* The Bead */
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        .header-controls { display: flex; align-items: center; gap: 16px; }
+
+        .tools {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .tool {
+            width: 38px; height: 32px;
+            border: none; background: transparent; border-radius: 7px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-gray);
+            padding: 0;
+            transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+        }
+        .tool:hover { color: var(--text-main); }
+        .tool:disabled { opacity: 0.35; cursor: default; }
+        .wholes-wrap { display: flex; align-items: center; }
+        .wholes-wrap .tool { width: 32px; font: 800 18px Lexend, system-ui, sans-serif; }
+        .count { min-width: 22px; display: flex; align-items: center; justify-content: center;
+                 font: 800 14px Lexend, system-ui, sans-serif; color: var(--text-main); }
+        .tool svg { display: block; }
+
+        /* ── LABELS PILL TOGGLE (Volume Space switch language) ── */
+        .pv-toggle-wrap { display: flex; align-items: center; }
+        .pv-icon { display: flex; align-items: center; margin-right: 6px; opacity: 0.75; flex-shrink: 0; }
+        .pv-pill { position: relative; width: 48px; height: 28px; cursor: pointer; flex-shrink: 0; }
+        .pv-pill input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .pv-pill-track {
+            position: absolute; inset: 0;
+            background: #E5E5EA;
+            border-radius: 14px;
+            transition: background 0.25s ease;
+            display: block;
+        }
+        .pv-pill-thumb {
+            position: absolute;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px; left: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+            transition: left 0.25s var(--spring);
+        }
+        .pv-pill input:checked + .pv-pill-track { background: var(--accent); }
+        .pv-pill input:checked + .pv-pill-track .pv-pill-thumb { left: 22px; }
+        .tool:focus-visible, .exit:focus-visible, .pv-pill input:focus-visible + .pv-pill-track {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .exit { font: 700 11px Lexend, system-ui, sans-serif; color: var(--text-gray); text-decoration: none; white-space: nowrap; }
+
+        /* ── FOOTER ── */
+        footer {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            text-align: center;
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            pointer-events: none;
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            margin-bottom: 0.08em;
+            background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: baseline;
+        }
+
+        .sr-only {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (max-width: 720px) {
+            header { padding: 0 10px; gap: 8px; }
+            .logo { font-size: 1.1rem; }
+            .header-controls { gap: 8px; }
+        }
+        @media (max-width: 560px) {
+            .pv-icon { display: none; }
+            .logo { font-size: 0.95rem; }
+            .wholes-wrap .tool { width: 26px; }
+            .tool { width: 32px; }
+        }
+        @media (max-width: 420px) {
+            .exit { font-size: 10px; }
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+  <div id="stage" role="application" aria-label="Fraction pieces: whole circles and whole bars recessed into the table, with dispensers of fraction pieces below"></div>
+  <header>
+    <div class="logo">Math Things<span class="logo-bead"></span></div>
+    <div class="header-controls">
+      <div class="pv-toggle-wrap">
+        <!-- Wordless icon: a piece carrying a printed fraction -->
+        <svg class="pv-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false">
+          <rect x="1" y="1" width="20" height="20" rx="4" fill="#D1AE6C"/>
+          <text x="11" y="9.2" text-anchor="middle" font-family="Lexend, system-ui, sans-serif" font-size="8" font-weight="800" fill="#1D1D1F">1</text>
+          <rect x="6.5" y="10.4" width="9" height="1.3" rx=".6" fill="#1D1D1F"/>
+          <text x="11" y="19" text-anchor="middle" font-family="Lexend, system-ui, sans-serif" font-size="8" font-weight="800" fill="#1D1D1F">4</text>
+        </svg>
+        <label class="pv-pill" title="Show fractions on the pieces">
+          <input type="checkbox" id="labels" checked aria-label="Show fraction labels on the pieces">
+          <span class="pv-pill-track"><span class="pv-pill-thumb"></span></span>
+        </label>
+      </div>
+      <!-- How many wholes are cut into the table: 1 to 3 -->
+      <div class="wholes-wrap">
+        <svg class="pv-icon" width="30" height="18" viewBox="0 0 30 18" fill="none" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="9" r="7" fill="#D1D1D6" stroke="#AEAEB2" stroke-width="1.2"/>
+          <rect x="17.5" y="5" width="11.5" height="8" rx="1.5" fill="#D1D1D6" stroke="#AEAEB2" stroke-width="1.2"/>
+        </svg>
+        <div class="tools" role="group" aria-label="Number of wholes">
+          <button class="tool" type="button" id="fewer" aria-label="One fewer whole">−</button>
+          <span class="count" id="wholeCount" aria-hidden="true">1</span>
+          <button class="tool" type="button" id="more" aria-label="One more whole">+</button>
+        </div>
+      </div>
+      <div class="tools">
+        <button class="tool" type="button" id="clear" aria-label="Put every piece away" title="Put every piece away">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg>
+        </button>
+      </div>
+      <a class="exit" href="../../">All Math Things</a>
+    </div>
+  </header>
+  <div class="sr-only" id="announce" aria-live="polite" role="status" aria-atomic="true"></div>
+  <footer>Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span></footer>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { FRACTION_DENOMINATORS, fractionColor } from '../../math-things-fractions.js';
+
+// Same world conventions, lighting and enamel as the Fraction & Decimal Number Line.
+THREE.Object3D.DEFAULT_UP.set(0,0,1);
+const V3=THREE.Vector3,TAU=Math.PI*2,EPS=1e-6;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+// Hundredths stay with the number line and decimal grids: a 1/100 wedge is a sliver.
+const DENS=FRACTION_DENOMINATORS.filter(d=>d!==100);
+const R=2.4;            // radius of the whole circle
+const BAR_L=8,BAR_H=1.2;// length and width of the whole bar
+const T=.28;            // piece thickness = cavity depth, so a filled whole sits flush
+const GAP=.022;         // half the seam between neighbouring pieces
+const CLEAR=.05;        // cavity clearance around a whole
+const LIFT=.9;          // height of a piece in the hand
+const MINI_WEDGE=.4,MINI_BAR=.45;   // dispenser pieces are shown smaller
+const FONT='Lexend, system-ui, sans-serif';
+const state={labels:true,wholes:1};
+
+// ── RENDERER ──
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setClearColor(0x000000,0);
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.NeutralToneMapping;
+renderer.toneMappingExposure=1;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const canvas=renderer.domElement;
+const scene=new THREE.Scene(),pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;
+scene.environmentIntensity=.36;
+scene.environmentRotation.set(Math.PI/2,0,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0xd6cfc4,.38));
+const sun=new THREE.DirectionalLight(0xfff8ee,.9);
+sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;
+scene.add(sun,sun.target);
+const camera=new THREE.PerspectiveCamera(18,window.innerWidth/window.innerHeight,.1,200);
+
+// ── MATERIALS ──
+// Fully opaque enamel, exactly the number line's finish; colour from the shared palette.
+const enamel=color=>new THREE.MeshPhysicalMaterial({color,roughness:.4,metalness:0,clearcoat:1,clearcoatRoughness:.12});
+const pieceMat=new Map(DENS.map(d=>[d,enamel(fractionColor(d))]));
+const tableMat=new THREE.MeshStandardMaterial({color:0xE5E5EA,roughness:.62});
+const floorMat=new THREE.MeshStandardMaterial({color:0xD1D1D6,roughness:.7});
+const shelfMat=new THREE.MeshStandardMaterial({color:0xDCDBDF,roughness:.66});
+
+// ── LAYOUT ──
+// Wide screens: circles in a row on the left, bars stacked on the right (two or
+// three stacked bars stand about as tall as one circle), dispensers beneath.
+// Tall screens: circles, then bars, then dispensers. Adding a whole extends the
+// table; pieces never change size.
+const MAX_WHOLES=3,PITCH=2*R+.8,ROW=BAR_H+.4;
+const isWide=()=>window.innerWidth/window.innerHeight>=1.15;
+function makeLayout(wide,n){
+  if(wide){
+    const barX=.7+(n-1)*PITCH,x1=barX+BAR_L+1;
+    return {
+      wide,n,
+      circles:Array.from({length:n},(_,i)=>({x:-4.6+i*PITCH,y:1.75})),
+      bars:Array.from({length:n},(_,j)=>({x0:barX,y:1.75+(n-1)*ROW/2-j*ROW})),
+      wedgeSlots:DENS.map((d,i)=>({x:-8.1+(i%5)*1.85,y:-2.45-Math.floor(i/5)*1.95})),
+      barSlots:DENS.map((d,i)=>({x:.7+Math.floor(i/5)*4.2,y:-1.75-(i%5)*.74})),
+      shelf:{x0:-9.25,x1:x1-.45,y0:-5.45,y1:-1.1},
+      bounds:{x0:-9.7,x1,y0:-5.9,y1:4.65}
+    };
+  }
+  const half=Math.max(5.25,(n*PITCH-.8)/2+.45),up=(n-1)*ROW;
+  return {
+    wide,n,
+    circles:Array.from({length:n},(_,i)=>({x:(i-(n-1)/2)*PITCH,y:8.15+up})),
+    bars:Array.from({length:n},(_,j)=>({x0:-4,y:4.6+up-j*ROW})),
+    wedgeSlots:DENS.map((d,i)=>({x:-3.7+(i%5)*1.85,y:2.35-Math.floor(i/5)*1.95})),
+    barSlots:DENS.map((d,i)=>({x:-4.25+Math.floor(i/5)*4.4,y:-1.15-(i%5)*.74})),
+    shelf:{x0:-half+.45,x1:half-.45,y0:-4.5,y1:3.3},
+    bounds:{x0:-half,x1:half,y0:-4.95,y1:11.05+up}
+  };
+}
+let L=makeLayout(isWide(),state.wholes);
+
+// ── GEOMETRY ──
+// A wedge is built around the circle's centre, pointing straight up, so placing it
+// is only a rotation. Its edges are inset by GAP so neighbours show a seam.
+const BEVEL=.03;
+const wedgeGeos=new Map(),barGeos=new Map();
+function wedgeGeometry(d){
+  if(wedgeGeos.has(d))return wedgeGeos.get(d);
+  const half=Math.PI/d,inset=GAP+BEVEL,r=R-inset;
+  const apex=inset/Math.sin(Math.min(half,Math.PI/2));
+  const trim=inset/r;
+  const s=new THREE.Shape();
+  s.moveTo(0,apex);
+  s.absarc(0,0,r,Math.PI/2+half-trim,Math.PI/2-half+trim,true);
+  s.lineTo(0,apex);
+  const g=new THREE.ExtrudeGeometry(s,{depth:T-2*BEVEL,bevelEnabled:true,bevelThickness:BEVEL,
+    bevelSize:BEVEL,bevelSegments:3,curveSegments:Math.max(6,Math.ceil(96/d))});
+  g.translate(0,0,BEVEL);
+  wedgeGeos.set(d,g);return g;
+}
+// A bar's origin is its left end, so a slot is only an x offset.
+function barGeometry(d){
+  if(barGeos.has(d))return barGeos.get(d);
+  const w=BAR_L/d;
+  const g=new RoundedBoxGeometry(w-2*GAP,BAR_H-2*GAP,T,3,.05);
+  g.translate(w/2,0,T/2);
+  barGeos.set(d,g);return g;
+}
+// Centroid of a sector of angle 2π/d, measured from the apex.
+const wedgeCentroid=d=>{const a=TAU/d;return 4*R*Math.sin(a/2)/(3*a)};
+
+// ── PRINTED LABELS ──
+const labelTex=new Map();
+function luminance(hex){
+  const c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+  return .2126*c[0]+.7152*c[1]+.0722*c[2];
+}
+// A stacked fraction, printed the way students write it. Repainted once Lexend loads.
+function paintFraction(g,n,d,ink){
+  g.clearRect(0,0,256,256);
+  g.fillStyle=ink;g.textAlign='center';g.textBaseline='alphabetic';
+  const draw=(t,y)=>{
+    g.font=`800 ${d>9&&t===String(d)?92:104}px ${FONT}`;
+    const m=g.measureText(t);
+    g.fillText(t,128,y+(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2);
+    return m.width;
+  };
+  if(d===1)draw(String(n),128);
+  else{
+    const w=Math.max(draw(String(n),68),draw(String(d),190));
+    g.fillRect(128-w/2-10,124,w+20,12);
+  }
+}
+function fractionTexture(n,d,ink){
+  const key=n+'/'+d+ink;
+  if(labelTex.has(key))return labelTex.get(key).tex;
+  const cv=document.createElement('canvas');cv.width=cv.height=256;
+  const repaint=()=>{paintFraction(cv.getContext('2d'),n,d,ink);tex.needsUpdate=true};
+  const tex=new THREE.CanvasTexture(cv);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
+  repaint();
+  labelTex.set(key,{tex,repaint});return tex;
+}
+const labelGeo=new THREE.PlaneGeometry(1,1);
+const labels=new Set();
+function makeLabel(n,d,background,size){
+  const ink=d===1||luminance(background)>.38?'rgba(29,29,31,.82)':'rgba(255,255,255,.95)';
+  const m=new THREE.Mesh(labelGeo,new THREE.MeshBasicMaterial({map:fractionTexture(n,d,ink),transparent:true,depthWrite:false,toneMapped:false}));
+  m.scale.setScalar(size);m.raycast=()=>{};m.visible=state.labels;
+  labels.add(m);return m;
+}
+// Where a piece's label sits (in the piece's own frame) and how big it can be.
+function labelPlacement(kind,d){
+  if(kind==='bar'){const w=BAR_L/d;return {x:w/2,y:0,size:Math.min(.92,w*.8,BAR_H*.75)}}
+  const half=Math.PI/d,rho=d<=2?R*.48:d<=4?R*.58:R*.66;
+  return {x:0,y:rho,size:Math.min(.95,2*rho*Math.sin(half)*.78,(R-rho)*1.4)};
+}
+
+// ── THE TABLE ──
+// One slab with every whole circle, every whole bar and the dispenser shelf cut into it.
+let tableParts=[];
+function rrect(path,x0,y0,x1,y1,r){
+  path.moveTo(x0+r,y0);path.lineTo(x1-r,y0);path.quadraticCurveTo(x1,y0,x1,y0+r);
+  path.lineTo(x1,y1-r);path.quadraticCurveTo(x1,y1,x1-r,y1);path.lineTo(x0+r,y1);
+  path.quadraticCurveTo(x0,y1,x0,y1-r);path.lineTo(x0,y0+r);path.quadraticCurveTo(x0,y0,x0+r,y0);
+}
+function buildTable(){
+  for(const p of tableParts){scene.remove(p);labels.delete(p)}
+  tableParts=[];
+  const b=L.bounds,sh=L.shelf;
+  const top=new THREE.Shape();rrect(top,b.x0,b.y0,b.x1,b.y1,.45);
+  for(const c of L.circles){const h=new THREE.Path();h.absarc(c.x,c.y,R+CLEAR,0,TAU,true);top.holes.push(h)}
+  for(const bar of L.bars){const h=new THREE.Path();rrect(h,bar.x0-CLEAR,bar.y-BAR_H/2-CLEAR,bar.x0+BAR_L+CLEAR,bar.y+BAR_H/2+CLEAR,.08);top.holes.push(h)}
+  const shelfHole=new THREE.Path();rrect(shelfHole,sh.x0,sh.y0,sh.x1,sh.y1,.3);top.holes.push(shelfHole);
+  const slab=new THREE.Mesh(new THREE.ExtrudeGeometry(top,{depth:T,bevelEnabled:false,curveSegments:96}),tableMat);
+  slab.position.z=-T;
+  // Cavity floors: the base the slab sits on, seen through the cut-outs.
+  const baseShape=new THREE.Shape();rrect(baseShape,b.x0,b.y0,b.x1,b.y1,.45);
+  const base=new THREE.Mesh(new THREE.ExtrudeGeometry(baseShape,{depth:.12,bevelEnabled:false}),floorMat);
+  base.position.z=-T-.12;
+  // The shelf is a shallow tray: dispensers sit low, ready to be picked up.
+  const shelfShape=new THREE.Shape();rrect(shelfShape,sh.x0,sh.y0,sh.x1,sh.y1,.3);
+  const shelf=new THREE.Mesh(new THREE.ExtrudeGeometry(shelfShape,{depth:T-.1,bevelEnabled:false}),shelfMat);
+  shelf.position.z=-T;
+  for(const m of [slab,base,shelf]){m.castShadow=m.receiveShadow=true;scene.add(m);tableParts.push(m)}
+  // "1" printed beside each whole.
+  const one=(x,y)=>{const l=makeLabel(1,1,'#E5E5EA',.62);l.position.set(x,y,.003);scene.add(l);tableParts.push(l)};
+  for(const c of L.circles)one(c.x-R*.92,c.y+R*.92);
+  for(const bar of L.bars)one(bar.x0-.45,bar.y);
+  const sc=sun.shadow.camera,span=Math.max(b.x1-b.x0,b.y1-b.y0)/2+1;
+  sc.left=-span;sc.right=span;sc.top=span;sc.bottom=-span;sc.near=.1;sc.far=60;sc.updateProjectionMatrix();
+  const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;
+  sun.target.position.set(cx,cy,0);sun.position.set(cx-6,cy-5,14);
+}
+
+// ── DISPENSERS ──
+// One per size and shape. Each shows its piece, smaller; pull and a full piece comes out.
+const minis=[];
+const miniGroup=new THREE.Group();scene.add(miniGroup);
+function buildDispensers(){
+  for(const m of minis){miniGroup.remove(m);labels.delete(m.userData.label)}
+  minis.length=0;
+  DENS.forEach((d,i)=>{
+    const wedge=pieceMesh('wedge',d);
+    const ws=L.wedgeSlots[i];
+    wedge.scale.setScalar(MINI_WEDGE);
+    // centre each mini wedge's centroid on its slot
+    wedge.position.set(ws.x,ws.y-wedgeCentroid(d)*MINI_WEDGE,-.1);
+    wedge.userData.mini={kind:'wedge',d};
+    const bar=pieceMesh('bar',d);
+    const bs=L.barSlots[i];
+    bar.scale.setScalar(MINI_BAR);
+    bar.position.set(bs.x,bs.y,-.1);
+    bar.userData.mini={kind:'bar',d};
+    for(const m of [wedge,bar]){miniGroup.add(m);minis.push(m)}
+  });
+}
+
+function pieceMesh(kind,d){
+  const m=new THREE.Mesh(kind==='wedge'?wedgeGeometry(d):barGeometry(d),pieceMat.get(d));
+  m.castShadow=m.receiveShadow=true;
+  const p=labelPlacement(kind,d);
+  const label=makeLabel(1,d,fractionColor(d),p.size);
+  label.position.set(p.x,p.y,T+.004);
+  m.add(label);m.userData.label=label;
+  return m;
+}
+
+// ── PIECES ON THE TABLE ──
+// A piece in a whole has `whole` (which circle or bar) and `slot`: where it sits,
+// in turns clockwise from 12 o'clock (circle) or in wholes from the left end (bar).
+// A loose piece has slot null.
+const pieces=[];
+const pieceGroup=new THREE.Group();scene.add(pieceGroup);
+function addPiece(kind,d){
+  const mesh=pieceMesh(kind,d);
+  const p={kind,d,w:1/d,mesh,whole:0,slot:null,
+    target:new V3(),targetRot:0,targetScale:1,removing:false};
+  mesh.userData.piece=p;
+  pieceGroup.add(mesh);pieces.push(p);
+  return p;
+}
+function removePiece(p){
+  pieceGroup.remove(p.mesh);labels.delete(p.mesh.userData.label);
+  pieces.splice(pieces.indexOf(p),1);
+}
+function putAway(p){
+  // Back to the dispenser: the piece sinks and shrinks away.
+  p.removing=true;p.slot=null;p.targetScale=.01;p.target.z=-.2;
+  if(active===p)active=null;
+}
+const slotRotation=(s,w)=>-(s+w/2)*TAU;
+function slotPosition(p,whole,s){
+  if(p.kind==='wedge'){const c=L.circles[whole];return new V3(c.x,c.y,-T)}
+  const b=L.bars[whole];return new V3(b.x0+s*BAR_L,b.y,-T);
+}
+function placeInSlot(p,whole,s){
+  p.whole=whole;p.slot=s;
+  p.target.copy(slotPosition(p,whole,s));
+  p.targetRot=p.kind==='wedge'?slotRotation(s,p.w):0;
+  if(active===p)active=null;
+}
+
+// Overlap of two arcs on the circle, in turns.
+const mod1=x=>((x%1)+1)%1;
+function fits(kind,whole,s,w,ignore){
+  if(kind==='bar'&&(s<-EPS||s+w>1+EPS))return false;
+  for(const q of pieces){
+    if(q===ignore||q.slot===null||q.kind!==kind||q.whole!==whole)continue;
+    if(kind==='wedge'){
+      if(mod1(s-q.slot)<q.w-EPS||mod1(q.slot-s)<w-EPS)return false;
+    }else if(s<q.slot+q.w-EPS&&q.slot<s+w-EPS)return false;
+  }
+  return true;
+}
+// The slot nearest to where the student is aiming. Candidates are the piece's own
+// grid (1/d steps from 12 o'clock or the left end) plus every edge of the pieces
+// already in that whole, so mixed sizes pack against each other.
+function findSlot(p,whole,aim){
+  const cands=[];
+  for(let k=0;k<p.d;k++)cands.push(k*p.w);
+  for(const q of pieces){
+    if(q===p||q.slot===null||q.kind!==p.kind||q.whole!==whole)continue;
+    cands.push(q.slot+q.w,q.slot-p.w);
+  }
+  let best=null,bestDist=Infinity;
+  for(let s of cands){
+    if(p.kind==='wedge')s=mod1(s);
+    if(!fits(p.kind,whole,s,p.w,p))continue;
+    const dist=p.kind==='wedge'
+      ?Math.abs(mod1(s+p.w/2-aim+.5)-.5)
+      :Math.abs(s-aim);
+    if(dist<bestDist-EPS){best=s;bestDist=dist}
+  }
+  return best;
+}
+
+// ── THE BEAD: turning a loose wedge ──
+// The neutral Math Things bead rides on the curved edge of the wedge last set down
+// loose. Drag it around and the wedge turns about its own centre.
+const BEAD_R=.17;
+const chrome=new THREE.MeshPhysicalMaterial({color:0xD8D9DD,metalness:1,roughness:.24,anisotropy:.8,clearcoat:.4,clearcoatRoughness:.2});
+const groove=new THREE.MeshStandardMaterial({color:0x3a3a3f,metalness:.6,roughness:.5});
+const bead=new THREE.Group();
+const beadBall=new THREE.Mesh(new THREE.SphereGeometry(BEAD_R,32,24),chrome);
+beadBall.castShadow=true;bead.add(beadBall);
+for(const off of [-.07,0,.07]){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(Math.sqrt(BEAD_R*BEAD_R-off*off)+.002,.008,6,32),groove);
+  ring.position.z=off;bead.add(ring);
+}
+bead.visible=false;scene.add(bead);
+let active=null;   // the loose wedge carrying the bead
+function centroidOf(p){
+  const c=wedgeCentroid(p.d),r=p.targetRot;
+  return new V3(p.target.x-c*Math.sin(r),p.target.y+c*Math.cos(r),0);
+}
+function placeBead(){
+  const p=active,m=p?.mesh;
+  bead.visible=!!p&&!drag&&!p.removing&&p.slot===null;
+  if(!bead.visible)return;
+  const r=m.rotation.z,rr=R-.32;
+  bead.position.set(m.position.x-rr*Math.sin(r),m.position.y+rr*Math.cos(r),m.position.z+T+BEAD_R*.6);
+  bead.rotation.z=r;
+}
+
+// ── POINTER ──
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+const tablePlane=new THREE.Plane(new V3(0,0,1),0);
+function aimRay(e){
+  const r=canvas.getBoundingClientRect();
+  ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(ndc,camera);
+}
+function tablePoint(e){aimRay(e);return ray.ray.intersectPlane(tablePlane,new V3())}
+const circleAt=pt=>L.circles.findIndex(c=>Math.hypot(pt.x-c.x,pt.y-c.y)<R+.35);
+const barAt=pt=>L.bars.findIndex(b=>pt.x>b.x0-.35&&pt.x<b.x0+BAR_L+.35&&Math.abs(pt.y-b.y)<ROW/2);
+const overShelf=pt=>pt.x>L.shelf.x0&&pt.x<L.shelf.x1&&pt.y>L.shelf.y0&&pt.y<L.shelf.y1;
+const offTable=pt=>pt.x<L.bounds.x0||pt.x>L.bounds.x1||pt.y<L.bounds.y0||pt.y>L.bounds.y1;
+
+// drag: {mode:'move', p, grab, id} or {mode:'turn', p, pivot, start, startRot, id}
+let drag=null;
+function hitPiece(e){
+  aimRay(e);
+  if(bead.visible&&ray.intersectObject(beadBall,false).length)return beadBall;
+  const hit=ray.intersectObjects([...pieces.filter(p=>!p.removing).map(p=>p.mesh),...minis],false)[0];
+  return hit?.object||null;
+}
+canvas.addEventListener('pointerdown',e=>{
+  if(drag)return;
+  const obj=hitPiece(e);if(!obj){active=null;return}
+  const pt=tablePoint(e);if(!pt)return;
+  if(obj===beadBall){
+    const p=active,pivot=centroidOf(p);
+    drag={mode:'turn',p,pivot,start:Math.atan2(pt.y-pivot.y,pt.x-pivot.x),startRot:p.targetRot,
+      apex:new V3(p.target.x-pivot.x,p.target.y-pivot.y,0),id:e.pointerId};
+  }else{
+    let p,grab;
+    if(obj.userData.mini){
+      // A fresh piece rises out of the dispenser and grows to full size in the hand.
+      const {kind,d}=obj.userData.mini;
+      p=addPiece(kind,d);
+      p.mesh.position.copy(obj.position);p.mesh.scale.copy(obj.scale);
+      const c=kind==='wedge'?new V3(0,wedgeCentroid(d),0):new V3(BAR_L/d/2,0,0);
+      grab=c.negate();
+    }else{
+      p=obj.userData.piece;
+      grab=new V3(p.mesh.position.x-pt.x,p.mesh.position.y-pt.y,0);
+      p.slot=null;
+    }
+    p.targetScale=1;active=null;
+    drag={mode:'move',p,grab,id:e.pointerId};
+    moveTo(pt);
+  }
+  canvas.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+// While held, a piece over a whole glides into the slot it would take there.
+function moveTo(pt){
+  const {p,grab}=drag;
+  const pos=new V3(pt.x+grab.x,pt.y+grab.y,LIFT);
+  drag.slot=null;
+  if(p.kind==='wedge'){
+    const i=circleAt(pt);
+    if(i>=0){
+      const c=L.circles[i];
+      const s=findSlot(p,i,mod1(Math.atan2(pt.x-c.x,pt.y-c.y)/TAU));
+      if(s!==null)drag.slot={whole:i,s};
+    }
+  }else{
+    const j=barAt(pt);
+    if(j>=0){
+      const s=findSlot(p,j,(pos.x-L.bars[j].x0)/BAR_L);
+      if(s!==null)drag.slot={whole:j,s};
+    }
+  }
+  if(drag.slot){
+    p.target.copy(slotPosition(p,drag.slot.whole,drag.slot.s)).setZ(LIFT*.55);
+    p.targetRot=p.kind==='wedge'?slotRotation(drag.slot.s,p.w):0;
+  }else{
+    p.target.copy(pos);
+    if(p.kind==='bar')p.targetRot=0;
+  }
+  drag.pt=pt;
+}
+// Turning: the wedge pivots on its centre, easing onto 15° steps so pieces line up.
+const STEP=Math.PI/12,STICK=THREE.MathUtils.degToRad(4);
+function turnTo(pt){
+  const {p,pivot,start,startRot,apex}=drag;
+  let rot=startRot+Math.atan2(pt.y-pivot.y,pt.x-pivot.x)-start;
+  const snapped=Math.round(rot/STEP)*STEP;
+  if(Math.abs(rot-snapped)<STICK)rot=snapped;
+  const dr=rot-startRot,c=Math.cos(dr),s=Math.sin(dr);
+  p.targetRot=rot;
+  p.target.x=pivot.x+apex.x*c-apex.y*s;
+  p.target.y=pivot.y+apex.x*s+apex.y*c;
+}
+canvas.addEventListener('pointermove',e=>{
+  if(!drag){const o=hitPiece(e);canvas.style.cursor=o?'grab':'default';return}
+  if(e.pointerId!==drag.id)return;
+  const pt=tablePoint(e);if(!pt)return;
+  if(drag.mode==='turn')turnTo(pt);else moveTo(pt);
+});
+function release(e){
+  if(!drag||e.pointerId!==drag.id)return;
+  const d=drag;drag=null;
+  try{canvas.releasePointerCapture(e.pointerId)}catch{}
+  if(d.mode==='turn'){active=d.p;d.p.target.z=restingHeight(d.p);return}
+  const {p,slot,pt}=d;
+  if(slot)placeInSlot(p,slot.whole,slot.s);
+  else if(!pt||overShelf(pt)||offTable(pt))putAway(p);
+  else{
+    p.target.z=restingHeight(p);
+    if(p.kind==='wedge')active=p;
+  }
+  announce();
+}
+canvas.addEventListener('pointerup',release);
+canvas.addEventListener('pointercancel',release);
+
+// A loose piece lies on the table, or on top of whatever loose pieces it lands on.
+const box=new THREE.Box3(),other=new THREE.Box3();
+function footprint(p,into){
+  const m=p.mesh,pos=m.position.clone(),rot=m.rotation.z,sc=m.scale.clone();
+  m.position.set(p.target.x,p.target.y,0);m.rotation.z=p.targetRot;m.scale.setScalar(1);
+  m.updateMatrixWorld(true);into.setFromObject(m,true);
+  m.position.copy(pos);m.rotation.z=rot;m.scale.copy(sc);m.updateMatrixWorld(true);
+  into.expandByScalar(-.06);
+  return into;
+}
+function restingHeight(p){
+  footprint(p,box);let z=0;
+  for(const q of pieces){
+    if(q===p||q.slot!==null||q.removing)continue;
+    footprint(q,other);
+    if(box.min.x<other.max.x&&other.min.x<box.max.x&&box.min.y<other.max.y&&other.min.y<box.max.y)
+      z=Math.max(z,q.target.z+T);
+  }
+  return z;
+}
+
+// ── CONTROLS ──
+document.getElementById('labels').addEventListener('change',e=>{
+  state.labels=e.target.checked;
+  for(const l of labels)l.visible=state.labels;
+});
+document.getElementById('clear').addEventListener('click',()=>{
+  for(const p of pieces)putAway(p);
+  announce();
+});
+const fewer=document.getElementById('fewer'),more=document.getElementById('more');
+function setWholes(n){
+  n=clamp(n,1,MAX_WHOLES);
+  if(n===state.wholes)return;
+  // Taking a whole away puts its pieces back in the dispensers.
+  for(const p of pieces)if(p.slot!==null&&p.whole>=n)putAway(p);
+  state.wholes=n;
+  relayout(true);announce();
+}
+function updateWholeControls(){
+  document.getElementById('wholeCount').textContent=state.wholes;
+  fewer.disabled=state.wholes<=1;more.disabled=state.wholes>=MAX_WHOLES;
+}
+fewer.addEventListener('click',()=>setWholes(state.wholes-1));
+more.addEventListener('click',()=>setWholes(state.wholes+1));
+
+// What the wholes hold altogether, as a mixed number, for screen readers.
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function total(kind){
+  let n=0,d=1;
+  for(const p of pieces){
+    if(p.kind!==kind||p.slot===null||p.removing)continue;
+    n=n*p.d+d;d*=p.d;const g=gcd(n,d);n/=g;d/=g;
+  }
+  if(n===0)return 'nothing';
+  const w=Math.floor(n/d),r=n%d;
+  return [w?String(w):'',r?r+'/'+d:''].filter(Boolean).join(' and ');
+}
+const announcer=document.getElementById('announce');
+function announce(){
+  const s=state.wholes>1;
+  announcer.textContent=`${s?'The circles hold':'The circle holds'} ${total('wedge')}. ${s?'The bars hold':'The bar holds'} ${total('bar')}.`;
+}
+
+// ── CAMERA ──
+// Looking down at the table with a slight tilt, so thickness and depth read.
+const VIEW_DIR=new V3(0,-.36,1).normalize();
+const target=new V3();
+function frame(){
+  const W=window.innerWidth,H=window.innerHeight;
+  camera.aspect=W/H;camera.updateProjectionMatrix();
+  const top=document.querySelector('header').getBoundingClientRect().bottom+10;
+  const bottom=H-34,side=Math.min(24,W*.03);
+  const availW=W-2*side,availH=Math.max(120,bottom-top);
+  const b=L.bounds,corners=[];
+  for(let i=0;i<8;i++)corners.push(new V3(i&1?b.x1:b.x0,i&2?b.y1:b.y0,i&4?T:-T));
+  const bounds=()=>{
+    camera.updateMatrixWorld();
+    let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+    for(const c of corners){
+      const v=c.clone().project(camera),px=(v.x+1)*W/2,py=(1-v.y)*H/2;
+      x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py);
+    }
+    return {x0,x1,y0,y1};
+  };
+  const place=dist=>{camera.position.copy(target).addScaledVector(VIEW_DIR,dist);camera.lookAt(target)};
+  target.set((b.x0+b.x1)/2,(b.y0+b.y1)/2,0);
+  let dist=20;
+  for(let pass=0;pass<3;pass++){
+    let lo=1,hi=250;
+    for(let k=0;k<34;k++){
+      dist=(lo+hi)/2;place(dist);
+      const q=bounds();
+      if(q.x1-q.x0<=availW&&q.y1-q.y0<=availH)hi=dist;else lo=dist;
+    }
+    dist=hi;place(dist);
+    const q=bounds(),perPx=2*dist*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/H;
+    const right=new V3().setFromMatrixColumn(camera.matrixWorld,0),up=new V3().setFromMatrixColumn(camera.matrixWorld,1);
+    target.addScaledVector(right,((q.x0+q.x1)/2-(side+availW/2))*perPx)
+          .addScaledVector(up,-((q.y0+q.y1)/2-(top+availH/2))*perPx);
+    place(dist);
+  }
+}
+// Changing shape (wide ↔ tall) or the number of wholes rebuilds the table. Pieces in
+// a whole go with it; loose pieces keep their place on the table.
+function relayout(force){
+  const wide=isWide();
+  if(force||wide!==L.wide){
+    L=makeLayout(wide,state.wholes);buildTable();buildDispensers();
+    for(const p of pieces){
+      if(p.removing)continue;
+      if(p.slot!==null){placeInSlot(p,p.whole,p.slot);p.mesh.position.copy(p.target)}
+      else{
+        p.target.x=clamp(p.target.x,L.bounds.x0+.5,L.bounds.x1-.5);
+        p.target.y=clamp(p.target.y,L.bounds.y0+.5,L.bounds.y1-.5);
+      }
+    }
+    updateWholeControls();
+  }
+  frame();
+}
+window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight);relayout(false)});
+new ResizeObserver(()=>frame()).observe(document.querySelector('header'));
+
+// ── MOTION ──
+// Light pieces: quick follow while held; drops settle with a short ease.
+const clock=new THREE.Clock();
+// Signed difference b − a, wrapped to (−π, π], so a wedge always turns the short way.
+const turn=(a,b)=>((((b-a)%TAU)+TAU*1.5)%TAU)-Math.PI;
+renderer.setAnimationLoop(()=>{
+  const dt=Math.min(clock.getDelta(),.05);
+  const k=1-Math.exp(-dt*(drag?22:14));
+  for(const p of [...pieces]){
+    const m=p.mesh;
+    m.position.lerp(p.target,k);
+    m.rotation.z+=turn(m.rotation.z,p.targetRot)*k;
+    const s=m.scale.x+(p.targetScale-m.scale.x)*k;m.scale.setScalar(s);
+    // Printed labels stay upright for the reader whichever way a wedge points.
+    m.userData.label.rotation.z=-m.rotation.z;
+    if(p.removing&&s<.05)removePiece(p);
+  }
+  placeBead();
+  renderer.render(scene,camera);
+});
+
+buildTable();buildDispensers();updateWholeControls();frame();announce();
+document.fonts?.ready.then(()=>{for(const t of labelTex.values())t.repaint()});
+window.__fractionPieces={state,pieces,addPiece,placeInSlot,findSlot,setWholes,camera,scene,L:()=>L,bead,active:()=>active};
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
