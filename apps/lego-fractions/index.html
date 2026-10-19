@@ -7,662 +7,379 @@
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Math Things Brand System */
-    --bg: #F5F5F7;
-    --glass: rgba(245,245,247,0.85);
-    --surface: #FFFFFF;
     --text-main: #1D1D1F;
     --text-gray: #86868B;
     --text-light: #AEAEB2;
-    --border: rgba(0,0,0,0.05);
-    --shadow-soft: 0 2px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03);
-    
-    /* Master Palette */
-    --thousands:   #4CBB17; /* Green (Success/Reduced) */
-    --tens:        #4169E1; /* Blue (Frac 1) */
-    --hundredths:  #FF9F0A; /* Orange (Frac 2) */
-
-    /* Classic Brick Geometry */
-    --unit: 36px; 
-    --brick-h: 42px;
-    --stud-w: 22px;
-    --stud-h: 10px;
-    --outline: #1D1D1F;
-    --brick-base: #555555;
+    --surface: #FFFFFF;
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+    --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    --outline: #2A2C30;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     font-family: 'Lexend', sans-serif;
-    background: var(--bg);
     color: var(--text-main);
-    min-height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    -webkit-font-smoothing: antialiased;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-font-smoothing: antialiased;
+    touch-action: none;
+    /* the mat: warm, quiet ceramic */
+    background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
   }
 
-  /* ── HEADER ── */
-  header {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 32px; height: 60px;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .logo {
-    display: inline-flex; align-items: baseline; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; color: var(--text-main); cursor: default;
-  }
-  .logo-bead {
-    width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block;
-    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
-    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+  /* ── MAT ── */
+  #mat { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: clamp(28px, 7vh, 72px); padding: 64px 12px 16px; }
+  .lane { display: flex; align-items: flex-end; justify-content: center; gap: clamp(6px, 1.4vw, 14px); position: relative; outline: none; }
+  .lane:focus-visible .chain { filter: drop-shadow(0 0 4px #007AFF); }
+  .chainbox { display: flex; justify-content: flex-start; }
+  .chain { overflow: visible; touch-action: none; cursor: pointer; display: block; }
 
-  /* ── MAIN LAYOUT ── */
-  main {
-    flex: 1; max-width: 1000px; width: 100%; margin: 0 auto;
-    padding: 40px 24px; display: flex; flex-direction: column;
-  }
-  .card {
-    background: var(--surface); border-radius: 28px; padding: 40px;
-    box-shadow: var(--shadow-soft); border: 1px solid var(--border);
-    display: flex; flex-direction: column; align-items: center; gap: 32px;
-    overflow: hidden;
-  }
-
-  /* ── SEGMENTED CONTROL (TABS) ── */
-  .seg-control {
-    display: flex; background: rgba(0,0,0,0.04); padding: 4px; border-radius: 20px;
-    gap: 4px; margin-bottom: 8px;
-  }
-  .seg-btn {
-    width: 64px; height: 44px; border-radius: 16px; border: none; background: transparent;
-    color: var(--text-gray); cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .seg-btn svg { width: 24px; height: 24px; fill: currentColor; }
-  .seg-btn.active {
-    background: var(--surface); color: var(--text-main);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-
-  /* ── CONTROLS UI ── */
-  .controls-panel {
-    display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
-    background: var(--bg); padding: 16px 24px; border-radius: 24px; border: 1px solid var(--border);
-    width: 100%; max-width: 800px; min-height: 120px; position: relative;
-  }
-
-  /* Stacked Fractions */
-  .frac-stack {
-    display: flex; flex-direction: column; align-items: center; gap: 8px; width: 64px;
-  }
-  .frac-input {
-    width: 100%; font-family: 'Lexend', sans-serif; font-size: 2.2rem; font-weight: 800;
-    text-align: center; border: none; background: transparent; outline: none;
-    color: var(--text-main); transition: transform 0.1s, color 0.2s;
-    padding: 0; margin: 0; line-height: 1;
-  }
-  .frac-input:focus { transform: scale(1.15); }
-  .frac-input::-webkit-inner-spin-button, .frac-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  
-  .f1-color { color: var(--tens); }
-  .f2-color { color: var(--hundredths); }
-  
-  .frac-bar { width: 100%; height: 4px; background: var(--text-main); border-radius: 2px; }
-  .operator { font-size: 2.5rem; font-weight: 400; color: var(--text-gray); margin: 0 8px; }
-  
-  .val-text { font-size: 2.2rem; font-weight: 900; color: var(--text-main); line-height: 1; }
-
-  /* Icon Buttons */
+  /* partition dial: ‹ plate › */
+  .dial { display: flex; align-items: center; gap: 4px; padding-bottom: 2px; }
+  .dial svg.mini { width: 40px; height: 22px; }
   .icon-btn {
-    width: 44px; height: 44px; border-radius: 14px; cursor: pointer; border: 2px solid var(--border);
-    background: var(--surface); color: var(--text-main);
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--surface); border: 2px solid transparent;
+    box-shadow: var(--shadow-raised);
     display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
-    box-shadow: 0 2px 0 var(--border);
+    cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+    color: var(--text-gray); padding: 0; flex-shrink: 0;
   }
-  .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
-  .icon-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 var(--border); }
-  .icon-btn.active-state { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
-  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .reset-btn {
-    position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
-    background: transparent; border: none; box-shadow: none; color: var(--text-light);
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+  .icon-btn:focus-visible { border-color: #007AFF; }
+  .icon-btn.small { width: 34px; height: 34px; }
+  .ghost {
+    height: 34px; min-width: 34px; border-radius: 8px; border: 2px dashed var(--text-light); background: transparent;
+    color: var(--text-light); display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; transition: all 0.2s;
   }
-  .reset-btn:hover { color: var(--text-gray); }
-  .reset-btn:active { transform: translateY(-50%) scale(0.9); }
+  .ghost:hover { border-color: var(--text-gray); color: var(--text-gray); }
+  .ghost:focus-visible { border-color: #007AFF; }
+  .ghost[hidden] { display: none; }
+  .plates { display: flex; flex-direction: column; gap: 6px; padding-bottom: 2px; }
 
-  .group-separator { width: 2px; height: 40px; background: var(--border); margin: 0 16px; border-radius: 1px; }
+  /* record: the lane's fraction, stacked as written */
+  .record { position: absolute; top: -46px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; opacity: 0; transition: opacity 0.3s; pointer-events: none; font-weight: 800; }
+  body.rec .record { opacity: 1; }
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; font-size: 1.15rem; }
+  .frac .bar { width: 100%; min-width: 16px; height: 2.5px; background: currentColor; border-radius: 2px; margin: 3px 0; }
+  .whole { font-size: 1.5rem; }
+  .eq { color: var(--text-gray); font-weight: 600; }
 
-  /* ── TOGGLES ── */
-  .toggle-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0 12px; }
-  .toggle-icon { width: 28px; height: 28px; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
-  .toggle-icon svg { width: 100%; height: 100%; fill: currentColor; }
-  
-  .toggle-track {
-    width: 54px; height: 30px; background: rgba(0,0,0,0.08); border-radius: 15px;
-    position: relative; transition: background 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  /* pour: drops the top lane's bricks onto the bottom lane */
+  #pourBtn { position: absolute; left: 0; top: 50%; transform: translate(-50%, -50%); z-index: 3; }
+  #pourBtn:active { transform: translate(-50%, -50%) scale(0.94); }
+  #between { position: relative; height: 0; }
+
+  /* ── CABINET ── */
+  #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+  #cabinet {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 20px;
+    border-radius: 24px 24px 0 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+      linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-bottom: none;
+    box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
   }
-  .toggle-track.active { background: rgba(0, 122, 255, 0.2); }
-  .toggle-bead {
-    position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
-    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
-    box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .toggle-track.active .toggle-bead { transform: translateX(24px); }
-
-  .slider-group { display: flex; align-items: center; gap: 16px; border-left: 2px solid var(--border); padding-left: 20px; }
-
-  /* ── STAGE & CLASSIC BRICKS ── */
-  .stage {
-    width: 100%; min-height: 400px; padding: 40px;
-    background: white; border-radius: 20px;
-    border: 2px solid var(--border);
-    position: relative; overflow-x: auto;
-  }
-
-  .row { display: flex; height: 100px; position: relative; margin-bottom: 40px; align-items: flex-end; }
-
-  /* Baseplate */
-  .brick {
-    position: relative; height: var(--brick-h); border: 2px solid var(--outline);
-    background-color: var(--brick-base); box-sizing: border-box;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 4px;
-  }
-
-  .brick.hidden-base { background-color: transparent; border-color: transparent; pointer-events: none; }
-  .brick.hidden-base > .stud-container .stud-inner { visibility: hidden; }
-  .brick.scaffold-base { background-color: transparent; border: 2px dashed #AEAEB2; visibility: visible; }
-  .brick.scaffold-base > .stud-container .stud-inner { border-style: dashed; border-color: #AEAEB2; background-color: transparent; visibility: visible; }
-
-  /* Numerator Block */
-  .num-brick { 
-    height: var(--brick-h); position: absolute; bottom: calc(100% - 2px); left: -2px; z-index: 20;
-    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid var(--outline); border-right: none; box-sizing: border-box;
-    border-radius: 4px 0 0 4px;
-  }
-  .num-brick.last-in-cluster { border-right: 2px solid var(--outline); border-radius: 4px; }
-
-  /* Studs */
-  .stud-container { position: absolute; top: calc(var(--stud-h) * -1); left: 0; width: 100%; height: var(--stud-h); display: flex; z-index: 5; }
-  .stud { height: var(--stud-h); display: flex; justify-content: center; }
-  .stud-inner { 
-    width: var(--stud-w); height: 100%; 
-    border: 2px solid var(--outline); border-bottom: none; 
-    border-radius: 3px 3px 0 0; box-sizing: border-box; 
-  }
-
-  /* Colors */
-  .color-blue { background-color: var(--tens); }
-  .color-blue .stud-inner { background-color: var(--tens); }
-  .color-orange { background-color: var(--hundredths); }
-  .color-orange .stud-inner { background-color: var(--hundredths); }
-  .color-green { background-color: var(--thousands); }
-  .color-green .stud-inner { background-color: var(--thousands); }
-
-  /* Fused / Separated Logic */
-  .row.fused-add .brick, .row.reducing-mode .brick { border-right: none; border-left: none; border-radius: 0; }
-  .row.fused-add .brick:first-child, .row.reducing-mode .brick:first-child { border-left: 2px solid var(--outline); border-radius: 4px 0 0 4px; }
-  .row.fused-add .brick:last-of-type, .row.reducing-mode .brick:last-of-type { border-right: 2px solid var(--outline); border-radius: 0 4px 4px 0; }
-  .row.separated .brick { margin-right: 20px; border-radius: 4px; border-left: 2px solid var(--outline); border-right: 2px solid var(--outline); }
-
-  /* Alignment Laser */
-  #laser { 
-    position: absolute; top: 0; bottom: 0; width: 4px; background: transparent; 
-    left: 0; z-index: 30; transition: left 0.3s ease; 
-  }
-  #laser.aligned { background: var(--thousands); box-shadow: 0 0 12px var(--thousands); }
-
-  /* Ghost Bricks (The on-stage controls) */
-  .ghost-brick {
-    height: var(--brick-h); box-sizing: border-box;
-    border: 2.5px dashed var(--text-light); border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--text-light); transition: all 0.2s;
-    margin-left: 8px; z-index: 10;
-  }
-  .ghost-brick:hover { border-color: var(--text-main); color: var(--text-main); background: rgba(0,0,0,0.02); transform: scale(1.02); }
-  .ghost-brick:active { transform: scale(0.95); }
-  .ghost-brick svg { width: 28px; height: 28px; fill: currentColor; }
-
-  /* Stage Action Button (The Merge Drop) */
-  .stage-action {
-    position: absolute; top: 50%; transform: translate(-50%, -50%);
-    width: 56px; height: 56px; border-radius: 50%;
-    background: var(--text-main); color: white; border: none;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 50;
-  }
-  .stage-action:hover { transform: translate(-50%, -50%) scale(1.1); }
-  .stage-action:active { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .stage-action svg { width: 28px; height: 28px; fill: currentColor; }
 
   /* ── FOOTER ── */
-  footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); flex-shrink: 0; }
-  .footer-bead { display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%; margin-bottom: 0.08em; background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0); box-shadow: 0 1px 3px rgba(0,0,0,0.2); vertical-align: baseline; margin-left: 0.04em; }
-
-  @media (max-width: 768px) {
-    .controls-panel { padding: 16px; padding-right: 60px; }
-    .frac-input { font-size: 1.8rem; }
-    .stage { padding: 20px; min-height: 350px; }
+  #footer {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+    padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    color: var(--text-light); letter-spacing: 0.5px;
+    background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
   }
+  .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
 <body>
 
-  <header>
-    <div class="logo">Math Things<span class="logo-bead"></span></div>
-  </header>
+<main id="mat" aria-label="Snap brick fraction mat"></main>
 
-  <main>
-    <div class="card">
-      
-      <div class="seg-control">
-        <button id="tab-add" class="seg-btn active" onclick="switchTab('add')">
-          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        </button>
-        <button id="tab-mixed" class="seg-btn" onclick="switchTab('mixed')">
-          <svg viewBox="0 0 24 24">
-            <rect x="4" y="5" width="4" height="4" rx="0.5"/>
-            <rect x="10" y="5" width="4" height="4" rx="0.5"/>
-            <rect x="16" y="5" width="4" height="4" rx="0.5"/>
-            <rect x="2" y="11" width="20" height="2" rx="1"/>
-            <rect x="7" y="15" width="4" height="4" rx="0.5"/>
-            <rect x="13" y="15" width="4" height="4" rx="0.5"/>
-          </svg>
-        </button>
-        <button id="tab-reduce" class="seg-btn" onclick="switchTab('reduce')">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><rect x="4" y="10.5" width="16" height="3" rx="1.5"/></svg>
-        </button>
-      </div>
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Hardware">
+    <button class="icon-btn" id="recordBtn" aria-label="Show the fractions" aria-pressed="false">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+    </button>
+    <button class="icon-btn" id="clearBtn" aria-label="Take the bricks off and start over">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+    </button>
+  </div>
+</div>
 
-      <div id="add-controls" class="controls-panel">
-        <button class="icon-btn reset-btn" onclick="reset('add')" title="Reset"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+<div id="live" class="sr-only" aria-live="polite"></div>
 
-        <div class="frac-stack">
-          <input type="number" id="n1" class="frac-input f1-color" value="1" oninput="reset('add')">
-          <div class="frac-bar"></div>
-          <input type="number" id="d1" class="frac-input" value="4" oninput="reset('add')">
-        </div>
-        
-        <div class="operator">+</div>
-        
-        <div class="frac-stack">
-          <input type="number" id="n2" class="frac-input f2-color" value="1" oninput="reset('add')">
-          <div class="frac-bar"></div>
-          <input type="number" id="d2" class="frac-input" value="3" oninput="reset('add')">
-        </div>
+<script type="module">
+import { FRACTION_DENOMINATORS, fractionColor } from '../../math-things-fractions.js';
 
-        <div id="res-eq" style="display:none; align-items:center; gap:16px;"></div>
-      </div>
+const DENS = FRACTION_DENOMINATORS.filter(d => d !== 100);   // 2 … 16
+const MAX_PLATES = 3;
+const NS = 'http://www.w3.org/2000/svg';
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+const r2 = v => Math.round(v * 100) / 100;
+const anim = (node, frames, dur, easing = 'ease-out') => reduceMotion || !node ? null : node.animate(frames, { duration: dur, easing });
+const shake = node => anim(node, [0, -6, 6, -4, 4, 0].map(v => ({ transform: `translateX(${v}px)` })), 280, 'linear');
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16), ch = [n >> 16, (n >> 8) & 255, n & 255];
+  return '#' + ch.map(c => Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f).toString(16).padStart(2, '0')).join('');
+}
 
-      <div id="mixed-controls" class="controls-panel" style="display:none">
-        <button class="icon-btn reset-btn" onclick="reset('mixed')" title="Reset"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+const $ = id => document.getElementById(id);
+const mat = $('mat'), live = $('live'), recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
 
-        <div class="frac-stack">
-          <input type="number" id="mn-n" class="frac-input f1-color" value="9" oninput="reset('mixed')">
-          <div class="frac-bar"></div>
-          <input type="number" id="mn-d" class="frac-input" value="4" oninput="reset('mixed')">
-        </div>
-        
-        <div class="group-separator"></div>
+// Two lanes of baseplates. Every plate is one whole, the same length in both lanes; its studs are its
+// parts. Bricks are one part each and fill the studs from the left, across plates.
+const START = [{ d: 4, plates: 1, m: 0 }, { d: 3, plates: 1, m: 0 }];
+const lanes = START.map(s => ({ ...s }));
+let WHOLE = 300;   // px length of one whole
 
-        <div class="toggle-wrap" onclick="toggleScaffold()">
-          <div class="toggle-icon">
-            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="8" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/></svg>
-          </div>
-          <div class="toggle-track" id="scaffold-track"><div class="toggle-bead"></div></div>
-          <div class="toggle-icon">
-            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="8"/></svg>
-          </div>
-        </div>
-
-        <div class="group-separator"></div>
-
-        <div class="toggle-wrap" onclick="toggleBreak()">
-          <div class="toggle-icon">
-            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="8"/></svg>
-          </div>
-          <div class="toggle-track" id="break-track"><div class="toggle-bead"></div></div>
-          <div class="toggle-icon">
-            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="6" height="8"/><rect x="14" y="8" width="6" height="8"/></svg>
-          </div>
-        </div>
-        
-        <div id="res-mixed" style="display:none; align-items:center; gap:16px;"></div>
-      </div>
-
-      <div id="reduce-controls" class="controls-panel" style="display:none">
-        <button class="icon-btn reset-btn" onclick="reset('reduce')" title="Reset"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
-
-        <div class="frac-stack">
-          <input type="number" id="red-n" class="frac-input f1-color" value="4" oninput="render()">
-          <div class="frac-bar"></div>
-          <input type="number" id="red-d" class="frac-input" value="8" oninput="render()">
-        </div>
-        
-        <div class="group-separator"></div>
-
-        <div class="slider-group">
-            <div class="toggle-icon">
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="6" width="18" height="12" fill="none" stroke="currentColor" stroke-width="2"/>
-                <line x1="9" y1="6" x2="9" y2="18" stroke="currentColor" stroke-width="2"/>
-                <line x1="15" y1="6" x2="15" y2="18" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </div>
-            <input type="range" id="divisor" min="1" max="12" value="1" oninput="render()" style="accent-color: var(--accent); width: 120px;">
-            <span id="divisor-val" style="font-family:'Lexend'; font-weight: 800; font-size:2rem; color:var(--text-main); width:40px; text-align:center;">1</span>
-        </div>
-
-        <div id="res-red" style="display:none; align-items:center; gap:16px;"></div>
-      </div>
-
-      <div class="stage" id="stage">
-          <div id="laser"></div>
-          <div id="row1" class="row"></div>
-          <div id="row2" class="row"></div>
-      </div>
-
+// ═══════ BUILD ═══════
+const between = document.createElement('div');
+between.id = 'between';
+lanes.forEach((ln, i) => {
+  ln.el = document.createElement('div');
+  ln.el.className = 'lane';
+  ln.el.tabIndex = 0;
+  ln.el.setAttribute('role', 'group');
+  ln.el.innerHTML = `
+    <div class="record" aria-hidden="true"></div>
+    <div class="dial">
+      <button class="icon-btn small" data-act="fewer" aria-label="Fewer, larger parts">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></button>
+      <svg class="mini" viewBox="0 0 40 22" aria-hidden="true"></svg>
+      <button class="icon-btn small" data-act="more" aria-label="More, smaller parts">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>
     </div>
-  </main>
+    <div class="chainbox"><svg class="chain"></svg></div>
+    <div class="plates">
+      <button class="ghost" data-act="add" aria-label="Add a whole plate"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+      <button class="ghost" data-act="remove" aria-label="Take off the last plate"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10"/></svg></button>
+    </div>`;
+  ln.chain = ln.el.querySelector('.chain');
+  ln.mini = ln.el.querySelector('.mini');
+  ln.rec = ln.el.querySelector('.record');
+  ln.el.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    ({ fewer: () => repartition(ln, -1), more: () => repartition(ln, 1), add: () => addPlate(ln), remove: () => removePlate(ln) })[b.dataset.act]();
+  });
+  mat.appendChild(ln.el);
+  if (i === 0) mat.appendChild(between);
+});
+const pourBtn = document.createElement('button');
+pourBtn.className = 'icon-btn';
+pourBtn.id = 'pourBtn';
+pourBtn.setAttribute('aria-label', 'Pour the top bricks onto the bottom plates');
+pourBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 16l-4.5-4.5h3.2V4h2.6v7.5h3.2z"/><rect x="5" y="18" width="14" height="2.2" rx="1.1"/></svg>';
+between.appendChild(pourBtn);
 
-  <footer>
-    Math Things<span class="footer-bead"></span>  |  Math, in your hands<span class="footer-bead"></span>
-  </footer>
+// ═══════ LAYOUT ═══════
+function layout() {
+  const W = innerWidth, side = 40 * 2 + 8 + 40 + 34 + 4 * 14 + 24;
+  const most = Math.max(...lanes.map(l => l.plates));
+  WHOLE = Math.max(90, Math.min(360, (W - side) / most - 6));
+  lanes.forEach(draw);
+  // both lanes share one plate column, so their wholes start at the same edge and line up
+  const widest = Math.max(...lanes.map(l => l.geom.w));
+  lanes.forEach(l => { l.el.querySelector('.chainbox').style.width = r2(widest) + 'px'; });
+  // the pour button sits under the top lane's dial, clear of the records
+  const dial = lanes[0].el.querySelector('.dial').getBoundingClientRect(), box = between.getBoundingClientRect();
+  pourBtn.style.left = r2(dial.left + dial.width / 2 - box.left) + 'px';
+}
 
-<script>
-    let tab = 'add';
-    let c1 = 1, c2 = 1, fused = false, poured = false;
-    let scaffold = false, separated = false;
-    const UNIT = 36; 
-    const DROP_DIST = 140; // 100px row height + 40px margin
-
-    function switchTab(t) {
-        tab = t;
-        document.querySelectorAll('.seg-btn').forEach(el => el.classList.toggle('active', el.id === 'tab-'+t));
-        document.getElementById('add-controls').style.display = t === 'add' ? 'flex' : 'none';
-        document.getElementById('mixed-controls').style.display = t === 'mixed' ? 'flex' : 'none';
-        document.getElementById('reduce-controls').style.display = t === 'reduce' ? 'flex' : 'none';
-        render();
+// ═══════ DRAWING ═══════
+// A plate: grey baseplate with a stud per part. A brick: one part, in its denominator's enamel, with a stud.
+function draw(ln) {
+  const d = ln.d, part = WHOLE / d, gap = 6, ph = Math.max(20, Math.min(34, WHOLE * 0.1)), bh = ph * 1.05, sh = Math.max(5, ph * 0.26);
+  const w = ln.plates * WHOLE + (ln.plates - 1) * gap, h = ph + bh + sh * 2 + 4;
+  ln.geom = { part, gap, ph, bh, sh, w, h };
+  ln.chain.setAttribute('width', r2(w));
+  ln.chain.setAttribute('height', r2(h));
+  ln.chain.setAttribute('viewBox', `0 0 ${r2(w)} ${r2(h)}`);
+  const color = fractionColor(d), dark = shade(color, -0.45), light = shade(color, 0.35);
+  const base = h - ph, top = base - bh;
+  const studW = Math.max(3, Math.min(part * 0.56, 22));
+  let s = '';
+  for (let p = 0; p < ln.plates; p++) {
+    const x0 = p * (WHOLE + gap);
+    // baseplate with engraved seams between parts
+    s += `<rect x="${r2(x0)}" y="${r2(base)}" width="${r2(WHOLE)}" height="${r2(ph)}" rx="3" fill="#8F9399" stroke="var(--outline)" stroke-width="1.6"/>`;
+    s += `<rect x="${r2(x0 + 1.5)}" y="${r2(base + 1.5)}" width="${r2(WHOLE - 3)}" height="${r2(ph * 0.3)}" rx="2" fill="rgba(255,255,255,0.22)"/>`;
+    for (let k = 1; k < d; k++) s += `<line x1="${r2(x0 + k * part)}" y1="${r2(base + 3)}" x2="${r2(x0 + k * part)}" y2="${r2(base + ph - 3)}" stroke="rgba(30,32,36,0.35)" stroke-width="1"/>`;
+    for (let k = 0; k < d; k++) {
+      const n = p * d + k, cx = x0 + (k + 0.5) * part;
+      if (n < ln.m) {
+        // a brick on this stud
+        const bx = x0 + k * part, isFirst = n === 0 || k === 0, isLast = n === ln.m - 1 || k === d - 1;
+        s += `<rect x="${r2(bx)}" y="${r2(top)}" width="${r2(part)}" height="${r2(bh + 1)}" fill="${color}" stroke="var(--outline)" stroke-width="1.6" rx="${isFirst || isLast ? 3 : 1}"/>`;
+        s += `<rect x="${r2(bx + 1.5)}" y="${r2(top + 1.5)}" width="${r2(Math.max(1, part - 3))}" height="${r2(bh * 0.28)}" rx="1.5" fill="${light}" opacity="0.55"/>`;
+        s += `<rect x="${r2(cx - studW / 2)}" y="${r2(top - sh)}" width="${r2(studW)}" height="${r2(sh + 1)}" rx="1.5" fill="${color}" stroke="var(--outline)" stroke-width="1.4"/>`;
+      } else {
+        s += `<rect x="${r2(cx - studW / 2)}" y="${r2(base - sh)}" width="${r2(studW)}" height="${r2(sh + 1)}" rx="1.5" fill="#9DA1A7" stroke="var(--outline)" stroke-width="1.4"/>`;
+      }
     }
+  }
+  // a fine seam between a brick and the next marks each part, darker in the brick's own colour
+  ln.chain.innerHTML = s.replace(/var\(--outline\)/g, '#2A2C30') + `<rect class="hit" x="0" y="0" width="${r2(w)}" height="${r2(h)}" fill="transparent"/>`;
+  void dark;
+  // the dial's little plate shows the partition
+  let mini = `<rect x="1" y="10" width="38" height="10" rx="2" fill="#8F9399" stroke="#2A2C30" stroke-width="1.2"/>`;
+  for (let k = 0; k < d; k++) mini += `<rect x="${r2(1 + (k + 0.5) * 38 / d - Math.min(3, 38 / d * 0.3))}" y="6" width="${r2(Math.min(6, 38 / d * 0.6))}" height="4.5" rx="1" fill="${color}" stroke="#2A2C30" stroke-width="0.8"/>`;
+  ln.mini.innerHTML = mini;
+  ln.el.querySelector('[data-act="add"]').hidden = ln.plates >= MAX_PLATES;
+  ln.el.querySelector('[data-act="remove"]').hidden = ln.plates <= 1;
+  record(ln);
+  ln.el.setAttribute('aria-label', `${ln === lanes[0] ? 'Top' : 'Bottom'} plates: ${ln.plates} whole${ln.plates > 1 ? 's' : ''} cut into ${d} parts each, ${ln.m} brick${ln.m === 1 ? '' : 's'}` + (document.body.classList.contains('rec') ? `, ${spoken(ln)}` : '') + '. Left and right arrows add or take off bricks; up and down change the parts.');
+}
 
-    function reset(type) {
-        if(type === 'add') { 
-            c1=1; c2=1; fused=false; poured=false; 
-            document.getElementById('n1').value = 1;
-            document.getElementById('d1').value = 4;
-            document.getElementById('n2').value = 1;
-            document.getElementById('d2').value = 3;
-        }
-        if(type === 'mixed') { 
-            scaffold=false; separated=false; 
-            document.getElementById('mn-n').value = 9;
-            document.getElementById('mn-d').value = 4;
-        }
-        if(type === 'reduce') { 
-            document.getElementById('red-n').value = 4;
-            document.getElementById('red-d').value = 8;
-            document.getElementById('divisor').value = 1;
-        }
-        render();
+// the record: m/d, and as a mixed number past one whole
+function record(ln) {
+  const { m, d } = ln, color = shade(fractionColor(d), -0.35);
+  const fr = (n, dd, c = 'inherit') => `<span class="frac" style="color:${c}"><span>${n}</span><span class="bar"></span><span>${dd}</span></span>`;
+  let h = fr(m, d, color);
+  if (m >= d && m > 0) {
+    const w = Math.floor(m / d), r = m % d;
+    h += `<span class="eq">=</span><span class="whole" style="color:${color}">${w}</span>` + (r ? fr(r, d, color) : '');
+  }
+  ln.rec.innerHTML = h;
+}
+const spoken = ln => {
+  const w = Math.floor(ln.m / ln.d), r = ln.m % ln.d;
+  return `${ln.m} over ${ln.d}` + (ln.m >= ln.d ? `, which is ${w}${r ? ` and ${r} over ${ln.d}` : ''}` : '');
+};
+function announce(ln) { live.textContent = `${ln === lanes[0] ? 'Top' : 'Bottom'}: ${ln.m} brick${ln.m === 1 ? '' : 's'} on wholes cut into ${ln.d} parts` + (document.body.classList.contains('rec') ? `, ${spoken(ln)}.` : '.'); }
+
+// ═══════ ACTIONS ═══════
+// Re-cutting the plates: with bricks on, only cuts the bricks still fit exactly are allowed
+// (fourths become eighths or twelfths, never thirds). Bricks split or join with the studs.
+function repartition(ln, dir) {
+  const i = DENS.indexOf(ln.d);
+  for (let j = i + dir; j >= 0 && j < DENS.length; j += dir) {
+    const d2 = DENS[j];
+    if ((ln.m * d2) % ln.d === 0) {
+      ln.m = ln.m * d2 / ln.d; ln.d = d2;
+      draw(ln);
+      anim(ln.chain, [{ transform: 'scaleY(0.94)' }, { transform: 'none' }], 220, 'cubic-bezier(0.34, 1.56, 0.64, 1)');
+      buzz(6); announce(ln);
+      return;
     }
-    
-    function toggleScaffold() { 
-        scaffold = !scaffold; 
-        document.getElementById('scaffold-track').classList.toggle('active', scaffold);
-        render(); 
-    }
-    
-    function toggleBreak() { 
-        separated = !separated; 
-        document.getElementById('break-track').classList.toggle('active', separated);
-        render(); 
-    }
+  }
+  shake(ln.chain); buzz([4, 30, 4]);
+}
+function addPlate(ln) {
+  if (ln.plates >= MAX_PLATES) return;
+  ln.plates++; layout(); buzz(6); announce(ln);
+  ln.el.querySelector('[data-act="add"]').hidden || ln.el.querySelector('[data-act="add"]').focus();
+}
+function removePlate(ln) {
+  if (ln.plates <= 1) return;
+  if (ln.m > (ln.plates - 1) * ln.d) { shake(ln.chain); buzz([4, 30, 4]); return; }   // its bricks hold it on
+  ln.plates--; layout(); buzz(6); announce(ln);
+}
+function setBricks(ln, m) {
+  m = Math.max(0, Math.min(ln.plates * ln.d, m));
+  if (m === ln.m) return;
+  ln.m = m; draw(ln); buzz(3);
+}
+// Pouring: the top bricks drop onto the bottom plates after its bricks. They only snap onto studs their
+// own size; otherwise they bounce back.
+function pour() {
+  const [a, b] = lanes;
+  if (!a.m) { shake(pourBtn); return; }
+  if (a.d !== b.d) {
+    anim(a.chain, [{ transform: 'translateY(0)' }, { transform: 'translateY(18px)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }], 420, 'ease-in-out');
+    buzz([4, 30, 4]);
+    live.textContent = 'The bricks do not fit those studs.';
+    return;
+  }
+  const need = Math.ceil((a.m + b.m) / b.d);
+  if (need > MAX_PLATES) { shake(b.chain); buzz([4, 30, 4]); return; }
+  const from = a.chain.getBoundingClientRect(), to = b.chain.getBoundingClientRect();
+  const ghost = a.chain.cloneNode(true);
+  ghost.style.cssText = `position:fixed;left:${from.left}px;top:${from.top}px;z-index:20;pointer-events:none;`;
+  ghost.querySelectorAll('rect[fill="#8F9399"], rect[fill="#9DA1A7"], line, rect[fill^="rgba"]').forEach(n => n.remove());
+  document.body.appendChild(ghost);
+  const dx = to.left - from.left + (b.m % b.d) * (WHOLE / b.d) + Math.floor(b.m / b.d) * (WHOLE + 6), dy = to.top - from.top;
+  const startM = a.m;
+  a.m = 0; draw(a);
+  const done = () => { ghost.remove(); b.plates = Math.max(b.plates, need); b.m += startM; layout(); buzz(12); announce(b); };
+  const an = anim(ghost, [{ transform: 'translate(0,0)' }, { transform: `translate(${dx}px, ${dy}px)` }], 520, 'cubic-bezier(0.5, 0, 0.6, 1)');
+  if (an) an.onfinish = done; else done();
+}
 
-    function createStuds(count, colorClass = '', widthFactor = 1) {
-        const container = document.createElement('div');
-        container.className = 'stud-container';
-        for(let i=0; i<count; i++) {
-            const s = document.createElement('div');
-            s.className = 'stud';
-            s.style.width = (UNIT * widthFactor) + 'px';
-            const inner = document.createElement('div');
-            inner.className = `stud-inner ${colorClass}`;
-            s.appendChild(inner);
-            container.appendChild(s);
-        }
-        return container;
-    }
+// ═══════ POINTER ═══════
+// Tap a stud to snap bricks on up to it; drag along to lay or lift; tap the last brick to lift it.
+const strokes = new Map();
+const studAt = (ln, clientX) => {
+  const r = ln.chain.getBoundingClientRect(), x = clientX - r.left, { part, gap } = ln.geom;
+  const p = Math.max(0, Math.min(ln.plates - 1, Math.floor(x / (WHOLE + gap))));
+  const k = Math.max(0, Math.min(ln.d - 1, Math.floor((x - p * (WHOLE + gap)) / part)));
+  return p * ln.d + k;
+};
+lanes.forEach(ln => {
+  ln.chain.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { ln.chain.setPointerCapture(e.pointerId); } catch (err) {}
+    const n = studAt(ln, e.clientX);
+    strokes.set(e.pointerId, { ln, n0: n, m0: ln.m, moved: false });
+    if (n >= ln.m) setBricks(ln, n + 1);
+  });
+  ln.chain.addEventListener('pointermove', e => {
+    const s = strokes.get(e.pointerId);
+    if (!s) return;
+    const n = studAt(ln, e.clientX);
+    if (n !== s.n0) s.moved = true;
+    if (s.moved) setBricks(ln, n + 1);
+  });
+  const end = e => {
+    const s = strokes.get(e.pointerId);
+    if (!s) return;
+    strokes.delete(e.pointerId);
+    if (!s.moved && s.n0 < s.m0) setBricks(ln, s.n0 === s.m0 - 1 ? s.m0 - 1 : s.n0 + 1);   // tap inside: lift back to there
+    announce(ln);
+  };
+  ln.chain.addEventListener('pointerup', end);
+  ln.chain.addEventListener('pointercancel', end);
+  // keyboard: arrows on a focused lane
+  ln.el.addEventListener('keydown', e => {
+    if (e.target !== ln.el) return;
+    const act = { ArrowRight: () => setBricks(ln, ln.m + 1), ArrowLeft: () => setBricks(ln, ln.m - 1), ArrowUp: () => repartition(ln, 1), ArrowDown: () => repartition(ln, -1) }[e.key];
+    if (!act) return;
+    e.preventDefault(); act(); announce(ln);
+  });
+});
+pourBtn.addEventListener('click', pour);
 
-    function render() {
-        const r1 = document.getElementById('row1');
-        const r2 = document.getElementById('row2');
-        const laser = document.getElementById('laser');
-        r1.innerHTML = ''; r2.innerHTML = ''; laser.style.display = 'none';
-        
-        const oldMergeBtn = document.getElementById('merge-action');
-        if(oldMergeBtn) oldMergeBtn.remove();
-
-        if (tab === 'add') renderAddition(r1, r2, laser);
-        else if (tab === 'mixed') renderMixed(r1);
-        else renderReducing(r1);
-    }
-
-    function renderAddition(r1, r2, laser) {
-        const n1 = Math.max(0, parseInt(document.getElementById('n1').value) || 0); 
-        const d1 = Math.max(1, parseInt(document.getElementById('d1').value) || 1);
-        const n2 = Math.max(0, parseInt(document.getElementById('n2').value) || 0); 
-        const d2 = Math.max(1, parseInt(document.getElementById('d2').value) || 1);
-        const match = (c1*d1 === c2*d2);
-
-        r1.className = `row ${fused ? 'fused-add' : ''}`;
-        r2.className = `row ${fused ? 'fused-add' : ''}`;
-
-        const draw = (el, count, den, numPer, isTop, colorClass) => {
-            for(let i=0; i<count; i++) {
-                const block = document.createElement('div');
-                block.className = 'brick';
-                block.style.width = (den * UNIT) + 'px';
-                block.appendChild(createStuds(den));
-                
-                for(let j=0; j<numPer; j++) {
-                    const num = document.createElement('div');
-                    num.className = `num-brick ${colorClass}`;
-                    num.appendChild(createStuds(1));
-                    num.style.width = UNIT + 'px';
-                    
-                    let x = j * UNIT, y = 0;
-                    const idx = (i * numPer) + j;
-                    
-                    if (fused) {
-                        x = (idx * UNIT) - (i * den * UNIT);
-                        if (poured && isTop) { y = DROP_DIST; x += (c2*n2*UNIT); } 
-                    }
-                    
-                    if (idx === (count*numPer)-1 || (poured && isTop && idx === (c1*n1)-1)) num.classList.add('last-in-cluster');
-                    if (poured && !isTop && idx === (c2*n2)-1) num.classList.remove('last-in-cluster');
-                    
-                    num.style.transform = `translate(${x}px, ${y}px)`;
-                    block.appendChild(num);
-                }
-                el.appendChild(block);
-            }
-            
-            if (!match && !fused) {
-                const ghost = document.createElement('div');
-                ghost.className = 'ghost-brick';
-                ghost.style.width = (den * UNIT) + 'px';
-                ghost.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
-                ghost.onclick = () => { isTop ? c1++ : c2++; render(); };
-                el.appendChild(ghost);
-            }
-        }
-        
-        draw(r1, c1, d1, n1, true, 'color-blue');
-        draw(r2, c2, d2, n2, false, 'color-orange');
-        
-        laser.style.display = 'block';
-        const alignedX = Math.max(c1*d1, c2*d2)*UNIT;
-        laser.style.left = (alignedX + 40) + 'px'; 
-        match ? laser.classList.add('aligned') : laser.classList.remove('aligned');
-        
-        if (match && !poured) {
-            const mergeBtn = document.createElement('button');
-            mergeBtn.id = 'merge-action';
-            mergeBtn.className = 'stage-action';
-            mergeBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4z"/><rect x="6" y="18" width="12" height="2" rx="1"/></svg>';
-            mergeBtn.style.left = (alignedX + 40) + 'px';
-            mergeBtn.onclick = () => { fused = true; poured = true; render(); };
-            document.getElementById('stage').appendChild(mergeBtn);
-        }
-
-        const resEq = document.getElementById('res-eq');
-        if (poured) {
-            const total = (c1*n1) + (c2*n2), den = c1*d1;
-            resEq.innerHTML = `
-                <div class="operator">=</div>
-                <div class="frac-stack">
-                    <div class="val-text" style="color:var(--thousands)">${total}</div>
-                    <div class="frac-bar"></div>
-                    <div class="val-text">${den}</div>
-                </div>
-            `;
-            resEq.style.display = 'flex';
-        } else {
-            resEq.style.display = 'none';
-        }
-    }
-
-    function renderMixed(r1) {
-        const n = Math.max(0, parseInt(document.getElementById('mn-n').value) || 0);
-        const d = Math.max(1, parseInt(document.getElementById('mn-d').value) || 1);
-        const total = Math.ceil(n / d);
-        r1.className = `row ${separated ? 'separated' : ''}`;
-        
-        for(let i=0; i<total; i++) {
-            const block = document.createElement('div');
-            block.className = 'brick';
-            if (i > 0 && !separated) block.classList.add(scaffold ? 'scaffold-base' : 'hidden-base');
-            block.style.width = (d * UNIT) + 'px';
-            
-            const studContainer = createStuds(d);
-            if (i > 0 && !separated && !scaffold) studContainer.style.visibility = 'hidden';
-            block.appendChild(studContainer);
-
-            for(let j=0; j<d; j++) {
-                const idx = (i * d) + j;
-                if (idx < n) {
-                    const num = document.createElement('div');
-                    num.className = 'num-brick color-blue';
-                    num.style.width = UNIT + 'px';
-                    num.appendChild(createStuds(1));
-                    if (idx === n-1 || j === d-1) num.classList.add('last-in-cluster');
-                    num.style.transform = `translateX(${j * UNIT}px)`;
-                    block.appendChild(num);
-                }
-            }
-            r1.appendChild(block);
-        }
-        
-        const resMixed = document.getElementById('res-mixed');
-        if (separated) {
-            const w = Math.floor(n/d);
-            const r = n%d;
-            resMixed.innerHTML = `
-                <div class="group-separator"></div>
-                <div class="operator">=</div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    ${w > 0 ? `<div class="val-text" style="color:var(--tens)">${w}</div>` : ''}
-                    ${r > 0 ? `
-                      <div class="frac-stack">
-                        <div class="val-text" style="color:var(--tens)">${r}</div>
-                        <div class="frac-bar"></div>
-                        <div class="val-text">${d}</div>
-                      </div>
-                    ` : ''}
-                </div>
-            `;
-            resMixed.style.display = 'flex';
-        } else {
-            resMixed.style.display = 'none';
-        }
-    }
-
-    function renderReducing(r1) {
-        const n = Math.max(0, parseInt(document.getElementById('red-n').value) || 0);
-        const d = Math.max(1, parseInt(document.getElementById('red-d').value) || 1);
-        const g = parseInt(document.getElementById('divisor').value);
-        document.getElementById('divisor-val').innerText = g;
-        
-        r1.className = 'row reducing-mode';
-
-        const block = document.createElement('div');
-        block.className = 'brick';
-        block.style.width = (d * UNIT) + 'px';
-        
-        const numSegments = Math.floor(d / g);
-        const remainder = d % g;
-        block.appendChild(createStuds(numSegments, '', g));
-        if(remainder > 0) block.appendChild(createStuds(1, '', remainder));
-        r1.appendChild(block);
-
-        const success = (n % g === 0 && d % g === 0 && g > 1);
-        const colorClass = success ? 'color-green' : 'color-blue';
-
-        const fullBigBlocks = Math.floor(n / g);
-        const leftOverUnits = n % g;
-
-        for(let i=0; i < fullBigBlocks; i++) {
-            const num = document.createElement('div');
-            num.className = `num-brick ${colorClass}`;
-            num.style.width = (g * UNIT) + 'px';
-            num.appendChild(createStuds(1, '', g));
-            num.style.transform = `translateX(${i * g * UNIT}px)`;
-            if (i === fullBigBlocks - 1 && leftOverUnits === 0) num.classList.add('last-in-cluster');
-            block.appendChild(num);
-        }
-        if(leftOverUnits > 0) {
-            const num = document.createElement('div');
-            num.className = `num-brick ${colorClass}`;
-            num.style.width = (leftOverUnits * UNIT) + 'px';
-            num.appendChild(createStuds(1, '', leftOverUnits));
-            num.style.transform = `translateX(${fullBigBlocks * g * UNIT}px)`;
-            num.classList.add('last-in-cluster');
-            block.appendChild(num);
-        }
-
-        const resRed = document.getElementById('res-red');
-        if (success) {
-            resRed.innerHTML = `
-                <div class="group-separator"></div>
-                <div class="operator">=</div>
-                <div class="frac-stack">
-                    <div class="val-text" style="color:var(--thousands)">${n/g}</div>
-                    <div class="frac-bar"></div>
-                    <div class="val-text">${d/g}</div>
-                </div>
-            `;
-            resRed.style.display = 'flex';
-        } else {
-            resRed.style.display = 'none';
-        }
-    }
-
-    // Boot
-    render();
+recordBtn.addEventListener('click', () => {
+  const on = !document.body.classList.contains('rec');
+  document.body.classList.toggle('rec', on);
+  recordBtn.classList.toggle('active', on);
+  recordBtn.setAttribute('aria-pressed', String(on));
+  lanes.forEach(draw);
+  if (on) live.textContent = lanes.map((l, i) => `${i ? 'Bottom' : 'Top'}: ${spoken(l)}`).join('. ') + '.';
+});
+clearBtn.addEventListener('click', () => {
+  lanes.forEach((l, i) => Object.assign(l, START[i]));
+  layout(); buzz(8); live.textContent = 'Fresh plates.';
+});
+let rf = 0;
+addEventListener('resize', () => { cancelAnimationFrame(rf); rf = requestAnimationFrame(layout); });
+addEventListener('contextmenu', e => e.preventDefault());
+layout();
 </script>
-  <script src="../../math-things-home.js"></script>
+<script src="../../math-things-home.js"></script>
 </body>
 </html>
