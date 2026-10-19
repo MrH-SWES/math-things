@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Teaching Table | Math Things.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;800;900&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.111.1/mathlive.min.js"></script>
+<script>
+  // MathLive looks for its fonts beside the script but resolves the folder wrongly from a CDN;
+  // point it at the pinned package's fonts. Keypress sounds stay off in the classroom.
+  addEventListener('DOMContentLoaded',()=>{if(window.MathfieldElement){
+    MathfieldElement.fontsDirectory='https://cdn.jsdelivr.net/npm/mathlive@0.111.1/fonts';
+    MathfieldElement.soundsDirectory=null;}});
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+<style>
+  :root{
+    --glass:rgba(247,246,243,.86);
+    --text-main:#1D1D1F;--text-gray:#86868B;--text-light:#AEAEB2;
+    --accent:#007AFF;--border:rgba(0,0,0,.08);
+    --spring:cubic-bezier(.34,1.56,.64,1);
+    --ink:#26262A;--ink-blue:#1F5FD1;
+    --key:64px;            /* board-sized touch targets */
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Lexend',system-ui,sans-serif;color:var(--text-main);
+    background:radial-gradient(130% 95% at 50% 40%,#FBFAF8 0%,#F3F1ED 55%,#E7E3DC 100%);
+    overflow:hidden;user-select:none;-webkit-user-select:none;
+    -webkit-font-smoothing:antialiased;touch-action:none;
+  }
+  button{font:inherit;color:inherit}
+  .sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* ── THE TABLE AND THE SHEET ── */
+  #table{position:fixed;inset:0;overflow:hidden;cursor:default}
+  #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+  #sheet{
+    position:absolute;left:0;top:0;background:#FFFEFB;
+    box-shadow:0 1px 2px rgba(0,0,0,.08),0 12px 40px rgba(60,48,30,.16);
+    border-radius:3px;
+  }
+  #sheet img.page-img{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;border-radius:3px}
+  /* Blank papers are printed in sheet units, so they zoom with the work. */
+  #sheet.lined{background-image:linear-gradient(transparent 39px,rgba(48,96,170,.22) 39px,rgba(48,96,170,.22) 41px);
+    background-size:100% 40px;background-position:0 20px}
+  #sheet.grid{background-image:linear-gradient(rgba(48,96,170,.16) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(48,96,170,.16) 1.5px,transparent 1.5px);
+    background-size:50px 50px;background-position:-.75px -.75px}
+  #sheet.dots{background-image:radial-gradient(circle,rgba(48,64,90,.38) 2.4px,transparent 2.8px);
+    background-size:50px 50px;background-position:25px 25px}
+  #marks{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+  #marks .hit{pointer-events:stroke;stroke:transparent;fill:none;cursor:grab}
+  #marks .hit.area{pointer-events:all;fill:transparent}
+  #marks .sel .vis{filter:drop-shadow(0 0 3px rgba(0,122,255,.55))}
+
+  /* ── TYPED MATH ON THE PAGE ── */
+  /* An item's y is its vertical centre, so a fraction sits on the line like printed math. */
+  .item{position:absolute;line-height:1;white-space:nowrap;transform:translateY(-50%)}
+  .item math-field{
+    display:inline-block;font-size:inherit;min-width:.8em;padding:.08em .12em;
+    background:transparent;border:none;outline:none;color:var(--ink);
+    --caret-color:var(--accent);--selection-background-color:rgba(0,122,255,.18);
+    --contains-highlight-background-color:transparent;--placeholder-color:#B8B8BE;
+  }
+  .item math-field::part(menu-toggle),.item math-field::part(virtual-keyboard-toggle){display:none}
+  .item .grip{position:absolute;inset:-.18em -.2em;cursor:grab;border-radius:.2em}
+  .item.editing .grip{display:none}
+  .item.editing{background:rgba(0,122,255,.06);box-shadow:0 0 0 2px rgba(0,122,255,.45);border-radius:.18em}
+  .item.selected{box-shadow:0 0 0 2px rgba(0,122,255,.45);border-radius:.18em}
+  .item.empty:not(.editing){display:none}
+
+  /* ── DOCK: one row of board-sized controls, within reach ── */
+  #dock{
+    position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;
+    display:flex;align-items:center;gap:10px;padding:8px;border-radius:22px;
+    background:var(--glass);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+    box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 30px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.08);
+  }
+  .group{display:flex;gap:4px;background:#E5E5EA;border-radius:16px;padding:4px}
+  .db{
+    width:var(--key);height:var(--key);border:none;border-radius:13px;background:transparent;
+    display:flex;align-items:center;justify-content:center;color:#4A4A4F;cursor:pointer;
+    transition:background .15s,box-shadow .15s,color .15s,transform .12s;
+  }
+  .db svg{width:30px;height:30px;display:block}
+  .db:active{transform:scale(.94)}
+  .db.on{background:#fff;color:var(--text-main);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.06)}
+  .db:disabled{opacity:.3;cursor:default}
+  .db:focus-visible,.key:focus-visible,.tile:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .pageno{min-width:58px;text-align:center;font-weight:800;font-size:15px;color:#4A4A4F}
+  #pager[hidden]{display:none}
+
+  /* ── TRAYS above the dock (paper, marks) ── */
+  .tray{
+    position:fixed;left:50%;bottom:104px;transform:translateX(-50%) translateY(8px);z-index:39;
+    padding:10px;border-radius:20px;background:var(--glass);
+    backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+    box-shadow:0 10px 30px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.08);
+    opacity:0;pointer-events:none;transition:opacity .18s,transform .22s var(--spring);
+    display:flex;gap:8px;align-items:center;
+  }
+  .tray.open{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+  .tile{
+    width:86px;height:86px;border:none;border-radius:14px;background:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06);
+  }
+  .tile.on{box-shadow:0 0 0 3px var(--accent)}
+  .tile svg{width:46px;height:46px}
+  .swatch{width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;box-shadow:0 0 0 .5px rgba(0,0,0,.2) inset}
+  .swatch.on{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--accent)}
+  .sep{width:1px;align-self:stretch;background:rgba(0,0,0,.1);margin:4px 2px}
+  /* Mini sheets: each blank paper is shown as itself. */
+  .mini{width:58px;height:58px;border-radius:4px;background:#FFFEFB;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .mini.lined{background-image:linear-gradient(transparent 9px,rgba(48,96,170,.4) 9px,rgba(48,96,170,.4) 10px);background-size:100% 10px;background-position:0 4px}
+  .mini.grid{background-image:linear-gradient(rgba(48,96,170,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(48,96,170,.3) 1px,transparent 1px);background-size:11px 11px}
+  .mini.dots{background-image:radial-gradient(circle,rgba(48,64,90,.6) 1.2px,transparent 1.6px);background-size:11px 11px;background-position:5px 5px}
+
+  /* ── KEYPAD: floats beside the spot being written ── */
+  #keypad{
+    position:fixed;z-index:45;padding:10px;border-radius:22px;
+    background:var(--glass);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+    box-shadow:0 14px 40px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);
+    display:grid;grid-template-columns:repeat(5,var(--key));gap:6px;
+    opacity:0;pointer-events:none;transform:scale(.96);transition:opacity .14s,transform .2s var(--spring);
+  }
+  #keypad.open{opacity:1;pointer-events:auto;transform:scale(1)}
+  .key{
+    height:var(--key);border:none;border-radius:13px;background:#fff;cursor:pointer;
+    font-size:26px;font-weight:600;color:var(--text-main);
+    box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.05);
+    display:flex;align-items:center;justify-content:center;transition:transform .08s,background .1s;
+  }
+  .key:active{transform:scale(.93);background:#F2F2F7}
+  .key.op{background:#F2F2F5}
+  .key.soft{background:transparent;box-shadow:none;color:#5A5A5F}
+  .key.done{background:var(--accent);color:#fff}
+  .key svg{width:28px;height:28px}
+  .frac-glyph{display:flex;flex-direction:column;align-items:center;line-height:1;font-size:15px;font-weight:800}
+  .frac-glyph i{display:block;width:20px;height:2.5px;background:currentColor;margin:3px 0;border-radius:2px}
+
+  /* ── SELECTION BUTTON (delete) ── */
+  #trash{
+    position:fixed;z-index:44;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+    background:#fff;color:#C0392B;box-shadow:0 4px 14px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);
+    display:none;align-items:center;justify-content:center;
+  }
+  #trash.show{display:flex}
+  #trash svg{width:26px;height:26px}
+
+  /* ── MATH THINGS ── */
+  #chest{
+    position:fixed;inset:0;z-index:50;background:rgba(40,36,30,.22);
+    display:flex;align-items:flex-end;justify-content:center;padding:0 16px 104px;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  #chest.open{opacity:1;pointer-events:auto}
+  #chest .shelf{
+    width:min(1100px,100%);max-height:calc(100vh - 140px);overflow:auto;padding:18px 20px 22px;border-radius:24px;
+    background:var(--glass);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+    box-shadow:0 20px 60px rgba(0,0,0,.22);
+    transform:translateY(16px);transition:transform .28s var(--spring);
+  }
+  #chest.open .shelf{transform:none}
+  #chest h3{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--text-gray);margin:14px 4px 8px}
+  #chest h3:first-child{margin-top:2px}
+  #chest .apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .app{
+    min-height:var(--key);border:none;border-radius:14px;background:#fff;cursor:pointer;text-align:left;
+    padding:12px 14px;font-weight:600;font-size:16px;line-height:1.2;display:flex;align-items:center;gap:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06);
+  }
+  .app::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:var(--c,#AEAEB2)}
+
+  #windows{position:fixed;inset:0;z-index:30;pointer-events:none}
+  .win{
+    position:absolute;pointer-events:auto;border-radius:16px;overflow:hidden;background:#fff;
+    box-shadow:0 18px 50px rgba(0,0,0,.22),0 0 0 .5px rgba(0,0,0,.1);
+    display:flex;flex-direction:column;
+  }
+  .win .bar{
+    height:48px;flex:none;display:flex;align-items:center;gap:8px;padding:0 6px 0 16px;cursor:grab;touch-action:none;
+    background:linear-gradient(#F7F6F3,#EDECE8);border-bottom:1px solid rgba(0,0,0,.07);
+    font-weight:700;font-size:15px;color:#4A4A4F;
+  }
+  .win .bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .win .bar button{width:44px;height:40px;border:none;border-radius:10px;background:transparent;cursor:pointer;color:#6E6E73;display:flex;align-items:center;justify-content:center}
+  .win .bar button:active{background:rgba(0,0,0,.06)}
+  .win iframe{flex:1;border:0;width:100%;background:#F3F1ED}
+  .win .resize{position:absolute;right:0;bottom:0;width:44px;height:44px;cursor:nwse-resize;touch-action:none;
+    background:linear-gradient(135deg,transparent 55%,rgba(0,0,0,.18) 55%,rgba(0,0,0,.18) 60%,transparent 60%,transparent 70%,rgba(0,0,0,.18) 70%,rgba(0,0,0,.18) 75%,transparent 75%)}
+  .win.moving iframe{pointer-events:none}
+
+  /* ── PHONE SCAN ── */
+  #scan{position:fixed;inset:0;z-index:55;background:rgba(40,36,30,.28);display:none;align-items:center;justify-content:center}
+  #scan.open{display:flex}
+  #scan .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;gap:12px}
+  #qr canvas{display:block}
+  #scan .status{font-size:14px;color:var(--text-gray);font-weight:600;min-height:18px}
+
+  .logo{position:fixed;left:18px;top:14px;z-index:20;font-weight:900;font-size:1.25rem;letter-spacing:-.05em;display:inline-flex;align-items:baseline;pointer-events:none}
+  .logo-bead{width:.22em;height:.22em;margin-left:.04em;margin-bottom:.08em;border-radius:50%;display:inline-block;
+    background:radial-gradient(circle at 33% 28%,rgba(255,255,255,.92) 0%,rgba(255,255,255,.3) 40%,transparent 65%),linear-gradient(135deg,#efefef 0%,#d0d0d0 25%,#a8a8a8 50%,#c0c0c0 75%,#e0e0e0 100%);
+    box-shadow:inset 1px 1px 2px rgba(255,255,255,.8),inset -1px -1px 2px rgba(0,0,0,.2),0 2px 5px rgba(0,0,0,.22)}
+  #drop{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,122,255,.08);border:4px dashed rgba(0,122,255,.5);pointer-events:none}
+  #drop.show{display:flex}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:760px){:root{--key:52px}.db svg{width:24px;height:24px}#dock{gap:6px;padding:6px}}
+</style>
+</head>
+<body>
+<div class="logo" aria-hidden="true">Math Things<span class="logo-bead"></span></div>
+<div id="table" role="application" aria-label="Teaching table: a worksheet or sheet of paper to work on">
+  <div id="world">
+    <div id="sheet" class="plain">
+      <svg id="marks" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+</div>
+<div id="windows"></div>
+
+<!-- Paper tray: a worksheet from a file or phone, or a blank sheet -->
+<div class="tray" id="paperTray" role="dialog" aria-label="Choose the page">
+  <button class="tile" id="openFile" aria-label="Open a worksheet or PDF from this computer" title="Open a worksheet or PDF">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#3A3A3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6h16l10 10v26H12z"/><path d="M28 6v10h10"/><path d="M25 37V24m-6 6 6-6 6 6"/></svg>
+  </button>
+  <button class="tile" id="openPhone" aria-label="Scan a worksheet with a phone" title="Scan with a phone">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#3A3A3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="20" height="40" rx="4"/><circle cx="24" cy="21" r="5"/><path d="M21 38h6"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button class="tile" data-paper="plain" aria-label="Plain paper" title="Plain paper"><div class="mini"></div></button>
+  <button class="tile" data-paper="lined" aria-label="Lined paper" title="Lined paper"><div class="mini lined"></div></button>
+  <button class="tile" data-paper="grid" aria-label="Grid paper" title="Grid paper"><div class="mini grid"></div></button>
+  <button class="tile" data-paper="dots" aria-label="Dot paper" title="Dot paper"><div class="mini dots"></div></button>
+  <div class="sep"></div>
+  <button class="tile" id="clearPage" aria-label="Wipe this page clean (undo brings it back)" title="Wipe this page clean">
+    <svg viewBox="0 0 48 48" fill="none" stroke="#3A3A3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 34 28 12l10 8-16 20H14z"/><path d="M20 22l10 8"/><path d="M8 42h32"/></svg>
+  </button>
+</div>
+
+<!-- Mark tray: clean shapes, two inks -->
+<div class="tray" id="markTray" role="dialog" aria-label="Choose a mark">
+  <button class="tile" data-shape="ellipse" aria-label="Circle" title="Circle"><svg viewBox="0 0 48 48" fill="none" stroke="#26262A" stroke-width="3"><ellipse cx="24" cy="24" rx="18" ry="12"/></svg></button>
+  <button class="tile" data-shape="line" aria-label="Underline" title="Underline"><svg viewBox="0 0 48 48" fill="none" stroke="#26262A" stroke-width="3" stroke-linecap="round"><path d="M6 32h36"/><path d="M10 22h28" stroke="#C7C7CC" stroke-width="5"/></svg></button>
+  <button class="tile" data-shape="arrow" aria-label="Arrow" title="Arrow"><svg viewBox="0 0 48 48" fill="none" stroke="#26262A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 38 38 10m0 0H24m14 0v14"/></svg></button>
+  <button class="tile" data-shape="box" aria-label="Box" title="Box"><svg viewBox="0 0 48 48" fill="none" stroke="#26262A" stroke-width="3"><rect x="7" y="12" width="34" height="24" rx="2"/></svg></button>
+  <button class="tile" data-shape="check" aria-label="Check mark" title="Check mark"><svg viewBox="0 0 48 48" fill="none" stroke="#26262A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 25l10 10L39 12"/></svg></button>
+  <button class="tile" data-shape="cross" aria-label="X mark" title="X mark"><svg viewBox="0 0 48 48" fill="none" stroke="#26262A" stroke-width="3.4" stroke-linecap="round"><path d="M12 12l24 24M36 12 12 36"/></svg></button>
+  <button class="tile" data-shape="highlight" aria-label="Highlight" title="Highlight"><svg viewBox="0 0 48 48"><rect x="6" y="15" width="36" height="18" rx="2" fill="rgba(255,204,0,.55)"/></svg></button>
+  <div class="sep"></div>
+  <button class="swatch" data-ink="graphite" style="background:#26262A" aria-label="Graphite ink"></button>
+  <button class="swatch" data-ink="blue" style="background:#1F5FD1" aria-label="Blue ink"></button>
+</div>
+
+<!-- The keypad: everything needed to write grade-school math without handwriting -->
+<div id="keypad" role="group" aria-label="Math keypad">
+  <button class="key" data-in="7">7</button><button class="key" data-in="8">8</button><button class="key" data-in="9">9</button>
+  <button class="key op" data-in="\div" aria-label="divided by">÷</button>
+  <button class="key soft" data-cmd="deleteBackward" aria-label="Delete">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M11 7h16v18H11l-8-9z"/><path d="m15 12 8 8m0-8-8 8"/></svg></button>
+  <button class="key" data-in="4">4</button><button class="key" data-in="5">5</button><button class="key" data-in="6">6</button>
+  <button class="key op" data-in="\times" aria-label="times">×</button>
+  <button class="key op" data-in="(" aria-label="open parenthesis">(</button>
+  <button class="key" data-in="1">1</button><button class="key" data-in="2">2</button><button class="key" data-in="3">3</button>
+  <button class="key op" data-in="-" aria-label="minus">−</button>
+  <button class="key op" data-in=")" aria-label="close parenthesis">)</button>
+  <button class="key" data-in="0">0</button><button class="key" data-in="." aria-label="decimal point">.</button>
+  <button class="key op" data-in="=" aria-label="equals">=</button>
+  <button class="key op" data-in="+" aria-label="plus">+</button>
+  <button class="key op" data-in="\frac{#@}{#?}" aria-label="fraction"><span class="frac-glyph">▢<i></i>▢</span></button>
+  <button class="key soft" data-cmd="moveToPreviousChar" aria-label="Move left">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-9 9 9 9"/></svg></button>
+  <button class="key soft" data-cmd="moveToNextChar" aria-label="Move right">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7l9 9-9 9"/></svg></button>
+  <button class="key soft" data-size="-1" aria-label="Smaller">
+    <svg viewBox="0 0 32 32" fill="currentColor"><text x="16" y="22" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="14">A</text></svg></button>
+  <button class="key soft" data-size="1" aria-label="Larger">
+    <svg viewBox="0 0 32 32" fill="currentColor"><text x="16" y="25" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="24">A</text></svg></button>
+  <button class="key done" data-done aria-label="Done">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.5l6 6L25 10"/></svg></button>
+</div>
+
+<button id="trash" aria-label="Remove this from the page">
+  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h20M13 9V6h6v3M9 9l1.2 17h11.6L23 9"/></svg>
+</button>
+
+<div id="chest" role="dialog" aria-label="Math Things"><div class="shelf" id="shelf"></div></div>
+
+<div id="scan" role="dialog" aria-label="Scan a worksheet with a phone">
+  <div class="card"><div id="qr"></div><div class="status" id="scanStatus"></div></div>
+</div>
+<div id="drop"></div>
+<input type="file" id="fileInput" accept="image/*,application/pdf" hidden>
+
+<!-- THE DOCK -->
+<nav id="dock" aria-label="Teaching table tools">
+  <div class="group">
+    <button class="db" id="pageBtn" aria-label="Page: worksheet or paper" title="Page">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M8 4h11l6 6v18H8z"/><path d="M19 4v6h6"/><path d="M12 16h9M12 20h9M12 24h6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="group" role="group" aria-label="What a tap does">
+    <button class="db on" id="typeBtn" aria-pressed="true" aria-label="Type numbers where you tap" title="Type">
+      <svg viewBox="0 0 32 32" fill="currentColor"><text x="16" y="21.5" text-anchor="middle" font-family="Lexend,system-ui" font-weight="800" font-size="13">123</text></svg>
+    </button>
+    <button class="db" id="markBtn" aria-pressed="false" aria-label="Draw clean marks" title="Mark">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><ellipse cx="16" cy="16" rx="12" ry="8"/><path d="M9 26h14"/></svg>
+    </button>
+  </div>
+  <div class="group">
+    <button class="db" id="chestBtn" aria-label="Math Things" title="Math Things">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="4" y="5" width="24" height="22" rx="2.5"/><path d="M4 12h24M4 19h24"/><path d="M13 8.5h6M13 15.5h6M13 22.5h6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="group">
+    <button class="db" id="undoBtn" aria-label="Undo" title="Undo" disabled>
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9 5 15l6 6"/><path d="M5 15h14a7 7 0 0 1 0 14h-4"/></svg>
+    </button>
+    <button class="db" id="redoBtn" aria-label="Redo" title="Redo" disabled>
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m21 9 6 6-6 6"/><path d="M27 15H13a7 7 0 0 0 0 14h4"/></svg>
+    </button>
+  </div>
+  <div class="group">
+    <button class="db" id="zoomOut" aria-label="Zoom out" title="Zoom out">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="14" cy="14" r="8"/><path d="m20 20 7 7M10 14h8"/></svg>
+    </button>
+    <button class="db" id="fitBtn" aria-label="Fit the page" title="Fit the page">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V5h6M21 5h6v6M27 21v6h-6M11 27H5v-6"/></svg>
+    </button>
+    <button class="db" id="zoomIn" aria-label="Zoom in" title="Zoom in">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="14" cy="14" r="8"/><path d="m20 20 7 7M10 14h8M14 10v8"/></svg>
+    </button>
+  </div>
+  <div class="group" id="pager" hidden>
+    <button class="db" id="prevPage" aria-label="Previous page">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-9 9 9 9"/></svg>
+    </button>
+    <div class="pageno" id="pageNo" aria-live="polite">1/1</div>
+    <button class="db" id="nextPage" aria-label="Next page">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7l9 9-9 9"/></svg>
+    </button>
+  </div>
+</nav>
+<div class="sr-only" id="announce" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+// The phone-scan relay shared with the original Teaching Table.
+const WORKER_URL = 'https://teaching-table-relay.ssccchef.workers.dev';
+const PAGE_W = 1000;                 // every page is 1000 units wide; marks and math live in these units
+const BLANK_H = 1294;                // blank paper: US Letter proportions
+const INKS = {graphite:'#26262A', blue:'#1F5FD1'};
+const STORE = 'math-things-teaching-table-v3';
+const $ = id => document.getElementById(id);
+const table=$('table'),world=$('world'),sheet=$('sheet'),marksSvg=$('marks'),keypad=$('keypad'),trash=$('trash');
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const uid=()=>Math.random().toString(36).slice(2,10);
+
+// ── DOCUMENT ──
+// doc.pages[i] = {id, w, h, paper, hasImage, items:[...]}
+// item: {id, type:'math', x, y, size, latex} | {id, type:'mark', shape, ink, x1, y1, x2, y2}
+let doc={pages:[{id:uid(),w:PAGE_W,h:BLANK_H,paper:'plain',hasImage:false,items:[]}],page:0};
+const ui={tool:'type',shape:'ellipse',ink:'graphite',size:34,editing:null,selected:null};
+const view={x:0,y:0,z:1};
+const page=()=>doc.pages[doc.page];
+
+// ── IMAGE STORE (IndexedDB) ── worksheet pages are blobs; too big for localStorage.
+const idb=new Promise(res=>{
+  try{const r=indexedDB.open(STORE,1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('images');
+    r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}catch{res(null)}
+});
+async function putImage(id,blob){const db=await idb;if(!db)return;
+  await new Promise(r=>{const t=db.transaction('images','readwrite');t.objectStore('images').put(blob,id);t.oncomplete=t.onerror=r})}
+async function getImage(id){const db=await idb;if(!db)return null;
+  return new Promise(r=>{const q=db.transaction('images').objectStore('images').get(id);q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null)})}
+const urls=new Map();   // page id → object URL (kept while the page is in the document)
+async function imageURL(p){
+  if(urls.has(p.id))return urls.get(p.id);
+  const b=await getImage(p.id);if(!b)return null;
+  const u=URL.createObjectURL(b);urls.set(p.id,u);return u;
+}
+
+function save(){
+  try{localStorage.setItem(STORE,JSON.stringify({doc,size:ui.size,ink:ui.ink}))}catch{}
+}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STORE)||'null');
+    if(s?.doc?.pages?.length){doc=s.doc;doc.page=clamp(doc.page|0,0,doc.pages.length-1)}
+    if(s?.size)ui.size=s.size;
+    if(s?.ink in INKS)ui.ink=s.ink;
+  }catch{}
+}
+
+// ── UNDO / REDO ── every change to the page is one step, including clearing it.
+const undoStack=[],redoStack=[];
+const snap=()=>JSON.stringify({page:doc.page,items:page().items,paper:page().paper});
+function record(before){
+  const after=snap();if(before===after)return;
+  undoStack.push({before,after});if(undoStack.length>300)undoStack.shift();
+  redoStack.length=0;syncHistory();save();
+}
+function restore(state){
+  const s=JSON.parse(state);
+  if(s.page!==doc.page){doc.page=s.page;}
+  page().items=s.items;page().paper=s.paper;
+  renderPage();save();
+}
+function undo(){finishEdit();const e=undoStack.pop();if(!e)return;redoStack.push(e);restore(e.before);syncHistory();say('Undone')}
+function redo(){finishEdit();const e=redoStack.pop();if(!e)return;undoStack.push(e);restore(e.after);syncHistory();say('Redone')}
+function syncHistory(){$('undoBtn').disabled=!undoStack.length;$('redoBtn').disabled=!redoStack.length}
+
+// ── VIEW ──
+function applyView(){
+  world.style.transform=`translate(${view.x}px,${view.y}px) scale(${view.z})`;
+  placeOverlays();
+}
+const DOCK_SPACE=104,TOP_SPACE=58;   // the dock below, the logo above
+function fit(){
+  const p=page(),W=innerWidth,H=innerHeight-DOCK_SPACE-TOP_SPACE;
+  // Fit the width: worksheets are read top to bottom, so a tall page scrolls.
+  view.z=clamp(Math.min((W-48)/p.w,1.6),.15,6);
+  view.x=(W-p.w*view.z)/2;
+  view.y=TOP_SPACE+(p.h*view.z<H?(H-p.h*view.z)/2:0);
+  applyView();
+}
+function zoomAt(f,cx,cy){
+  const z=clamp(view.z*f,.15,6);f=z/view.z;
+  view.x=cx-(cx-view.x)*f;view.y=cy-(cy-view.y)*f;view.z=z;applyView();
+}
+const toPage=(cx,cy)=>({x:(cx-view.x)/view.z,y:(cy-view.y)/view.z});
+const toScreen=(x,y)=>({x:view.x+x*view.z,y:view.y+y*view.z});
+const onSheet=pt=>pt.x>=0&&pt.y>=0&&pt.x<=page().w&&pt.y<=page().h;
+
+// ── RENDERING ──
+const els=new Map();   // item id → element
+async function renderPage(){
+  const p=page();
+  sheet.style.width=p.w+'px';sheet.style.height=p.h+'px';
+  sheet.className=p.hasImage?'':p.paper;
+  sheet.querySelector('img.page-img')?.remove();
+  if(p.hasImage){
+    const u=await imageURL(p);
+    if(u&&page()===p){const img=new Image();img.className='page-img';img.src=u;img.alt='';sheet.prepend(img)}
+  }
+  marksSvg.setAttribute('width',p.w);marksSvg.setAttribute('height',p.h);
+  marksSvg.setAttribute('viewBox',`0 0 ${p.w} ${p.h}`);
+  for(const el of els.values())el.remove();
+  els.clear();marksSvg.replaceChildren();
+  for(const it of p.items)drawItem(it);
+  ui.editing=null;ui.selected=null;closeKeypad();showTrash();
+  const n=doc.pages.length;
+  $('pager').hidden=n<2;$('pageNo').textContent=(doc.page+1)+'/'+n;
+  $('prevPage').disabled=doc.page===0;$('nextPage').disabled=doc.page===n-1;
+  for(const t of document.querySelectorAll('[data-paper]'))t.classList.toggle('on',!p.hasImage&&t.dataset.paper===p.paper);
+}
+function drawItem(it){
+  if(it.type==='math'){
+    let el=els.get(it.id);
+    if(!el){
+      el=document.createElement('div');el.className='item math';el.dataset.id=it.id;
+      const mf=document.createElement('math-field');
+      el.append(mf,Object.assign(document.createElement('div'),{className:'grip'}));
+      sheet.append(el);els.set(it.id,el);
+      setupField(mf,it);
+    }
+    el.style.left=it.x+'px';el.style.top=it.y+'px';el.style.fontSize=it.size+'px';
+    const mf=el.querySelector('math-field');
+    if(mf.value!==it.latex)mf.value=it.latex;
+    el.classList.toggle('empty',!it.latex);
+  }else drawMark(it);
+}
+function setupField(mf,it){
+  // Our keypad replaces MathLive's own keyboard and menu; physical keyboards still work.
+  mf.mathVirtualKeyboardPolicy='manual';
+  mf.menuItems=[];
+  mf.smartFence=false;mf.smartSuperscript=false;
+  mf.addEventListener('focusin',()=>mf.shadowRoot?.querySelector('textarea')?.setAttribute('inputmode','none'));
+  mf.addEventListener('input',()=>{
+    const item=findItem(it.id);if(!item)return;
+    item.latex=mf.value;els.get(it.id)?.classList.toggle('empty',!item.latex);
+    placeOverlays();
+  });
+  mf.addEventListener('keydown',e=>{
+    if(e.key==='Escape'||(e.key==='Enter'&&!e.shiftKey)){e.preventDefault();finishEdit()}
+  });
+}
+// Clean marks: drawn from a drag's two corners, never from the stroke itself.
+function markPaths(m){
+  const {x1,y1,x2,y2}=m;
+  const l=Math.min(x1,x2),t=Math.min(y1,y2),w=Math.abs(x2-x1),h=Math.abs(y2-y1);
+  switch(m.shape){
+    case 'ellipse':return [`<ellipse cx="${l+w/2}" cy="${t+h/2}" rx="${Math.max(w/2,6)}" ry="${Math.max(h/2,6)}"/>`];
+    case 'box':return [`<rect x="${l}" y="${t}" width="${Math.max(w,8)}" height="${Math.max(h,8)}" rx="3"/>`];
+    case 'highlight':return [`<rect x="${l}" y="${t}" width="${Math.max(w,8)}" height="${Math.max(h,8)}" rx="3"/>`];
+    case 'line':return [`<path d="M${x1} ${y1}L${x2} ${y2}"/>`];
+    case 'arrow':{
+      const a=Math.atan2(y2-y1,x2-x1),len=Math.hypot(x2-x1,y2-y1),hd=Math.min(26,Math.max(12,len*.28));
+      const p=s=>`${x2-hd*Math.cos(a+s)} ${y2-hd*Math.sin(a+s)}`;
+      return [`<path d="M${x1} ${y1}L${x2} ${y2}M${p(.5)}L${x2} ${y2}L${p(-.5)}"/>`];
+    }
+    case 'check':return [`<path d="M${l} ${t+h*.55}L${l+w*.36} ${t+h}L${l+w} ${t}"/>`];
+    case 'cross':return [`<path d="M${l} ${t}L${l+w} ${t+h}M${l+w} ${t}L${l} ${t+h}"/>`];
+  }
+  return [];
+}
+function drawMark(m){
+  let g=els.get(m.id);
+  if(!g){g=document.createElementNS('http://www.w3.org/2000/svg','g');g.dataset.id=m.id;marksSvg.append(g);els.set(m.id,g)}
+  const hl=m.shape==='highlight',color=INKS[m.ink]||INKS.graphite;
+  const sw=m.shape==='check'||m.shape==='cross'?5:3.6;
+  const vis=markPaths(m).join('');
+  g.innerHTML=
+    `<g class="vis" fill="${hl?'rgba(255,204,0,.38)':'none'}" stroke="${hl?'none':color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${vis}</g>`+
+    `<g class="hit${hl?' area':''}" stroke-width="26">${vis}</g>`;
+  g.classList.toggle('sel',ui.selected===m.id);
+  // highlights sit under the ink
+  if(hl&&marksSvg.firstChild!==g)marksSvg.prepend(g);
+}
+const findItem=id=>page().items.find(i=>i.id===id);
+
+// ── EDITING TYPED MATH ──
+let editBefore=null;
+function startEdit(id){
+  if(ui.editing===id)return;
+  finishEdit();select(null);
+  ui.editing=id;editBefore=snap();
+  const el=els.get(id);el.classList.add('editing');
+  const mf=el.querySelector('math-field');
+  requestAnimationFrame(()=>{mf.focus();openKeypad()});
+}
+function finishEdit(){
+  const id=ui.editing;if(!id)return;
+  ui.editing=null;
+  const el=els.get(id),it=findItem(id);
+  el?.classList.remove('editing');el?.querySelector('math-field')?.blur();
+  if(it&&!it.latex.trim()){page().items=page().items.filter(i=>i!==it);el?.remove();els.delete(id)}
+  closeKeypad();
+  if(editBefore){const b=editBefore;editBefore=null;record(b)}
+}
+function newMathAt(pt){
+  const before=snap();
+  const it={id:uid(),type:'math',x:pt.x-ui.size*.12,y:pt.y,size:ui.size,latex:''};
+  page().items.push(it);drawItem(it);
+  startEdit(it.id);editBefore=before;   // creation and typing are one undo step
+}
+function activeField(){return ui.editing?els.get(ui.editing)?.querySelector('math-field'):null}
+
+// ── KEYPAD ──
+function openKeypad(){keypad.classList.add('open');placeOverlays()}
+function closeKeypad(){keypad.classList.remove('open')}
+keypad.addEventListener('pointerdown',e=>e.preventDefault());   // keep focus in the field
+keypad.addEventListener('click',e=>{
+  const k=e.target.closest('.key');if(!k)return;
+  const mf=activeField();if(!mf)return;
+  if(k.dataset.done!==undefined){finishEdit();return}
+  if(k.dataset.size){
+    const it=findItem(ui.editing);
+    it.size=clamp(it.size+Number(k.dataset.size)*4,14,120);ui.size=it.size;
+    drawItem(it);placeOverlays();save();mf.focus();return;
+  }
+  mf.focus();
+  if(k.dataset.cmd)mf.executeCommand(k.dataset.cmd);
+  else mf.insert(k.dataset.in,{insertionMode:'replaceSelection',selectionMode:k.dataset.in.includes('#')?'placeholder':'after',format:'latex'});
+  mf.dispatchEvent(new Event('input'));
+});
+
+// Overlays (keypad, delete button) follow the thing they belong to.
+function placeOverlays(){
+  if(ui.editing&&keypad.classList.contains('open')){
+    const r=els.get(ui.editing).getBoundingClientRect();
+    const kw=keypad.offsetWidth,kh=keypad.offsetHeight,W=innerWidth,H=innerHeight-DOCK_SPACE;
+    let x=r.right+24,y=r.top+r.height/2-kh/2;
+    if(x+kw>W-12)x=r.left-kw-24;                       // no room on the right: go left
+    if(x<12){x=clamp(r.left,12,W-kw-12);y=r.bottom+18;  // no room either side: go below
+      if(y+kh>H)y=r.top-kh-18;}
+    keypad.style.left=clamp(x,12,W-kw-12)+'px';keypad.style.top=clamp(y,12,H-kh)+'px';
+  }
+  showTrash();
+}
+function showTrash(){
+  const id=ui.selected,el=id&&els.get(id);
+  if(!el){trash.classList.remove('show');return}
+  const r=el.getBoundingClientRect();
+  trash.style.left=clamp(r.right+10,8,innerWidth-64)+'px';
+  trash.style.top=clamp(r.top-66,8,innerHeight-64)+'px';
+  trash.classList.add('show');
+}
+function select(id){
+  const prev=ui.selected;ui.selected=id;
+  for(const x of [prev,id]){if(!x)continue;const el=els.get(x);if(!el)continue;
+    if(el instanceof SVGElement)el.classList.toggle('sel',ui.selected===x);else el.classList.toggle('selected',ui.selected===x)}
+  showTrash();
+}
+trash.addEventListener('click',()=>{
+  const id=ui.selected;if(!id)return;
+  const before=snap();page().items=page().items.filter(i=>i.id!==id);
+  els.get(id)?.remove();els.delete(id);select(null);record(before);
+});
+
+// ── POINTER: tap to write, drag to pan or draw, pinch to zoom ──
+const ptrs=new Map();
+let gesture=null;
+function itemAt(target){
+  const el=target.closest?.('.item');if(el)return el.dataset.id;
+  const g=target.closest?.('#marks > g');return g?g.dataset.id:null;
+}
+table.addEventListener('pointerdown',e=>{
+  if(e.button>0)return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  table.setPointerCapture(e.pointerId);
+  if(ptrs.size===2){
+    // A second finger turns whatever was starting into a pinch.
+    if(gesture?.kind==='draw')cancelDraw();
+    const [a,b]=[...ptrs.values()];
+    gesture={kind:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};
+    return;
+  }
+  if(ptrs.size>2)return;
+  const pt=toPage(e.clientX,e.clientY),hit=itemAt(e.target);
+  if(hit&&hit!==ui.editing){
+    const it=findItem(hit);
+    gesture={kind:'item',id:hit,sx:e.clientX,sy:e.clientY,orig:JSON.parse(JSON.stringify(it)),moved:false};
+  }else if(ui.tool==='mark'&&onSheet(pt)&&!hit){
+    finishEdit();select(null);
+    gesture={kind:'draw',start:pt,sx:e.clientX,sy:e.clientY,mark:null};
+  }else{
+    gesture={kind:'pan',sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,moved:false,onItem:!!hit};
+  }
+});
+table.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId))return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const g=gesture;if(!g)return;
+  if(g.kind==='pinch'&&ptrs.size>=2){
+    const [a,b]=[...ptrs.values()];
+    const d=Math.hypot(a.x-b.x,a.y-b.y),cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+    view.x+=cx-g.cx;view.y+=cy-g.cy;zoomAt(d/g.d,cx,cy);
+    g.d=d;g.cx=cx;g.cy=cy;return;
+  }
+  const dx=e.clientX-g.sx,dy=e.clientY-g.sy,far=Math.hypot(dx,dy)>8;
+  if(g.kind==='pan'){
+    if(far)g.moved=true;
+    if(g.moved){view.x=g.vx+dx;view.y=g.vy+dy;applyView()}
+  }else if(g.kind==='item'&&(far||g.moved)){
+    if(!g.moved){g.moved=true;g.before=snap();finishEdit();select(g.id)}
+    const it=findItem(g.id),o=g.orig,ux=dx/view.z,uy=dy/view.z;
+    if(it.type==='math'){it.x=o.x+ux;it.y=o.y+uy}
+    else{it.x1=o.x1+ux;it.y1=o.y1+uy;it.x2=o.x2+ux;it.y2=o.y2+uy}
+    drawItem(it);showTrash();
+  }else if(g.kind==='draw'){
+    let p=toPage(e.clientX,e.clientY);
+    if(!g.mark&&!far)return;
+    if(!g.mark){g.mark={id:uid(),type:'mark',shape:ui.shape,ink:ui.ink,x1:g.start.x,y1:g.start.y,x2:p.x,y2:p.y}}
+    // Straight lines and arrows settle onto level and plumb when they are close.
+    if(g.mark.shape==='line'||g.mark.shape==='arrow'){
+      const a=Math.atan2(p.y-g.start.y,p.x-g.start.x),len=Math.hypot(p.x-g.start.x,p.y-g.start.y);
+      const s=Math.round(a/(Math.PI/4))*(Math.PI/4);
+      if(Math.abs(a-s)<.12)p={x:g.start.x+len*Math.cos(s),y:g.start.y+len*Math.sin(s)};
+    }
+    g.mark.x2=p.x;g.mark.y2=p.y;drawMark(g.mark);
+  }
+});
+function endPointer(e){
+  if(!ptrs.has(e.pointerId))return;
+  ptrs.delete(e.pointerId);
+  const g=gesture;
+  if(g?.kind==='pinch'){if(ptrs.size===0)gesture=null;save();return}
+  if(ptrs.size)return;
+  gesture=null;if(!g)return;
+  if(g.kind==='item'){
+    if(g.moved){record(g.before);return}
+    const it=findItem(g.id);
+    if(it.type==='math'&&ui.tool==='type')startEdit(it.id);
+    else{finishEdit();select(ui.selected===g.id?null:g.id)}
+  }else if(g.kind==='draw'){
+    if(g.mark){
+      const before=snap(),m=g.mark;
+      if(Math.hypot(m.x2-m.x1,m.y2-m.y1)<10&&!['check','cross'].includes(m.shape)){els.get(m.id)?.remove();els.delete(m.id);return}
+      page().items.push(m);record(before);
+    }else if(g.shape==='check'||ui.shape==='check'||ui.shape==='cross'){
+      // A tap stamps a check or an X at a readable size.
+      const s=34,before=snap();
+      const m={id:uid(),type:'mark',shape:ui.shape,ink:ui.ink,x1:g.start.x-s/2,y1:g.start.y-s/2,x2:g.start.x+s/2,y2:g.start.y+s/2};
+      page().items.push(m);drawMark(m);record(before);
+    }
+  }else if(g.kind==='pan'&&!g.moved){
+    const pt=toPage(e.clientX,e.clientY);
+    if(ui.tool==='type'&&onSheet(pt))newMathAt(pt);
+    else{finishEdit();select(null)}
+  }
+}
+function cancelDraw(){if(gesture?.mark){els.get(gesture.mark.id)?.remove();els.delete(gesture.mark.id)}gesture=null}
+table.addEventListener('pointerup',endPointer);
+table.addEventListener('pointercancel',endPointer);
+table.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(e.ctrlKey||e.metaKey)zoomAt(Math.exp(-e.deltaY*.0025),e.clientX,e.clientY);
+  else{view.x-=e.deltaX;view.y-=e.deltaY;applyView()}
+},{passive:false});
+
+// ── DOCK ──
+function setTool(t){
+  ui.tool=t;finishEdit();select(null);
+  $('typeBtn').classList.toggle('on',t==='type');$('typeBtn').setAttribute('aria-pressed',t==='type');
+  $('markBtn').classList.toggle('on',t==='mark');$('markBtn').setAttribute('aria-pressed',t==='mark');
+  table.style.cursor=t==='mark'?'crosshair':'text';
+}
+// toggleTray(null) closes every tray.
+function toggleTray(id,force){
+  for(const t of document.querySelectorAll('.tray'))if(t.id!==id)t.classList.remove('open');
+  const t=id&&$(id);if(t)t.classList.toggle('open',force??!t.classList.contains('open'));
+}
+$('typeBtn').onclick=()=>{setTool('type');toggleTray('markTray',false)};
+$('markBtn').onclick=()=>{
+  if(ui.tool==='mark'){toggleTray('markTray');return}
+  setTool('mark');toggleTray('markTray',true);
+};
+$('pageBtn').onclick=()=>toggleTray('paperTray');
+$('undoBtn').onclick=undo;$('redoBtn').onclick=redo;
+$('zoomIn').onclick=()=>zoomAt(1.25,innerWidth/2,(innerHeight-DOCK_SPACE)/2);
+$('zoomOut').onclick=()=>zoomAt(.8,innerWidth/2,(innerHeight-DOCK_SPACE)/2);
+$('fitBtn').onclick=fit;
+$('prevPage').onclick=()=>goPage(doc.page-1);
+$('nextPage').onclick=()=>goPage(doc.page+1);
+function goPage(i){
+  finishEdit();if(i<0||i>=doc.pages.length)return;
+  doc.page=i;renderPage().then(fit);save();say('Page '+(i+1));
+}
+for(const b of document.querySelectorAll('[data-shape]'))b.onclick=()=>{ui.shape=b.dataset.shape;syncTrays()};
+for(const b of document.querySelectorAll('[data-ink]'))b.onclick=()=>{ui.ink=b.dataset.ink;syncTrays();save()};
+function syncTrays(){
+  for(const b of document.querySelectorAll('[data-shape]'))b.classList.toggle('on',b.dataset.shape===ui.shape);
+  for(const b of document.querySelectorAll('[data-ink]'))b.classList.toggle('on',b.dataset.ink===ui.ink);
+}
+for(const b of document.querySelectorAll('[data-paper]'))b.onclick=()=>{
+  // Blank paper replaces the document with one fresh sheet; undo cannot cross documents, so
+  // only switch the pattern if the current page is already blank paper.
+  const p=page();
+  if(!p.hasImage&&doc.pages.length===1){const before=snap();p.paper=b.dataset.paper;renderPage();record(before)}
+  else newDocument([{id:uid(),w:PAGE_W,h:BLANK_H,paper:b.dataset.paper,hasImage:false,items:[]}]);
+  toggleTray('paperTray',false);
+};
+$('clearPage').onclick=()=>{
+  const before=snap();page().items=[];renderPage();record(before);toggleTray('paperTray',false);say('Page wiped. Undo brings it back.');
+};
+function newDocument(pages){
+  finishEdit();
+  for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();
+  doc={pages,page:0};undoStack.length=redoStack.length=0;syncHistory();
+  renderPage().then(fit);save();
+}
+
+// ── WORKSHEETS IN ──
+$('openFile').onclick=()=>{$('fileInput').value='';$('fileInput').click()};
+$('fileInput').onchange=e=>{const f=e.target.files?.[0];if(f)openFile(f)};
+async function openFile(file){
+  toggleTray('paperTray',false);say('Opening…');
+  try{
+    let blobs;
+    if(file.type==='application/pdf'||/\.pdf$/i.test(file.name))blobs=await renderPdf(file);
+    else blobs=[await normaliseImage(file)];
+    await openImages(blobs);
+  }catch(err){say('Could not open that file.');console.error(err)}
+}
+async function openImages(blobs){
+  const pages=[];
+  for(const b of blobs){
+    const bmp=await createImageBitmap(b);
+    const p={id:uid(),w:PAGE_W,h:Math.round(PAGE_W*bmp.height/bmp.width),paper:'plain',hasImage:true,items:[]};
+    bmp.close?.();await putImage(p.id,b);pages.push(p);
+  }
+  newDocument(pages);say(pages.length>1?pages.length+' pages':'Worksheet open');
+}
+// Large photos are scaled to a crisp, storable size.
+async function normaliseImage(blob){
+  const bmp=await createImageBitmap(blob),max=2400;
+  if(bmp.width<=max&&bmp.height<=max){bmp.close?.();return blob}
+  const s=max/Math.max(bmp.width,bmp.height),c=document.createElement('canvas');
+  c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);bmp.close?.();
+  return new Promise(r=>c.toBlob(r,'image/jpeg',.9));
+}
+// Every page of a PDF, not just the first.
+async function renderPdf(file){
+  const lib=window.pdfjsLib;if(!lib)throw new Error('PDF renderer did not load');
+  lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const out=[];
+  for(let i=1;i<=Math.min(pdf.numPages,40);i++){
+    const pg=await pdf.getPage(i),v0=pg.getViewport({scale:1});
+    const v=pg.getViewport({scale:clamp(1800/v0.width,1,3)});
+    const c=document.createElement('canvas');c.width=Math.ceil(v.width);c.height=Math.ceil(v.height);
+    const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    await pg.render({canvasContext:ctx,viewport:v}).promise;
+    out.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.9)));
+  }
+  return out;
+}
+// Drag a file onto the table, or paste an image.
+let dragDepth=0;
+addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files')){dragDepth++;$('drop').classList.add('show')}});
+addEventListener('dragleave',()=>{if(--dragDepth<=0){dragDepth=0;$('drop').classList.remove('show')}});
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('drop').classList.remove('show');const f=e.dataTransfer.files?.[0];if(f)openFile(f)});
+addEventListener('paste',e=>{
+  if(ui.editing)return;
+  const f=[...(e.clipboardData?.files||[])].find(f=>f.type.startsWith('image/')||f.type==='application/pdf');
+  if(f){e.preventDefault();openFile(f)}
+});
+
+// Phone scan: the same relay as the original table. Phone uploads, the board polls.
+let scanTimer=null,scanId=null;
+$('openPhone').onclick=()=>{
+  toggleTray('paperTray',false);
+  scanId=Array.from({length:2},()=>Math.random().toString(36).substring(2,6).toUpperCase()).join('');
+  const url=`${WORKER_URL}/u/${scanId}`;
+  const qr=$('qr');qr.replaceChildren();
+  const c=document.createElement('canvas');qr.append(c);
+  if(window.QRCode)QRCode.toCanvas(c,url,{width:260,margin:1});
+  $('scanStatus').textContent='';
+  $('scan').classList.add('open');
+  clearInterval(scanTimer);scanTimer=setInterval(pollScan,1500);pollScan();
+};
+async function pollScan(){
+  const id=scanId;if(!id)return;
+  try{
+    const r=await fetch(`${WORKER_URL}/image/${id}`);
+    if(r.status!==200||id!==scanId)return;
+    const data=(await r.text()).trim();if(!data.startsWith('data:image/'))return;
+    closeScan();
+    const blob=await (await fetch(data)).blob();
+    await openImages([await normaliseImage(blob)]);
+  }catch{}
+}
+function closeScan(){clearInterval(scanTimer);scanTimer=null;scanId=null;$('scan').classList.remove('open')}
+$('scan').addEventListener('click',e=>{if(e.target.id==='scan')closeScan()});
+
+// ── MATH THINGS ──
+// The shelf reads the home page, so new Math Things appear here as soon as they ship.
+const HOME=new URL('../../../',location.href);
+let shelfBuilt=false,lastTap={x:innerWidth*.55,y:innerHeight*.3};
+table.addEventListener('pointerdown',e=>{lastTap={x:e.clientX,y:e.clientY}},true);
+async function buildShelf(){
+  if(shelfBuilt)return;shelfBuilt=true;
+  const shelf=$('shelf');
+  try{
+    const html=await (await fetch(HOME.href)).text();
+    const d=new DOMParser().parseFromString(html,'text/html');
+    let group=null;
+    for(const n of d.querySelectorAll('.section-heading h2, a.app-card')){
+      if(n.tagName==='H2'){group=document.createElement('div');group.className='apps';
+        shelf.append(Object.assign(document.createElement('h3'),{textContent:n.textContent.trim()}),group);continue}
+      const href=n.getAttribute('href');if(!group||!href||/teaching-table|curriculum-hub/.test(href))continue;
+      const b=document.createElement('button');b.className='app';
+      b.textContent=n.querySelector('.app-name')?.textContent.trim()||href;
+      const c=(n.getAttribute('style')||'').match(/--card-color:\s*var\(--([\w-]+)\)/)?.[1];
+      if(c)b.style.setProperty('--c',{ones:'#DC143C',tens:'#4169E1',hundreds:'#FFD700',thousands:'#4CBB17','ten-thousands':'#FF7F00',tenths:'#64D2FF',hundredths:'#FF9F0A'}[c]||'#AEAEB2');
+      b.onclick=()=>{openApp(b.textContent,new URL(href,HOME).href);closeChest()};
+      group.append(b);
+    }
+  }catch{shelf.textContent='Math Things could not be loaded.'}
+}
+$('chestBtn').onclick=()=>{finishEdit();toggleTray(null);buildShelf();$('chest').classList.add('open')};
+function closeChest(){$('chest').classList.remove('open')}
+$('chest').addEventListener('click',e=>{if(e.target.id==='chest')closeChest()});
+
+// A Math Thing opens beside the spot you last worked on, not in a corner.
+function openApp(name,url){
+  const W=innerWidth,H=innerHeight-DOCK_SPACE;
+  const w=Math.min(720,W*.55),h=Math.min(540,H*.7);
+  let x=lastTap.x+40,y=lastTap.y-h/2;
+  if(x+w>W-12)x=lastTap.x-w-40;
+  const win=document.createElement('div');win.className='win';
+  win.style.cssText=`left:${clamp(x,12,W-w-12)}px;top:${clamp(y,12,H-h)}px;width:${w}px;height:${h}px`;
+  win.innerHTML=`<div class="bar"><span></span><button aria-label="Close">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <iframe allow="autoplay; fullscreen" loading="eager"></iframe><div class="resize" aria-hidden="true"></div>`;
+  win.querySelector('span').textContent=name;
+  win.querySelector('iframe').src=url;win.querySelector('iframe').title=name;
+  win.querySelector('button').onclick=()=>win.remove();
+  $('windows').append(win);
+  dragHandle(win.querySelector('.bar'),win,(o,dx,dy)=>{win.style.left=o.l+dx+'px';win.style.top=o.t+dy+'px'});
+  dragHandle(win.querySelector('.resize'),win,(o,dx,dy)=>{win.style.width=Math.max(320,o.w+dx)+'px';win.style.height=Math.max(240,o.h+dy)+'px'});
+  win.addEventListener('pointerdown',()=>$('windows').append(win));   // bring to front
+}
+function dragHandle(handle,win,move){
+  handle.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button'))return;
+    e.preventDefault();handle.setPointerCapture(e.pointerId);win.classList.add('moving');
+    const o={x:e.clientX,y:e.clientY,l:win.offsetLeft,t:win.offsetTop,w:win.offsetWidth,h:win.offsetHeight};
+    const mv=ev=>move(o,ev.clientX-o.x,ev.clientY-o.y);
+    const up=()=>{win.classList.remove('moving');handle.removeEventListener('pointermove',mv);handle.removeEventListener('pointerup',up);handle.removeEventListener('pointercancel',up)};
+    handle.addEventListener('pointermove',mv);handle.addEventListener('pointerup',up);handle.addEventListener('pointercancel',up);
+  });
+}
+
+// ── KEYBOARD (for a laptop at the board) ──
+addEventListener('keydown',e=>{
+  if(ui.editing)return;
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo()}
+  else if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo()}
+  else if((e.key==='Delete'||e.key==='Backspace')&&ui.selected){e.preventDefault();trash.click()}
+  else if(e.key==='Escape'){select(null);closeChest();closeScan();toggleTray(null)}
+});
+
+const announcer=$('announce');
+function say(t){announcer.textContent=t}
+
+// ── START ──
+load();syncTrays();setTool('type');
+addEventListener('resize',()=>{placeOverlays()});
+function start(){renderPage().then(fit);syncHistory()}
+// Typed math needs MathLive; wait for it so restored math renders, but never forever.
+const ready=customElements.whenDefined('math-field');
+Promise.race([ready,new Promise(r=>setTimeout(r,4000))]).then(start);
+window.__table={doc:()=>doc,ui,view,undo,redo,openImages,goPage};
+})();
+</script>
+<script src="../../../math-things-home.js"></script>
+</body>
+</html>
