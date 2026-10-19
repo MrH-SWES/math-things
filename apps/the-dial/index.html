@@ -217,18 +217,18 @@
     
     .tick {
       position: absolute; top: 0; left: 50%; 
-      background: var(--text-light); width: 2px; height: 14px; 
+      background: var(--text-light); width: 2px; height: calc(14px * var(--k, 1)); 
       transform-origin: center 238px; 
       transition: background 0.3s;
       z-index: 32;
       border-radius: 2px;
     }
-    .tick.major { width: 4px; height: 24px; background: var(--text-gray); z-index: 33; }
+    .tick.major { width: calc(4px * var(--k, 1)); height: calc(24px * var(--k, 1)); background: var(--text-gray); z-index: 33; }
     
     .tick-number {
       position: absolute; transform: translate(-50%, -50%);
-      width: 82px; height: 72px; display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 3.85rem; color: var(--text-main);
+      width: calc(82px * var(--k, 1)); height: calc(72px * var(--k, 1)); display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: calc(3.85rem * var(--k, 1)); color: var(--text-main);
       transition: color 0.3s; letter-spacing: -0.065em; line-height: 0.9;
       z-index: 24;
     }
@@ -243,9 +243,9 @@
     .minute-label {
       position: absolute;
       transform: translate(-50%, -50%);
-      width: 14px; height: 14px;
+      width: calc(14px * var(--k, 1)); height: calc(14px * var(--k, 1));
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.48rem; font-weight: 800;
+      font-size: calc(0.48rem * var(--k, 1)); font-weight: 800;
       color: var(--text-light);
       opacity: 0;
       transition: opacity 0.22s ease, transform 0.22s ease, color 0.3s ease;
@@ -255,17 +255,17 @@
     }
 
     .minute-label.minute-five {
-      width: 28px; height: 28px;
+      width: calc(28px * var(--k, 1)); height: calc(28px * var(--k, 1));
       border-radius: 50%;
       color: #fff;
       background: var(--tick-color);
-      font-size: 0.82rem;
+      font-size: calc(0.82rem * var(--k, 1));
       font-weight: 900;
       box-shadow: 0 6px 14px rgba(0,0,0,0.12), inset 1px 1px 3px rgba(255,255,255,0.42);
       z-index: 31;
     }
 
-    .minute-label.minute-zero { font-size: 1.02rem; }
+    .minute-label.minute-zero { font-size: calc(1.02rem * var(--k, 1)); }
 
     body.minute-mode-1 .minute-label.minute-five,
     body.minute-mode-2 .minute-label.minute-five {
@@ -300,14 +300,14 @@
     .hand-container { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
     
     .hour-hand {
-      position: absolute; bottom: 50%; left: 50%; width: 16px; height: 148px;
+      position: absolute; bottom: 50%; left: 50%; width: calc(16px * var(--k, 1)); height: calc(148px * var(--k, 1));
       background: var(--steel-dark); transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg); border-radius: 7px 7px 0 0;
       box-shadow: 2px 4px 8px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.4);
     }
     
     .minute-hand {
-      position: absolute; bottom: 50%; left: 50%; width: 9px; height: 282px;
+      position: absolute; bottom: 50%; left: 50%; width: max(5px, calc(9px * var(--k, 1))); height: calc(282px * var(--k, 1));
       background: var(--ones); transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg); border-radius: 4px 4px 0 0;
       box-shadow: 2px 4px 8px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4);
@@ -324,7 +324,7 @@
 
     .center-bead {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 38px; height: 38px; border-radius: 50%; z-index: 25;
+      width: calc(38px * var(--k, 1)); height: calc(38px * var(--k, 1)); border-radius: 50%; z-index: 25;
       background: 
         radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%), 
         radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%), 
@@ -403,7 +403,7 @@
     /* ── SECOND HAND ── */
     .second-hand {
       position: absolute; bottom: 50%; left: 50%;
-      width: 2px; height: 300px;
+      width: 2px; height: calc(300px * var(--k, 1));
       background: linear-gradient(to top, #c8cacf 0%, #e8e9ed 45%, #b8bbbf 100%);
       transform-origin: bottom center;
       transform: translateX(-50%) rotate(0deg);
@@ -538,6 +538,14 @@
         min-width: 0;
         min-height: 0;
       }
+    }
+
+    /* Phones: the wedge row wraps 3×2, and a thinner bezel leaves more room for the face.
+       Everything drawn on the face scales with --k (set from the measured face size). */
+    @media (max-width: 600px) {
+      .inventory { grid-template-columns: repeat(3, 1fr); }
+      .clock-chassis { border-width: 10px; }
+      .clock-face { inset: 18px; }
     }
 
     /* Footer */
@@ -755,16 +763,26 @@
     const countdownChip = document.getElementById('countdownChip');
 
     // --- INITIALIZATION ---
+    // Face scale: 1 on every desktop/projector face (468px is the smallest one, at 981px wide),
+    // smaller on phones. Numerals, ticks, hands and their radial offsets all follow it.
+    function faceScale() {
+      const k = Math.min(1, clockFace.offsetWidth / 468);
+      clockFace.style.setProperty('--k', k);
+      return k;
+    }
+
     function buildClockFace() {
       // One geometry source for every radial element. This keeps the numerals and hash marks
       // locked to the same center point, even if the clock face size changes.
+      ticksContainer.innerHTML = '';
+      const k = faceScale();
       const center = clockFace.offsetWidth / 2;
       // Keep the hour numerals tucked out at the rim beside the hash marks.
       // This preserves the current numeral size while moving the layout outward.
-      const hashRadius = center - 18;
-      const hourRadius = hashRadius - 58;
-      const minuteFiveRadius = hashRadius + 32; // bubbles share the hash angles and sit out in the white rim
-      const minuteOneRadius = hashRadius - 20; // fine minute numerals stay just inside the hash marks
+      const hashRadius = center - 18 * k;
+      const hourRadius = hashRadius - 58 * k;
+      const minuteFiveRadius = hashRadius + 32 * k; // bubbles share the hash angles and sit out in the white rim
+      const minuteOneRadius = hashRadius - 20 * k; // fine minute numerals stay just inside the hash marks
 
       function placeOnDial(el, index, radius) {
         const angleRad = (index * 6 - 90) * Math.PI / 180;
@@ -1259,8 +1277,8 @@
 
     // ring geometry, in face px: bands sit inside the hour numerals and stack inward, one per hour
     function elapsedBands() {
-      const size = clockFace.offsetWidth, c = size / 2;
-      const outer = c - 18 - 84, inner = 30, w = Math.max(8, size * 0.025), gap = Math.max(3, size * 0.007);
+      const size = clockFace.offsetWidth, c = size / 2, k = faceScale();
+      const outer = c - (18 + 84) * k, inner = 30 * k, w = Math.max(8, size * 0.025), gap = Math.max(3, size * 0.007);
       return { c, outer, inner, w, gap, rim: c - 9 };
     }
     const polar = (c, r, deg) => {
@@ -1323,7 +1341,9 @@
     buildClockFace();
     measureClockGeometry();
     updateTimeDisplay();
+    let lastFaceSize = clockFace.offsetWidth;
     window.addEventListener('resize', () => {
+      if (clockFace.offsetWidth !== lastFaceSize) { lastFaceSize = clockFace.offsetWidth; buildClockFace(); }
       measureClockGeometry();
       if (targetActive) { updateTargetHandle(); updateShade(); }
       updateElapsed();
