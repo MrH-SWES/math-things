@@ -94,6 +94,8 @@
   .arow.carry{min-height:calc(var(--u)*.8);margin-bottom:calc(var(--u)*-.06)}
   .arow.carry .cell{height:calc(var(--u)*.8);font-size:.58em;color:#1F5FD1}
   .item.algo.sub .arow.carry .cell{color:#C0392B}
+  /* Regrouping: a digit crossed out by hand, with its new value written above it. */
+  .cell.x::before{content:"";position:absolute;left:8%;right:8%;top:50%;border-top:calc(var(--u)*.07) solid #C0392B;transform:rotate(-58deg);pointer-events:none}
   .lead,.dvsr{display:flex;gap:calc(var(--u)*.1);width:calc(var(--u)*2.2);justify-content:flex-end}
   .pad,.dvnd{display:flex;gap:calc(var(--u)*.1);padding-left:calc(var(--u)*.18);border-left:calc(var(--u)*.07) solid transparent}
   .dvnd{border-left-color:currentColor;border-top:calc(var(--u)*.07) solid currentColor;border-top-left-radius:calc(var(--u)*.16)}
@@ -382,6 +384,7 @@
   <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v24M4 16h24M16 4l-4 4m4-4 4 4M16 28l-4-4m4 4 4-4M4 16l4-4m-4 4 4 4M28 16l-4-4m4 4-4 4"/></svg>
 </button>
 <div id="algoBar" role="group" aria-label="Change this setup">
+  <button class="ab" id="crossOut" aria-label="Cross out this digit to regroup">╱ Cross out</button>
   <button class="ab" id="algoWider" aria-label="Add a place-value column">+ Place</button>
   <button class="ab" id="addendMore" aria-label="Add another addend">+ Addend</button>
   <button class="ab" id="addendLess" aria-label="Remove the last addend">− Addend</button>
@@ -847,6 +850,28 @@ function firstCell(it){
   if(it.alg==='div')return {r:it.rows.findIndex(r=>r.k==='dvsr'),i:0};
   const r=it.rows.findIndex(r=>r.k==='op');return {r,i:autoCursor(it,it.rows[r])};
 }
+// Subtraction regroups by hand: cross out a digit of the top number (or a regrouped digit),
+// and the cursor goes up to write its new value. Crossed digits are kept as places counted
+// from the right, so they stay with their digit when places are added on the left.
+const crossable=(it,r)=>it.alg==='sub'&&(it.rows[r]?.k==='carry'||r===it.rows.findIndex(x=>x.k==='op'));
+function crossed(it,row,i){return (row.x||[]).includes(cellsOf(it,row).length-1-i)}
+function crossOut(){
+  const it=findItem(ui.editing);if(it?.type!=='algo'||!ui.cell||!crossable(it,ui.cell.r))return;
+  let {r,i}=ui.cell;const row=it.rows[r],cells=cellsOf(it,row),place=cells.length-1-i;
+  if(!cells[i])return;
+  if(crossed(it,row,i)){row.x=row.x.filter(p=>p!==place)}
+  else{
+    row.x=[...(row.x||[]),place];
+    // The new value goes in the row above; a second row of regrouping appears when needed
+    // (crossing out a 10 to make it 9).
+    if(r===0||it.rows[r-1].k!=='carry'){
+      if(it.rows.filter(x=>x.k==='carry').length>=2){drawAlgo(it);placeOverlays();return}
+      it.rows.splice(r,0,{k:'carry',c:blank(it.cols)});r++;
+    }
+    ui.cell={r:r-1,i};drawAlgo(it);placeOverlays();return;
+  }
+  drawAlgo(it);placeOverlays();
+}
 function cellKey(key){
   const it=findItem(ui.editing);if(it?.type!=='algo'||!ui.cell)return;
   let {r,i}=ui.cell;const row=it.rows[r],len=ri=>cellsOf(it,it.rows[ri]).length;
@@ -858,9 +883,12 @@ function cellKey(key){
     setAuto(it,row,v);i=autoCursor(it,row);
   }else if(/^[0-9]$/.test(key)){
     // The quotient and division work are written left to right; carries stay where they are put.
-    row.c[i]=key;if(it.alg==='div')i=Math.min(len(r)-1,i+1);
+    // A regrouped digit can be 10 or more, so subtraction's top rows take two digits.
+    if(it.alg==='sub'&&row.k==='carry'&&row.c[i].length===1&&!crossed(it,row,i))row.c[i]+=key;
+    else row.c[i]=key;
+    if(it.alg==='div')i=Math.min(len(r)-1,i+1);
   }else if(key==='back'){
-    if(row.c[i])row.c[i]='';
+    if(row.c[i])row.c[i]=row.c[i].slice(0,-1);
     else if(it.alg==='div'&&i>0)row.c[--i]='';
   }
   else if(key==='left')i=Math.max(0,i-1);
@@ -891,7 +919,7 @@ function drawAlgo(it,k=ownerOf(it.id)||'main'){
   const on=ui.editing===it.id?ui.cell:null,ones=it.alg==='add'?it.cols-it.frac-1:-1;
   const cells=ri=>{
     const row=it.rows[ri],dot=it.alg==='add'&&autoRow(it,row)&&(row.v||'').includes('.');
-    return cellsOf(it,row).map((d,i)=>`<span class="cell${on&&on.r===ri&&on.i===i?' on':''}${dot&&i===ones?' dot':''}" data-r="${ri}" data-i="${i}">${String(d).replace(/[^0-9]/g,'')}</span>`).join('');
+    return cellsOf(it,row).map((d,i)=>`<span class="cell${on&&on.r===ri&&on.i===i?' on':''}${dot&&i===ones?' dot':''}${d&&crossed(it,row,i)?' x':''}" data-r="${ri}" data-i="${i}">${String(d).replace(/[^0-9]/g,'')}</span>`).join('');
   };
   let h='',part=true;
   it.rows.forEach((row,ri)=>{
@@ -906,7 +934,13 @@ function drawAlgo(it,k=ownerOf(it.id)||'main'){
   });
   el.innerHTML=h+'<div class="grip"></div>';
 }
-function setCell(r,i){const it=findItem(ui.editing);if(it?.type!=='algo')return;ui.cell=fixCell(it,{r,i});drawAlgo(it);placeOverlays()}
+// Tapping a digit of a number picks that digit (to cross it out); typing still adds to the number.
+function setCell(r,i){
+  const it=findItem(ui.editing);if(it?.type!=='algo')return;
+  const row=it.rows[r];
+  ui.cell=row&&autoRow(it,row)&&cellsOf(it,row)[i]?{r,i}:fixCell(it,{r,i});
+  drawAlgo(it);placeOverlays();
+}
 
 // ── KEYPAD ──
 function openKeypad(){keypad.classList.add('open');placeOverlays()}
@@ -983,6 +1017,8 @@ function showTrash(){
   if(it?.type==='algo'){
     const ops=it.rows.filter(x=>x.k==='op').length;
     $('addendMore').hidden=$('addendLess').hidden=it.alg!=='add';
+    $('crossOut').hidden=it.alg!=='sub';
+    $('crossOut').disabled=!ui.cell||!crossable(it,ui.cell.r)||!cellsOf(it,it.rows[ui.cell.r])[ui.cell.i];
     $('addendMore').disabled=ops>=5;$('addendLess').disabled=ops<=2;$('algoWider').disabled=it.cols>=ALG_MAX;
     algoBar.style.left=clamp(r.left,8,innerWidth-algoBar.offsetWidth-8)+'px';
     algoBar.style.top=clamp(r.bottom+12,8,innerHeight-DOCK_SPACE-64)+'px';
@@ -1002,6 +1038,7 @@ mover.addEventListener('pointermove',e=>{
 });
 const endMove=()=>{if(!moving)return;const m=moving;moving=null;if(m.before)record(m.before);else save()};
 mover.addEventListener('pointerup',endMove);mover.addEventListener('pointercancel',endMove);
+$('crossOut').onclick=crossOut;
 $('algoWider').onclick=()=>{const it=findItem(ui.editing);if(it?.type==='algo'&&widen(it,1)){drawAlgo(it);placeOverlays()}};
 $('addendMore').onclick=()=>{const it=findItem(ui.editing);if(it?.type==='algo'&&addend(it,1)){drawAlgo(it);placeOverlays()}};
 $('addendLess').onclick=()=>{const it=findItem(ui.editing);if(it?.type==='algo'&&addend(it,-1)){drawAlgo(it);placeOverlays()}};
@@ -1473,6 +1510,7 @@ addEventListener('keydown',e=>{
     const keys={Backspace:'back',Delete:'back',ArrowLeft:'left',ArrowRight:'right',ArrowDown:'down',ArrowUp:'up',Enter:'down'};
     if(e.key==='Escape'){e.preventDefault();finishEdit()}
     else if(/^[0-9.]$/.test(e.key)){e.preventDefault();cellKey(e.key)}
+    else if(e.key.toLowerCase()==='x'){e.preventDefault();crossOut()}
     else if(keys[e.key]){e.preventDefault();cellKey(keys[e.key])}
     return;
   }
