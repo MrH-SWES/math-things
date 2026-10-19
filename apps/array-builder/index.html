@@ -13,68 +13,59 @@
       --text-main: #1D1D1F;
       --text-gray: #86868B;
       --text-light: #AEAEB2;
-      
-      --ones: #DC143C; 
-      --tens: #4169E1; 
-      
-      --shadow-block: 
+
+      --ones: #DC143C;
+      --tens: #4169E1;
+
+      --shadow-block:
         inset 2px 2px 0 rgba(255,255,255,0.4),
         inset -2px -2px 0 rgba(0,0,0,0.12),
         0 8px 20px rgba(0,0,0,0.12),
         1px -1px 0 rgba(0,0,0,0.08);
 
-      --bead-surface: 
+      --bead-surface:
         radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
         radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
         linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
-      
-      --grid-size: 60px; 
+      --shadow-raised: 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-milled: inset 2px 2px 5px rgba(166,171,189,0.8), inset -2px -2px 5px rgba(255,255,255,1);
+
+      --grid-size: 60px;
       --block-size: 56px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; user-select: none; }
-    body { font-family: 'Lexend', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    body { font-family: 'Lexend', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
 
-    header { position: relative; height: 60px; background: var(--glass); backdrop-filter: blur(40px); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    header { position: relative; height: 60px; flex-shrink: 0; background: var(--glass); backdrop-filter: blur(40px); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.05); }
     .logo { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.05em; color: var(--text-main); display: inline-flex; align-items: baseline; z-index: 2; }
     .logo-bead { width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em; border-radius: 50%; display: inline-block; background: var(--bead-surface); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22); }
-    
-    .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 600; font-size: 0.9rem; color: var(--text-gray); letter-spacing: 1.5px; text-transform: uppercase; z-index: 1; }
 
-    .pagination { display: flex; gap: 8px; cursor: pointer; z-index: 2; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-light); opacity: 0.3; transition: all 0.3s ease; }
-    .dot.active { opacity: 1; background: var(--tens); transform: scale(1.3); }
-    .dot.sandbox { border-radius: 4px; width: 12px; }
-
-    #workspace { 
-      flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; 
+    #workspace {
+      flex-grow: 1; min-height: 0; position: relative; outline: none;
       background-color: var(--bg);
-      background-image: 
+      background-image:
         radial-gradient(rgba(29, 29, 31, 0.12) 2px, transparent 2px), /* Grid dots on top layer */
         radial-gradient(circle at 50% -20%, #FFFFFF 0%, rgba(255,255,255,0.5) 40%, transparent 80%); /* Spotlight underneath */
-      background-size: var(--grid-size) var(--grid-size), 100% 100%; 
+      background-size: var(--grid-size) var(--grid-size), 100% 100%;
       background-position: calc(var(--grid-size)/2) calc(var(--grid-size)/2), center top;
       box-shadow: inset 0 10px 30px rgba(0,0,0,0.02);
     }
 
-    #reset-btn {
-      position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
-      background: var(--surface); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      display: flex; align-items: center; justify-content: center; cursor: pointer;
-      opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 150;
+    .hardware { position: absolute; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 150; }
+    .icon-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent; box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; outline: none;
+      color: var(--text-gray); transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    #reset-btn.show { opacity: 1; pointer-events: auto; }
-    #reset-btn:active { transform: scale(0.9); }
-    #reset-btn svg { width: 18px; height: 18px; stroke: var(--text-gray); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-btn:active { transform: scale(0.9); }
+    .icon-btn:focus-visible { border-color: var(--tens); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); background: #F2F2F5; }
+    .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
-    #target-zone {
-      position: absolute; border: 3px dashed rgba(0,0,0,0.15); border-radius: 8px; background: rgba(0,0,0,0.02);
-      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    #target-zone.sandbox-mode { border-color: rgba(0,0,0,0.06); background: transparent; }
-    .landing-strip { border-color: rgba(65, 105, 225, 0.5) !important; background: rgba(65, 105, 225, 0.05) !important; border-style: solid !important; }
-
-    .tutorial-active .bead-handle { pointer-events: none; }
+    /* the mat the array is built on: a faint 12-by-12 field */
+    #target-zone { position: absolute; border: 3px dashed rgba(0,0,0,0.06); border-radius: 8px; background: transparent; }
 
     .bead-handle {
       position: absolute; width: calc(var(--grid-size) * 0.55); height: calc(var(--grid-size) * 0.55); border-radius: 50%;
@@ -83,6 +74,7 @@
       cursor: grab; z-index: 100; transition: transform 0.1s ease, left 0.3s ease, top 0.3s ease, bottom 0.3s ease;
     }
     .bead-handle:active { transform: scale(0.85) !important; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: grabbing; }
+    #workspace:focus-visible .bead-handle { box-shadow: 0 0 0 3px var(--tens), 0 4px 12px rgba(0,0,0,0.2); }
 
     #build-container { position: absolute; }
 
@@ -101,197 +93,129 @@
       transition: width 0.3s ease; box-shadow: var(--shadow-block);
     }
     .row-fused::after { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, transparent, transparent calc(var(--grid-size) - 2px), rgba(0,0,0,0.15) calc(var(--grid-size) - 1px), rgba(0,0,0,0.15) var(--grid-size)); z-index: 1; pointer-events: none; }
-    
+
     .fused-label { position: relative; z-index: 5; font-size: calc(var(--grid-size) * 0.45); font-weight: 800; color: rgba(255,255,255,0.95); }
 
+    /* The record: skip-count tags beside the rows and the equation below. Hidden until the eye is on. */
     .skip-tag {
-      position: absolute; right: calc(var(--grid-size) * -0.9); font-size: calc(var(--grid-size) * 0.35); font-weight: 400; 
-      color: rgba(0,0,0,0.15); transition: color 0.4s, font-weight 0.4s;
+      position: absolute; right: calc(var(--grid-size) * -0.9); font-size: calc(var(--grid-size) * 0.35); font-weight: 400;
+      color: rgba(0,0,0,0.15); transition: color 0.4s, font-weight 0.4s, opacity 0.3s;
+      opacity: 0;
     }
     .skip-tag.lit { color: var(--tens); font-weight: 800; }
+    body.rec .skip-tag { opacity: 1; }
 
-    #equation-board { position: absolute; bottom: calc(var(--grid-size) * 0.8); width: 100%; text-align: center; font-size: calc(var(--grid-size) * 0.65); font-weight: 900; color: var(--text-main); }
+    #equation-board { position: absolute; bottom: calc(var(--grid-size) * 0.5); width: 100%; text-align: center; font-size: calc(var(--grid-size) * 0.6); font-weight: 900; color: var(--text-main); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    body.rec #equation-board { opacity: 1; }
     .operator { color: var(--text-light); font-weight: 300; margin: 0 8px; }
     .final-eq { animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    
-    @keyframes pulseNext {
-      0% { box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2), 0 0 0 0 rgba(65, 105, 225, 0.4); }
-      70% { box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2), 0 0 0 15px rgba(65, 105, 225, 0); }
-      100% { box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2), 0 0 0 0 rgba(65, 105, 225, 0); }
-    }
-
-    #next-btn {
-      position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%) scale(0);
-      width: 56px; height: 56px; border-radius: 50%;
-      background: var(--bead-surface);
-      box-shadow: inset 2.5px 2.5px 5px rgba(255,255,255,0.8), inset -2.5px -2.5px 5px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.2);
-      cursor: pointer; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
-      display: flex; align-items: center; justify-content: center; z-index: 150;
-    }
-    #next-btn svg { width: 24px; height: 24px; fill: none; stroke: var(--tens); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; transform: translateX(2px); }
-    #next-btn.show { transform: translateX(-50%) scale(1); animation: pulseNext 2s infinite 1s; }
-    #next-btn:active { transform: translateX(-50%) scale(0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.2); animation: none; }
 
     @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-    footer { height: 40px; background: var(--surface); border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); z-index: 10; }
+    footer { height: 40px; flex-shrink: 0; background: var(--surface); border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); z-index: 10; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo">Math Things<span class="logo-bead"></span></div>
-  <div class="header-title">Array Builder</div>
-  <div class="pagination" id="pagination"></div>
 </header>
 
-<div id="workspace">
-  <div id="reset-btn">
-    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+<div id="workspace" tabindex="0" role="application" aria-label="Array builder. Arrow keys: Right and Left change the row; Down repeats it into rows, Up takes rows away.">
+  <div class="hardware">
+    <button class="icon-btn" id="record-btn" aria-label="Show the skip count and equation" aria-pressed="false">
+      <svg viewBox="0 0 16 16" style="stroke-width:1.6"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+    </button>
+    <button class="icon-btn" id="reset-btn" aria-label="Start a new array">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
   </div>
   <div id="target-zone"></div>
   <div id="build-container"></div>
   <div id="equation-board"><div id="dynamic-math"></div></div>
-  
-  <div id="next-btn">
-    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-  </div>
 </div>
 
 <footer>Math Things<span class="logo-bead" style="width:0.18em;height:0.18em;box-shadow:none;"></span> &nbsp;|&nbsp; Math, in your hands</footer>
+<div id="live" class="sr-only" aria-live="polite"></div>
 
 <script>
     const container = document.getElementById('build-container');
     const targetZone = document.getElementById('target-zone');
     const dynamicMath = document.getElementById('dynamic-math');
-    const pagination = document.getElementById('pagination');
-    const nextBtn = document.getElementById('next-btn');
     const resetBtn = document.getElementById('reset-btn');
+    const recordBtn = document.getElementById('record-btn');
     const workspace = document.getElementById('workspace');
-    
-    let GRID = 60; 
+    const live = document.getElementById('live');
+
+    const MAX = 12;               // the mat is 12 by 12
+    let GRID = 60;
     let currentCols = 1, currentRows = 1;
-    let state = 'horizontal'; 
+    let state = 'horizontal';     // 'horizontal': pulling a row of ones; 'vertical': repeating the fused row
     let handleX, handleY;
-    let isDraggingY = false;
+    let isDraggingY = false, merging = false;
 
-    const levels = [
-      { c: 4, r: 3, tutorial: true },
-      { c: 6, r: 2 },
-      { c: 5, r: 4 },
-      { c: 7, r: 3 },
-      { sandbox: true }
-    ];
-
-    // Build Pagination Dots
-    levels.forEach((lvl, idx) => {
-        const dot = document.createElement('div');
-        dot.className = lvl.sandbox ? 'dot sandbox' : 'dot';
-        dot.addEventListener('click', () => { currentLevelIdx = idx; loadLevel(); });
-        pagination.appendChild(dot);
-    });
-    const dots = document.querySelectorAll('.dot');
-
+    // The grid fits the mat in both directions, leaving room for the equation below it.
     function updateGridSize() {
-      const maxColsNeeded = levels[currentLevelIdx].sandbox ? 12 : Math.max(8, levels[currentLevelIdx].c);
-      const availableWidth = window.innerWidth - 64; 
-      GRID = Math.max(20, Math.min(60, availableWidth / maxColsNeeded));
+      const w = workspace.clientWidth - 64, h = workspace.clientHeight - 120;
+      GRID = Math.max(20, Math.min(60, w / MAX, h / MAX));
       document.documentElement.style.setProperty('--grid-size', `${GRID}px`);
       document.documentElement.style.setProperty('--block-size', `${GRID - 4}px`);
+      const size = MAX * GRID;
+      const left = (workspace.clientWidth - size) / 2 - 20;      // a little left, for the skip-count tags
+      const top = Math.max(16, (workspace.clientHeight - size) / 2 - GRID * 0.6);
+      targetZone.style.width = `${size}px`;
+      targetZone.style.height = `${size}px`;
+      targetZone.style.left = `${left}px`;
+      targetZone.style.top = `${top}px`;
+      container.style.left = `${left}px`;
+      container.style.top = `${top}px`;
     }
 
-    function loadLevel() {
-      updateGridSize();
-      const lvl = levels[currentLevelIdx];
-      currentCols = 1; currentRows = 1; state = 'horizontal';
+    function newArray() {
+      currentCols = 1; currentRows = 1; state = 'horizontal'; merging = false;
       container.innerHTML = ''; dynamicMath.innerHTML = '';
-      nextBtn.classList.remove('show');
-      
-      if(lvl.sandbox) localStorage.setItem('mathThings_arrayBuilder_unlocked', 'true');
-      workspace.classList.toggle('tutorial-active', !!lvl.tutorial);
-      dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentLevelIdx));
-
-      if (lvl.sandbox) {
-        targetZone.classList.add('sandbox-mode');
-        targetZone.style.width = `${12 * GRID}px`;
-        targetZone.style.height = `${12 * GRID}px`;
-        targetZone.style.left = `calc(50vw - ${(12 * GRID)/2}px - 20px)`; 
-        targetZone.style.top = `calc(50vh - ${(12 * GRID)/2}px - 40px)`; 
-        resetBtn.classList.add('show');
-      } else {
-        targetZone.classList.remove('sandbox-mode');
-        targetZone.style.width = `${lvl.c * GRID}px`;
-        targetZone.style.height = `${lvl.r * GRID}px`;
-        targetZone.style.left = `calc(50vw - ${(lvl.c * GRID)/2}px - 20px)`;
-        targetZone.style.top = `calc(50vh - ${(lvl.r * GRID)/2}px - 40px)`; 
-        resetBtn.classList.remove('show');
-      }
-
-      container.style.left = targetZone.style.left;
-      container.style.top = targetZone.style.top;
-
-      createHandleX(); 
+      createHandleX();
       renderHorizontal();
-
-      if (lvl.tutorial) setTimeout(runTutorialX, 1000);
+      announce();
     }
 
-    window.addEventListener('resize', () => { updateGridSize(); loadLevel(); });
-    resetBtn.addEventListener('click', () => loadLevel());
-
-    // --- Deliberate Tutorial Auto-Pilot ---
-    function runTutorialX() {
-        targetZone.classList.add('landing-strip');
-        const targetC = levels[currentLevelIdx].c;
-        let xInt = setInterval(() => {
-            if (currentCols < targetC) {
-                currentCols++; renderHorizontal();
-            } else {
-                clearInterval(xInt);
-                targetZone.classList.remove('landing-strip');
-                setTimeout(animateStaggeredMerge, 800); // Wait so they can see the full row
-            }
-        }, 650); // Slower drag
-    }
-
-    function runTutorialY() {
-        targetZone.classList.add('landing-strip');
-        const targetR = levels[currentLevelIdx].r;
-        let yInt = setInterval(() => {
-            if (currentRows < targetR) {
-                currentRows++; renderVertical();
-            } else {
-                clearInterval(yInt);
-                targetZone.classList.remove('landing-strip');
-                setTimeout(finish, 800);
-            }
-        }, 650); // Slower drag
-    }
+    // Resizing keeps the array; it is redrawn at the new grid size.
+    let resizeFrame = 0;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        updateGridSize();
+        if (merging) return;
+        if (state === 'horizontal') { createHandleX(); renderHorizontal(); }
+        else { container.innerHTML = ''; createHandleY(document.createElement('div')); renderVertical(); }
+      });
+    });
+    resetBtn.addEventListener('click', newArray);
+    recordBtn.addEventListener('click', () => {
+      const on = document.body.classList.toggle('rec');
+      recordBtn.classList.toggle('active', on);
+      recordBtn.setAttribute('aria-pressed', String(on));
+      announce();
+    });
 
     function createHandleX() {
       handleX = document.createElement('div');
       handleX.className = 'bead-handle'; handleX.id = 'handle-x';
       handleX.addEventListener('pointerdown', e => {
-        if(!levels[currentLevelIdx].sandbox) targetZone.classList.add('landing-strip');
-        const startX = e.clientX ?? e.touches[0].clientX; 
+        const startX = e.clientX;
         const startCols = currentCols;
-        
+
         const move = e => {
-          let dx = (e.clientX ?? e.touches[0].clientX) - startX;
-          let limit = levels[currentLevelIdx].sandbox ? 12 : levels[currentLevelIdx].c;
-          let newCols = Math.max(1, Math.min(limit, startCols + Math.round(dx / GRID)));
+          let dx = e.clientX - startX;
+          let newCols = Math.max(1, Math.min(MAX, startCols + Math.round(dx / GRID)));
           if(newCols !== currentCols) { currentCols = newCols; renderHorizontal(); }
         };
-        
+
         const up = () => {
-          targetZone.classList.remove('landing-strip');
           document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
-          
-          if (levels[currentLevelIdx].sandbox) {
-              if(currentCols > 1) animateStaggeredMerge();
-          } else {
-              if(currentCols === levels[currentLevelIdx].c) animateStaggeredMerge();
-          }
+          if(currentCols > 1) animateStaggeredMerge();
+          else announce();
         };
         document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
       });
@@ -310,19 +234,21 @@
       dynamicMath.innerHTML = `<span>${currentCols}</span>`;
     }
 
+    // A finished row of ones fuses into one bar: its count gathers to the middle.
     function animateStaggeredMerge() {
+      merging = true;
       if(handleX) handleX.remove();
       let spans = document.querySelectorAll('.val');
       let exactCenter = (currentCols - 1) / 2; // The geometric center fix
-      
+
       if(spans.length > 2) {
         spans[0].style.transform = `translateX(${GRID}px)`;
         spans[spans.length-1].style.transform = `translateX(${-GRID}px)`;
       }
 
       setTimeout(() => {
-        spans.forEach((s, i) => { 
-            s.style.transform = `translateX(${(exactCenter - i) * GRID}px)`; 
+        spans.forEach((s, i) => {
+            s.style.transform = `translateX(${(exactCenter - i) * GRID}px)`;
         });
       }, 500);
 
@@ -330,13 +256,13 @@
         let keeperIdx = Math.floor(exactCenter); // The numeral that survives
         spans.forEach((s, i) => {
           let tx = (exactCenter - i) * GRID;
-          if(i === keeperIdx) { 
-              s.style.transform = `translateX(${tx}px) scale(1.5)`; 
-              s.textContent = currentCols; 
+          if(i === keeperIdx) {
+              s.style.transform = `translateX(${tx}px) scale(1.5)`;
+              s.textContent = currentCols;
               s.style.zIndex = '10';
-          } else { 
+          } else {
               s.style.transform = `translateX(${tx}px) scale(0.5)`;
-              s.style.opacity = '0'; 
+              s.style.opacity = '0';
           }
         });
       }, 1000);
@@ -349,10 +275,7 @@
         container.appendChild(fused);
         addTag(fused, currentCols, true);
         createHandleY(fused);
-        state = 'vertical'; updateMath();
-
-        if(levels[currentLevelIdx].tutorial) setTimeout(runTutorialY, 500);
-
+        state = 'vertical'; merging = false; updateMath(); announce();
       }, 1500);
     }
 
@@ -361,7 +284,7 @@
         state = 'horizontal';
         createHandleX();
         renderHorizontal();
-        
+
         document.querySelectorAll('.block').forEach(b => {
             b.style.transform = 'scale(0.8)';
             b.style.opacity = '0.5';
@@ -370,40 +293,32 @@
                 b.style.opacity = '1';
             }, 20);
         });
+        announce();
     }
 
     function createHandleY(parent) {
       handleY = document.createElement('div'); handleY.className = 'bead-handle'; handleY.id = 'handle-y';
       handleY.addEventListener('pointerdown', e => {
-        isDraggingY = true; 
-        if(!levels[currentLevelIdx].sandbox) targetZone.classList.add('landing-strip');
-        
-        const startY = e.clientY ?? e.touches[0].clientY; 
+        isDraggingY = true;
+        const startY = e.clientY;
         const startRows = currentRows;
-        
+
         const move = e => {
-          let dy = (e.clientY ?? e.touches[0].clientY) - startY;
-          let limit = levels[currentLevelIdx].sandbox ? 12 : levels[currentLevelIdx].r;
-          let newRows = Math.max(1, Math.min(limit, startRows + Math.round(dy / GRID)));
+          let dy = e.clientY - startY;
+          let newRows = Math.max(1, Math.min(MAX, startRows + Math.round(dy / GRID)));
           if(newRows !== currentRows) { currentRows = newRows; renderVertical(); }
         };
-        
+
         const up = () => {
-          isDraggingY = false; targetZone.classList.remove('landing-strip');
+          isDraggingY = false;
           document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
-          
-          if (levels[currentLevelIdx].sandbox) {
-              if (currentRows === 1) animateUnfuse(); 
-              else renderVertical(); 
-          } else {
-              if (currentRows === levels[currentLevelIdx].r) finish(); 
-              else renderVertical(); 
-          }
+          if (currentRows === 1) animateUnfuse();
+          else { renderVertical(); announce(); }
         };
         document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
       });
       parent.appendChild(handleY);
-      
+
       handleY.style.bottom = `-${GRID * 0.28}px`;
       handleY.style.left = '50%';
       handleY.style.transform = 'translateX(-50%)';
@@ -416,9 +331,10 @@
         f.style.width = (currentCols*GRID - 4)+'px'; f.style.top = (i*GRID)+'px';
         f.innerHTML = `<span class="fused-label">${currentCols}</span>`;
         addTag(f, (i+1)*currentCols, !(i === currentRows-1 && isDraggingY));
-        if(i === currentRows-1 && !levels[currentLevelIdx].tutorial) f.appendChild(handleY);
+        if(i === currentRows-1) f.appendChild(handleY);
         container.appendChild(f);
       }
+      handleY.style.bottom = `-${GRID * 0.28}px`;
       updateMath();
     }
 
@@ -428,33 +344,45 @@
     }
 
     function updateMath() {
-      let h = ''; 
+      let h = '';
       for(let i=0; i<currentRows; i++) {
           h += `<span>${currentCols}</span>`;
           if(i < currentRows-1) h += `<span class="operator">+</span>`;
       }
       dynamicMath.innerHTML = h;
-      
-      if(levels[currentLevelIdx].sandbox && !isDraggingY && currentRows > 1) {
+
+      if(!isDraggingY && currentRows > 1) {
          dynamicMath.innerHTML = `<div class="final-eq">${currentRows} × ${currentCols} = ${currentRows * currentCols}</div>`;
       }
     }
 
-    function finish() {
-      if(handleY) handleY.remove();
-      document.querySelectorAll('.skip-tag').forEach(t => t.classList.add('lit'));
-      dynamicMath.innerHTML = `<div class="final-eq">${currentRows} × ${currentCols} = ${currentRows * currentCols}</div>`;
-      
-      if(currentLevelIdx < levels.length - 1) {
-        setTimeout(() => nextBtn.classList.add('show'), 800);
-      }
+    // ── Keyboard: the arrows pull the same beads ──
+    function announce() {
+      const rec = document.body.classList.contains('rec');
+      live.textContent = state === 'horizontal'
+        ? `A row of ${currentCols}.`
+        : `${currentRows} ${currentRows === 1 ? 'row' : 'rows'} of ${currentCols}` + (rec && currentRows > 1 ? `, ${currentRows} times ${currentCols} is ${currentRows * currentCols}.` : '.');
     }
+    workspace.addEventListener('keydown', e => {
+      if (e.target !== workspace || merging) return;
+      const k = e.key;
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k)) return;
+      e.preventDefault();
+      if (state === 'horizontal') {
+        if (k === 'ArrowRight' && currentCols < MAX) { currentCols++; renderHorizontal(); announce(); }
+        else if (k === 'ArrowLeft' && currentCols > 1) { currentCols--; renderHorizontal(); announce(); }
+        else if (k === 'ArrowDown' && currentCols > 1) animateStaggeredMerge();
+      } else {
+        if (k === 'ArrowDown' && currentRows < MAX) { currentRows++; renderVertical(); announce(); }
+        else if (k === 'ArrowUp') {
+          if (currentRows > 1) { currentRows--; renderVertical(); announce(); }
+          else animateUnfuse();
+        }
+      }
+    });
 
-    nextBtn.addEventListener('click', () => { currentLevelIdx++; loadLevel(); });
-
-    let currentLevelIdx = localStorage.getItem('mathThings_arrayBuilder_unlocked') === 'true' ? levels.length - 1 : 0;
-    
-    loadLevel(); 
+    updateGridSize();
+    newArray();
 </script>
   <script src="../../math-things-home.js"></script>
 </body>
