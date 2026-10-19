@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Pan Balance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── BALANCE ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .item { pointer-events: all; cursor: grab; outline: none; }
+    #board .item:focus-visible .focus-ring { stroke: #007AFF; stroke-width: 3; }
+    #board .item.held { cursor: grabbing; }
+    #record { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #board.rec #record { opacity: 1; }
+    #record text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; fill: #3A3D42; paint-order: stroke; stroke: rgba(255,255,255,0.92); stroke-width: 4px; stroke-linejoin: round; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #drawers { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 16px); }
+    #objects, #masses { display: grid; gap: clamp(5px, 1vw, 8px); }
+    #objects { grid-template-columns: repeat(5, auto); padding-right: clamp(4px, 1vw, 12px); border-right: 1px solid rgba(0,0,0,0.07); }
+    #masses { grid-template-columns: repeat(5, auto); }
+    @media (max-width: 860px) {
+      #drawers { flex-direction: column; align-items: stretch; }
+      #objects { border-right: none; padding-right: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.07); justify-content: center; }
+      #masses { justify-content: center; }
+    }
+    .bin {
+      width: clamp(44px, 6.4vw, 64px);
+      height: clamp(40px, 5.6vw, 54px);
+      border: 2px solid transparent; border-radius: 12px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.2s var(--spring);
+    }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 82%; height: 82%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Pan balance"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Drawers">
+    <div id="drawers">
+      <div id="objects" aria-label="Things to weigh"></div>
+      <div id="masses" aria-label="Brass masses"></div>
+    </div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the masses on each pan" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Empty both pans">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.24" stop-color="#F1F1F3"/><stop offset="0.55" stop-color="#C8C9CD"/><stop offset="0.82" stop-color="#A7A8AD"/><stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <linearGradient id="steelV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4F5F7"/><stop offset="0.45" stop-color="#D9DBDF"/><stop offset="1" stop-color="#B4B7BD"/>
+    </linearGradient>
+    <linearGradient id="steelH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B9BCC2"/><stop offset="0.35" stop-color="#F2F3F5"/><stop offset="0.65" stop-color="#DCDEE2"/><stop offset="1" stop-color="#ACAFB5"/>
+    </linearGradient>
+    <linearGradient id="dish" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9EBEE"/><stop offset="0.5" stop-color="#C9CCD1"/><stop offset="1" stop-color="#9FA3A9"/>
+    </linearGradient>
+    <!-- brass: warm, polished, darker at the edges -->
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8A6516"/><stop offset="0.22" stop-color="#D9AE45"/><stop offset="0.45" stop-color="#F6DC8A"/><stop offset="0.7" stop-color="#C99A2E"/><stop offset="1" stop-color="#7D5A12"/>
+    </linearGradient>
+    <linearGradient id="brassTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FBE7A6"/><stop offset="1" stop-color="#C9982C"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.45"/><stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.06"/><stop offset="1" stop-color="#000000" stop-opacity="0.14"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <defs id="defs"></defs>
+  <g id="stand"></g>
+  <g id="hangers"></g>
+  <g id="pans"></g>
+  <g id="items"></g>
+  <g id="beam"></g>
+  <g id="record"></g>
+  <g id="held"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // Brass masses, in grams. The small ones are flat sheet weights; the rest are knobbed cylinders.
+  const MASSES = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+  // Things to weigh. Each mass is one the brass set can match exactly; it is never shown.
+  const OBJECTS = [
+    { key: 'clip', name: 'paper clip', g: 1 },
+    { key: 'pencil', name: 'pencil', g: 6 },
+    { key: 'apple', name: 'apple', g: 180 },
+    { key: 'book', name: 'book', g: 750 },
+    { key: 'bottle', name: 'water bottle', g: 1030 },
+  ];
+  const PAN_MAX = 14;
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const anim = (node, frames, dur, easing = 'ease-out') =>
+    reduceMotion || !node ? null : node.animate(frames, { duration: dur, easing });
+  const shake = node => anim(node, [0, -5, 5, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), 260, 'linear');
+  const label = g => g >= 1000 ? (g % 1000 ? `${Math.floor(g / 1000)} kg ${g % 1000} g` : `${g / 1000} kg`) : `${g} g`;
+  const stamp = g => g >= 1000 ? `${g / 1000}kg` : `${g}g`;
+
+  const $ = id => document.getElementById(id);
+  const board = $('board'), defs = $('defs'), standG = $('stand'), hangersG = $('hangers'), pansG = $('pans'),
+        itemsG = $('items'), beamG = $('beam'), recordG = $('record'), heldG = $('held');
+  const dock = $('dock'), objectsEl = $('objects'), massesEl = $('masses'), live = $('live');
+  const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+  // ═══════ ITEMS ═══════
+  // Every item is drawn standing on (0,0), its bottom centre, at scale 1; the pan scales it by U.
+  function massShape(g) {
+    if (g <= 5) {
+      // sheet weights: thin brass plates with a folded tab
+      const w = { 1: 13, 2: 15, 5: 18 }[g];
+      return { w, h: 5, svg:
+        `<rect x="${-w / 2}" y="-5" width="${w}" height="5" rx="1" fill="url(#brass)" stroke="#6B4E10" stroke-width="0.5"/>` +
+        `<path d="M${w / 2 - 4},-5 l3,-3 h1 v3" fill="url(#brassTop)" stroke="#6B4E10" stroke-width="0.4"/>` +
+        `<text x="${-1.5}" y="-2.3" font-size="3.4" font-weight="800" text-anchor="middle" dominant-baseline="central" fill="#5A4110" font-family="Lexend, sans-serif">${stamp(g)}</text>` };
+    }
+    // knobbed cylinders, sized by the cube root of their mass, like a real set
+    const w = 9 + 34 * Math.cbrt(g / 1000), h = w * 0.95, kw = w * 0.42, kh = w * 0.32, e = w * 0.16;
+    const fs = Math.max(3.2, w * (g >= 1000 ? 0.24 : 0.22));
+    return { w, h: h + kh + e, svg:
+      `<ellipse cx="0" cy="${-e * 0.2}" rx="${w / 2}" ry="${e}" fill="#6E5012"/>` +
+      `<rect x="${-w / 2}" y="${-h}" width="${w}" height="${h}" fill="url(#brass)"/>` +
+      `<ellipse cx="0" cy="${-h}" rx="${w / 2}" ry="${e}" fill="url(#brassTop)" stroke="#8A6516" stroke-width="0.4"/>` +
+      `<rect x="${-kw * 0.28}" y="${-h - kh * 0.55}" width="${kw * 0.56}" height="${kh * 0.6}" fill="url(#brass)"/>` +
+      `<ellipse cx="0" cy="${-h - kh * 0.55}" rx="${kw / 2}" ry="${kh * 0.38}" fill="url(#brassTop)" stroke="#8A6516" stroke-width="0.4"/>` +
+      `<text x="0" y="${-h * 0.5}" font-size="${r2(fs)}" font-weight="800" text-anchor="middle" dominant-baseline="central" fill="#5A4110" fill-opacity="0.85" font-family="Lexend, sans-serif">${stamp(g)}</text>` };
+  }
+  const OBJ_SHAPES = {
+    clip: { w: 22, h: 6, svg: `<path d="M-10,-1.2 h17 a2.4,2.4 0 0 0 0,-3.6 h-15 a1.7,1.7 0 0 0 0,3.4 h12" fill="none" stroke="#8E949C" stroke-width="1.1" stroke-linecap="round"/>` },
+    pencil: { w: 62, h: 8, svg:
+      `<path d="M-26,-7.5 h48 v7 h-48 z" fill="#F2B705"/><path d="M-26,-5 h48" stroke="#D99A04" stroke-width="0.8"/>` +
+      `<path d="M22,-7.5 l9,3.5 l-9,3.5 z" fill="#E8C9A0"/><path d="M28.2,-5.1 l2.8,1.1 l-2.8,1.1 z" fill="#3A3D42"/>` +
+      `<rect x="-31" y="-7.5" width="5" height="7" fill="#C9CBD0"/><rect x="-34" y="-7.5" width="3.5" height="7" rx="1.4" fill="#E79AA5"/>` },
+    apple: { w: 34, h: 36, svg:
+      `<path d="M0,-27 C-7,-33 -17,-30 -17,-18 C-17,-6 -9,0 -4,0 C-2,0 -1,-1 0,-1 C1,-1 2,0 4,0 C9,0 17,-6 17,-18 C17,-30 7,-33 0,-27 Z" fill="#C8282E"/>` +
+      `<path d="M0,-27 C-7,-33 -17,-30 -17,-18 C-17,-6 -9,0 -4,0 C-2,0 -1,-1 0,-1 C1,-1 2,0 4,0 C9,0 17,-6 17,-18 C17,-30 7,-33 0,-27 Z" fill="url(#gloss)"/>` +
+      `<path d="M0,-27 C0,-31 1,-34 3,-36" stroke="#5B3A1E" stroke-width="1.6" fill="none" stroke-linecap="round"/>` +
+      `<path d="M2,-32 C6,-37 12,-36 13,-33 C9,-31 5,-31 2,-32 Z" fill="#4E8C2F"/>` },
+    book: { w: 72, h: 15, svg:
+      `<rect x="-36" y="-15" width="72" height="15" rx="2" fill="#2B5BB8"/>` +
+      `<rect x="-33" y="-12.5" width="68" height="10" fill="#F7F3EA"/><path d="M-33,-10 h68 M-33,-7.5 h68 M-33,-5 h68" stroke="#DDD6C6" stroke-width="0.5"/>` +
+      `<rect x="-36" y="-15" width="72" height="15" rx="2" fill="url(#gloss)"/>` },
+    bottle: { w: 24, h: 66, svg:
+      `<path d="M-11,0 v-44 c0,-5 5,-8 7,-11 v-4 h8 v4 c2,3 7,6 7,11 v44 z" fill="#9FD3EE" fill-opacity="0.75" stroke="#6AA7C8" stroke-width="0.8"/>` +
+      `<path d="M-11,0 v-40 h22 v40 z" fill="#4FA3D6" fill-opacity="0.55"/>` +
+      `<rect x="-5" y="-66" width="10" height="7" rx="1.5" fill="#2B4C8C"/>` +
+      `<rect x="-11" y="-30" width="22" height="12" fill="#F4F4F6" fill-opacity="0.85"/>` +
+      `<path d="M-8,-52 v44" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2" stroke-linecap="round"/>` },
+  };
+  function shapeOf(it) { return it.kind === 'mass' ? massShape(it.g) : OBJ_SHAPES[it.key]; }
+  function nameOf(it) { return it.kind === 'mass' ? `${label(it.g)} brass mass` : OBJECTS.find(o => o.key === it.key).name; }
+
+  // ═══════ STATE ═══════
+  let nextId = 1, recordOn = false;
+  const pans = { L: [], R: [] };               // items, in the order they were set down
+  let theta = 0, omega = 0, lastT = 0, running = false;
+  let W = 0, TOP = 0, PX = 0, PY = 0, A = 200, HANG = 160, PW = 150, U = 1;
+
+  const total = side => pans[side].reduce((a, it) => a + it.g, 0);
+  const brass = side => pans[side].filter(it => it.kind === 'mass').reduce((a, it) => a + it.g, 0);
+  // the beam leans toward the heavier pan; any difference at all shows, and big ones lean all the way
+  function targetTilt() {
+    const d = total('R') - total('L');
+    if (d === 0) return 0;
+    const big = Math.max(total('L'), total('R'));
+    const frac = Math.min(1, Math.abs(d) / Math.max(40, big * 0.25));
+    return Math.sign(d) * (2.6 + 9.4 * Math.sqrt(frac)) * Math.PI / 180;
+  }
+
+  // ═══════ LAYOUT ═══════
+  function layout() {
+    W = innerWidth; TOP = dock.getBoundingClientRect().top;
+    // the pans (each 0.86 of the half-beam wide) keep a margin from the screen's edges
+    A = Math.max(100, Math.min(W * 0.34, 330, TOP * 0.62, (W / 2 - 12) / 1.43));
+    PW = A * 0.86;
+    U = PW / 150;
+    PX = W / 2;
+    PY = Math.max(90, TOP * 0.3);
+    HANG = Math.max(110, Math.min(TOP * 0.36, A * 0.95));
+    // Shadow regions are in the user space of whatever uses them, and the beam and the items are drawn
+    // around their own origins, so the region must reach well into negative coordinates too.
+    const H = innerHeight, region = `filterUnits="userSpaceOnUse" x="${-2 * W}" y="${-2 * H}" width="${5 * W}" height="${5 * H}"`;
+    defs.innerHTML =
+      `<filter id="shadow" ${region}><feDropShadow dx="1" dy="4" stdDeviation="5" flood-color="#2A2018" flood-opacity="0.22"/></filter>` +
+      `<filter id="softShadow" ${region}><feDropShadow dx="0.5" dy="2" stdDeviation="2" flood-color="#2A2018" flood-opacity="0.28"/></filter>`;
+    drawStand();
+    frame();
+  }
+
+  function drawStand() {
+    const baseY = PY + HANG + 70 * U, colW = Math.max(14, 18 * U), bw = Math.max(120, A * 0.9);
+    standG.innerHTML =
+      `<ellipse cx="${r2(PX)}" cy="${r2(baseY + 6)}" rx="${r2(bw * 0.62)}" ry="${r2(12 * U + 4)}" fill="rgba(40,30,20,0.12)"/>` +
+      `<rect x="${r2(PX - bw / 2)}" y="${r2(baseY - 14 * U)}" width="${r2(bw)}" height="${r2(18 * U)}" rx="${r2(8 * U)}" fill="url(#steelV)" stroke="rgba(60,62,68,0.25)" filter="url(#shadow)"/>` +
+      `<rect x="${r2(PX - colW / 2)}" y="${r2(PY)}" width="${r2(colW)}" height="${r2(baseY - PY - 12 * U)}" fill="url(#steelH)" stroke="rgba(60,62,68,0.2)"/>` +
+      // the level scale: a small arc behind the pointer, its middle mark longest
+      levelScale();
+  }
+  function levelScale() {
+    const cy = PY, r = Math.max(34, 46 * U);
+    let s = `<path d="M${r2(PX - r * Math.sin(0.35))},${r2(cy - r * Math.cos(0.35))} A${r2(r)},${r2(r)} 0 0 1 ${r2(PX + r * Math.sin(0.35))},${r2(cy - r * Math.cos(0.35))}" fill="none" stroke="rgba(60,62,68,0.35)" stroke-width="2"/>`;
+    for (let k = -3; k <= 3; k++) {
+      const a = k * 0.1, l = k === 0 ? 10 : 5;
+      s += `<path d="M${r2(PX + r * Math.sin(a))},${r2(cy - r * Math.cos(a))} L${r2(PX + (r + l) * Math.sin(a))},${r2(cy - (r + l) * Math.cos(a))}" stroke="rgba(60,62,68,${k === 0 ? 0.7 : 0.35})" stroke-width="${k === 0 ? 2 : 1.3}"/>`;
+    }
+    return s;
+  }
+
+  // ═══════ DRAWING EACH FRAME ═══════
+  const ends = () => ({ L: { x: PX - A * Math.cos(theta), y: PY - A * Math.sin(theta) }, R: { x: PX + A * Math.cos(theta), y: PY + A * Math.sin(theta) } });
+  const panTop = side => { const e = ends()[side]; return { x: e.x, y: e.y + HANG }; };
+
+  function frame() {
+    const E = ends(), bt = Math.max(9, 11 * U);
+    // beam with a pointer standing up from the pivot
+    const r = Math.max(34, 46 * U);
+    beamG.innerHTML =
+      `<g transform="translate(${r2(PX)} ${r2(PY)}) rotate(${r2(theta * 180 / Math.PI)})">` +
+      `<path d="M0,0 L0,${r2(-r + 4)}" stroke="#3A3D42" stroke-width="2.4" stroke-linecap="round"/>` +
+      `<rect x="${r2(-A - 6)}" y="${r2(-bt / 2)}" width="${r2(2 * A + 12)}" height="${r2(bt)}" rx="${r2(bt / 2)}" fill="url(#steelV)" stroke="rgba(60,62,68,0.3)" filter="url(#shadow)"/>` +
+      `<circle cx="${r2(-A)}" cy="0" r="${r2(bt * 0.42)}" fill="#8E9198"/><circle cx="${r2(A)}" cy="0" r="${r2(bt * 0.42)}" fill="#8E9198"/></g>` +
+      `<circle cx="${r2(PX)}" cy="${r2(PY)}" r="${r2(bt * 1.05)}" fill="url(#alum)" stroke="rgba(40,40,46,0.4)" stroke-width="0.8"/>`;
+    // hangers and pans hang straight down from the beam ends, whatever the tilt
+    let h = '', p = '';
+    for (const side of ['L', 'R']) {
+      const e = E[side], t = panTop(side), half = PW / 2;
+      h += `<path d="M${r2(e.x)},${r2(e.y)} L${r2(t.x - half * 0.92)},${r2(t.y)} M${r2(e.x)},${r2(e.y)} L${r2(t.x + half * 0.92)},${r2(t.y)}" stroke="#9A9DA4" stroke-width="${r2(Math.max(1.4, 1.8 * U))}" fill="none"/>`;
+      p += `<path d="M${r2(t.x - half)},${r2(t.y)} Q${r2(t.x)},${r2(t.y + 30 * U)} ${r2(t.x + half)},${r2(t.y)} Z" fill="url(#dish)" stroke="rgba(60,62,68,0.35)" filter="url(#shadow)"/>` +
+           `<ellipse cx="${r2(t.x)}" cy="${r2(t.y)}" rx="${r2(half)}" ry="${r2(5 * U)}" fill="#E4E6EA" stroke="rgba(60,62,68,0.3)"/>`;
+    }
+    hangersG.innerHTML = h;
+    pansG.innerHTML = p;
+    placeItems();
+    drawRecord();
+  }
+
+  // Items sit in rows across the pan; a full row starts another on top of it. Each item rests on
+  // whatever is directly under it (or on the pan), so nothing hangs in the air above a short neighbour.
+  function placeItems() {
+    for (const side of ['L', 'R']) {
+      const t = panTop(side), maxW = PW * 0.86, placed = [];
+      let rowW = 0, row = [];
+      const flush = () => {
+        let x = t.x - rowW / 2;
+        for (const it of row) {
+          const sh = shapeOf(it), w = sh.w * U, x0 = x, x1 = x + w;
+          let y = t.y + 1;
+          for (const p of placed) if (p.x1 > x0 + 1 && p.x0 < x1 - 1) y = Math.min(y, p.top);
+          it.px = x + w / 2; it.py = y;
+          placed.push({ x0, x1, top: y - sh.h * U });
+          x += w + 2;
+        }
+        row = []; rowW = 0;
+      };
+      for (const it of pans[side]) {
+        const sh = shapeOf(it), w = sh.w * U + 2;
+        if (rowW + w > maxW && row.length) flush();
+        row.push(it); rowW += w;
+      }
+      if (row.length) flush();
+      for (const it of pans[side]) if (it.el && !it.held) it.el.setAttribute('transform', `translate(${r2(it.px)} ${r2(it.py)}) scale(${r2(U)})`);
+    }
+  }
+
+  function drawRecord() {
+    // only the brass is read: an object's mass is found by balancing it
+    let s = '';
+    const fs = r2(Math.max(14, 17 * U));
+    for (const side of ['L', 'R']) {
+      const t = panTop(side), g = brass(side);
+      if (!g) continue;
+      const y = t.y + 30 * U + fs * 1.1;
+      s += `<text x="${r2(t.x)}" y="${r2(y)}" font-size="${fs}" font-weight="800">${label(g)}</text>`;
+      if (g >= 1000) s += `<text x="${r2(t.x)}" y="${r2(y + fs * 1.15)}" font-size="${r2(fs * 0.75)}" font-weight="600">${g} g</text>`;
+    }
+    recordG.innerHTML = s;
+  }
+
+  // ═══════ MOTION ═══════
+  // A damped swing toward the target: heavy pans take their time and settle.
+  function kick() {
+    if (reduceMotion) { theta = targetTilt(); omega = 0; frame(); return; }
+    if (running) return;
+    running = true; lastT = performance.now();
+    requestAnimationFrame(step);
+  }
+  function step(now) {
+    const dt = Math.min(0.035, (now - lastT) / 1000); lastT = now;
+    const target = targetTilt();
+    omega += (-(theta - target) * 16 - omega * 5.2) * dt;
+    theta += omega * dt;
+    frame();
+    if (Math.abs(theta - target) < 0.0004 && Math.abs(omega) < 0.002) { theta = target; omega = 0; running = false; frame(); return; }
+    requestAnimationFrame(step);
+  }
+
+  let liveTimer = 0;
+  function changed() {
+    kick();
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const d = total('R') - total('L');
+      const what = side => pans[side].length ? pans[side].map(nameOf).join(', ') : 'nothing';
+      live.textContent = (d === 0 ? (total('L') ? 'Level. ' : 'Both pans empty. ') : d > 0 ? 'The right pan is heavier. ' : 'The left pan is heavier. ') +
+        `Left pan: ${what('L')}. Right pan: ${what('R')}.` + (recordOn ? ` Brass on the left ${label(brass('L'))}, on the right ${label(brass('R'))}.` : '');
+    }, 500);
+  }
+
+  // ═══════ ITEMS ON PANS ═══════
+  function makeItem(spec) {
+    const it = { id: nextId++, ...spec };
+    const sh = shapeOf(it);
+    it.el = el('g', { class: 'item', tabindex: 0, role: 'img', 'aria-label': nameOf(it) }, itemsG);
+    it.el.dataset.id = it.id;
+    it.el.innerHTML = `<g filter="url(#softShadow)">${sh.svg}</g><rect class="focus-ring" x="${-sh.w / 2 - 3}" y="${-sh.h - 3}" width="${sh.w + 6}" height="${sh.h + 6}" rx="4" fill="transparent" stroke="transparent" stroke-width="0"/>`;
+    return it;
+  }
+  function addTo(side, it) {
+    if (pans[side].length >= PAN_MAX) return false;
+    pans[side].push(it);
+    if (it.el.parentNode !== itemsG) itemsG.appendChild(it.el);
+    return true;
+  }
+  function takeOut(it) {
+    for (const side of ['L', 'R']) { const i = pans[side].indexOf(it); if (i >= 0) { pans[side].splice(i, 1); return side; } }
+    return null;
+  }
+  function putAway(it) {
+    takeOut(it);
+    if (reduceMotion) it.el.remove();
+    else it.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }).onfinish = () => it.el.remove();
+  }
+  const findItem = id => pans.L.concat(pans.R).find(o => o.id === id);
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  function sideAt(x, y) {
+    for (const side of ['L', 'R']) {
+      const t = panTop(side);
+      if (Math.abs(x - t.x) < PW * 0.62 && y > t.y - HANG * 0.9 && y < t.y + 60 * U) return side;
+    }
+    return null;
+  }
+  function overDock(x, y) { const r = dock.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+
+  board.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.item'), it = g && findItem(+g.dataset.id);
+    if (!it) return;
+    e.preventDefault();
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+    drags.set(e.pointerId, { it, from: null, sx: e.clientX, sy: e.clientY, ox: it.px - e.clientX, oy: it.py - e.clientY, moved: false });
+  });
+  function binDown(e) {
+    e.preventDefault();
+    const b = e.currentTarget;
+    drags.set(e.pointerId, { bin: b, sx: e.clientX, sy: e.clientY, moved: false });
+  }
+  addEventListener('pointermove', e => {
+    const d = drags.get(e.pointerId);
+    if (!d) return;
+    if (!d.moved) {
+      if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 5) return;
+      d.moved = true;
+      if (d.bin) {
+        // a piece pulled out of its drawer comes up under the finger
+        d.it = makeItem(specOf(d.bin)); d.fresh = true; d.ox = 0; d.oy = makeItemHalf(d.it);
+      } else d.from = takeOut(d.it);
+      d.it.held = true;
+      heldG.appendChild(d.it.el);
+      d.it.el.classList.add('held');
+      changed();
+    }
+    d.it.el.setAttribute('transform', `translate(${r2(e.clientX + d.ox)} ${r2(e.clientY + d.oy)}) scale(${r2(U)})`);
+  });
+  const makeItemHalf = it => shapeOf(it).h * U / 2;
+  function endDrag(e) {
+    const d = drags.get(e.pointerId);
+    if (!d) return;
+    drags.delete(e.pointerId);
+    if (d.bin && !d.moved) { tapBin(d.bin); return; }
+    if (!d.moved) return;
+    const it = d.it;
+    it.held = false; it.el.classList.remove('held');
+    const side = sideAt(e.clientX, e.clientY);
+    if (overDock(e.clientX, e.clientY)) { putAway(it); buzz(6); }
+    else if (side && addTo(side, it)) { buzz(8); itemsG.appendChild(it.el); }
+    else if (!d.fresh && d.from && addTo(d.from, it)) { itemsG.appendChild(it.el); }
+    else { putAway(it); }
+    changed();
+    frame();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  // A focused item: Left/Right arrows move it to that pan; Delete puts it back in its drawer.
+  board.addEventListener('keydown', e => {
+    const g = e.target.closest('.item'), it = g && findItem(+g.dataset.id);
+    if (!it) return;
+    const to = { ArrowLeft: 'L', ArrowRight: 'R' }[e.key];
+    if (to) {
+      e.preventDefault();
+      const from = takeOut(it);
+      if (!addTo(to, it)) { addTo(from, it); shake(it.el); return; }
+      changed(); frame(); it.el.focus();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      putAway(it); changed(); frame();
+    }
+  });
+
+  // ═══════ DRAWERS ═══════
+  function specOf(b) { return b.dataset.kind === 'mass' ? { kind: 'mass', g: +b.dataset.g } : { kind: 'object', key: b.dataset.key, g: OBJECTS.find(o => o.key === b.dataset.key).g }; }
+  // a tap sets a thing to weigh on the left pan and a brass mass on the right
+  function tapBin(b) {
+    const spec = specOf(b), side = spec.kind === 'mass' ? 'R' : 'L';
+    if (pans[side].length >= PAN_MAX) { shake(b); return null; }
+    const it = makeItem(spec);
+    addTo(side, it);
+    changed(); frame();
+    anim(it.el, [{ opacity: 0 }, { opacity: 1 }], 180);
+    buzz(6);
+    return it;
+  }
+  function binIcon(sh) {
+    const s = 40 / Math.max(sh.w, sh.h * 1.1, 26);
+    return `<svg viewBox="-22 -22 44 44" aria-hidden="true" focusable="false"><g transform="translate(0 ${r2(sh.h * s / 2)}) scale(${r2(s)})">${sh.svg}</g></svg>`;
+  }
+  for (const o of OBJECTS) {
+    const b = document.createElement('button');
+    b.className = 'bin'; b.dataset.kind = 'object'; b.dataset.key = o.key;
+    b.setAttribute('aria-label', `${o.name[0].toUpperCase() + o.name.slice(1)}`);
+    b.innerHTML = binIcon(OBJ_SHAPES[o.key]);
+    objectsEl.appendChild(b);
+  }
+  for (const g of MASSES) {
+    const b = document.createElement('button');
+    b.className = 'bin'; b.dataset.kind = 'mass'; b.dataset.g = g;
+    b.setAttribute('aria-label', `${label(g)} brass mass`);
+    // drawer icons keep their order of size (bigger masses look bigger), softened so the small ones still show
+    const sh = massShape(g), big = Math.max(sh.w, sh.h), s = Math.min(36 / big, 0.62 * Math.sqrt(61 / big));
+    b.innerHTML = `<svg viewBox="-22 -22 44 44" aria-hidden="true" focusable="false"><g transform="translate(0 ${r2(sh.h * s / 2)}) scale(${r2(s)})">${sh.svg}</g></svg>`;
+    massesEl.appendChild(b);
+  }
+  document.querySelectorAll('.bin').forEach(b => {
+    b.addEventListener('pointerdown', binDown);
+    b.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      const it = tapBin(b);
+      if (it) it.el.focus();
+    });
+  });
+
+  // ═══════ HARDWARE ═══════
+  recordBtn.addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('rec', recordOn);
+    recordBtn.classList.toggle('active', recordOn);
+    recordBtn.setAttribute('aria-pressed', String(recordOn));
+    changed();
+  });
+  clearBtn.addEventListener('click', () => {
+    [...pans.L, ...pans.R].forEach(putAway);
+    buzz(8); changed(); frame();
+  });
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  layout();
+  changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>

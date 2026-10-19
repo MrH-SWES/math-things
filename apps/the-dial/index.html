@@ -464,6 +464,43 @@
     }
     #shadePath { fill: var(--thousands); opacity: 0.18; }
 
+    /* ── START PIN & ELAPSED TIME ── */
+    /* A brushed-aluminium pin stuck in the rim at the start time; the hand's sweep since then is shaded,
+       one ring per full hour, plus the arc of the hour in progress. */
+    .start-pin {
+      position: absolute; width: 0; height: 0; z-index: 34; pointer-events: none;
+      opacity: 0; transition: opacity 0.25s;
+    }
+    body.pin-active .start-pin { opacity: 1; }
+    .start-pin .pin-head {
+      position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%;
+      background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 3px 8px rgba(0,0,0,0.35);
+    }
+    @keyframes pin-drop {
+      0% { transform: translateY(-14px) scale(1.35); opacity: 0; }
+      70% { transform: translateY(1px) scale(0.96); opacity: 1; }
+      100% { transform: none; }
+    }
+    .start-pin.dropping .pin-head { animation: pin-drop 0.36s cubic-bezier(0.2, 0.8, 0.3, 1); }
+    #elapsedG .lap { fill: var(--tens); opacity: 0.30; }
+    #elapsedG .part { fill: var(--tens); opacity: 0.30; }
+    #elapsedG .thread { stroke: #9A9DA3; stroke-width: 2; stroke-linecap: round; }
+    body.pin-active #pinBtn { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .elapsed-chip {
+      background: var(--surface); border-radius: 12px; padding: 8px 20px;
+      box-shadow: var(--shadow-raised); border: 1px solid var(--border);
+      font-size: 1rem; font-weight: 900; letter-spacing: -0.03em;
+      color: var(--tens); min-width: 120px; text-align: center; display: none;
+    }
+    body.pin-active .elapsed-chip { display: block; }
+    /* hiding the digital time hides the elapsed record too */
+    body.readout-hidden .elapsed-chip { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
     /* ── TARGET TOGGLE ── */
     body.target-active #targetBtn {
       box-shadow: var(--shadow-milled);
@@ -632,9 +669,19 @@
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
           </button>
+
+          <button id="pinBtn" class="now-btn" onclick="togglePin()" aria-label="Start pin: mark the start time" aria-pressed="false">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3.5 A8.5 8.5 0 1 1 3.5 12" stroke-opacity="0.45"/>
+              <line x1="12" y1="6.5" x2="12" y2="12.5"/>
+              <circle cx="12" cy="4.2" r="2.6" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
         </div>
 
         <div class="countdown-chip" id="countdownChip"></div>
+        <div class="elapsed-chip" id="elapsedChip" aria-hidden="true"></div>
+        <div class="sr-only" id="dialLive" aria-live="polite"></div>
         
       </div>
     </div>
@@ -644,6 +691,7 @@
         <div class="clock-face" id="clockFace">
           <div class="active-wedge-overlay" id="wedgeOverlay"></div>
           <svg class="shade-overlay" id="shadeOverlay" viewBox="0 0 476 476">
+            <g id="elapsedG"></g>
             <path id="shadePath"/>
           </svg>
           <div class="ticks-container" id="ticksContainer"></div>
@@ -654,6 +702,7 @@
             <div class="second-hand" id="secondHand"></div>
             <div class="center-bead"></div>
           </div>
+          <div class="start-pin" id="startPin"><div class="pin-head"></div></div>
           <div class="target-handle" id="targetHandle">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <circle cx="12" cy="12" r="10"/>
@@ -797,6 +846,7 @@
       hourHand.style.transform = `translateX(-50%) rotate(${STATE.totalMinuteRotation / 12}deg)`;
 
       updateShade();
+      updateElapsed();
 
       if (isSpinning) return;
 
@@ -1071,6 +1121,8 @@
     }
     function startSpin() {
       if (liveActive) toggleLive();
+      // a random time has no start: the pin comes out
+      if (pinActive) togglePin();
       isSpinning = true;
       document.body.classList.add('is-spinning');
       minuteHand.classList.remove('needs-discovery');
@@ -1160,7 +1212,7 @@
       const tgtMin = Math.round(targetAngleDeg / 6) % 60;
       const diff = (tgtMin - curMin + 60) % 60;
       countdownChip.classList.add('active');
-      countdownChip.textContent = diff === 0 ? '✓' : diff === 1 ? '1 min' : `${diff} min`;
+      countdownChip.textContent = diff === 1 ? '1 min' : `${diff} min`;
     }
 
     targetHandle.addEventListener('mousedown', e => {
@@ -1173,6 +1225,100 @@
       isDraggingTarget = true;
     }, { passive: false });
 
+    // --- START PIN & ELAPSED TIME ---
+    // The pin marks the minute hand's position (its total rotation, so hours count too). Everything the
+    // hand sweeps forward from there is elapsed time: 6° a minute, 360° an hour.
+    let pinActive = false;
+    let pinRotation = 0;
+    const startPin = document.getElementById('startPin');
+    const elapsedG = document.getElementById('elapsedG');
+    const elapsedChip = document.getElementById('elapsedChip');
+    const dialLive = document.getElementById('dialLive');
+    const pinBtn = document.getElementById('pinBtn');
+
+    function togglePin() {
+      pinActive = !pinActive;
+      document.body.classList.toggle('pin-active', pinActive);
+      pinBtn.setAttribute('aria-pressed', String(pinActive));
+      pinBtn.setAttribute('aria-label', pinActive ? 'Remove the start pin' : 'Start pin: mark the start time');
+      if (pinActive) {
+        pinRotation = Math.round(STATE.totalMinuteRotation / 6) * 6;
+        startPin.classList.remove('dropping'); void startPin.offsetWidth; startPin.classList.add('dropping');
+        navigator.vibrate?.(12);
+      }
+      updateElapsed();
+      announceElapsed();
+    }
+
+    // floored like the digital time, so the record always agrees with the readout
+    const elapsedMinutes = () => Math.max(0, Math.floor((STATE.totalMinuteRotation + 1e-6) / 6) - Math.round(pinRotation / 6));
+    const formatElapsed = m => {
+      const h = Math.floor(m / 60), r = m % 60;
+      return h ? (r ? `${h} h ${r} min` : `${h} h`) : `${r} min`;
+    };
+
+    // ring geometry, in face px: bands sit inside the hour numerals and stack inward, one per hour
+    function elapsedBands() {
+      const size = clockFace.offsetWidth, c = size / 2;
+      const outer = c - 18 - 84, inner = 30, w = Math.max(8, size * 0.025), gap = Math.max(3, size * 0.007);
+      return { c, outer, inner, w, gap, rim: c - 9 };
+    }
+    const polar = (c, r, deg) => {
+      const a = deg * Math.PI / 180;
+      return [(c + r * Math.sin(a)).toFixed(1), (c - r * Math.cos(a)).toFixed(1)];
+    };
+    function ringPath(c, ro, ri) {
+      return `M ${c - ro} ${c} a ${ro} ${ro} 0 1 0 ${2 * ro} 0 a ${ro} ${ro} 0 1 0 ${-2 * ro} 0 Z ` +
+             `M ${c - ri} ${c} a ${ri} ${ri} 0 1 0 ${2 * ri} 0 a ${ri} ${ri} 0 1 0 ${-2 * ri} 0 Z`;
+    }
+    function arcPath(c, ro, ri, a1, span) {
+      const a2 = a1 + span, large = span > 180 ? 1 : 0;
+      const [x1, y1] = polar(c, ro, a1), [x2, y2] = polar(c, ro, a2), [x3, y3] = polar(c, ri, a2), [x4, y4] = polar(c, ri, a1);
+      return `M ${x1} ${y1} A ${ro} ${ro} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${ri} ${ri} 0 ${large} 0 ${x4} ${y4} Z`;
+    }
+
+    function updateElapsed() {
+      if (!pinActive) { elapsedG.innerHTML = ''; elapsedChip.textContent = ''; return; }
+      const { c, outer, inner, w, gap, rim } = elapsedBands();
+      const pinAngle = ((pinRotation % 360) + 360) % 360;
+      const swept = Math.max(0, STATE.totalMinuteRotation - pinRotation);
+      const laps = Math.floor(swept / 360 + 1e-9), part = swept - laps * 360;
+      // bands shrink if many hours pile up, so every lap stays countable
+      const n = laps + (part > 0.5 ? 1 : 0);
+      const room = outer - inner;
+      const bw = n * (w + gap) > room ? Math.max(3, room / n - gap) : w;
+      let html = '';
+      for (let k = 0; k < laps; k++) {
+        const ro = outer - k * (bw + gap);
+        html += `<path class="lap" fill-rule="evenodd" d="${ringPath(c, ro, ro - bw)}"/>`;
+      }
+      const deepest = outer - Math.max(0, n - 1) * (bw + gap) - bw;
+      if (part > 0.5) {
+        const ro = outer - laps * (bw + gap);
+        html += `<path class="part" d="${arcPath(c, ro, ro - bw, pinAngle, Math.min(part, 359.9))}"/>`;
+      }
+      // a thread from the pin in the rim down to the bands marks where the hour began
+      const [tx1, ty1] = polar(c, rim - 10, pinAngle), [tx2, ty2] = polar(c, n ? deepest : outer - w, pinAngle);
+      html += `<line class="thread" x1="${tx1}" y1="${ty1}" x2="${tx2}" y2="${ty2}"/>`;
+      elapsedG.innerHTML = html;
+      const [px, py] = polar(c, rim, pinAngle);
+      startPin.style.left = px + 'px';
+      startPin.style.top = py + 'px';
+      elapsedChip.textContent = formatElapsed(elapsedMinutes());
+      clearTimeout(announceTimer);
+      announceTimer = setTimeout(announceElapsed, 700);
+    }
+    let announceTimer = 0;
+    function announceElapsed() {
+      dialLive.textContent = !pinActive ? 'Start pin removed.'
+        : readoutHidden ? 'Start pin set.'
+        : `Elapsed since the pin: ${spokenElapsed(elapsedMinutes())}.`;
+    }
+    function spokenElapsed(total) {
+      const h = Math.floor(total / 60), m = total % 60, part = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+      return h && m ? `${part(h, 'hour')} ${part(m, 'minute')}` : h ? part(h, 'hour') : part(m, 'minute');
+    }
+
     // Boot
     buildClockFace();
     measureClockGeometry();
@@ -1180,6 +1326,7 @@
     window.addEventListener('resize', () => {
       measureClockGeometry();
       if (targetActive) { updateTargetHandle(); updateShade(); }
+      updateElapsed();
     });
   </script>
   <script src="../../math-things-home.js"></script>
