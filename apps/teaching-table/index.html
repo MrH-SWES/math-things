@@ -11,6 +11,13 @@
   <link rel="stylesheet" href="./table-v2.css?v=20261014a">
   <link rel="stylesheet" href="./accessibility.css?v=20260930c">
   <script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.111.1/mathlive.min.js"></script>
+<script>
+  // MathLive looks for its fonts beside the script but resolves the folder wrongly from a CDN;
+  // point it at the pinned package's fonts. Keypress sounds stay off in the classroom.
+  addEventListener('DOMContentLoaded',()=>{if(window.MathfieldElement){
+    MathfieldElement.fontsDirectory='https://cdn.jsdelivr.net/npm/mathlive@0.111.1/fonts';
+    MathfieldElement.soundsDirectory=null;}});
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>  <style>
