@@ -1,6 +1,48 @@
 # Latest Review
 
-This round covers three changes: The Dial (elapsed-time start pin), Liquid Volume (new) and Pan Balance (new). The legacy Balance Scale is unchanged.
+This round covers four changes: The Dial (elapsed-time start pin, then a phone layout fix), Liquid Volume (new) and Pan Balance (new). The legacy Balance Scale is unchanged.
+
+---
+
+## The Dial: phone layout
+
+Status: PASS
+
+Must Fix:
+- None.
+
+Should Fix Soon:
+- Try it on a real phone, especially dragging the hand and the target handle with a thumb. Testing used scripted mouse events at 375×812, 1024×768 and 1920×1080.
+
+Notes:
+- Files changed: apps/the-dial/index.html only.
+- Behavior:
+  - Under 600px the six wedge buttons wrap to 3 across, 2 rows. The page no longer scrolls sideways at 375px (it was 392px wide, on main too).
+  - Under 600px the bezel is thinner (10px) and the white rim narrower (18px), so the face grows from 235px to 271px.
+  - Everything drawn on the face follows one scale, --k = face width ÷ 468, capped at 1: hour numerals, ticks, the 5-minute bubbles and fine minute numerals, the hour, minute and second hands, the center bead, and the elapsed rings. 468px is the smallest face a desktop ever draws, so desktop and projector stay at exactly 1 and look the same as before.
+  - The numerals' radial offsets from the rim scale too, so they sit at the rim on a small face instead of bunching at the centre.
+  - The face is rebuilt when its size changes (turning a tablet, resizing a window). Before, numerals kept the size they were built at.
+  - The target handle and the start pin keep their size on phones; they are touch targets.
+- Doctrine principles applied: no new words or controls; the tool keeps the same parts at every size.
+- Desktop (1024×768): face 512px, numeral radius 180px and 61.6px numerals, the same as before. No horizontal scroll.
+- Mobile (375×812): no horizontal scroll. Face 271px, numerals 35.7px at radius 92px (0.68 of the face radius; desktop is 0.70). The 5-minute bubbles stay inside the bezel (151.7 against 153.5px).
+- Projector (1920×1080): face 588px, numeral radius 218px, the same as before. No horizontal scroll.
+- Accessibility: unchanged.
+- Remaining risks:
+  - On phones the 44px target handle can cover part of a numeral while it sits over one.
+
+Acceptance tests (each at 375×812, 1024×768 and 1920×1080):
+- No horizontal scroll. PASS
+- Hour numerals at the rim, not bunched. PASS
+- Dragging the minute hand from 12 to 3 sets about :15. PASS
+- The 1/4 wedge shades and its button stays pressed. PASS
+- The target handle sits on the shade ring (0.88 of the face radius); dragged to 6 it reads 30 min. PASS
+- Start pin: 9:45 → 11:20 reads 1 h 35 min, 1 ring + 1 arc; the pin sits in the rim. PASS
+- Spin turns the hands and pulls the pin. PASS
+- Live mode shows the real time. PASS
+- Resizing 1024 → 375 rebuilds the face (60 ticks, numerals at the rim, no scroll). PASS
+- No console errors. PASS
+- No frameworks, bundlers, or package managers added. PASS
 
 ---
 
