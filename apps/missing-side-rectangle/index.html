@@ -59,18 +59,6 @@
     }
     .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 0.86rem; font-weight: 700; letter-spacing: 1.2px; color: var(--text-gray); text-transform: uppercase; }
 
-    #new-problem-btn {
-      border: 0;
-      background: var(--surface);
-      color: var(--text-main);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
     #workspace {
       flex: 1;
       position: relative;
@@ -130,7 +118,7 @@
       pointer-events: none;
     }
 
-    #drag-handle {
+    .bead {
       position: absolute;
       width: calc(var(--grid-size) * 0.58);
       height: calc(var(--grid-size) * 0.58);
@@ -141,8 +129,11 @@
       z-index: 8;
       transition: top 0.2s ease, transform 0.12s ease;
     }
-    #drag-handle:active { transform: scale(0.9); cursor: grabbing; }
+    .bead:active { transform: scale(0.9); cursor: grabbing; }
+    .bead:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
     #drag-handle.idle-wiggle { animation: wiggle 0.55s ease-in-out 0s 2; }
+    #width-handle { cursor: ew-resize; }
+    #area-handle { width: calc(var(--grid-size) * 0.46); height: calc(var(--grid-size) * 0.46); }
 
     #equations {
       position: absolute;
@@ -159,13 +150,6 @@
     .hidden { opacity: 0; transform: translateX(-50%) translateY(10px); }
     .show { opacity: 1; transform: translateX(-50%) translateY(0); transition: opacity 0.25s ease, transform 0.25s ease; }
 
-    #board.solved .cell { animation: solvedPulse 0.55s ease; }
-
-    @keyframes solvedPulse {
-      0% { transform: scale(1); }
-      45% { transform: scale(1.04); }
-      100% { transform: scale(1); }
-    }
     @keyframes wiggle {
       0%,100% { transform: rotate(0deg); }
       25% { transform: rotate(-9deg); }
@@ -190,8 +174,8 @@
 <body>
   <header>
     <div class="logo">Math Things<span class="logo-bead"></span></div>
-    <div class="header-title">Array Slicer</div>
-    <button id="new-problem-btn" type="button">New Problem</button>
+    <div class="header-title" aria-hidden="true"></div>
+    <span aria-hidden="true"></span>
   </header>
 
   <div id="workspace">
@@ -200,7 +184,9 @@
       <div id="array"></div>
       <div id="fixed-label" class="num-label"></div>
       <div id="quotient-label" class="num-label">?</div>
-      <div id="drag-handle" role="slider" aria-label="Slice array into groups" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"></div>
+      <div id="drag-handle" class="bead" tabindex="0" role="slider" aria-label="Pull rows apart" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"></div>
+      <div id="width-handle" class="bead" tabindex="0" role="slider" aria-label="Known side" aria-valuemin="1" aria-valuemax="10" aria-valuenow="4"></div>
+      <div id="area-handle" class="bead" tabindex="0" role="slider" aria-label="Area: pull squares in or out" aria-valuemin="1" aria-valuemax="100" aria-valuenow="16"></div>
     </div>
 
     <div id="equations" class="hidden" aria-live="polite"></div>
@@ -215,21 +201,20 @@
     const fixedLabel = document.getElementById('fixed-label');
     const quotientLabel = document.getElementById('quotient-label');
     const dragHandle = document.getElementById('drag-handle');
+    const widthHandle = document.getElementById('width-handle');
+    const areaHandle = document.getElementById('area-handle');
     const equations = document.getElementById('equations');
-    const newProblemBtn = document.getElementById('new-problem-btn');
 
+    // The rectangle: totalArea squares laid in rows of fixedSide. The number of rows is the missing side;
+    // a partial last row is the remainder. The student sets the known side and the area with the beads,
+    // then pulls the rows apart to count the missing side.
     let gridSize = 50;
     let fixedSide = 4;
-    let quotient = 4;
     let totalArea = 16;
     let separatedGroups = 0;
     let hasInteracted = false;
-    let locked = false;
     let idleTimer = null;
-
-    function randInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    const rows = () => Math.ceil(totalArea / fixedSide);
 
     function updateGridSize() {
       const maxBoardWidth = Math.min(window.innerWidth - 32, 620);
@@ -241,9 +226,9 @@
     function scheduleIdleWiggle() {
       clearTimeout(idleTimer);
       dragHandle.classList.remove('idle-wiggle');
-      if (locked) return;
+      if (separatedGroups === rows()) return;
       idleTimer = setTimeout(() => {
-        if (!locked) dragHandle.classList.add('idle-wiggle');
+        if (separatedGroups !== rows()) dragHandle.classList.add('idle-wiggle');
       }, 3000);
     }
 
@@ -252,22 +237,22 @@
       dragHandle.classList.remove('idle-wiggle');
     }
 
+    const gapPx = () => Math.round(gridSize * 0.32);
+    const rowTop = row => row * gridSize + (row < separatedGroups ? row : separatedGroups) * gapPx();
+
     function renderArray() {
       arrayEl.innerHTML = '';
-      const gap = Math.round(gridSize * 0.32);
-
-      for (let row = 0; row < quotient; row++) {
-        for (let col = 0; col < fixedSide; col++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          const yOffset = row < separatedGroups ? row * gap : separatedGroups * gap;
-          cell.style.left = `${col * gridSize + 2}px`;
-          cell.style.top = `${row * gridSize + yOffset + 2}px`;
-          arrayEl.appendChild(cell);
-        }
+      const R = rows();
+      for (let i = 0; i < totalArea; i++) {
+        const row = Math.floor(i / fixedSide), col = i % fixedSide;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.left = `${col * gridSize + 2}px`;
+        cell.style.top = `${rowTop(row) + 2}px`;
+        arrayEl.appendChild(cell);
       }
 
-      const totalHeight = quotient * gridSize + separatedGroups * gap;
+      const totalHeight = R * gridSize + separatedGroups * gapPx();
       arrayEl.style.width = `${fixedSide * gridSize}px`;
       arrayEl.style.height = `${totalHeight}px`;
 
@@ -275,94 +260,135 @@
       dividendEl.style.left = `${(fixedSide * gridSize) / 2}px`;
       dividendEl.style.top = `${(totalHeight) / 2}px`;
 
+      // the known side is labelled along the top; its bead sits at the right end of the first row
       fixedLabel.textContent = `${fixedSide}`;
-      fixedLabel.style.left = `${fixedSide * gridSize + 8}px`;
-      fixedLabel.style.top = `${Math.max(4, (gridSize / 2) - 10)}px`;
+      fixedLabel.style.left = `${(fixedSide * gridSize) / 2 - 6}px`;
+      fixedLabel.style.top = `${-gridSize * 0.55}px`;
+      widthHandle.style.left = `${fixedSide * gridSize + 6}px`;
+      widthHandle.style.top = `${gridSize * 0.21}px`;
+      widthHandle.setAttribute('aria-valuenow', String(fixedSide));
 
+      // the missing side is labelled down the left
       quotientLabel.textContent = hasInteracted ? `${separatedGroups}` : '?';
-      quotientLabel.style.left = `${fixedSide * gridSize + 8}px`;
-      quotientLabel.style.top = `${totalHeight - 20}px`;
+      quotientLabel.style.left = `${-gridSize * 0.45}px`;
+      quotientLabel.style.top = `${totalHeight / 2 - 12}px`;
 
-      dragHandle.style.left = `${(fixedSide * gridSize) / 2 - (gridSize * 0.29)}px`;
+      // the area bead sits where the next square would go
+      const next = totalArea, nr = Math.floor(next / fixedSide), nc = next % fixedSide;
+      areaHandle.style.left = `${nc * gridSize + gridSize * 0.27}px`;
+      areaHandle.style.top = `${rowTop(nr) + gridSize * 0.27}px`;
+      areaHandle.setAttribute('aria-valuenow', String(totalArea));
+
+      dragHandle.style.left = `${Math.max((fixedSide * gridSize) / 2, gridSize * 1.6) - (gridSize * 0.29)}px`;
       dragHandle.style.top = `${totalHeight + 8}px`;
+      dragHandle.setAttribute('aria-valuemax', String(R));
       dragHandle.setAttribute('aria-valuenow', String(separatedGroups));
 
-      checkSolved();
+      showEquations();
     }
 
-    function checkSolved() {
-      const solved = separatedGroups === quotient;
-      if (solved && !locked) {
-        locked = true;
-        stopIdleWiggle();
-        board.classList.add('solved');
+    // With every row pulled apart, the division and multiplication it shows appear beneath.
+    function showEquations() {
+      const R = rows(), full = Math.floor(totalArea / fixedSide), rem = totalArea % fixedSide;
+      if (separatedGroups === R) {
         equations.className = 'show';
-        equations.innerHTML = `${totalArea} ÷ ${fixedSide} = ${quotient}<br>${quotient} × ${fixedSide} = ${totalArea}`;
-      }
-      if (!solved) {
-        locked = false;
-        board.classList.remove('solved');
+        equations.innerHTML = rem === 0
+          ? `${totalArea} ÷ ${fixedSide} = ${full}<br>${full} × ${fixedSide} = ${totalArea}`
+          : `${totalArea} ÷ ${fixedSide} = ${full} R ${rem}<br>${full} × ${fixedSide} + ${rem} = ${totalArea}`;
+      } else {
         equations.className = 'hidden';
         equations.innerHTML = '';
       }
     }
 
     function setSeparatedGroups(val) {
-      const clamped = Math.max(0, Math.min(quotient, Math.round(val)));
+      const clamped = Math.max(0, Math.min(rows(), Math.round(val)));
       if (clamped === separatedGroups) return;
       separatedGroups = clamped;
       renderArray();
       scheduleIdleWiggle();
     }
 
-    function beginDrag(startEvent) {
-      if (locked) return;
-      stopIdleWiggle();
+    // Changing the rectangle closes the rows back up and hides the missing side again.
+    function reshape(side, area) {
+      side = Math.max(Math.ceil(area / 10), Math.min(10, side));
+      if (side === fixedSide && area === totalArea) return;
+      fixedSide = side; totalArea = area;
+      separatedGroups = 0; hasInteracted = false;
+      renderArray();
+      navigator.vibrate?.(4);
+    }
 
+    function beginDrag(startEvent) {
+      stopIdleWiggle();
       if (!hasInteracted) {
         hasInteracted = true;
         quotientLabel.textContent = `${separatedGroups}`;
       }
-
       const startY = startEvent.clientY;
       const startGroups = separatedGroups;
-
-      function onMove(e) {
-        const dy = startY - e.clientY;
-        setSeparatedGroups(startGroups + dy / gridSize);
-      }
-
+      function onMove(e) { setSeparatedGroups(startGroups + (startY - e.clientY) / gridSize); }
       function onUp() {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
-        if (!locked) scheduleIdleWiggle();
+        scheduleIdleWiggle();
       }
-
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
     }
 
-    function newProblem() {
-      updateGridSize();
-      fixedSide = randInt(2, 10);
-      quotient = randInt(2, 10);
-      totalArea = fixedSide * quotient;
+    // drag the width bead left or right: the squares re-flow into rows of that length
+    function beginWidth(e) {
+      e.preventDefault();
+      stopIdleWiggle();
+      const origin = arrayEl.getBoundingClientRect().left;
+      function onMove(ev) { reshape(Math.round((ev.clientX - origin) / gridSize), totalArea); }
+      function onUp() { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); scheduleIdleWiggle(); }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    }
 
-      separatedGroups = 0;
-      hasInteracted = false;
-      locked = false;
-      board.classList.remove('solved');
-      equations.className = 'hidden';
-      equations.innerHTML = '';
-
-      renderArray();
-      scheduleIdleWiggle();
+    // drag the area bead through the grid: every square before it is part of the rectangle
+    function beginArea(e) {
+      e.preventDefault();
+      stopIdleWiggle();
+      separatedGroups = 0; renderArray();
+      const box = arrayEl.getBoundingClientRect();
+      function onMove(ev) {
+        const col = Math.max(0, Math.min(fixedSide - 1, Math.floor((ev.clientX - box.left) / gridSize)));
+        const row = Math.max(0, Math.min(9, Math.floor((ev.clientY - box.top) / gridSize)));
+        const area = Math.max(1, Math.min(fixedSide * 10, row * fixedSide + col + (ev.clientX - box.left >= fixedSide * gridSize ? 1 : 0)));
+        reshape(fixedSide, area);
+      }
+      function onUp() { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); scheduleIdleWiggle(); }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
     }
 
     dragHandle.addEventListener('pointerdown', beginDrag);
-    newProblemBtn.addEventListener('click', () => {
-      stopIdleWiggle();
-      newProblem();
+    widthHandle.addEventListener('pointerdown', beginWidth);
+    areaHandle.addEventListener('pointerdown', beginArea);
+
+    // keyboard: arrows on each bead
+    dragHandle.addEventListener('keydown', e => {
+      const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      hasInteracted = true;
+      setSeparatedGroups(separatedGroups + d);
+      renderArray();
+    });
+    widthHandle.addEventListener('keydown', e => {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      reshape(fixedSide + d, totalArea);
+    });
+    areaHandle.addEventListener('keydown', e => {
+      const d = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: fixedSide, ArrowUp: -fixedSide }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      reshape(fixedSide, Math.max(1, Math.min(fixedSide * 10, totalArea + d)));
     });
 
     window.addEventListener('resize', () => {
@@ -371,7 +397,9 @@
       scheduleIdleWiggle();
     });
 
-    newProblem();
+    updateGridSize();
+    renderArray();
+    scheduleIdleWiggle();
   </script>
   <script src="../../math-things-home.js"></script>
 </body>

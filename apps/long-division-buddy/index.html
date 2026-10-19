@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Things. | Division Scaffold</title>
+    <title>Math Things. | Long Division Buddy</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -185,13 +185,11 @@
         .action-input:focus { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,122,255,0.15); }
         .action-input::-webkit-inner-spin-button, .action-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: var(--error) !important; color: var(--error) !important; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
 
         /* ── COMPLETION ── */
         #completion { display: none; flex-direction: column; align-items: center; text-align: center; width: 100%; }
         .final-eq { font-size: 3rem; font-weight: 900; color: var(--text-main); margin-bottom: 24px; letter-spacing: -0.04em; }
-        .remainder { color: var(--error); font-size: 2rem; margin-left: 12px; }
+        .remainder { color: var(--text-gray); font-size: 2rem; margin-left: 12px; }
         
         /* ── FOOTER ── */
         footer { text-align: center; padding: 24px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-light); }
@@ -206,7 +204,6 @@
     </header>
 
     <main>
-        <p class="section-label">Algorithm Scaffold</p>
         <div class="card">
             
             <div id="setupScreen">
@@ -257,6 +254,7 @@
         let workRows = [];
         let step = 'divide'; 
         let currentQuotientDigit = 0;
+        let currentProduct = 0;
 
         // DOM
         const setupScreen = document.getElementById('setupScreen');
@@ -404,12 +402,9 @@
             return inp;
         }
 
-        function triggerError(input) {
-            input.classList.remove('shake');
-            void input.offsetWidth; // trigger reflow
-            input.classList.add('shake');
-            input.value = '';
-        }
+        // The scaffold records what the student writes and carries it forward, as on paper.
+        // Nothing is marked right or wrong; a slip shows up later in the work itself.
+        const entry = input => { const v = parseInt(input.value, 10); return Number.isNaN(v) ? null : v; };
 
         // 1. DIVIDE
         function promptDivide() {
@@ -419,23 +414,18 @@
         }
 
         function handleDivide(input) {
-            const ans = parseInt(input.value);
-            const correct = Math.floor(currentNumber / divisor);
-            
-            if (ans === correct) {
-                currentQuotientDigit = ans;
-                quotientDigits[currentPosition] = ans;
-                
-                if (ans === 0) {
-                    // Skip mult/sub if 0, go straight to drop
-                    if (currentPosition === dividendDigits.length - 1) { finishProblem(); }
-                    else { step = 'drop'; nextStep(); }
-                } else {
-                    step = 'multiply'; 
-                    nextStep();
-                }
+            const ans = entry(input);
+            if (ans === null || ans < 0) return;
+            currentQuotientDigit = ans;
+            quotientDigits[currentPosition] = ans;
+
+            if (ans === 0) {
+                // Skip mult/sub if 0, go straight to drop
+                if (currentPosition === dividendDigits.length - 1) { finishProblem(); }
+                else { step = 'drop'; nextStep(); }
             } else {
-                triggerError(input);
+                step = 'multiply';
+                nextStep();
             }
         }
 
@@ -447,44 +437,33 @@
         }
 
         function handleMultiply(input) {
-            const ans = parseInt(input.value);
-            const correct = divisor * currentQuotientDigit;
-            
-            if (ans === correct) {
-                workRows.push({ type: 'subtract', value: correct, position: currentPosition });
-                step = 'subtract';
-                nextStep();
-            } else {
-                triggerError(input);
-            }
+            const ans = entry(input);
+            if (ans === null || ans < 0) return;
+            currentProduct = ans;
+            workRows.push({ type: 'subtract', value: ans, position: currentPosition });
+            step = 'subtract';
+            nextStep();
         }
 
         // 3. SUBTRACT
         function promptSubtract() {
-            const product = divisor * currentQuotientDigit;
-            actionArea.innerHTML = `<span class="math-prompt">${currentNumber} − ${product} = </span>`;
+            actionArea.innerHTML = `<span class="math-prompt">${currentNumber} − ${currentProduct} = </span>`;
             const inp = createInput(handleSubtract);
             actionArea.appendChild(inp);
         }
 
         function handleSubtract(input) {
-            const ans = parseInt(input.value);
-            const product = divisor * currentQuotientDigit;
-            const correct = currentNumber - product;
-            
-            if (ans === correct) {
-                workRows.push({ type: 'line', position: currentPosition });
-                workRows.push({ type: 'result', value: correct, position: currentPosition, bringDown: false });
-                currentNumber = correct;
-                
-                if (currentPosition === dividendDigits.length - 1) {
-                    finishProblem();
-                } else {
-                    step = 'drop';
-                    nextStep();
-                }
+            const ans = entry(input);
+            if (ans === null) return;
+            workRows.push({ type: 'line', position: currentPosition });
+            workRows.push({ type: 'result', value: ans, position: currentPosition, bringDown: false });
+            currentNumber = ans;
+
+            if (currentPosition === dividendDigits.length - 1) {
+                finishProblem();
             } else {
-                triggerError(input);
+                step = 'drop';
+                nextStep();
             }
         }
 
