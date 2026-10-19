@@ -42,23 +42,25 @@
   /* ── THE TABLE AND THE SHEET ── */
   #table{position:fixed;inset:0;overflow:hidden;cursor:default}
   #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
-  #sheet{
+  .sheet{
     position:absolute;left:0;top:0;background:#FFFEFB;
     box-shadow:0 1px 2px rgba(0,0,0,.08),0 12px 40px rgba(60,48,30,.16);
     border-radius:3px;
   }
   #sheet img.page-img{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;border-radius:3px}
   /* Blank papers are printed in sheet units, so they zoom with the work. */
-  #sheet.lined{background-image:linear-gradient(transparent 39px,rgba(48,96,170,.22) 39px,rgba(48,96,170,.22) 41px);
+  .sheet.lined{background-image:linear-gradient(transparent 39px,rgba(48,96,170,.22) 39px,rgba(48,96,170,.22) 41px);
     background-size:100% 40px;background-position:0 20px}
-  #sheet.grid{background-image:linear-gradient(rgba(48,96,170,.16) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(48,96,170,.16) 1.5px,transparent 1.5px);
+  .sheet.grid{background-image:linear-gradient(rgba(48,96,170,.16) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(48,96,170,.16) 1.5px,transparent 1.5px);
     background-size:50px 50px;background-position:-.75px -.75px}
-  #sheet.dots{background-image:radial-gradient(circle,rgba(48,64,90,.38) 2.4px,transparent 2.8px);
+  .sheet.dots{background-image:radial-gradient(circle,rgba(48,64,90,.38) 2.4px,transparent 2.8px);
     background-size:50px 50px;background-position:25px 25px}
-  #marks{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-  #marks .hit{pointer-events:stroke;stroke:transparent;fill:none;cursor:grab}
-  #marks .hit.area{pointer-events:all;fill:transparent}
-  #marks .sel .vis{filter:drop-shadow(0 0 3px rgba(0,122,255,.55))}
+  .marks{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+  .marks .hit{pointer-events:stroke;stroke:transparent;fill:none;cursor:grab}
+  .marks .hit.area{pointer-events:all;fill:transparent}
+  .marks .sel .vis{filter:drop-shadow(0 0 3px rgba(0,122,255,.55))}
+  #scratch{display:none}
+  #scratch.open{display:block}
 
   /* ── TYPED MATH ON THE PAGE ── */
   /* An item's y is its vertical centre, so a fraction sits on the line like printed math. */
@@ -121,6 +123,7 @@
   .mini{width:58px;height:58px;border-radius:4px;background:#FFFEFB;box-shadow:0 1px 3px rgba(0,0,0,.18)}
   .mini.lined{background-image:linear-gradient(transparent 9px,rgba(48,96,170,.4) 9px,rgba(48,96,170,.4) 10px);background-size:100% 10px;background-position:0 4px}
   .mini.grid{background-image:linear-gradient(rgba(48,96,170,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(48,96,170,.3) 1px,transparent 1px);background-size:11px 11px}
+  .duo{display:flex;gap:5px}.duo .mini{width:30px;height:42px}
   .mini.dots{background-image:radial-gradient(circle,rgba(48,64,90,.6) 1.2px,transparent 1.6px);background-size:11px 11px;background-position:5px 5px}
 
   /* ── KEYPAD: floats beside the spot being written ── */
@@ -247,8 +250,12 @@
 <div class="logo" aria-hidden="true">Math Things<span class="logo-bead"></span></div>
 <div id="table" role="application" aria-label="Teaching table: a worksheet or sheet of paper to work on">
   <div id="world">
-    <div id="sheet" class="plain">
-      <svg id="marks" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="sheet" class="sheet plain">
+      <svg id="marks" class="marks" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <!-- Scratch paper beside the page, as on a desk -->
+    <div id="scratch" class="sheet grid">
+      <svg id="marks2" class="marks" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
 </div>
@@ -264,6 +271,9 @@
   </button>
   <button class="tile" id="openBook" aria-label="Open a textbook page" title="Textbook">
     <svg viewBox="0 0 48 48" fill="none" stroke="#3A3A3F" stroke-width="2.6" stroke-linejoin="round"><path d="M24 12c-4-3-10-4-16-3v28c6-1 12 0 16 3 4-3 10-4 16-3V9c-6-1-12 0-16 3z"/><path d="M24 12v28"/></svg>
+  </button>
+  <button class="tile" id="sideBtn" aria-label="Scratch paper beside the page" aria-pressed="false" title="Scratch paper beside the page">
+    <div class="duo"><div class="mini" style="background:#FFFEFB;box-shadow:0 1px 3px rgba(0,0,0,.18);background-image:linear-gradient(rgba(40,40,45,.5) 2px,transparent 2px);background-size:100% 7px;background-position:0 6px"></div><div class="mini grid"></div></div>
   </button>
   <div class="sep"></div>
   <button class="tile" data-paper="plain" aria-label="Plain paper" title="Plain paper"><div class="mini"></div></button>
@@ -305,7 +315,7 @@
   <button class="key" data-in="0">0</button><button class="key" data-in="." aria-label="decimal point">.</button>
   <button class="key op" data-in="=" aria-label="equals">=</button>
   <button class="key op" data-in="+" aria-label="plus">+</button>
-  <button class="key op" data-in="\frac{#@}{#?}" aria-label="fraction"><span class="frac-glyph">▢<i></i>▢</span></button>
+  <button class="key op" data-in="\frac" aria-label="fraction"><span class="frac-glyph">▢<i></i>▢</span></button>
   <button class="key soft" data-cmd="moveToPreviousChar" aria-label="Move left">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-9 9 9 9"/></svg></button>
   <button class="key soft" data-cmd="moveToNextChar" aria-label="Move right">
@@ -401,6 +411,7 @@ const INKS = {graphite:'#26262A', blue:'#1F5FD1'};
 const STORE = 'math-things-teaching-table-v3';
 const $ = id => document.getElementById(id);
 const table=$('table'),world=$('world'),sheet=$('sheet'),marksSvg=$('marks'),keypad=$('keypad'),trash=$('trash');
+const scratchEl=$('scratch'),marks2=$('marks2');
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const uid=()=>Math.random().toString(36).slice(2,10);
 
@@ -413,6 +424,29 @@ let doc={pages:[{id:uid(),w:PAGE_W,h:BLANK_H,paper:'plain',hasImage:false,items:
 const ui={tool:'type',shape:'ellipse',ink:'graphite',size:34,editing:null,selected:null};
 const view={x:0,y:0,z:1};
 const page=()=>doc.pages[doc.page];
+// Scratch paper lives on the desk, not in the document: it stays while pages turn and
+// worksheets change. Closing it only puts it aside.
+let desk={open:false,scratch:{id:'scratch',w:PAGE_W,h:BLANK_H,paper:'grid',items:[]}};
+const GAP=48;   // space between the page and the scratch paper
+// A surface is one sheet on the table: its data, its element, its marks layer, its place.
+const SURF={
+  main:{el:sheet,svg:marksSvg,data:()=>page(),x:()=>0},
+  scratch:{el:scratchEl,svg:marks2,data:()=>desk.open?desk.scratch:null,x:()=>page().w+GAP},
+};
+const surfaces=()=>desk.open?['main','scratch']:['main'];
+function ownerOf(id){
+  for(const k of ['main','scratch']){const d=SURF[k].data();if(d?.items.some(i=>i.id===id))return k}
+  return null;
+}
+// Which sheet a point on the table falls on, in that sheet's own units.
+function surfaceAt(w){
+  for(const k of surfaces()){
+    const d=SURF[k].data(),x=w.x-SURF[k].x();
+    if(x>=0&&w.y>=0&&x<=d.w&&w.y<=d.h)return {k,x,y:w.y};
+  }
+  return null;
+}
+let lastSurf='main';
 
 // ── IMAGE STORE (IndexedDB) ── worksheet pages are blobs; too big for localStorage.
 const idb=new Promise(res=>{
@@ -436,6 +470,7 @@ function save(){
   try{
     localStorage.setItem(STORE,JSON.stringify({doc,size:ui.size,ink:ui.ink}));
     const l=page().lesson;if(l)localStorage.setItem(lessonKey(l),JSON.stringify(page().items));
+    localStorage.setItem(STORE+':desk',JSON.stringify(desk));
   }catch{}
 }
 function lessonItems(l){try{return JSON.parse(localStorage.getItem(lessonKey(l))||'[]')}catch{return []}}
@@ -445,12 +480,14 @@ function load(){
     if(s?.doc?.pages?.length){doc=s.doc;doc.page=clamp(doc.page|0,0,doc.pages.length-1)}
     if(s?.size)ui.size=s.size;
     if(s?.ink in INKS)ui.ink=s.ink;
+    const d=JSON.parse(localStorage.getItem(STORE+':desk')||'null');
+    if(d?.scratch?.items)desk=d;
   }catch{}
 }
 
 // ── UNDO / REDO ── every change to the page is one step, including clearing it.
 const undoStack=[],redoStack=[];
-const snap=()=>JSON.stringify({page:doc.page,items:page().items,paper:page().paper});
+const snap=()=>JSON.stringify({page:doc.page,items:page().items,paper:page().paper,scratch:{items:desk.scratch.items,paper:desk.scratch.paper}});
 function record(before){
   const after=snap();if(before===after)return;
   undoStack.push({before,after});if(undoStack.length>300)undoStack.shift();
@@ -460,6 +497,7 @@ function restore(state){
   const s=JSON.parse(state);
   if(s.page!==doc.page){doc.page=s.page;}
   page().items=s.items;page().paper=s.paper;
+  if(s.scratch){desk.scratch.items=s.scratch.items;desk.scratch.paper=s.scratch.paper}
   renderPage();save();
 }
 function undo(){finishEdit();const e=undoStack.pop();if(!e)return;redoStack.push(e);restore(e.before);syncHistory();say('Undone')}
@@ -474,10 +512,12 @@ function applyView(){
 const DOCK_SPACE=104,TOP_SPACE=58;   // the dock below, the logo above
 function fit(){
   const p=page(),W=innerWidth,H=innerHeight-DOCK_SPACE-TOP_SPACE;
-  // Fit the width: worksheets are read top to bottom, so a tall page scrolls.
-  view.z=clamp(Math.min((W-48)/p.w,1.6),.15,6);
-  view.x=(W-p.w*view.z)/2;
-  view.y=TOP_SPACE+(p.h*view.z<H?(H-p.h*view.z)/2:0);
+  // Fit the width of everything on the table: worksheets are read top to bottom, so a
+  // tall page scrolls. With scratch paper out, both sheets fit side by side.
+  const tw=desk.open?p.w+GAP+desk.scratch.w:p.w,th=desk.open?Math.max(p.h,desk.scratch.h):p.h;
+  view.z=clamp(Math.min((W-48)/tw,1.6),.15,6);
+  view.x=(W-tw*view.z)/2;
+  view.y=TOP_SPACE+(th*view.z<H?(H-th*view.z)/2:0);
   applyView();
 }
 function zoomAt(f,cx,cy){
@@ -486,14 +526,13 @@ function zoomAt(f,cx,cy){
 }
 const toPage=(cx,cy)=>({x:(cx-view.x)/view.z,y:(cy-view.y)/view.z});
 const toScreen=(x,y)=>({x:view.x+x*view.z,y:view.y+y*view.z});
-const onSheet=pt=>pt.x>=0&&pt.y>=0&&pt.x<=page().w&&pt.y<=page().h;
 
 // ── RENDERING ──
 const els=new Map();   // item id → element
 async function renderPage(){
   const p=page();
   sheet.style.width=p.w+'px';sheet.style.height=p.h+'px';
-  sheet.className=p.hasImage||p.lesson?'':p.paper;
+  sheet.className='sheet '+(p.hasImage||p.lesson?'':p.paper);
   // The page's surface (scan or textbook page) is rebuilt only when the page changes,
   // so undo and redo never flash it.
   if(sheet.dataset.page!==p.id){
@@ -506,33 +545,45 @@ async function renderPage(){
       if(u&&page()===p){const img=new Image();img.className='page-img';img.src=u;img.alt='';sheet.prepend(img)}
     }
   }
-  marksSvg.setAttribute('width',p.w);marksSvg.setAttribute('height',p.h);
-  marksSvg.setAttribute('viewBox',`0 0 ${p.w} ${p.h}`);
+  sizeMarks(marksSvg,p);
   for(const el of els.values())el.remove();
-  els.clear();marksSvg.replaceChildren();
-  for(const it of p.items)drawItem(it);
+  els.clear();marksSvg.replaceChildren();marks2.replaceChildren();
+  layoutScratch();
+  for(const k of surfaces())for(const it of SURF[k].data().items)drawItem(it,k);
   ui.editing=null;ui.selected=null;closeKeypad();showTrash();
   // The pager turns worksheet pages, or textbook pages when a book is open.
   const n=doc.book?doc.book.total:doc.pages.length,at=doc.book?p.lesson.index:doc.page;
   $('pager').hidden=n<2;$('pageNo').textContent=(at+1)+'/'+n;
   $('prevPage').disabled=at===0;$('nextPage').disabled=at===n-1;
-  for(const t of document.querySelectorAll('[data-paper]'))t.classList.toggle('on',!p.hasImage&&!p.lesson&&t.dataset.paper===p.paper);
+  syncPaperTiles();
 }
-function drawItem(it){
+function sizeMarks(svg,d){svg.setAttribute('width',d.w);svg.setAttribute('height',d.h);svg.setAttribute('viewBox',`0 0 ${d.w} ${d.h}`)}
+// Scratch paper stands beside the page and is at least as tall as it.
+function layoutScratch(){
+  const sc=desk.scratch;
+  scratchEl.classList.toggle('open',desk.open);
+  $('sideBtn').classList.toggle('on',desk.open);$('sideBtn').setAttribute('aria-pressed',desk.open);
+  if(!desk.open)return;
+  sc.h=Math.max(BLANK_H,page().h);
+  scratchEl.className='sheet open '+sc.paper;
+  scratchEl.style.cssText=`left:${SURF.scratch.x()}px;width:${sc.w}px;height:${sc.h}px`;
+  sizeMarks(marks2,sc);
+}
+function drawItem(it,k=ownerOf(it.id)||'main'){
   if(it.type==='math'){
     let el=els.get(it.id);
     if(!el){
       el=document.createElement('div');el.className='item math';el.dataset.id=it.id;
       const mf=document.createElement('math-field');
       el.append(mf,Object.assign(document.createElement('div'),{className:'grip'}));
-      sheet.append(el);els.set(it.id,el);
+      SURF[k].el.append(el);els.set(it.id,el);
       setupField(mf,it);
     }
     el.style.left=it.x+'px';el.style.top=it.y+'px';el.style.fontSize=it.size+'px';
     const mf=el.querySelector('math-field');
     if(mf.value!==it.latex)mf.value=it.latex;
     el.classList.toggle('empty',!it.latex);
-  }else drawMark(it);
+  }else drawMark(it,k);
 }
 function setupField(mf,it){
   // Our keypad replaces MathLive's own keyboard and menu; physical keyboards still work.
@@ -568,9 +619,10 @@ function markPaths(m){
   }
   return [];
 }
-function drawMark(m){
+function drawMark(m,k=ownerOf(m.id)||'main'){
+  const svg=SURF[k].svg;
   let g=els.get(m.id);
-  if(!g){g=document.createElementNS('http://www.w3.org/2000/svg','g');g.dataset.id=m.id;marksSvg.append(g);els.set(m.id,g)}
+  if(!g){g=document.createElementNS('http://www.w3.org/2000/svg','g');g.dataset.id=m.id;svg.append(g);els.set(m.id,g)}
   const hl=m.shape==='highlight',color=INKS[m.ink]||INKS.graphite;
   const sw=m.shape==='check'||m.shape==='cross'?5:3.6;
   const vis=markPaths(m).join('');
@@ -579,16 +631,17 @@ function drawMark(m){
     `<g class="hit${hl?' area':''}" stroke-width="26">${vis}</g>`;
   g.classList.toggle('sel',ui.selected===m.id);
   // highlights sit under the ink
-  if(hl&&marksSvg.firstChild!==g)marksSvg.prepend(g);
+  if(hl&&svg.firstChild!==g)svg.prepend(g);
 }
-const findItem=id=>page().items.find(i=>i.id===id);
+const findItem=id=>{const k=ownerOf(id);return k?SURF[k].data().items.find(i=>i.id===id):null};
+function removeItem(id){const k=ownerOf(id);if(!k)return;const d=SURF[k].data();d.items=d.items.filter(i=>i.id!==id);els.get(id)?.remove();els.delete(id)}
 
 // ── EDITING TYPED MATH ──
 let editBefore=null;
 function startEdit(id){
   if(ui.editing===id)return;
   finishEdit();select(null);
-  ui.editing=id;editBefore=snap();
+  ui.editing=id;editBefore=snap();fracPart=null;
   const el=els.get(id);el.classList.add('editing');
   const mf=el.querySelector('math-field');
   requestAnimationFrame(()=>{mf.focus();openKeypad()});
@@ -598,14 +651,14 @@ function finishEdit(){
   ui.editing=null;
   const el=els.get(id),it=findItem(id);
   el?.classList.remove('editing');el?.querySelector('math-field')?.blur();
-  if(it&&!it.latex.trim()){page().items=page().items.filter(i=>i!==it);el?.remove();els.delete(id)}
+  if(it&&!it.latex.trim())removeItem(id);
   closeKeypad();
   if(editBefore){const b=editBefore;editBefore=null;record(b)}
 }
-function newMathAt(pt){
-  const before=snap();
-  const it={id:uid(),type:'math',x:pt.x-ui.size*.12,y:pt.y,size:ui.size,latex:''};
-  page().items.push(it);drawItem(it);
+function newMathAt(at){
+  const before=snap();lastSurf=at.k;
+  const it={id:uid(),type:'math',x:at.x-ui.size*.12,y:at.y,size:ui.size,latex:''};
+  SURF[at.k].data().items.push(it);drawItem(it,at.k);
   startEdit(it.id);editBefore=before;   // creation and typing are one undo step
 }
 function activeField(){return ui.editing?els.get(ui.editing)?.querySelector('math-field'):null}
@@ -624,10 +677,25 @@ keypad.addEventListener('click',e=>{
     drawItem(it);placeOverlays();save();mf.focus();return;
   }
   mf.focus();
-  if(k.dataset.cmd)mf.executeCommand(k.dataset.cmd);
-  else mf.insert(k.dataset.in,{insertionMode:'replaceSelection',selectionMode:k.dataset.in.includes('#')?'placeholder':'after',format:'latex'});
+  // Fractions are written the way they are by hand: the fraction key gives an empty
+  // stacked fraction with the cursor on top; → goes from top to bottom; an operator typed
+  // after the bottom steps out of the fraction first, so 3/4 + 1/8 never nests.
+  const ins=k.dataset.in,cmd=k.dataset.cmd;
+  const leave=()=>{mf.executeCommand('moveToNextChar');fracPart=null};
+  if(cmd){
+    mf.executeCommand(cmd);
+    fracPart=cmd==='moveToNextChar'&&fracPart==='top'?'bottom':null;
+  }else if(ins.startsWith('\\frac')){
+    if(fracPart==='bottom')leave();
+    mf.insert('\\frac{#?}{#?}',{insertionMode:'replaceSelection',selectionMode:'placeholder',format:'latex'});
+    fracPart='top';
+  }else{
+    if(fracPart==='bottom'&&!/^[0-9.]$/.test(ins))leave();
+    mf.insert(ins,{insertionMode:'replaceSelection',selectionMode:'after',format:'latex'});
+  }
   mf.dispatchEvent(new Event('input'));
 });
+let fracPart=null;   // 'top' or 'bottom' while the keypad is writing a fraction
 
 // Overlays (keypad, delete button) follow the thing they belong to.
 function placeOverlays(){
@@ -658,8 +726,7 @@ function select(id){
 }
 trash.addEventListener('click',()=>{
   const id=ui.selected;if(!id)return;
-  const before=snap();page().items=page().items.filter(i=>i.id!==id);
-  els.get(id)?.remove();els.delete(id);select(null);record(before);
+  const before=snap();removeItem(id);select(null);record(before);
 });
 
 // ── POINTER: tap to write, drag to pan or draw, pinch to zoom ──
@@ -667,7 +734,7 @@ const ptrs=new Map();
 let gesture=null;
 function itemAt(target){
   const el=target.closest?.('.item');if(el)return el.dataset.id;
-  const g=target.closest?.('#marks > g');return g?g.dataset.id:null;
+  const g=target.closest?.('.marks > g');return g?g.dataset.id:null;
 }
 table.addEventListener('pointerdown',e=>{
   if(e.button>0)return;
@@ -681,13 +748,13 @@ table.addEventListener('pointerdown',e=>{
     return;
   }
   if(ptrs.size>2)return;
-  const pt=toPage(e.clientX,e.clientY),hit=itemAt(e.target);
+  const at=surfaceAt(toPage(e.clientX,e.clientY)),hit=itemAt(e.target);
   if(hit&&hit!==ui.editing){
     const it=findItem(hit);
     gesture={kind:'item',id:hit,sx:e.clientX,sy:e.clientY,orig:JSON.parse(JSON.stringify(it)),moved:false};
-  }else if(ui.tool==='mark'&&onSheet(pt)&&!hit){
-    finishEdit();select(null);
-    gesture={kind:'draw',start:pt,sx:e.clientX,sy:e.clientY,mark:null};
+  }else if(ui.tool==='mark'&&at&&!hit){
+    finishEdit();select(null);lastSurf=at.k;
+    gesture={kind:'draw',k:at.k,start:{x:at.x,y:at.y},sx:e.clientX,sy:e.clientY,mark:null};
   }else{
     gesture={kind:'pan',sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,moved:false,onItem:!!hit};
   }
@@ -707,13 +774,14 @@ table.addEventListener('pointermove',e=>{
     if(far)g.moved=true;
     if(g.moved){view.x=g.vx+dx;view.y=g.vy+dy;applyView()}
   }else if(g.kind==='item'&&(far||g.moved)){
-    if(!g.moved){g.moved=true;g.before=snap();finishEdit();select(g.id)}
+    if(!g.moved){g.moved=true;g.before=snap();finishEdit();select(g.id);lastSurf=ownerOf(g.id)||lastSurf}
     const it=findItem(g.id),o=g.orig,ux=dx/view.z,uy=dy/view.z;
     if(it.type==='math'){it.x=o.x+ux;it.y=o.y+uy}
     else{it.x1=o.x1+ux;it.y1=o.y1+uy;it.x2=o.x2+ux;it.y2=o.y2+uy}
     drawItem(it);showTrash();
   }else if(g.kind==='draw'){
-    let p=toPage(e.clientX,e.clientY);
+    const w=toPage(e.clientX,e.clientY);
+    let p={x:w.x-SURF[g.k].x(),y:w.y};
     if(!g.mark&&!far)return;
     if(!g.mark){g.mark={id:uid(),type:'mark',shape:ui.shape,ink:ui.ink,x1:g.start.x,y1:g.start.y,x2:p.x,y2:p.y}}
     // Straight lines and arrows settle onto level and plumb when they are close.
@@ -722,7 +790,7 @@ table.addEventListener('pointermove',e=>{
       const s=Math.round(a/(Math.PI/4))*(Math.PI/4);
       if(Math.abs(a-s)<.12)p={x:g.start.x+len*Math.cos(s),y:g.start.y+len*Math.sin(s)};
     }
-    g.mark.x2=p.x;g.mark.y2=p.y;drawMark(g.mark);
+    g.mark.x2=p.x;g.mark.y2=p.y;drawMark(g.mark,g.k);
   }
 });
 function endPointer(e){
@@ -741,16 +809,16 @@ function endPointer(e){
     if(g.mark){
       const before=snap(),m=g.mark;
       if(Math.hypot(m.x2-m.x1,m.y2-m.y1)<10&&!['check','cross'].includes(m.shape)){els.get(m.id)?.remove();els.delete(m.id);return}
-      page().items.push(m);record(before);
-    }else if(g.shape==='check'||ui.shape==='check'||ui.shape==='cross'){
+      SURF[g.k].data().items.push(m);record(before);
+    }else if(ui.shape==='check'||ui.shape==='cross'){
       // A tap stamps a check or an X at a readable size.
       const s=34,before=snap();
       const m={id:uid(),type:'mark',shape:ui.shape,ink:ui.ink,x1:g.start.x-s/2,y1:g.start.y-s/2,x2:g.start.x+s/2,y2:g.start.y+s/2};
-      page().items.push(m);drawMark(m);record(before);
+      SURF[g.k].data().items.push(m);drawMark(m,g.k);record(before);
     }
   }else if(g.kind==='pan'&&!g.moved){
-    const pt=toPage(e.clientX,e.clientY);
-    if(ui.tool==='type'&&onSheet(pt))newMathAt(pt);
+    const at=surfaceAt(toPage(e.clientX,e.clientY));
+    if(ui.tool==='type'&&at)newMathAt(at);
     else{finishEdit();select(null)}
   }
 }
@@ -804,12 +872,29 @@ for(const b of document.querySelectorAll('[data-paper]'))b.onclick=()=>{
   // Blank paper replaces the document with one fresh sheet; undo cannot cross documents, so
   // only switch the pattern if the current page is already blank paper.
   const p=page();
+  if(desk.open){
+    // With scratch paper out, the paper tiles choose its paper.
+    const before=snap();desk.scratch.paper=b.dataset.paper;layoutScratch();record(before);syncPaperTiles();
+    toggleTray('paperTray',false);return;
+  }
   if(!p.hasImage&&!p.lesson&&doc.pages.length===1){const before=snap();p.paper=b.dataset.paper;renderPage();record(before)}
   else newDocument([{id:uid(),w:PAGE_W,h:BLANK_H,paper:b.dataset.paper,hasImage:false,items:[]}]);
   toggleTray('paperTray',false);
 };
+function syncPaperTiles(){
+  const p=page(),cur=desk.open?desk.scratch.paper:(!p.hasImage&&!p.lesson?p.paper:null);
+  for(const t of document.querySelectorAll('[data-paper]'))t.classList.toggle('on',t.dataset.paper===cur);
+}
+$('sideBtn').onclick=()=>{
+  finishEdit();desk.open=!desk.open;if(!desk.open&&lastSurf==='scratch')lastSurf='main';
+  renderPage().then(fit);save();toggleTray('paperTray',false);
+  say(desk.open?'Scratch paper out':'Scratch paper put aside');
+};
+// Wiping clears the sheet you last worked on; undo brings it back.
 $('clearPage').onclick=()=>{
-  const before=snap();page().items=[];renderPage();record(before);toggleTray('paperTray',false);say('Page wiped. Undo brings it back.');
+  const k=desk.open?lastSurf:'main';
+  const before=snap();SURF[k].data().items=[];renderPage();record(before);toggleTray('paperTray',false);
+  say((k==='scratch'?'Scratch paper':'Page')+' wiped. Undo brings it back.');
 };
 function newDocument(pages,book=null){
   finishEdit();
@@ -927,7 +1012,7 @@ async function showLesson(p){
         const d=f.contentDocument,h=Math.max(Math.ceil(d.body?.scrollHeight||0),600);
         if(Math.abs(h-p.h)>2){
           const first=p.h===BLANK_H&&!p.measured;p.h=h;p.measured=true;f.style.height=h+'px';
-          sheet.style.height=h+'px';marksSvg.setAttribute('height',h);marksSvg.setAttribute('viewBox',`0 0 ${p.w} ${h}`);
+          sheet.style.height=h+'px';sizeMarks(marksSvg,p);layoutScratch();
           if(first)fit();save();
         }
       }catch{}
