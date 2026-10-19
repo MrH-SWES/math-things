@@ -6,40 +6,39 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook touchscreen, especially drag-laying chips along a row with a finger. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
-- On phones, tiles are 30px; fine with a mouse, small for a finger.
+- Try it on a real iPad or Chromebook touchscreen, especially dragging a fold tab partway and tracing with a finger while folded. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
+- Drawing has no keyboard path; only the crease, the fold tabs and the shapes do.
 
 Notes:
-- Files changed: apps/hundred-chart/index.html (new app). No existing app was modified.
-- Behavior: A free hundred chart for multiples, factors, primes and number patterns (Grade 4 Lesson 9).
-  - Ceramic tiles numbered 1–100 in rows of ten, set in a brushed-metal frame. A slightly wider gap after the fifth row and column makes fives and tens easy to see. The numbers are part of the object.
-  - The cabinet has three chip bins (teal, plum, gold) and a cover-tile bin. Tapping a bin chooses it; the chosen bin sits pressed into the cabinet.
-  - Tap a number to lay the chosen chip, or drag across numbers. The first number decides: a stroke that starts on an empty number lays chips, one that starts on a chip lifts them.
-  - Chips are translucent enamel discs; the number shows through. Two or three colors on one number share the disc as wedges, so common multiples stand out (multiples of 3 in teal and of 4 in plum meet on 12, 24, 36…).
-  - Cover tiles are brushed-metal caps that hide a number, for "what's under here?" puzzles. A covered number takes no chips; tapping it with the cover bin chosen lifts the cover.
-  - ↺ takes all chips and covers off.
-  - The eye button shows an optional record above the chart: how many numbers each color is on, and how many carry two or more colors. Off by default.
+- Files changed: apps/symmetry-fold/index.html (new app); index.html (menu card).
+- Behavior: A sheet of tracing paper with a fold, for symmetry and lines of symmetry (Grade 4 Lessons 30 and 34; it stands in for tracing paper and mirrors).
+  - A square sheet of tracing paper lies on the mat with a crease through its middle. An aluminum bead at each end of the crease turns it in 15° steps (0°–165°), which covers the lines of symmetry of squares, rectangles, triangles and hexagons.
+  - A metal tab on each half folds that half over the crease. Tap a tab to fold or unfold; drag it to fold by hand, and let go past the crease to stay folded. The half squashes toward the crease, stands edge-on, then lies over the other half; its back faces up, so its marks show through the translucent paper.
+  - Pencil: draw anywhere on the sheet. While the sheet is folded, a mark made on the folded-over half is made on that half, as on real tracing paper, so unfolding brings the tracing back as a mirror image. The app never mirrors anything on its own.
+  - Shape bins draw an ink outline across the middle of the crease: square, rectangle, equilateral triangle, right triangle, parallelogram, kite. Fold: if the crease is a line of symmetry the halves land on each other as one outline; if not, two outlines show. Nothing is checked.
+  - Hand: move a shape; let go near the middle of the crease and it settles there. Shapes can't be added or moved while folded.
+  - The eye button lays a faint dot grid on the paper. Off by default. ↺ is a new sheet: drawing and shapes are cleared and the sheet unfolds.
 - Doctrine principles applied:
   - No words or directions on the surface.
-  - The student does the counting; the chart never highlights multiples on its own and never checks.
-  - The record is optional and follows the chips.
-- Chip colors are kept clear of the place-value palette, since chips here mark sets, not places.
-- Desktop behavior (1024×768): Tiles 47px. Chips on every third number give 33; plum on every fourth gives 25; 8 numbers share both and show split chips; the record reads 33, 25, 8. A drag along 11–20 with plum lays 7 new chips (12, 16, 20 already had one); a drag from 11 lifts all 10. A cover hides 50, refuses a teal chip, and lifts on a second tap. No console errors.
-- Mobile behavior (375×812): Tiles 30px; the chart fits above the cabinet with no horizontal scroll. Same tests pass.
-- Projector behavior (1920×1080): Tiles 64px; same tests pass.
-- Accessibility notes: The chart is one focusable control. Arrow keys move a cursor (it stops at row ends), Space or Enter lays or lifts the chosen chip or cover, and the number under the cursor is announced with its chips. The bins are toggle buttons. A polite live region reports chip counts per color and covers.
+  - The student does the folding and the tracing; symmetry shows as two outlines landing on each other or not.
+  - No answer checking.
+- Desktop behavior (1024×768): Sheet 506px. A mark traced on the folded-over half reappears exactly mirrored when unfolded (within 3px). A folded parallelogram shows two crossing outlines; a folded rectangle shows one. Dragging the top bead a quarter turn sets the crease to 45°. A shape moved with the hand and dropped near the middle settles there. No console errors.
+- Mobile behavior (375×812): Sheet 265px; the cabinet wraps (tools in a column, shapes in two rows). Same tests pass.
+- Projector behavior (1920×1080): Sheet 560px; same tests pass.
+- Accessibility notes: The beads are sliders (arrow keys turn the crease 15°), the tabs are buttons (Enter or Space folds and unfolds), and shapes are focusable in hand mode (arrows move them, Shift moves farther, Delete removes). Ctrl+Z takes back the last pencil stroke. A polite live region announces the crease angle and folds.
 - Remaining risks:
-  - Only 1–100; no 0–99 or 101–200 chart.
-  - Chips can't be dragged from one number to another; lift and lay instead.
+  - The crease always passes through the middle of the sheet; shapes move instead.
+  - Shapes cannot be turned; turning the crease does that job.
 
 Acceptance Tests:
-- Tapping a number lays or lifts the chosen chip. PASS
-- Dragging lays or lifts along the stroke, decided by the first number. PASS
-- Two colors on one number show as a split chip. PASS
-- Cover tiles hide numbers, refuse chips, and lift on a second tap. PASS
-- The record counts each color and shared numbers. PASS
-- ↺ clears chips and covers. PASS
-- Keyboard: arrows, Space; the cursor stops at row ends. PASS
+- Tapping a tab folds and unfolds that half. PASS
+- A tracing made while folded unfolds as a mirror image. PASS
+- Shape outlines fold onto themselves only along a line of symmetry. PASS
+- The beads turn the crease in 15° steps. PASS
+- The hand moves shapes; near the middle they settle on the crease. PASS
+- Shape bins refuse while folded. PASS
+- ↺ clears the sheet. PASS
+- Keyboard: arrows on a bead, Enter on a tab. PASS
 - No visible instruction text on the student surface. PASS
 - No console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS
