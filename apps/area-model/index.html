@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Area Model</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .bead { pointer-events: all; cursor: grab; outline: none; }
+    #board .bead:focus-visible .face { stroke: #007AFF; stroke-width: 3; }
+    #board .step { pointer-events: all; cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
+    #board .step:active { transform-box: fill-box; transform-origin: center; transform: scale(0.94); }
+    #board .rec { opacity: 0; transition: opacity 0.3s; }
+    #board.recon .rec { opacity: 1; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+
+    /* hardware: record and clear, top right */
+    .hardware { position: fixed; top: 14px; right: 16px; z-index: 20; display: flex; gap: 10px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Area model: a unit square cut by two factors"></main>
+
+<div class="hardware">
+  <button class="icon-btn" id="recordBtn" aria-label="Show the factors and the product" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" aria-label="Start over">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="alum" cx="0.38" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.24" stop-color="#F1F1F3"/><stop offset="0.55" stop-color="#C8C9CD"/><stop offset="0.82" stop-color="#A7A8AD"/><stop offset="1" stop-color="#D9DADD"/>
+    </radialGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4F5F7"/><stop offset="1" stop-color="#C9CCD1"/>
+    </linearGradient>
+    <linearGradient id="frameMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F5F7"/><stop offset="0.5" stop-color="#E1E3E7"/><stop offset="1" stop-color="#CFD2D7"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<svg id="board" role="application" aria-label="Area model">
+  <g id="field"></g>
+  <g id="controls"></g>
+  <g id="record" class="rec"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script type="module">
+import { fractionColor } from '../../math-things-fractions.js';
+
+// Each side of the rectangle is one factor: a count of equal cuts of a whole. Either side can run to 2 wholes.
+const DENS = [2, 3, 4, 5, 6, 8, 10, 12];
+const MAX = 2;
+const NS = 'http://www.w3.org/2000/svg';
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+const r2 = v => Math.round(v * 100) / 100;
+const $ = id => document.getElementById(id);
+const board = $('board'), field = $('field'), controls = $('controls'), recordG = $('record'), live = $('live');
+const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
+
+const START = { a: { n: 2, d: 3 }, b: { n: 3, d: 4 } };
+const f = { a: { ...START.a }, b: { ...START.b } };   // a runs across the top, b down the left side
+let recordOn = false;
+let U = 220, X0 = 0, Y0 = 0;                          // one whole in px; top-left corner of the square
+
+function layout() {
+  const W = innerWidth, H = innerHeight - 34;
+  // room for the left track and stepper, the top track, and the record underneath
+  U = Math.max(70, Math.min(260, (W - 165) / MAX, (H - 230) / MAX));
+  const span = U * MAX;
+  // the left track and its label need about 110px; the right stepper needs about 50px
+  X0 = Math.min(Math.max(110, (W - span) / 2 + 30), W - span - 52);
+  Y0 = Math.max(150, (H - span) / 2 + 40);
+  draw();
+}
+
+const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent && parent.appendChild(n); return n; };
+const val = s => f[s].n / f[s].d;
+function fracText(n, d) { return `${n}/${d}`; }
+function stacked(x, y, n, d, size, color) {
+  const w = Math.max(String(n).length, String(d).length) * size * 0.62 + 6;
+  return `<text x="${r2(x)}" y="${r2(y - size * 0.62)}" font-size="${size}" font-weight="800" fill="${color}">${n}</text>` +
+    `<rect x="${r2(x - w / 2)}" y="${r2(y - 1.2)}" width="${r2(w)}" height="2.4" rx="1.2" fill="${color}"/>` +
+    `<text x="${r2(x)}" y="${r2(y + size * 0.66)}" font-size="${size}" font-weight="800" fill="${color}">${d}</text>`;
+}
+function decimal(n, d) {
+  if (d !== 10) return null;
+  return (n / d).toFixed(1).replace(/^0(?=\.)/, '0');
+}
+
+// ═══════ THE SQUARE ═══════
+function draw() {
+  const a = val('a'), b = val('b'), ca = fractionColor(f.a.d), cb = fractionColor(f.b.d);
+  const S = U * MAX;
+  let s = '';
+  // the mat under the square: the first whole is a solid tile in a metal frame, the rest are faint ghosts
+  s += `<rect x="${r2(X0 - 10)}" y="${r2(Y0 - 10)}" width="${r2(U + 20)}" height="${r2(U + 20)}" rx="10" fill="url(#frameMetal)" stroke="rgba(60,62,68,0.22)"/>`;
+  for (let i = 0; i < MAX; i++) for (let j = 0; j < MAX; j++) {
+    const first = i === 0 && j === 0;
+    s += `<rect x="${r2(X0 + i * U)}" y="${r2(Y0 + j * U)}" width="${r2(U)}" height="${r2(U)}" fill="${first ? '#FFFFFF' : 'rgba(255,255,255,0.35)'}" stroke="${first ? 'rgba(60,62,68,0.35)' : 'rgba(60,62,68,0.14)'}" stroke-dasharray="${first ? 'none' : '5 5'}"/>`;
+  }
+  // the first factor shades columns: as tall as the wholes the second factor reaches
+  const tallB = Math.max(1, Math.ceil(b - 1e-9)), wideA = Math.max(1, Math.ceil(a - 1e-9));
+  s += `<rect x="${r2(X0)}" y="${r2(Y0)}" width="${r2(a * U)}" height="${r2(tallB * U)}" fill="${ca}" fill-opacity="0.38"/>`;
+  // the second factor shades rows: as wide as the wholes the first factor reaches
+  s += `<rect x="${r2(X0)}" y="${r2(Y0)}" width="${r2(wideA * U)}" height="${r2(b * U)}" fill="${cb}" fill-opacity="0.38"/>`;
+  // cut lines: every cut of each factor runs across the whole mat
+  let cuts = '';
+  for (let k = 1; k < MAX * f.a.d; k++) if (k % f.a.d) cuts += `M${r2(X0 + k * U / f.a.d)},${r2(Y0)}v${r2(S)}`;
+  for (let k = 1; k < MAX * f.b.d; k++) if (k % f.b.d) cuts += `M${r2(X0)},${r2(Y0 + k * U / f.b.d)}h${r2(S)}`;
+  s += `<path d="${cuts}" stroke="rgba(60,62,68,0.28)" stroke-width="1"/>`;
+  // wholes are drawn heavier than cuts
+  let wholes = '';
+  for (let k = 1; k < MAX; k++) wholes += `M${r2(X0 + k * U)},${r2(Y0)}v${r2(S)}M${r2(X0)},${r2(Y0 + k * U)}h${r2(S)}`;
+  s += `<path d="${wholes}" stroke="rgba(60,62,68,0.45)" stroke-width="2"/>`;
+  s += `<rect x="${r2(X0)}" y="${r2(Y0)}" width="${r2(U)}" height="${r2(U)}" fill="none" stroke="#3A3D42" stroke-width="2.5"/>`;
+  // where the two factors cross is the product
+  if (a > 0 && b > 0) s += `<rect x="${r2(X0)}" y="${r2(Y0)}" width="${r2(a * U)}" height="${r2(b * U)}" fill="none" stroke="#1D1D1F" stroke-width="3.5" stroke-linejoin="round"/>`;
+  field.innerHTML = s;
+  drawControls();
+  drawRecord();
+}
+
+// ═══════ TRACKS, BEADS, STEPPERS ═══════
+function drawControls() {
+  const S = U * MAX, ty = Y0 - 44, tx = X0 - 44;
+  let s = '';
+  // top track for the first factor, left track for the second; each notched at its cuts
+  s += `<rect x="${r2(X0 - 4)}" y="${r2(ty - 4)}" width="${r2(S + 8)}" height="8" rx="4" fill="url(#rail)" stroke="rgba(60,62,68,0.25)"/>`;
+  s += `<rect x="${r2(tx - 4)}" y="${r2(Y0 - 4)}" width="8" height="${r2(S + 8)}" rx="4" fill="url(#rail)" stroke="rgba(60,62,68,0.25)"/>`;
+  let notches = '';
+  for (let k = 0; k <= MAX * f.a.d; k++) { const big = k % f.a.d === 0; notches += `M${r2(X0 + k * U / f.a.d)},${r2(ty - (big ? 11 : 7))}v${big ? 22 : 14}`; }
+  for (let k = 0; k <= MAX * f.b.d; k++) { const big = k % f.b.d === 0; notches += `M${r2(tx - (big ? 11 : 7))},${r2(Y0 + k * U / f.b.d)}h${big ? 22 : 14}`; }
+  s += `<path d="${notches}" stroke="rgba(60,62,68,0.5)" stroke-width="1.5" stroke-linecap="round"/>`;
+  // a tinted thread from the track to the bead shows how much of the track the factor takes
+  s += `<rect x="${r2(X0)}" y="${r2(ty - 3)}" width="${r2(val('a') * U)}" height="6" rx="3" fill="${fractionColor(f.a.d)}"/>`;
+  s += `<rect x="${r2(tx - 3)}" y="${r2(Y0)}" width="6" height="${r2(val('b') * U)}" rx="3" fill="${fractionColor(f.b.d)}"/>`;
+  controls.innerHTML = s;
+  const R = Math.max(13, Math.min(18, U * 0.08));
+  bead('a', X0 + val('a') * U, ty, R);
+  bead('b', tx, Y0 + val('b') * U, R);
+  // steppers: fewer cuts / more cuts, at the far end of each track
+  stepper('a', -1, X0 - 44 - 26, ty, '‹');
+  stepper('a', 1, X0 + S + 30, ty, '›');
+  stepper('b', -1, tx, Y0 - 44 - 26 + 0, '‹', true);
+  stepper('b', 1, tx, Y0 + S + 30, '›', true);
+}
+function bead(side, x, y, R) {
+  const g = el('g', { class: 'bead', tabindex: 0, role: 'slider', 'data-side': side,
+    'aria-label': side === 'a' ? 'First factor, across the top' : 'Second factor, down the side',
+    'aria-valuemin': 0, 'aria-valuemax': MAX, 'aria-valuenow': r2(val(side)), 'aria-valuetext': `${f[side].n} ${f[side].d === 1 ? 'wholes' : 'out of ' + f[side].d + ' parts of a whole'}` }, controls);
+  g.innerHTML = `<circle cx="${r2(x + 0.8)}" cy="${r2(y + 1.8)}" r="${r2(R)}" fill="rgba(40,30,20,0.22)"/>` +
+    `<circle class="face" cx="${r2(x)}" cy="${r2(y)}" r="${r2(R)}" fill="url(#alum)" stroke="rgba(40,40,46,0.4)" stroke-width="0.8"/>` +
+    `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(R + 12)}" fill="transparent"/>`;
+}
+function stepper(side, dir, x, y, glyph, vertical) {
+  const idx = DENS.indexOf(f[side].d), can = dir < 0 ? idx > 0 : idx < DENS.length - 1;
+  const g = el('g', { class: 'step', tabindex: 0, role: 'button', 'data-side': side, 'data-dir': dir,
+    'aria-label': `${dir < 0 ? 'Fewer' : 'More'} cuts in each whole, ${side === 'a' ? 'top' : 'side'}`, 'aria-disabled': String(!can), opacity: can ? 1 : 0.35 }, controls);
+  const rot = vertical ? `rotate(90 ${r2(x)} ${r2(y)})` : '';
+  g.innerHTML = `<circle cx="${r2(x)}" cy="${r2(y)}" r="17" fill="#FFFFFF" stroke="rgba(60,62,68,0.18)" style="filter: drop-shadow(2px 3px 4px rgba(166,171,189,0.45))"/>` +
+    `<text x="${r2(x)}" y="${r2(y - 1)}" font-size="22" font-weight="600" fill="#6E7076" transform="${rot}">${glyph}</text>`;
+}
+
+// change the number of cuts, keeping the factor as close as it can get to where it was
+function recut(side, dir) {
+  const idx = DENS.indexOf(f[side].d), next = DENS[idx + dir];
+  if (!next) { buzz([4, 30, 4]); return; }
+  const v = val(side);
+  f[side] = { n: Math.min(MAX * next, Math.round(v * next)), d: next };
+  buzz(6); draw(); announce();
+}
+
+// ═══════ RECORD ═══════
+function drawRecord() {
+  const S = U * MAX, fs = Math.max(15, Math.min(24, U * 0.1));
+  const { a, b } = f;
+  let s = '';
+  // each factor rides with its bead; the product sits under the square
+  s += stacked(X0 + val('a') * U, Y0 - 44 - 52, a.n, a.d, fs, '#3A3D42');
+  s += stacked(X0 - 44 - 42, Y0 + val('b') * U, b.n, b.d, fs, '#3A3D42');
+  const pn = a.n * b.n, pd = a.d * b.d, y = Y0 + S + 40;
+  const da = decimal(a.n, a.d), db = decimal(b.n, b.d);
+  const line = da && db
+    ? `${da} × ${db} = ${(pn / 100).toFixed(2)}`
+    : `${fracText(a.n, a.d)} × ${fracText(b.n, b.d)} = ${fracText(pn, pd)}`;
+  s += `<text x="${r2(X0 + S / 2)}" y="${r2(y)}" font-size="${r2(fs * 1.15)}" font-weight="800" fill="#1D1D1F">${line}</text>`;
+  recordG.innerHTML = s;
+}
+
+let liveTimer = 0;
+function announce() {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => {
+    const { a, b } = f;
+    live.textContent = `Across: ${a.n} of ${a.d} parts. Down: ${b.n} of ${b.d} parts. The overlap is ${a.n * b.n} of the ${a.d * b.d} small pieces in each whole` +
+      (recordOn ? `: ${a.n}/${a.d} times ${b.n}/${b.d} is ${a.n * b.n}/${a.d * b.d}.` : '.');
+  }, 400);
+}
+
+// ═══════ POINTER ═══════
+let drag = null;
+board.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.bead'), st = e.target.closest('.step');
+  if (st) { e.preventDefault(); recut(st.dataset.side, +st.dataset.dir); return; }
+  if (!g) return;
+  e.preventDefault();
+  drag = { side: g.dataset.side, id: e.pointerId };
+  try { board.setPointerCapture(e.pointerId); } catch (err) {}
+});
+addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const side = drag.side, d = f[side].d;
+  const raw = side === 'a' ? (e.clientX - X0) / U : (e.clientY - Y0) / U;
+  const n = Math.max(0, Math.min(MAX * d, Math.round(raw * d)));
+  if (n !== f[side].n) { f[side].n = n; buzz(n % d === 0 ? 8 : 3); draw(); }
+});
+const end = e => { if (drag && e.pointerId === drag.id) { drag = null; announce(); } };
+addEventListener('pointerup', end);
+addEventListener('pointercancel', end);
+
+// ═══════ KEYBOARD ═══════
+// A bead: arrows move it one cut; Shift+arrows change how many cuts make a whole.
+board.addEventListener('keydown', e => {
+  const g = e.target.closest('.bead'), st = e.target.closest('.step');
+  if (st && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); recut(st.dataset.side, +st.dataset.dir); refocus(st); return; }
+  if (!g) return;
+  const side = g.dataset.side;
+  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+  if (!step) return;
+  e.preventDefault();
+  if (e.shiftKey) recut(side, step);
+  else { const d = f[side].d; f[side].n = Math.max(0, Math.min(MAX * d, f[side].n + step)); draw(); announce(); }
+  document.querySelector(`.bead[data-side="${side}"]`).focus();
+});
+function refocus(st) {
+  const again = document.querySelector(`.step[data-side="${st.dataset.side}"][data-dir="${st.dataset.dir}"]`);
+  if (again) again.focus();
+}
+
+// ═══════ HARDWARE ═══════
+recordBtn.addEventListener('click', () => {
+  recordOn = !recordOn;
+  board.classList.toggle('recon', recordOn);
+  recordBtn.classList.toggle('active', recordOn);
+  recordBtn.setAttribute('aria-pressed', String(recordOn));
+  announce();
+});
+clearBtn.addEventListener('click', () => {
+  f.a = { ...START.a }; f.b = { ...START.b };
+  draw(); announce(); buzz(8);
+});
+let frame = 0;
+addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(layout); });
+addEventListener('contextmenu', e => e.preventDefault());
+
+layout();
+announce();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
