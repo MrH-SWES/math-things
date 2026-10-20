@@ -6,32 +6,29 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook, especially dragging the beads with a finger. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
-- On phones a whole is about 100px, so twelfths cut it into 8px strips; readable on a projector, tight on a phone.
+- Try it on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
+- On a phone, a 3-whole line cut in eighths has ticks about 11px apart: fine to look at, fiddly to tap. Fewer wholes or fourths are comfortable.
 
 Notes:
-- Files changed: apps/area-model/index.html (new app); index.html (menu card).
-- Behavior: a fraction and decimal area model for Grade 5 Lessons 15–16, 20 and 22 (multiply decimals; multiply fractions; fractions to find area).
-  - A unit square in a metal frame, with three ghost squares beside and below it so either side can run to 2 wholes (mixed numbers, Lesson 20).
-  - Each factor is an aluminum bead on a notched track: across the top for the first factor, down the left side for the second. Beads snap to the cuts of a whole. ‹ › steppers at each end of a track change how many cuts make a whole (2, 3, 4, 5, 6, 8, 10, 12), keeping the factor as near as it can.
-  - The first factor shades columns and the second shades rows, each in the shared denominator color (math-things-fractions.js). Their cut lines run across the whole mat, so the square is cut into equal small pieces. Where the two shadings cross is the product, outlined in bold.
-  - Tenths by tenths gives the hundredths grid, so decimals work the same way (0.4 × 0.3).
-  - The eye button (off by default) shows each factor beside its bead as a stacked fraction, and the product under the square: "2/3 × 3/4 = 6/12", or "0.4 × 0.3 = 0.12" when both sides are in tenths. Products are left unsimplified so they match the pieces counted.
-  - ↺ returns to 2/3 by 3/4.
-- Doctrine principles applied: no words or directions; the product is a region you can count; the equation is the optional shadow of the square; no answer checking.
-- Desktop (1024×768): whole = 255px. Starts at 2/3 × 3/4 = 6/12. Dragging the top bead past one whole reads 4/3 × 3/4 = 12/12. Steppers reach tenths; arrow keys set 0.4 × 0.3 = 0.12. The record hides when toggled off. No console errors.
-- Mobile (375×812): whole ≈ 105px; everything fits on screen with no horizontal scroll (fixed during testing: the right stepper overhung the edge by 7px). Same tests pass.
-- Projector (1920×1080): whole = 260px; same tests pass.
-- Accessibility: beads are sliders (arrows move one cut; Shift+arrows change the number of cuts) and steppers are buttons. A polite live region describes both factors and the overlap in pieces, plus the multiplication while the record is shown.
+- Files changed: apps/line-plot/index.html (new app); index.html (menu card).
+- Behavior: a line plot for measurement data in fractions of a unit (Grade 5 Lesson 27).
+  - A metal number line from 0 to 2 wholes, cut in fourths. Whole numbers are always printed; cuts are printed as room allows (every cut, every other cut, or halves only).
+  - Tap above a tick to stamp an ✕ tile; tiles stack up to 12 high. Tap the top tile of a stack to take it off.
+  - ‹ › steppers on the left change the cuts per whole (halves, fourths, eighths); on the right they change the length (1 to 6 wholes). The tool refuses (a short buzz) to drop a cut or a whole that has marks on it.
+  - The eye button (off by default) shows the number of marks, their total, and the lowest and highest value, e.g. "✕ 6  total 3 3/4  1/4 to 1 1/4".
+  - ↺ takes all the marks off.
+- Doctrine principles applied: no words or directions; the data is a stack of objects you can count; totals are an optional shadow; no answer checking or datasets.
+- Desktop (1024×768): add/remove by tap, steppers, refusals, record and keyboard all pass. No console errors. Fixed during testing: labels on a 3-whole eighths line ran together; now they thin out.
+- Mobile (375×812): fits with no horizontal scroll. Fixed during testing: the line sat high with empty space below, and the record line overlapped the eye button.
+- Projector (1920×1080): line is 960px; same tests pass.
+- Accessibility: the plot is focusable; Left/Right move a cursor along the ticks, Space/Up adds, Backspace/Down removes. Steppers are buttons. A polite live region reports each stack, and the total and spread while the record is shown.
 - Remaining risks:
-  - Factors stop at 2 wholes.
-  - Hundredths (0.25 × 0.4) are not offered; the cuts stop at twelfths and tenths.
+  - Values stop at eighths and 6 wholes; stacks stop at 12.
 
 Acceptance Tests:
-- Beads snap to cuts; the overlap is outlined. PASS
-- Mixed numbers past one whole. PASS
-- Steppers change cuts; tenths × tenths gives hundredths. PASS
-- Record off by default; shows fractions or decimals when on. PASS
-- Keyboard sets both factors. PASS
+- Tap adds a mark; tapping the top mark removes it. PASS
+- Cuts and length steppers; refusals protect existing marks. PASS
+- Record off by default; count, total and spread correct when on. PASS
+- Keyboard adds and removes. PASS
 - Fits phone, desktop and projector; no console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS

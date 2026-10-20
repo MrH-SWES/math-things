@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Line Plot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F; --text-gray: #86868B; --text-light: #AEAEB2; --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif; color: var(--text-main); height: 100dvh; overflow: hidden;
+      display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; touch-action: none;
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #plot { pointer-events: all; cursor: pointer; outline: none; }
+    #cursor { opacity: 0; }
+    #plot:focus-visible #cursor { opacity: 1; }
+    #board .step { pointer-events: all; cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
+    #record { opacity: 0; transition: opacity 0.3s; }
+    #board.recon #record { opacity: 1; }
+    .hardware { position: fixed; top: 14px; right: 16px; z-index: 20; display: flex; gap: 10px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none; color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px; background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Line plot"></main>
+
+<div class="hardware">
+  <button class="icon-btn" id="recordBtn" aria-label="Show the count, total and spread" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" aria-label="Take all the marks off">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F5F7"/><stop offset="1" stop-color="#C9CCD1"/></linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#ECEAE6"/></linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <g id="plot" tabindex="0" role="application" aria-label="Line plot. Arrow keys move along the line; Space adds a mark, Backspace takes one off.">
+    <g id="line"></g>
+    <g id="marks"></g>
+    <rect id="cursor" fill="none" stroke="#007AFF" stroke-width="2.5" rx="8"/>
+  </g>
+  <g id="controls"></g>
+  <g id="record"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // Values are kept in eighths of a whole, so halves, fourths and eighths all share one scale.
+  const CUTS = [2, 4, 8], MAX_STACK = 12;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), plot = $('plot'), lineG = $('line'), marksG = $('marks'), cursorEl = $('cursor'),
+        controls = $('controls'), recordG = $('record'), live = $('live');
+
+  let cuts = 4, wholes = 2, recordOn = false, cursor = 0;
+  const counts = new Map();                // eighths → how many marks
+  let L = 0, X0 = 0, Y = 0, step = 0, mark = 24;
+
+  const ticks = () => wholes * cuts;                  // ticks after 0
+  const eighthsAt = k => k * 8 / cuts;
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  // 13 eighths → "1 5/8"
+  function mixed(e, den = 8) {
+    const w = Math.floor(e / den), r = e % den;
+    if (!r) return String(w);
+    const g = gcd(r, den), part = `${r / g}/${den / g}`;
+    return w ? `${w} ${part}` : part;
+  }
+
+  function layout() {
+    const W = innerWidth, H = innerHeight - 34;
+    L = Math.min(W - 110, 960);
+    X0 = (W - L) / 2;
+    step = L / ticks();
+    mark = Math.max(14, Math.min(30, step * 0.8, (H * 0.55) / MAX_STACK));
+    Y = Math.min(H - 140, Math.max(110 + mark * MAX_STACK, H * 0.62));
+    draw();
+  }
+
+  // ═══════ THE LINE ═══════
+  function draw() {
+    const n = ticks();
+    let s = `<rect x="${r2(X0 - 12)}" y="${r2(Y - 4)}" width="${r2(L + 24)}" height="8" rx="4" fill="url(#rail)" stroke="rgba(60,62,68,0.3)"/>`;
+    const fs = Math.max(11, Math.min(15, step * 0.42));
+    // the line's own printing: every whole, and as many cuts as there is room for
+    const longest = mixed(eighthsAt(n - 1)).length;
+    let every = 1;
+    while (every < cuts && step * every < longest * fs * 0.56 + 8) every *= 2;
+    for (let k = 0; k <= n; k++) {
+      const x = X0 + k * step, e = eighthsAt(k), whole = e % 8 === 0;
+      s += `<path d="M${r2(x)},${r2(Y - (whole ? 14 : 9))}v${whole ? 28 : 18}" stroke="#3A3D42" stroke-width="${whole ? 2.4 : 1.4}" stroke-linecap="round"/>`;
+      if (whole || (every < cuts && k % every === 0)) s += `<text x="${r2(x)}" y="${r2(Y + 30)}" font-size="${whole ? fs * 1.25 : fs}" font-weight="${whole ? 800 : 600}" fill="${whole ? '#1D1D1F' : '#5A5D63'}">${mixed(e)}</text>`;
+    }
+    lineG.innerHTML = s;
+    // marks: stamped tiles stacked above each tick
+    let m = '';
+    for (const [e, c] of counts) {
+      const x = X0 + e / 8 * cuts * step;
+      for (let i = 0; i < c; i++) {
+        const y = Y - 22 - i * mark - mark / 2;
+        m += `<g transform="translate(${r2(x)} ${r2(y)})"><rect x="${r2(-mark * 0.45)}" y="${r2(-mark * 0.45)}" width="${r2(mark * 0.9)}" height="${r2(mark * 0.9)}" rx="${r2(mark * 0.18)}" fill="url(#tile)" stroke="rgba(60,62,68,0.3)" style="filter: drop-shadow(0.5px 1.5px 1.5px rgba(40,30,20,0.25))"/>` +
+          `<path d="M${r2(-mark * 0.22)},${r2(-mark * 0.22)}L${r2(mark * 0.22)},${r2(mark * 0.22)}M${r2(mark * 0.22)},${r2(-mark * 0.22)}L${r2(-mark * 0.22)},${r2(mark * 0.22)}" stroke="#2B4C8C" stroke-width="${r2(Math.max(2, mark * 0.11))}" stroke-linecap="round"/></g>`;
+      }
+    }
+    marksG.innerHTML = m;
+    cursor = Math.min(cursor, n);
+    const cx = X0 + cursor * step;
+    cursorEl.setAttribute('x', r2(cx - Math.max(12, step * 0.45)));
+    cursorEl.setAttribute('y', r2(Y - 22 - MAX_STACK * mark - 6));
+    cursorEl.setAttribute('width', r2(Math.max(24, step * 0.9)));
+    cursorEl.setAttribute('height', r2(MAX_STACK * mark + 64));
+    drawControls();
+    drawRecord();
+  }
+
+  // steppers: cuts per whole on the left, number of wholes on the right
+  function drawControls() {
+    const y = Y + 70;
+    let s = '';
+    const btn = (id, x, glyph, can, label) => `<g class="step" tabindex="0" role="button" data-id="${id}" aria-label="${label}" aria-disabled="${!can}" opacity="${can ? 1 : 0.35}">` +
+      `<circle cx="${r2(x)}" cy="${r2(y)}" r="17" fill="#FFFFFF" stroke="rgba(60,62,68,0.18)" style="filter: drop-shadow(2px 3px 4px rgba(166,171,189,0.45))"/>` +
+      `<text x="${r2(x)}" y="${r2(y - 1)}" font-size="20" font-weight="600" fill="#6E7076">${glyph}</text></g>`;
+    const ci = CUTS.indexOf(cuts);
+    s += btn('cuts-', X0 + 8, '‹', ci > 0, 'Fewer cuts in each whole');
+    s += `<g transform="translate(${r2(X0 + 46)} ${r2(y)})">${[...Array(cuts + 1)].map((_, i) => `<path d="M${r2(i * 24 / cuts)},${i % cuts ? -4 : -7}v${i % cuts ? 8 : 14}" stroke="#6E7076" stroke-width="1.4"/>`).join('')}<path d="M0,0h24" stroke="#6E7076" stroke-width="1.4"/></g>`;
+    s += btn('cuts+', X0 + 92, '›', ci < CUTS.length - 1, 'More cuts in each whole');
+    s += `<g transform="translate(${r2(X0 + L - 64)} ${r2(y)})">${[...Array(wholes + 1)].map((_, i) => `<path d="M${r2(i * 28 / wholes)},-7v14" stroke="#6E7076" stroke-width="1.6"/>`).join('')}<path d="M0,0h28" stroke="#6E7076" stroke-width="1.4"/></g>`;
+    s += btn('wholes-', X0 + L - 92, '‹', wholes > 1 && ![...counts.keys()].some(e => e > (wholes - 1) * 8), 'Shorter line');
+    s += btn('wholes+', X0 + L - 8, '›', wholes < 6, 'Longer line');
+    controls.innerHTML = s;
+  }
+
+  // ═══════ RECORD ═══════
+  function stats() {
+    let n = 0, total = 0, lo = Infinity, hi = -Infinity;
+    for (const [e, c] of counts) { n += c; total += e * c; lo = Math.min(lo, e); hi = Math.max(hi, e); }
+    return { n, total, lo, hi };
+  }
+  function drawRecord() {
+    const { n, total, lo, hi } = stats(), fs = 18;
+    const y = Math.max(Y - 22 - MAX_STACK * mark - 24, innerWidth < 600 ? 96 : 60);
+    recordG.innerHTML = n ? `<text x="${r2(X0 + L / 2)}" y="${r2(y)}" font-size="${fs}" font-weight="800" fill="#1D1D1F"><tspan fill="#2B4C8C">✕</tspan> ${n} &#160;&#160; total ${mixed(total)} &#160;&#160; ${mixed(lo)} to ${mixed(hi)}</text>` : '';
+  }
+
+  let liveTimer = 0;
+  function announce(extra) {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const { n, total, lo, hi } = stats();
+      live.textContent = (extra ? extra + ' ' : '') + (n ? `${n} marks.` + (recordOn ? ` Total ${mixed(total)}, from ${mixed(lo)} to ${mixed(hi)}.` : '') : 'No marks.');
+    }, 350);
+  }
+
+  // ═══════ MARKS ═══════
+  function add(k) {
+    const e = eighthsAt(k), c = counts.get(e) || 0;
+    if (c >= MAX_STACK) { buzz([4, 30, 4]); return; }
+    counts.set(e, c + 1); buzz(5); draw(); announce(`${mixed(e)}: ${c + 1}.`);
+  }
+  function remove(k) {
+    const e = eighthsAt(k), c = counts.get(e) || 0;
+    if (!c) return;
+    if (c === 1) counts.delete(e); else counts.set(e, c - 1);
+    buzz(3); draw(); announce(`${mixed(e)}: ${c - 1}.`);
+  }
+  // a tap above a tick adds a mark; a tap on the top mark of a stack takes it off
+  plot.addEventListener('pointerdown', e => {
+    const k = Math.round((e.clientX - X0) / step);
+    if (k < 0 || k > ticks() || Math.abs(e.clientX - (X0 + k * step)) > Math.max(14, step * 0.5)) return;
+    if (e.clientY > Y + 16 || e.clientY < Y - 22 - MAX_STACK * mark - 10) return;
+    e.preventDefault();
+    cursor = k;
+    const c = counts.get(eighthsAt(k)) || 0, topY = Y - 22 - (c - 1) * mark - mark / 2;
+    if (c && Math.abs(e.clientY - topY) < mark * 0.6) remove(k); else add(k);
+  });
+  // the hit area: the whole band above the line
+  function hitArea() {
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    r.setAttribute('fill', 'transparent');
+    return r;
+  }
+  const hit = hitArea(); plot.insertBefore(hit, plot.firstChild);
+  function sizeHit() {
+    hit.setAttribute('x', r2(X0 - 20)); hit.setAttribute('y', r2(Y - 22 - MAX_STACK * mark - 10));
+    hit.setAttribute('width', r2(L + 40)); hit.setAttribute('height', r2(MAX_STACK * mark + 50));
+  }
+
+  function recut(id) {
+    const ci = CUTS.indexOf(cuts);
+    if (id === 'cuts-' || id === 'cuts+') {
+      const next = CUTS[ci + (id === 'cuts+' ? 1 : -1)];
+      if (!next) return buzz([4, 30, 4]);
+      // fewer cuts can't drop marks that sit between the new ticks
+      if (next < cuts && [...counts.keys()].some(e => e % (8 / next))) { buzz([4, 30, 4]); return; }
+      const e = eighthsAt(cursor); cuts = next; cursor = Math.round(e * cuts / 8);
+    } else if (id === 'wholes+') { if (wholes >= 6) return; wholes++; }
+    else { if (wholes <= 1 || [...counts.keys()].some(e => e > (wholes - 1) * 8)) return buzz([4, 30, 4]); wholes--; }
+    buzz(6); layout(); sizeHit();
+  }
+  controls.addEventListener('pointerdown', e => { const st = e.target.closest('.step'); if (st) { e.preventDefault(); recut(st.dataset.id); } });
+  board.addEventListener('keydown', e => {
+    const st = e.target.closest && e.target.closest('.step');
+    if (st && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); const id = st.dataset.id; recut(id); const again = document.querySelector(`.step[data-id="${id}"]`); if (again) again.focus(); return; }
+    if (e.target !== plot) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      cursor = Math.max(0, Math.min(ticks(), cursor + (e.key === 'ArrowRight' ? 1 : -1)));
+      draw(); live.textContent = `${mixed(eighthsAt(cursor))}: ${counts.get(eighthsAt(cursor)) || 0}.`;
+    } else if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowUp') { e.preventDefault(); add(cursor); }
+    else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowDown') { e.preventDefault(); remove(cursor); }
+  });
+
+  $('recordBtn').addEventListener('click', () => {
+    recordOn = !recordOn;
+    board.classList.toggle('recon', recordOn);
+    $('recordBtn').classList.toggle('active', recordOn);
+    $('recordBtn').setAttribute('aria-pressed', String(recordOn));
+    announce();
+  });
+  $('clearBtn').addEventListener('click', () => { counts.clear(); draw(); announce(); buzz(8); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { layout(); sizeHit(); }); });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  layout(); sizeHit(); announce();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
