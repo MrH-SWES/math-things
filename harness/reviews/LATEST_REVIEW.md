@@ -9,7 +9,9 @@ Should Fix Soon:
 - Try both on a real iPad or Chromebook, especially Nets, which uses 3D graphics. Testing used scripted events (software WebGL for Nets) at 1024×768, 375×812 and 1920×1080.
 
 Notes:
-- Files changed: apps/nets/index.html, apps/inequalities/index.html (new apps); index.html (menu cards).
+- Files changed: apps/nets/index.html (triangular prism added).
+- Triangular prism: a tent of two slanted sides on a rectangular base, closed by an isosceles triangle at each end. + / − set length (1–6), base side (2–6) and slant side, which must be longer than half the base. It unfolds into the classic net of three rectangles and two triangles. The eye lists the face areas. An end triangle's area that isn't whole shows to one decimal place with ≈ (e.g. 30 + 20 + 20 + 7.9 + 7.9 ≈ 85.8); the default 5 × 6 × 5 tent (triangle height 4) reads 30 + 25 + 25 + 12 + 12 = 104.
+- Earlier in this round: Nets and Inequalities were added (apps/nets, apps/inequalities, menu cards).
 - Nets (new, Grade 6 Lesson 3, surface area):
   - A rectangular prism or a square pyramid built from hinged faces. Rectangles are ruled into unit squares.
   - The slider in the cabinet turns every hinge together, from the closed solid to its flat net. The camera rises to look straight down, and the net settles square to the screen.
@@ -23,11 +25,10 @@ Notes:
 - Doctrine principles applied: no words or prompts; the numbers are the optional shadow.
 - Both: no horizontal scroll and no console errors.
 - Remaining risks:
-  - Nets has no triangular prism yet.
   - Inequalities shows one boundary at a time (no compound inequalities).
 
 Acceptance Tests:
-- Nets: fold and unfold, dimensions, pyramid slant guard, correct surface areas. PASS
+- Nets: fold and unfold, dimensions, pyramid and prism slant guards, correct surface areas for all three solids. PASS
 - Inequalities: drag, fill/empty, flip direction, range, keyboard, correct symbols. PASS
 - Fits phone, desktop and projector; no console errors. PASS
 - No frameworks, bundlers, or package managers added (Three.js from the same CDN as the other 3D apps). PASS
