@@ -75,7 +75,7 @@
       border: none; border-radius: 18px;
       background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
       box-shadow: var(--shadow-milled);
-      display: flex; align-items: center; justify-content: center;
+      display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center;
       cursor: grab;
       touch-action: none;
       transition: transform 0.2s var(--spring);
@@ -83,22 +83,27 @@
     .bin:active { transform: scale(0.97); }
     .bin:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
     .bin svg {
-      width: calc(var(--bin-w) * 0.74); height: calc(var(--bin-h) * 0.7);
+      width: calc(var(--bin-w) * 0.74); height: calc(var(--bin-h) * 0.52);
       overflow: visible; pointer-events: none;
       filter: drop-shadow(0 3px 3px rgba(60,40,20,0.2));
     }
     .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
     .icon-btn {
-      width: 42px; height: 42px; border-radius: 50%;
+      min-width: 92px; min-height: 44px; border-radius: 22px;
       background: var(--surface); border: 2px solid transparent;
       box-shadow: var(--shadow-raised);
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
-      color: var(--text-gray); padding: 0;
+      cursor: pointer; gap: 6px; padding: 0 10px; font: 600 11px 'Lexend', sans-serif; transition: all 0.25s var(--spring); outline: none;
+      color: #555A62;
     }
     .icon-btn:active { transform: scale(0.94); }
     .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
     .icon-btn:focus-visible { border-color: #007AFF; }
+
+    .bin-label { font: 600 10px 'Lexend', sans-serif; color: #555A62; pointer-events: none; }
+    #moveHint { flex-shrink: 0; text-align: center; padding: 8px 12px; font-size: 11px; line-height: 1.5; color: #555A62; pointer-events: none; }
+    #moveHint span { display: inline-block; }
+    @media (max-width: 380px) { .icon-btn { min-width: 82px; } #moveHint { font-size: 10px; } }
 
     /* ── RECORD (optional, follows the angle) ── */
     #record {
@@ -127,16 +132,17 @@
 <body>
 <main id="surface" aria-label="Angle and protractor mat"></main>
 
+<p id="moveHint"><span>Drag body to move · Turn top knob · Drag arm ends</span><br/><span>Drag tools to bins to put away</span></p>
 <div id="dock">
   <div id="cabinet" role="toolbar" aria-label="Bins">
-    <button class="bin" data-bin="prot" aria-label="Protractor bin"></button>
-    <button class="bin" data-bin="ray" aria-label="Ray bin. Adds a ray to the angle."></button>
+    <button class="bin" data-bin="prot" aria-label="Protractor bin. Drag the protractor here to put away; tap to retrieve it." title="Drag protractor here to put away; tap to retrieve"></button>
+    <button class="bin" data-bin="ray" aria-label="Add ray. Drag extra rays here to remove them." title="Add a ray; drag an extra ray here to remove"></button>
     <div class="hardware">
-      <button class="icon-btn" id="recordBtn" aria-label="Show the measure" aria-pressed="false">
-        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      <button class="icon-btn" id="recordBtn" aria-label="Show angle" title="Reveal the angle, not a check of protractor alignment" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg><span id="recordLabel">Show angle</span>
       </button>
-      <button class="icon-btn" id="resetBtn" aria-label="Reset the angle and protractor">
-        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      <button class="icon-btn" id="resetBtn" aria-label="Reset the angle and protractor" title="Reset angle and protractor">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg><span>Reset</span>
       </button>
     </div>
   </div>
@@ -170,7 +176,7 @@
   <g id="raylines"></g>
   <g id="rods" filter="url(#rest)"></g>
   <g id="arcs"></g>
-  <g id="prot" tabindex="0" role="button" aria-label="Protractor">
+  <g id="prot" tabindex="0" role="button" aria-label="Protractor. Drag body to move; drag top knob to rotate. Arrow keys move; brackets rotate; Enter aligns." aria-describedby="moveHint">
     <g id="protShape" filter="url(#glassShadow)"></g>
     <g id="rotor"></g>
   </g>
@@ -593,6 +599,8 @@
     record.classList.toggle('on', recordOn);
     recordBtn.classList.toggle('active', recordOn);
     recordBtn.setAttribute('aria-pressed', String(recordOn));
+    recordBtn.setAttribute('aria-label', recordOn ? 'Hide angle' : 'Show angle');
+    $('recordLabel').textContent = recordOn ? 'Hide angle' : 'Show angle';
     changed();
   });
 
@@ -629,10 +637,10 @@
   addEventListener('contextmenu', e => e.preventDefault());
 
   // ═══════ START ═══════
-  protBin.innerHTML = `<svg viewBox="-40 -42 80 50" aria-hidden="true" focusable="false">${protMarkup(36, { coarse: true })}</svg>`;
+  protBin.innerHTML = `<svg viewBox="-40 -42 80 50" aria-hidden="true" focusable="false">${protMarkup(36, { coarse: true })}</svg><span class="bin-label">Protractor bin</span>`;
   rayBin.innerHTML = `<svg viewBox="-6 -30 70 38" aria-hidden="true" focusable="false">` +
     `<line x1="0" y1="0" x2="50" y2="-18" stroke="#A4A6AB" stroke-width="5" stroke-linecap="round"/>` +
-    `<g transform="translate(50 -18)">${knobMarkup(8)}</g><g>${beadMarkup(6)}</g></svg>`;
+    `<g transform="translate(50 -18)">${knobMarkup(8)}</g><g>${beadMarkup(6)}</g></svg><span class="bin-label">Add ray</span>`;
 
   setSizes();
   const vg = el('g', { id: 'vertex', 'data-grab': 'vertex', tabindex: '0', role: 'button', 'aria-label': 'Vertex' }, handles);
@@ -645,3 +653,4 @@
 <script src="../../math-things-home.js"></script>
 </body>
 </html>
+
