@@ -6,26 +6,33 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try these on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
-- Bar Model: removing a cut merges two parts, and an unknown mark on the right-hand part is dropped. Re-mark it if needed.
+- Try it on a real iPad or Chromebook. Testing used scripted clicks at 1024×768, 375×812 and 1920×1080.
 
 Notes:
-- Files changed: apps/bar-model/index.html (new app); apps/hundred-chart/index.html; apps/line-plot/index.html; index.html (menu card).
-- Bar Model (new, Grade 2 Lessons 3, 5, 7–9, 19, 25–26, and later grades): tape diagrams.
-  - Bars start at one left edge under a metal ruler, so they compare. ‹ › above the ruler set its length: 10, 20, 50, 100, 200, 500 or 1,000. Lengths snap to whole units up to 100, and to 2, 5 or 10 beyond.
-  - Drag a bar's metal end knob to stretch it. Pulling a bar with no cuts back to zero lifts it off; one bar always stays.
-  - Cut tool (default): tap a bar to cut it into parts; drag a cut to move it; tap a cut to take it out.
-  - Unknown tool: tap a part to hatch it with a "?" (and tap again to clear).
-  - The add bin adds a bar (up to 4). The eye (off by default) prints each part's length and each bar's total. ↺ starts over with two bars.
-- Hundred Chart: ‹ › above its right corner turn to the next hundred (101–200 and on to 901–1,000). Each hundred keeps its own chips and covers; ↺ clears them all. Three- and four-digit numbers are drawn a little smaller.
-- Line Plot: whole units added (cuts per whole now 1, 2, 4 or 8). Whole-unit lines run up to 20; halves up to 12; fourths and eighths up to 6. Whole-number labels thin to every 2 or 5 when crowded. Switching to a finer cut is refused while the line is too long for it.
-- All three: no horizontal scroll and no console errors at the three sizes.
-- Accessibility: Bar Model bars are focusable sliders. Left/Right change length (Shift ×10), Space cuts the longest part in half, Backspace removes the last cut, and ? marks the last part. The Hundred Chart page turners are buttons.
+- Files changed: apps/spinner-dice/index.html (new app); index.html (menu card).
+- Behavior: number makers for Grade 1 games and practice (spinners, number cubes and number cards appear in 20 of 27 lessons, and in Grades 2–5 too).
+  - Three bins: spinner, number cube, number cards. Each tap adds one to the mat (up to 4); × on a device puts it away. It starts with two dot cubes.
+  - Tap a device to use it:
+    - A spinner's arrow turns a few times and stops inside a section, never on a line.
+    - A cube tumbles through faces and lands.
+    - A card is drawn from the deck. The deck runs out without repeats, thins as it goes, and the next tap after it's empty reshuffles.
+  - ‹ › under each device step through its settings:
+    - Spinners: 2, 3, 4, 5, 6, 8 or 10 sections (10 is numbered 0–9; new spinners start at 4).
+    - Cubes: dots 1–6, numerals 1–6, 4–9, 0–9.
+    - Cards: 0–10, 0–20, 1–100, 1–120.
+  - The dice button rolls and spins everything at once. The eye (off by default) shows the numbers added together, e.g. 6 + 1 + 4 + 6 = 17.
+- Doctrine principles applied: no words, prompts or answer checking. Each device is a fair random tool; the sum is the optional shadow.
+- Checks:
+  - The spinner's resting angle matched its number at every size (e.g. 101.9° on 2 sections → 1).
+  - Ten draws from 0–10 gave ten different cards, then a reshuffle.
+  - Removing a device and the 4-device limit work.
+  - No horizontal scroll and no console errors.
+- Accessibility: each device is a button (Roll, Spin, Draw a card); ‹ › and × are buttons. The live region reads each result. With reduced motion, results appear without spinning or tumbling.
 
 Acceptance Tests:
-- Bar Model: stretch, cut, move and remove cuts, unknown marks, add and remove bars, scale change. PASS
-- Bar Model record off by default; parts and totals correct when on. PASS
-- Hundred Chart pages 1–1,000 with chips kept per page. PASS
-- Line Plot whole units to 20 with readable labels. PASS
+- Spinner, cube and cards each make a number fairly. PASS
+- Settings change sections, faces and decks. PASS
+- Deck draws without repeats, then reshuffles. PASS
+- Roll-all and record (off by default). PASS
 - Fits phone, desktop and projector; no console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS
