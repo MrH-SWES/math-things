@@ -6,22 +6,24 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
+- Try a roll on a real iPad or Chromebook, with Reduce Motion both on and off.
 
 Notes:
-- Files changed: apps/crossing-lines/index.html (new app); index.html (menu card).
-- Crossing Lines (new, Grade 7 Lesson 28; Grade 8 parallel lines and transversals):
-  - Two lines cross at a point. A round handle at the end of each line turns it, in whole degrees, and the lines can't close up within 5°.
-  - The four angles at the crossing are painted in two colors: one size red, the other blue. Opposite (vertical) angles share a color, and neighbors make a straight line together.
-  - The mode button switches to two parallel lines (with arrow marks) cut by a crossing line. Both crossings are painted the same way, so corresponding, alternate and same-side angles can be matched by color. The upper parallel's handle turns both parallels together.
-  - The eye (off by default) prints every angle's measure, e.g. 130°, 50°, 130°, 50° at each crossing.
-- Doctrine principles applied: no words, prompts or answer checking; equal angles are shown by color, and the numbers are the optional shadow.
-- Checks: dragging the crossing line to 130° gave 130/50 at each crossing; Shift+Left on the parallels turned them 10° (to 120/60); a 2px drag of the offset handle moves the parallels by at most 1° (no jump). No horizontal scroll and no console errors.
+- Files changed: apps/spinner-dice/index.html, apps/chance-lab/index.html.
+- Teacher request: spinners and dice should animate.
+- Cause found: both apps honored the system Reduce Motion setting by skipping all movement. School iPads and Chromebooks often have it on, so spinners jumped straight to their result and dice didn't move. Chance Lab's cube never animated, and its batch runs didn't move either.
+- Spinners now always spin. Normally they make about four turns over 1.6 s (Chance Lab: 1.2 s). With Reduce Motion they make one gentler turn over about 0.9 s instead of none.
+- Number cubes are now real 3D cubes (CSS 3D, no library).
+  - Before each roll, the result is written on the front face and other values on the rest. The cube tumbles one or two whole turns with a little hop and lands showing the result, tipped slightly toward the viewer so it reads as a cube.
+  - Rolls take 1.2 s normally and 0.65 s with Reduce Motion.
+  - Works for dot cubes and numeral cubes (1–6, 4–9, 0–9).
+- Chance Lab: every run now moves. A single trial gets the full spin or roll; a batch (10, 100, 1,000) gets a quicker 0.65 s turn landing on its last result. Drawn marbles rise out of the bag.
+- Number cards keep their flip with Reduce Motion on (it's small).
+- Checks: sampled the arrow and cube transforms every 220 ms during a roll, with and without Reduce Motion; both change and then settle. The landed front faces matched the record (e.g. dice 5 and 6 with record 5 + 6 + 3 = 14). Earlier Spinner & Dice tests still pass. No horizontal scroll and no console errors.
 
 Acceptance Tests:
-- Two crossing lines; vertical and straight-line pairs by color. PASS
-- Parallel lines and a crossing line; matching angles by color at both crossings. PASS
-- Record off by default; measures correct when on. PASS
-- Keyboard turns both handles. PASS
+- Spinners spin with Reduce Motion on and off. PASS
+- Dice tumble in 3D and land on the recorded value. PASS
+- Chance Lab batches animate. PASS
 - Fits phone, desktop and projector; no console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS
