@@ -118,6 +118,7 @@
   <div id="cabinet" role="toolbar" aria-label="Controls">
     <div id="bins">
       <button class="bin" data-kind="box" aria-label="Rectangular prism" aria-pressed="true"><svg viewBox="0 0 44 38" aria-hidden="true"><path d="M6 14l10-6h22l-10 6z" fill="#8FB0FF"/><path d="M6 14h22v18H6z" fill="#4169E1"/><path d="M28 14l10-6v18l-10 6z" fill="#2F51B8"/></svg></button>
+      <button class="bin" data-kind="prism" aria-label="Triangular prism" aria-pressed="false"><svg viewBox="0 0 44 38" aria-hidden="true"><path d="M13 12l22-6-9 18z" fill="#6D8CF0"/><path d="M4 30h22L13 12z" fill="#FF9F0A"/><path d="M26 30l9-6V6l-9 18z" fill="#2F51B8"/></svg></button>
       <button class="bin" data-kind="pyramid" aria-label="Square pyramid" aria-pressed="false"><svg viewBox="0 0 44 38" aria-hidden="true"><path d="M22 4L6 30l16 4z" fill="#FF9F0A"/><path d="M22 4l16 26-16 4z" fill="#D67F00"/></svg></button>
     </div>
     <div class="dims" id="dims"></div>
@@ -147,7 +148,7 @@ const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { naviga
 const $ = id => document.getElementById(id);
 const stage = $('stage'), live = $('live'), record = $('record'), fold = $('fold');
 
-let kind = 'box', dims = { box: { L: 4, W: 2, H: 3 }, pyramid: { B: 4, S: 3 } }, t = 0, yaw = -0.5, recordOn = false;
+let kind = 'box', dims = { box: { L: 4, W: 2, H: 3 }, prism: { L: 5, B: 6, S: 5 }, pyramid: { B: 4, S: 3 } }, t = 0, yaw = -0.5, recordOn = false;
 
 // ═══════ SCENE ═══════
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -209,6 +210,14 @@ function build() {
     hinge(back, new THREE.Vector3(0, 0, H), 0, R, face(L, W, COLORS.top));
     hinge(model, new THREE.Vector3(L / 2, 0, 0), Math.PI / 2, R, face(W, H, COLORS.end));
     hinge(model, new THREE.Vector3(-L / 2, 0, 0), -Math.PI / 2, R, face(W, H, COLORS.end));
+  } else if (kind === 'prism') {
+    // a tent: two slanted sides meet at the ridge; a triangle closes each end
+    const { L, B, S } = dims.prism, lean = -(Math.PI - Math.acos((B / 2) / S)), h = triH();
+    const base = face(B, L, COLORS.base); base.position.z = -L / 2; model.add(base);
+    hinge(model, new THREE.Vector3(B / 2, 0, 0), Math.PI / 2, lean, face(L, S, COLORS.side));
+    hinge(model, new THREE.Vector3(-B / 2, 0, 0), -Math.PI / 2, lean, face(L, S, COLORS.side));
+    hinge(model, new THREE.Vector3(0, 0, L / 2), 0, -Math.PI / 2, face(B, h, COLORS.tri, true));
+    hinge(model, new THREE.Vector3(0, 0, -L / 2), Math.PI, -Math.PI / 2, face(B, h, COLORS.tri, true));
   } else {
     const { B, S } = dims.pyramid, lean = -(Math.PI - Math.acos((B / 2) / S));   // each triangle leans in to meet at the top
     const base = face(B, B, COLORS.base); base.position.z = -B / 2; model.add(base);
@@ -219,6 +228,8 @@ function build() {
   }
   pose(); frameCamera(); drawRecord();
 }
+// the height of the prism's end triangle, from its base side and slant sides
+const triH = () => Math.sqrt(dims.prism.S ** 2 - (dims.prism.B / 2) ** 2);
 function pose() {
   for (const h of hinges) h.pivot.rotation.x = h.folded * (1 - t);
   model.rotation.y = yaw * (1 - t);   // the net settles square to the screen
@@ -230,6 +241,7 @@ function frameCamera() {
   // the flat net's extent across (x) and from front to back (z), and where its middle is
   let ex, ez, cz = 0;
   if (kind === 'box') { const { L, W, H } = dims.box; ex = L + 2 * H; ez = 2 * W + 2 * H; cz = -W / 2; }
+  else if (kind === 'prism') { const { L, B, S } = dims.prism; ex = B + 2 * S; ez = L + 2 * triH(); }
   else { const { B, S } = dims.pyramid; ex = ez = B + 2 * S; }
   const w = stage.clientWidth, h = stage.clientHeight, aspect = w / h, tan = Math.tan(17.5 * Math.PI / 180);
   const flat = Math.max(ez / 2, ex / 2 / aspect) * 1.32 / tan;            // straight down, the whole net fits
@@ -248,13 +260,18 @@ function resize() { renderer.setSize(stage.clientWidth, stage.clientHeight, fals
 function drawRecord() {
   let parts;
   if (kind === 'box') { const { L, W, H } = dims.box; parts = [L * W, L * W, L * H, L * H, W * H, W * H]; }
+  else if (kind === 'prism') { const { L, B, S } = dims.prism, tri = B * triH() / 2; parts = [B * L, S * L, S * L, tri, tri]; }
   else { const { B, S } = dims.pyramid; parts = [B * B, ...Array(4).fill(B * S / 2)]; }
-  record.innerHTML = parts.join('<span class="op">+</span>') + `<span class="op">=</span>${parts.reduce((p, q) => p + q, 0)}`;
+  // an end triangle's area isn't always whole; it shows to one decimal place
+  parts = parts.map(v => Math.abs(v - Math.round(v)) < 1e-9 ? Math.round(v) : Math.round(v * 10) / 10);
+  const total = Math.round(parts.reduce((p, q) => p + q, 0) * 10) / 10;
+  record.innerHTML = parts.join('<span class="op">+</span>') + `<span class="op">${parts.some(v => !Number.isInteger(v)) ? '≈' : '='}</span>${total}`;
 }
 
 // ═══════ CONTROLS ═══════
 const DIMS = {
   box: [['L', 'length', 1, 6], ['W', 'width', 1, 6], ['H', 'height', 1, 6]],
+  prism: [['L', 'length', 1, 6], ['B', 'base side', 2, 6], ['S', 'slant side', 2, 7]],
   pyramid: [['B', 'base side', 2, 6], ['S', 'slant height', 2, 7]],
 };
 const glyph = (k) => ({
@@ -268,7 +285,7 @@ function drawDims() {
   $('dims').innerHTML = DIMS[kind].map(([k, name, lo, hi]) => {
     const v = dims[kind][k];
     // the slant must be longer than half the base, or the triangles can't meet
-    const minV = k === 'S' ? Math.floor(dims.pyramid.B / 2) + 1 : lo;
+    const minV = k === 'S' ? Math.floor(dims[kind].B / 2) + 1 : lo;
     return `<div class="dim"><button class="knob" data-k="${k}" data-d="1" aria-label="Longer ${name}" ${v < hi ? '' : 'disabled'}>+</button><svg viewBox="0 0 26 26" aria-hidden="true">${glyph(k)}</svg><button class="knob" data-k="${k}" data-d="-1" aria-label="Shorter ${name}" ${v > minV ? '' : 'disabled'}>−</button></div>`;
   }).join('');
 }
@@ -276,7 +293,7 @@ $('dims').addEventListener('click', e => {
   const b = e.target.closest('.knob'); if (!b || b.disabled) return;
   const k = b.dataset.k, d = +b.dataset.d, D = dims[kind];
   D[k] += d;
-  if (kind === 'pyramid' && D.S <= D.B / 2) D.S = Math.floor(D.B / 2) + 1;
+  if (D.S !== undefined && D.S <= D.B / 2) D.S = Math.floor(D.B / 2) + 1;
   buzz(5); build(); drawDims();
   const again = $('dims').querySelector(`.knob[data-k="${k}"][data-d="${d}"]`); if (again && !again.disabled) again.focus();
   live.textContent = Object.values(D).join(' by ') + '.';
@@ -284,7 +301,7 @@ $('dims').addEventListener('click', e => {
 document.querySelectorAll('.bin').forEach(b => b.addEventListener('click', () => {
   kind = b.dataset.kind;
   document.querySelectorAll('.bin').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
-  canvas.setAttribute('aria-label', kind === 'box' ? 'A rectangular prism' : 'A square pyramid');
+  canvas.setAttribute('aria-label', { box: 'A rectangular prism', prism: 'A triangular prism', pyramid: 'A square pyramid' }[kind]);
   build(); drawDims(); buzz(6);
 }));
 fold.addEventListener('input', () => {
