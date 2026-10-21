@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Coordinate Grid</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F; --text-gray: #86868B; --text-light: #AEAEB2; --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif; color: var(--text-main); height: 100dvh; overflow: hidden;
+      display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; touch-action: none;
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #plot { pointer-events: all; cursor: pointer; outline: none; }
+    #cursor { opacity: 0; }
+    #plot:focus-visible #cursor { opacity: 1; }
+    #pairs { opacity: 0; transition: opacity 0.3s; }
+    #board.recon #pairs { opacity: 1; }
+    .hardware { position: fixed; top: 14px; right: 16px; z-index: 20; display: flex; gap: 10px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none; color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px; background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Coordinate grid"></main>
+
+<div class="hardware">
+  <button class="icon-btn" id="sizeBtn" aria-label="Bigger grid: 0 to 20" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 2v12h12"/><path d="M2 8h12M8 2v12M2 5h12M2 11h12M5 2v12M11 2v12" stroke-width="0.7"/></svg>
+  </button>
+  <button class="icon-btn" id="joinBtn" aria-label="Join the points with a line" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13L6 8l4 2 4-7"/><circle cx="2" cy="13" r="1.4" fill="currentColor"/><circle cx="6" cy="8" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="14" cy="3" r="1.4" fill="currentColor"/></svg>
+  </button>
+  <button class="icon-btn" id="recordBtn" aria-label="Show the ordered pairs" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" aria-label="Take all the points off">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EEE8"/></linearGradient>
+    <radialGradient id="bead" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#FF7A90"/><stop offset="0.55" stop-color="#DC143C"/><stop offset="1" stop-color="#9E0E2B"/></radialGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <g id="plot" tabindex="0" role="application" aria-label="Coordinate grid. Arrow keys move; Space puts a point down or takes it off.">
+    <g id="grid"></g>
+    <g id="join"></g>
+    <g id="guides"></g>
+    <g id="points"></g>
+    <circle id="cursor" fill="none" stroke="#007AFF" stroke-width="2.5"/>
+    <g id="pairs"></g>
+  </g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const MAX_POINTS = 30;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), plot = $('plot'), gridG = $('grid'), joinG = $('join'), guidesG = $('guides'),
+        pointsG = $('points'), pairsG = $('pairs'), cursorEl = $('cursor'), live = $('live');
+
+  let N = 10, s = 40, X0 = 0, Y0 = 0, recordOn = false, joinOn = false;
+  const pts = [];                       // { x, y } in grid units, in the order they were put down
+  let active = null, cur = { x: 0, y: 0 };
+  const sx = x => X0 + x * s, sy = y => Y0 - y * s;
+  const at = (x, y) => pts.find(p => p.x === x && p.y === y);
+
+  function layout() {
+    const W = innerWidth, H = innerHeight - 30, top = 74;
+    s = Math.max(12, Math.min((W - 80) / N, (H - top - 50) / N, 60));
+    X0 = Math.round((W - N * s) / 2 + 14);
+    Y0 = Math.round(Math.max(top, (H - N * s) / 2 - 10) + N * s);
+    drawGrid(); draw();
+  }
+
+  // ═══════ THE GRID ═══════
+  function drawGrid() {
+    const L = N * s, every = s < 26 ? 2 : 1, fs = Math.max(10, Math.min(15, s * 0.42));
+    let g = `<rect x="${sx(0) - 10}" y="${sy(N) - 10}" width="${r2(L + 20)}" height="${r2(L + 20)}" rx="12" fill="url(#tile)" stroke="rgba(60,45,30,0.18)" style="filter: drop-shadow(1.5px 5px 8px rgba(59,42,26,0.16))"/>`;
+    let fine = '', bold = '';
+    for (let k = 1; k <= N; k++) {
+      const line = `M${r2(sx(k))},${r2(sy(0))}V${r2(sy(N))}M${r2(sx(0))},${r2(sy(k))}H${r2(sx(N))}`;
+      if (k % 5 === 0) bold += line; else fine += line;
+    }
+    g += `<path d="${fine}" stroke="rgba(60,45,30,0.16)" stroke-width="1"/><path d="${bold}" stroke="rgba(60,45,30,0.32)" stroke-width="1.3"/>`;
+    // axes: the two number lines that meet at 0
+    g += `<path d="M${r2(sx(0))},${r2(sy(0))}H${r2(sx(N) + 6)}M${r2(sx(0))},${r2(sy(0))}V${r2(sy(N) - 6)}" stroke="#3A3D42" stroke-width="2.6" stroke-linecap="round"/>`;
+    for (let k = 0; k <= N; k += every) {
+      g += `<text x="${r2(sx(k))}" y="${r2(sy(0) + fs + 6)}" font-size="${r2(fs)}" font-weight="${k ? 600 : 800}" fill="#5A5D63">${k}</text>`;
+      if (k) g += `<text x="${r2(sx(0) - fs - 4)}" y="${r2(sy(k))}" font-size="${r2(fs)}" font-weight="600" fill="#5A5D63">${k}</text>`;
+    }
+    gridG.innerHTML = g;
+  }
+
+  // ═══════ POINTS ═══════
+  function draw() {
+    const R = Math.max(6, Math.min(12, s * 0.24));
+    pointsG.innerHTML = pts.map(p => `<circle cx="${r2(sx(p.x))}" cy="${r2(sy(p.y))}" r="${r2(R)}" fill="url(#bead)" stroke="rgba(80,0,20,0.35)" style="filter: drop-shadow(0.5px 2px 2px rgba(60,20,20,0.3))"/>`).join('');
+    // the join runs left to right, so a pattern reads as a path
+    const order = [...pts].sort((a, b) => a.x - b.x || a.y - b.y);
+    joinG.innerHTML = joinOn && order.length > 1
+      ? `<polyline points="${order.map(p => `${r2(sx(p.x))},${r2(sy(p.y))}`).join(' ')}" fill="none" stroke="#4169E1" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.8"/>` : '';
+    // drop lines from the point in hand to each axis
+    guidesG.innerHTML = active ? `<path d="M${r2(sx(active.x))},${r2(sy(active.y))}V${r2(sy(0))}M${r2(sx(active.x))},${r2(sy(active.y))}H${r2(sx(0))}" stroke="#DC143C" stroke-width="1.8" stroke-dasharray="4 4" opacity="0.7"/>` : '';
+    const fs = Math.max(11, Math.min(16, s * 0.38));
+    pairsG.innerHTML = pts.map(p => {
+      const right = p.x < N - 2, x = sx(p.x) + (right ? R + 4 : -R - 4), y = sy(p.y) - R - fs * 0.5;
+      return `<text x="${r2(x)}" y="${r2(Math.max(y, sy(N) - 4))}" font-size="${r2(fs)}" font-weight="800" fill="#1D1D1F" text-anchor="${right ? 'start' : 'end'}" style="paint-order: stroke; stroke: #FBF9F6; stroke-width: 4px">(${p.x}, ${p.y})</text>`;
+    }).join('');
+    cursorEl.setAttribute('cx', r2(sx(cur.x))); cursorEl.setAttribute('cy', r2(sy(cur.y))); cursorEl.setAttribute('r', r2(R + 5));
+  }
+
+  let liveTimer = 0;
+  function say(text) { clearTimeout(liveTimer); liveTimer = setTimeout(() => { live.textContent = text; }, 250); }
+  const pair = p => `(${p.x}, ${p.y})`;
+
+  function toggleAt(x, y) {
+    const p = at(x, y);
+    if (p) { pts.splice(pts.indexOf(p), 1); if (active === p) active = null; buzz(3); say(`${pair(p)} taken off. ${pts.length} points.`); }
+    else if (pts.length >= MAX_POINTS) { buzz([4, 30, 4]); return; }
+    else { const q = { x, y }; pts.push(q); active = q; buzz(5); say(`Point at ${pair(q)}. ${pts.length} points.`); }
+    draw();
+  }
+
+  // ═══════ POINTER ═══════
+  // Tap a crossing to put a point there; tap a point to take it off; drag a point to move it.
+  const lattice = e => {
+    const x = Math.round((e.clientX - X0) / s), y = Math.round((Y0 - e.clientY) / s);
+    if (x < 0 || y < 0 || x > N || y > N) return null;
+    return Math.hypot(e.clientX - sx(x), e.clientY - sy(y)) <= Math.max(14, s * 0.45) ? { x, y } : null;
+  };
+  let drag = null;
+  plot.addEventListener('pointerdown', e => {
+    const c = lattice(e);
+    if (!c) return;
+    e.preventDefault();
+    cur = { ...c };
+    const p = at(c.x, c.y);
+    if (p) { active = p; drag = { p, id: e.pointerId, moved: false, sx: e.clientX, sy: e.clientY }; draw(); }
+    else toggleAt(c.x, c.y);
+    try { plot.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  plot.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6) return;
+    drag.moved = true;
+    const x = Math.max(0, Math.min(N, Math.round((e.clientX - X0) / s))), y = Math.max(0, Math.min(N, Math.round((Y0 - e.clientY) / s)));
+    if ((x !== drag.p.x || y !== drag.p.y) && !at(x, y)) { drag.p.x = x; drag.p.y = y; cur = { x, y }; buzz(2); draw(); }
+  });
+  const end = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (!d.moved) toggleAt(d.p.x, d.p.y);
+    else { say(`Point at ${pair(d.p)}.`); draw(); }
+  };
+  plot.addEventListener('pointerup', end);
+  plot.addEventListener('pointercancel', end);
+  // the whole grid takes touches, so a near miss isn't a page gesture
+  const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  hit.setAttribute('fill', 'transparent'); plot.insertBefore(hit, plot.firstChild);
+  const sizeHit = () => { hit.setAttribute('x', sx(0) - 20); hit.setAttribute('y', sy(N) - 20); hit.setAttribute('width', N * s + 40); hit.setAttribute('height', N * s + 40); };
+
+  // ═══════ KEYBOARD ═══════
+  plot.addEventListener('keydown', e => {
+    const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+    if (mv) {
+      e.preventDefault();
+      cur = { x: Math.max(0, Math.min(N, cur.x + mv[0])), y: Math.max(0, Math.min(N, cur.y + mv[1])) };
+      draw(); say(`${pair(cur)}${at(cur.x, cur.y) ? ', a point' : ''}.`);
+    } else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleAt(cur.x, cur.y); }
+    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); if (at(cur.x, cur.y)) toggleAt(cur.x, cur.y); }
+  });
+
+  // ═══════ HARDWARE ═══════
+  const press = (btn, on) => { btn.classList.toggle('active', on); btn.setAttribute('aria-pressed', String(on)); };
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; board.classList.toggle('recon', recordOn); press($('recordBtn'), recordOn); });
+  $('joinBtn').addEventListener('click', () => { joinOn = !joinOn; press($('joinBtn'), joinOn); draw(); });
+  $('sizeBtn').addEventListener('click', () => {
+    // the grid can't shrink out from under a point
+    if (N === 20 && pts.some(p => p.x > 10 || p.y > 10)) { buzz([4, 30, 4]); return; }
+    N = N === 10 ? 20 : 10;
+    cur = { x: Math.min(cur.x, N), y: Math.min(cur.y, N) };
+    press($('sizeBtn'), N === 20);
+    $('sizeBtn').setAttribute('aria-label', N === 20 ? 'Smaller grid: 0 to 10' : 'Bigger grid: 0 to 20');
+    layout(); sizeHit(); buzz(6);
+  });
+  $('clearBtn').addEventListener('click', () => { pts.length = 0; active = null; draw(); say('No points.'); buzz(8); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { layout(); sizeHit(); }); });
+  addEventListener('contextmenu', e => e.preventDefault());
+
+  layout(); sizeHit();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
