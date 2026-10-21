@@ -6,27 +6,26 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
-- On phones the cells are about 24px, which is fine for tapping but tight for three-digit numbers (100 is drawn smaller).
+- Try these on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
+- Bar Model: removing a cut merges two parts, and an unknown mark on the right-hand part is dropped. Re-mark it if needed.
 
 Notes:
-- Files changed: apps/facts-table/index.html (new app, built from Hundred Chart); index.html (menu card).
-- Behavior: the addition and multiplication tables as a tool for Grade 3 Lessons 12–13 (facts and patterns).
-  - An 11 × 11 table from 0 to 10, with a slightly wider gap after 5. The metal edge row and column carry the numbers being added or multiplied; the corner shows the sign.
-  - The same chips and covers as Hundred Chart: teal, plum and gold translucent chips, and metal covers. Tap or drag across cells to lay or lift them.
-  - Tap an edge number to lay or lift the chosen chip or cover along its whole row or column. This shows a row of 3s, or a column and row meeting at the same square.
-  - The + / × button switches the table between addition and multiplication. The chips stay where they are, so a pattern can be compared in both tables.
-  - The eye (off by default) counts how many cells each color is on, as in Hundred Chart. ↺ clears.
-- Doctrine principles applied: no words, prompts or answer checking. The table's numbers are its own printing, and covers let a teacher hide any part of it.
-- Desktop, mobile, projector: 121 cells and 23 edge tiles. Edge taps chip a full row and column, the × table reads 0–100 in row 10, and keyboard Space works. No horizontal scroll and no console errors. The cabinet keeps its height on wide screens; phones stack the three buttons.
-- Accessibility: arrows move a ring through the table; Space/Enter lays or lifts the chosen tool. The live region reads "3 times 4, 12" plus any chips.
-- Remaining risks:
-  - The edge row and column aren't reachable by keyboard; whole-row chips need a pointer.
+- Files changed: apps/bar-model/index.html (new app); apps/hundred-chart/index.html; apps/line-plot/index.html; index.html (menu card).
+- Bar Model (new, Grade 2 Lessons 3, 5, 7–9, 19, 25–26, and later grades): tape diagrams.
+  - Bars start at one left edge under a metal ruler, so they compare. ‹ › above the ruler set its length: 10, 20, 50, 100, 200, 500 or 1,000. Lengths snap to whole units up to 100, and to 2, 5 or 10 beyond.
+  - Drag a bar's metal end knob to stretch it. Pulling a bar with no cuts back to zero lifts it off; one bar always stays.
+  - Cut tool (default): tap a bar to cut it into parts; drag a cut to move it; tap a cut to take it out.
+  - Unknown tool: tap a part to hatch it with a "?" (and tap again to clear).
+  - The add bin adds a bar (up to 4). The eye (off by default) prints each part's length and each bar's total. ↺ starts over with two bars.
+- Hundred Chart: ‹ › above its right corner turn to the next hundred (101–200 and on to 901–1,000). Each hundred keeps its own chips and covers; ↺ clears them all. Three- and four-digit numbers are drawn a little smaller.
+- Line Plot: whole units added (cuts per whole now 1, 2, 4 or 8). Whole-unit lines run up to 20; halves up to 12; fourths and eighths up to 6. Whole-number labels thin to every 2 or 5 when crowded. Switching to a finer cut is refused while the line is too long for it.
+- All three: no horizontal scroll and no console errors at the three sizes.
+- Accessibility: Bar Model bars are focusable sliders. Left/Right change length (Shift ×10), Space cuts the longest part in half, Backspace removes the last cut, and ? marks the last part. The Hundred Chart page turners are buttons.
 
 Acceptance Tests:
-- Addition and multiplication tables 0–10. PASS
-- Chips and covers by tap, drag and whole row/column. PASS
-- Chips persist across + / ×. PASS
-- Record off by default; counts when on. PASS
+- Bar Model: stretch, cut, move and remove cuts, unknown marks, add and remove bars, scale change. PASS
+- Bar Model record off by default; parts and totals correct when on. PASS
+- Hundred Chart pages 1–1,000 with chips kept per page. PASS
+- Line Plot whole units to 20 with readable labels. PASS
 - Fits phone, desktop and projector; no console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS

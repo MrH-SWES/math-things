@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Bar Model</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #surface { flex: 1; min-height: 0; }
+
+    /* ── CHART ── */
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    #board .bar { pointer-events: all; outline: none; cursor: crosshair; }
+    #board .bar:focus-visible .outline { stroke: #007AFF; stroke-width: 3; }
+    #board .knob, #board .cutline, #board .step { pointer-events: all; cursor: ew-resize; }
+    #board .step { cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
+    #board .rec { opacity: 0; transition: opacity 0.3s; }
+    #board.recon .rec { opacity: 1; }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: flex; gap: clamp(6px, 1.2vw, 12px); }
+    .bin {
+      width: clamp(58px, 11vw, 88px);
+      height: clamp(52px, 9vw, 72px);
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%);
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s;
+    }
+    /* the chosen bin sits pressed into the cabinet */
+    .bin[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 72%; height: 72%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Bar model mat"></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Tools">
+    <div id="bins">
+      <button class="bin" id="barBin" aria-label="Add a bar" aria-pressed="false"></button>
+      <button class="bin" id="cutBin" aria-label="Cut tool: tap a bar to cut it into parts" aria-pressed="true"></button>
+      <button class="bin" id="askBin" aria-label="Unknown tool: tap a part to mark it unknown" aria-pressed="false"></button>
+    </div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the lengths" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Start over">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F5F7"/><stop offset="0.5" stop-color="#DADCE1"/><stop offset="1" stop-color="#C4C7CC"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.45"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.08"/></linearGradient>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#FFFFFF"/><path d="M0,0V8" stroke="rgba(60,62,68,0.16)" stroke-width="3"/></pattern>
+  </defs>
+</svg>
+
+<svg id="board">
+  <g id="ruler"></g>
+  <g id="bars"></g>
+  <g id="controls"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // Bars all start at the same left edge, so lengths can be compared. Lengths are whole units on the ruler's scale.
+  const MAXES = [10, 20, 50, 100, 200, 500, 1000], MAX_BARS = 4;
+  const HUES = ['#4169E1', '#DC143C', '#4CBB17', '#FF9F0A'];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), rulerG = $('ruler'), barsG = $('bars'), controls = $('controls'), dock = $('dock'), live = $('live');
+
+  let max = 20, tool = 'cut', recordOn = false;
+  let bars = [];
+  const fresh = () => [{ len: 12, cuts: [5], ask: new Set() }, { len: 7, cuts: [], ask: new Set() }];
+  bars = fresh();
+  let X0 = 0, L = 0, Y0 = 0, H = 54, GAPY = 30;
+  const snap = () => max <= 100 ? 1 : max / 100;
+  const px = u => X0 + u / max * L;
+  const unitAt = x => Math.round((x - X0) / L * max / snap()) * snap();
+  const rowY = i => Y0 + i * (H + GAPY);
+  const segs = b => { const e = [0, ...b.cuts, b.len]; return e.slice(1).map((v, k) => [e[k], v]); };
+  const mix = (hex, a) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.substr(i, 2), 16) * (1 - a) + 255 * a).toString(16).padStart(2, '0')).join('');
+
+  function layout() {
+    const W = innerWidth, top = dock.getBoundingClientRect().top;
+    L = Math.min(W - 110, 1000);
+    X0 = Math.round((W - L) / 2 - 10);
+    H = Math.max(40, Math.min(60, (top - 190) / MAX_BARS - 30));
+    GAPY = Math.round(H * 0.55);
+    Y0 = Math.round(Math.max(120, (top - (MAX_BARS * (H + GAPY))) / 2 + 40));
+    draw();
+  }
+
+  // ═══════ RULER ═══════
+  // The scale the bars are measured against: ticks at every snap, numbers at friendly steps.
+  function drawRuler() {
+    const y = Y0 - 46, lab = [1, 2, 5, 10, 20, 50, 100, 200].map(v => v * max / 20).find(v => L / max * v >= 44) || max;
+    let s = `<rect x="${r2(X0 - 10)}" y="${y - 6}" width="${r2(L + 20)}" height="26" rx="6" fill="url(#metal)" stroke="rgba(60,62,68,0.25)"/>`;
+    const minor = max <= 50 ? snap() : max / 20;
+    let ticks = '';
+    for (let u = 0; u <= max + 1e-9; u += minor) {
+      const major = Math.abs(u / lab - Math.round(u / lab)) < 1e-9;
+      ticks += `M${r2(px(u))},${y - 6}v${major ? 12 : 6}`;
+      if (major) s += `<text x="${r2(px(u))}" y="${y + 13}" font-size="12" font-weight="${u ? 600 : 800}" fill="#3A3D42">${u}</text>`;
+    }
+    s += `<path d="${ticks}" stroke="#3A3D42" stroke-width="1.2"/>`;
+    // ‹ › to change the scale
+    const btn = (id, x, glyph, can, label) => `<g class="step" tabindex="0" role="button" data-id="${id}" aria-label="${label}" aria-disabled="${!can}" opacity="${can ? 1 : 0.35}">` +
+      `<circle cx="${r2(x)}" cy="${y + 7}" r="15" fill="#FFFFFF" stroke="rgba(60,62,68,0.18)" style="filter: drop-shadow(2px 3px 4px rgba(166,171,189,0.45))"/>` +
+      `<text x="${r2(x)}" y="${y + 6}" font-size="18" font-weight="600" fill="#6E7076">${glyph}</text></g>`;
+    const mi = MAXES.indexOf(max);
+    controls.innerHTML = btn('max-', X0 + L - 38, '‹', mi > 0 && bars.every(b => b.len <= MAXES[mi - 1]), 'Shorter ruler') + btn('max+', X0 + L, '›', mi < MAXES.length - 1, 'Longer ruler');
+    controls.setAttribute('transform', `translate(0 ${-34})`);
+    rulerG.innerHTML = s;
+  }
+
+  // ═══════ BARS ═══════
+  function draw() {
+    drawRuler();
+    let s = '';
+    bars.forEach((b, i) => {
+      const y = rowY(i), hue = HUES[i], x1 = px(b.len);
+      s += `<g class="bar" tabindex="0" role="slider" data-i="${i}" aria-label="Bar ${i + 1}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${b.len}">`;
+      s += `<rect x="${r2(X0)}" y="${y}" width="${r2(x1 - X0)}" height="${r2(H)}" fill="transparent"/>`;
+      segs(b).forEach(([a, z], k) => {
+        const ask = b.ask.has(k), fill = ask ? 'url(#hatch)' : mix(hue, k % 2 ? 0.55 : 0.35);
+        s += `<rect x="${r2(px(a))}" y="${y}" width="${r2(px(z) - px(a))}" height="${r2(H)}" fill="${fill}" pointer-events="none"/>`;
+        if (ask) s += `<text x="${r2((px(a) + px(z)) / 2)}" y="${r2(y + H / 2)}" font-size="${r2(H * 0.5)}" font-weight="800" fill="#3A3D42">?</text>`;
+        else s += `<text class="rec" x="${r2((px(a) + px(z)) / 2)}" y="${r2(y + H / 2)}" font-size="${r2(Math.min(H * 0.38, (px(z) - px(a)) * 0.45))}" font-weight="800" fill="#1D1D1F">${z - a}</text>`;
+      });
+      s += `<rect x="${r2(X0)}" y="${y}" width="${r2(x1 - X0)}" height="${r2(H)}" fill="url(#gloss)" pointer-events="none"/>`;
+      s += `<rect class="outline" x="${r2(X0)}" y="${y}" width="${r2(x1 - X0)}" height="${r2(H)}" rx="3" fill="none" stroke="${mix(hue, -0.0)}" stroke-width="2" pointer-events="none"/>`;
+      for (const c of b.cuts) s += `<path class="cutline" data-i="${i}" data-c="${c}" d="M${r2(px(c))},${y}v${r2(H)}" stroke="${hue}" stroke-width="3"/><path class="cutline" data-i="${i}" data-c="${c}" d="M${r2(px(c))},${y}v${r2(H)}" stroke="transparent" stroke-width="18"/>`;
+      s += `</g>`;
+      // the end knob stretches the bar; the length rides beside it
+      s += `<g class="knob" data-i="${i}"><rect x="${r2(x1 - 7)}" y="${r2(y - 6)}" width="14" height="${r2(H + 12)}" rx="7" fill="url(#metal)" stroke="rgba(60,62,68,0.35)" style="filter: drop-shadow(1px 2px 2px rgba(60,40,20,0.25))"/><rect x="${r2(x1 - 22)}" y="${r2(y - 10)}" width="44" height="${r2(H + 20)}" fill="transparent"/></g>`;
+      s += `<text class="rec" x="${r2(x1 + 30)}" y="${r2(y + H / 2)}" font-size="${r2(H * 0.4)}" font-weight="800" fill="${hue}" text-anchor="start">${b.len}</text>`;
+    });
+    barsG.innerHTML = s;
+  }
+
+  let liveTimer = 0;
+  const say = t => { clearTimeout(liveTimer); liveTimer = setTimeout(() => { live.textContent = t; }, 300); };
+  const describe = i => { const b = bars[i]; return `Bar ${i + 1}` + (recordOn ? `, ${b.len}: ` + segs(b).map(([a, z], k) => b.ask.has(k) ? 'unknown' : z - a).join(' + ') : `, ${segs(b).length} parts`) + '.'; };
+
+  // ═══════ CHANGES ═══════
+  function setLen(i, v) {
+    const b = bars[i], last = b.cuts.length ? b.cuts[b.cuts.length - 1] : 0;
+    v = Math.max(last + snap(), Math.min(max, v));
+    if (v === b.len) return;
+    b.len = v; buzz(2); draw(); say(describe(i));
+  }
+  function addCut(i, u) {
+    const b = bars[i];
+    if (u <= 0 || u >= b.len || b.cuts.includes(u)) return;
+    // the part being cut keeps its unknown mark on its left piece; later parts shift by one
+    const k = segs(b).findIndex(([a, z]) => u > a && u < z);
+    b.ask = new Set([...b.ask].map(j => j > k ? j + 1 : j));
+    b.cuts = [...b.cuts, u].sort((p, q) => p - q);
+    buzz(6); draw(); say(describe(i));
+  }
+  function removeCut(i, c) {
+    const b = bars[i], k = b.cuts.indexOf(c);
+    if (k < 0) return;
+    b.ask = new Set([...b.ask].filter(j => j !== k + 1).map(j => j > k + 1 ? j - 1 : j));
+    b.cuts.splice(k, 1); buzz(4); draw(); say(describe(i));
+  }
+
+  // ═══════ POINTER ═══════
+  let drag = null;
+  board.addEventListener('pointerdown', e => {
+    const st = e.target.closest('.step');
+    if (st) { e.preventDefault(); act(st.dataset.id); return; }
+    const knob = e.target.closest('.knob'), cut = e.target.closest('.cutline'), bar = e.target.closest('.bar');
+    if (!knob && !cut && !bar) return;
+    e.preventDefault();
+    if (knob) drag = { kind: 'len', i: +knob.dataset.i };
+    else if (cut) drag = { kind: 'cut', i: +cut.dataset.i, c: +cut.dataset.c, moved: false, sx: e.clientX };
+    else {
+      const i = +bar.dataset.i, u = (e.clientX - X0) / L * max;
+      if (tool === 'ask') {
+        const k = segs(bars[i]).findIndex(([a, z]) => u >= a && u <= z);
+        if (k >= 0) { const b = bars[i]; b.ask.has(k) ? b.ask.delete(k) : b.ask.add(k); buzz(5); draw(); say(describe(i)); }
+      } else addCut(i, unitAt(e.clientX));
+      return;
+    }
+    drag.id = e.pointerId;
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (drag.kind === 'len') {
+      const u = unitAt(e.clientX);
+      // a bar pulled back to nothing is lifted off, as long as one stays
+      if (u <= 0 && bars.length > 1 && !bars[drag.i].cuts.length) { bars.splice(drag.i, 1); drag = null; buzz(10); draw(); say(`${bars.length} bars.`); return; }
+      setLen(drag.i, u);
+    } else {
+      if (!drag.moved && Math.abs(e.clientX - drag.sx) < 6) return;
+      drag.moved = true;
+      const b = bars[drag.i], k = b.cuts.indexOf(drag.c), lo = k ? b.cuts[k - 1] : 0, hi = k < b.cuts.length - 1 ? b.cuts[k + 1] : b.len;
+      const u = Math.max(lo + snap(), Math.min(hi - snap(), unitAt(e.clientX)));
+      if (u !== drag.c) { b.cuts[k] = u; drag.c = u; buzz(2); draw(); }
+    }
+  });
+  const end = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (d.kind === 'cut' && !d.moved) removeCut(d.i, d.c);   // a tap on a cut takes it out
+    else say(describe(d.i));
+  };
+  addEventListener('pointerup', end); addEventListener('pointercancel', end);
+
+  function act(id) {
+    const mi = MAXES.indexOf(max);
+    const next = MAXES[mi + (id === 'max+' ? 1 : -1)];
+    if (!next || bars.some(b => b.len > next)) { buzz([4, 30, 4]); return; }
+    // a coarser scale rounds lengths and cuts to its snap
+    max = next;
+    const sn = snap();
+    for (const b of bars) {
+      b.len = Math.max(sn, Math.round(b.len / sn) * sn);
+      b.cuts = [...new Set(b.cuts.map(c => Math.round(c / sn) * sn))].filter(c => c > 0 && c < b.len);
+    }
+    buzz(6); draw(); say(`Ruler to ${max}.`);
+  }
+
+  // ═══════ KEYBOARD ═══════
+  board.addEventListener('keydown', e => {
+    const st = e.target.closest && e.target.closest('.step');
+    if (st && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); const id = st.dataset.id; act(id); const again = document.querySelector(`.step[data-id="${id}"]`); if (again) again.focus(); return; }
+    const bar = e.target.closest && e.target.closest('.bar');
+    if (!bar) return;
+    const i = +bar.dataset.i, b = bars[i];
+    const refocus = () => { const g = document.querySelector(`.bar[data-i="${i}"]`); if (g) g.focus(); };
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setLen(i, b.len + (e.key === 'ArrowRight' ? 1 : -1) * snap() * (e.shiftKey ? 10 : 1)); refocus(); }
+    else if (e.key === ' ' || e.key === 'Enter') {
+      // Space cuts the longest part in half (to the nearest unit)
+      e.preventDefault();
+      const [a, z] = segs(b).reduce((p, q) => (q[1] - q[0] > p[1] - p[0] ? q : p));
+      addCut(i, Math.round((a + z) / 2 / snap()) * snap()); refocus();
+    } else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); if (b.cuts.length) removeCut(i, b.cuts[b.cuts.length - 1]); refocus(); }
+    else if (e.key === '?' || e.key === '/') { e.preventDefault(); const k = segs(b).length - 1; b.ask.has(k) ? b.ask.delete(k) : b.ask.add(k); draw(); say(describe(i)); refocus(); }
+  });
+
+  // ═══════ CABINET ═══════
+  const barBin = $('barBin'), cutBin = $('cutBin'), askBin = $('askBin');
+  barBin.innerHTML = `<svg viewBox="0 0 60 40" aria-hidden="true"><rect x="4" y="6" width="40" height="12" rx="2" fill="${mix(HUES[0], 0.35)}" stroke="${HUES[0]}"/><rect x="4" y="22" width="28" height="12" rx="2" fill="${mix(HUES[1], 0.35)}" stroke="${HUES[1]}"/><path d="M48 28h10M53 23v10" stroke="#6E7076" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+  cutBin.innerHTML = `<svg viewBox="0 0 60 40" aria-hidden="true"><rect x="4" y="12" width="52" height="16" rx="2" fill="${mix(HUES[0], 0.35)}" stroke="${HUES[0]}"/><path d="M24 6v28M40 6v28" stroke="${HUES[0]}" stroke-width="3"/></svg>`;
+  askBin.innerHTML = `<svg viewBox="0 0 60 40" aria-hidden="true"><rect x="4" y="12" width="22" height="16" rx="2" fill="${mix(HUES[0], 0.35)}" stroke="${HUES[0]}"/><rect x="26" y="12" width="30" height="16" rx="2" fill="url(#hatch)" stroke="${HUES[0]}"/><text x="41" y="21" font-size="14" font-weight="800" fill="#3A3D42" text-anchor="middle" dominant-baseline="central" font-family="Lexend, sans-serif">?</text></svg>`;
+  const pick = t => { tool = t; cutBin.setAttribute('aria-pressed', String(t === 'cut')); askBin.setAttribute('aria-pressed', String(t === 'ask')); buzz(4); };
+  cutBin.addEventListener('click', () => pick('cut'));
+  askBin.addEventListener('click', () => pick('ask'));
+  barBin.addEventListener('click', () => {
+    if (bars.length >= MAX_BARS) { buzz([4, 30, 4]); return; }
+    bars.push({ len: Math.round(max / 2 / snap()) * snap(), cuts: [], ask: new Set() }); buzz(8); draw(); say(`${bars.length} bars.`);
+  });
+
+  // ═══════ HARDWARE ═══════
+  const recordBtn = $('recordBtn');
+  recordBtn.addEventListener('click', () => { recordOn = !recordOn; board.classList.toggle('recon', recordOn); recordBtn.classList.toggle('active', recordOn); recordBtn.setAttribute('aria-pressed', String(recordOn)); });
+  $('clearBtn').addEventListener('click', () => { bars = fresh(); max = 20; draw(); buzz(8); say('Two bars.'); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  layout();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>

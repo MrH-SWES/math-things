@@ -85,7 +85,9 @@
 (() => {
   'use strict';
   // Values are kept in eighths of a whole, so halves, fourths and eighths all share one scale.
-  const CUTS = [2, 4, 8], MAX_STACK = 12;
+  const CUTS = [1, 2, 4, 8], MAX_STACK = 12;
+  // whole units allow a long line (inch lengths up to 20); finer cuts keep it shorter so ticks stay tappable
+  const MAX_WHOLES = { 1: 20, 2: 12, 4: 6, 8: 6 };
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
   const r2 = v => Math.round(v * 100) / 100;
@@ -127,10 +129,12 @@
     const longest = mixed(eighthsAt(n - 1)).length;
     let every = 1;
     while (every < cuts && step * every < longest * fs * 0.56 + 8) every *= 2;
+    // whole numbers thin out too when the line is long: every one, every other, or every fifth
+    const wholeEvery = [1, 2, 5].find(w => step * cuts * w >= String(wholes).length * fs * 1.25 * 0.62 + 10) || 5;
     for (let k = 0; k <= n; k++) {
       const x = X0 + k * step, e = eighthsAt(k), whole = e % 8 === 0;
       s += `<path d="M${r2(x)},${r2(Y - (whole ? 14 : 9))}v${whole ? 28 : 18}" stroke="#3A3D42" stroke-width="${whole ? 2.4 : 1.4}" stroke-linecap="round"/>`;
-      if (whole || (every < cuts && k % every === 0)) s += `<text x="${r2(x)}" y="${r2(Y + 30)}" font-size="${whole ? fs * 1.25 : fs}" font-weight="${whole ? 800 : 600}" fill="${whole ? '#1D1D1F' : '#5A5D63'}">${mixed(e)}</text>`;
+      if ((whole && (e / 8) % wholeEvery === 0) || (!whole && every < cuts && k % every === 0)) s += `<text x="${r2(x)}" y="${r2(Y + 30)}" font-size="${whole ? fs * 1.25 : fs}" font-weight="${whole ? 800 : 600}" fill="${whole ? '#1D1D1F' : '#5A5D63'}">${mixed(e)}</text>`;
     }
     lineG.innerHTML = s;
     // marks: stamped tiles stacked above each tick
@@ -167,7 +171,7 @@
     s += btn('cuts+', X0 + 92, '›', ci < CUTS.length - 1, 'More cuts in each whole');
     s += `<g transform="translate(${r2(X0 + L - 64)} ${r2(y)})">${[...Array(wholes + 1)].map((_, i) => `<path d="M${r2(i * 28 / wholes)},-7v14" stroke="#6E7076" stroke-width="1.6"/>`).join('')}<path d="M0,0h28" stroke="#6E7076" stroke-width="1.4"/></g>`;
     s += btn('wholes-', X0 + L - 92, '‹', wholes > 1 && ![...counts.keys()].some(e => e > (wholes - 1) * 8), 'Shorter line');
-    s += btn('wholes+', X0 + L - 8, '›', wholes < 6, 'Longer line');
+    s += btn('wholes+', X0 + L - 8, '›', wholes < MAX_WHOLES[cuts], 'Longer line');
     controls.innerHTML = s;
   }
 
@@ -233,8 +237,9 @@
       if (!next) return buzz([4, 30, 4]);
       // fewer cuts can't drop marks that sit between the new ticks
       if (next < cuts && [...counts.keys()].some(e => e % (8 / next))) { buzz([4, 30, 4]); return; }
+      if (wholes > MAX_WHOLES[next]) { buzz([4, 30, 4]); return; }
       const e = eighthsAt(cursor); cuts = next; cursor = Math.round(e * cuts / 8);
-    } else if (id === 'wholes+') { if (wholes >= 6) return; wholes++; }
+    } else if (id === 'wholes+') { if (wholes >= MAX_WHOLES[cuts]) return; wholes++; }
     else { if (wholes <= 1 || [...counts.keys()].some(e => e > (wholes - 1) * 8)) return buzz([4, 30, 4]); wholes--; }
     buzz(6); layout(); sizeHit();
   }
