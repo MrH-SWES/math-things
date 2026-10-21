@@ -33,6 +33,12 @@
       background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
     }
 
+    /* a number cube in 3D: six faces round a center; rolling turns the whole cube and lands with the result in front */
+    .die3d { position: relative; perspective: 700px; display: inline-block; }
+    .die3d .cube { position: absolute; inset: 0; transform-style: preserve-3d; }
+    .die3d .f { position: absolute; inset: 0; border-radius: 16%; background: linear-gradient(135deg, #FFFFFF, #ECE8E1); border: 1.5px solid rgba(60,45,30,0.3); backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font: 800 calc(var(--s) * 0.5) 'Lexend', sans-serif; color: #1D1D1F; box-shadow: inset 0 0 calc(var(--s) * 0.08) rgba(60,45,30,0.12); }
+    .die3d .f svg { width: 100%; height: 100%; }
+    .die3d .shadow { position: absolute; left: 12%; right: 12%; bottom: -10%; height: 14%; border-radius: 50%; background: radial-gradient(rgba(59,42,26,0.35), transparent 70%); }
     #lab { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: clamp(16px, 4vw, 56px); padding: 64px 16px 12px; flex-wrap: wrap; }
     .devices { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .pair { display: flex; gap: 14px; }
@@ -185,6 +191,29 @@
     const p = { 1: [[2, 2]], 2: [[1, 1], [3, 3]], 3: [[1, 1], [2, 2], [3, 3]], 4: [[1, 1], [3, 1], [1, 3], [3, 3]], 5: [[1, 1], [3, 1], [2, 2], [1, 3], [3, 3]], 6: [[1, 1], [3, 1], [1, 2], [3, 2], [1, 3], [3, 3]] }[v];
     return p.map(([x, y]) => `<circle cx="${r2(S * x / 4)}" cy="${r2(S * y / 4)}" r="${r2(S * 0.08)}" fill="#1D1D1F"/>`).join('');
   }
+  // ═══════ 3D NUMBER CUBE ═══════
+  // Six faces: front, back, right, left, top, bottom. Before each roll the result is written on the front face and
+  // other values on the rest; the cube then turns a few whole turns and comes to rest showing its front.
+  const FACE_TURN = ['', 'rotateY(180deg)', 'rotateY(90deg)', 'rotateY(-90deg)', 'rotateX(90deg)', 'rotateX(-90deg)'];
+  function dieFace(v, S, dots) { return dots ? `<svg viewBox="0 0 ${S} ${S}">${pips(v, S)}</svg>` : String(v); }
+  function dieHTML(values, S, dots, turns) {
+    return `<div class="die3d" style="width:${S}px;height:${S}px;--s:${S}px"><div class="shadow"></div><div class="cube" style="transform: rotateX(${turns.x - 14}deg) rotateY(${turns.y + 18}deg)">` +
+      values.map((v, i) => `<div class="f" style="transform: ${FACE_TURN[i]} translateZ(${S / 2}px)">${dieFace(v, S, dots)}</div>`).join('') + `</div></div>`;
+  }
+  // roll the cube in `root` to show `front`; `others` fill the other five faces. Calls back when it lands.
+  function tumble(root, front, others, S, dots, turns, dur, done) {
+    const faces = root.querySelectorAll('.f'), cube = root.querySelector('.cube');
+    [front, ...others].forEach((v, i) => { faces[i].innerHTML = dieFace(v, S, dots); });
+    const spins = dur > 700 ? 2 : 1;
+    turns.x += 360 * spins; turns.y += 360 * (spins - 1 || 1);
+    cube.style.transition = `transform ${dur}ms cubic-bezier(.2,.75,.25,1)`;
+    // it comes to rest tipped a little toward the viewer, so it reads as a cube
+    cube.style.transform = `rotateX(${turns.x - 14}deg) rotateY(${turns.y + 18}deg)`;
+    root.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-S * 0.35}px)`, offset: 0.3 }, { transform: 'translateY(0)', offset: 0.65 }, { transform: `translateY(${-S * 0.06}px)`, offset: 0.82 }, { transform: 'translateY(0)' }], { duration: dur, easing: 'ease-out' });
+    setTimeout(done, dur + 30);
+  }
+  const turns = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
+  const cubeOthers = v => [1, 2, 3, 4, 5, 6].filter(f => f !== v).sort(() => Math.random() - 0.5);
   function deviceSVG(i, S) {
     const res = last[i];
     if (kind === 'spinner') {
@@ -198,8 +227,8 @@
       return s + `<g class="arrow" style="transform-origin:${c}px ${c}px;transform:rotate(${angle[i]}deg)"><path d="M${c},${r2(c - R * 0.86)}L${r2(c + S * 0.05)},${c}L${c},${r2(c + R * 0.2)}L${r2(c - S * 0.05)},${c}Z" fill="#2B2D31"/></g><circle cx="${c}" cy="${c}" r="${r2(S * 0.05)}" fill="#ccc" stroke="#888"/></svg>`;
     }
     if (kind === 'cube') {
-      const v = res ? res.key + 1 : 6 - i * 3;
-      return `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}"><rect x="${r2(S * 0.1)}" y="${r2(S * 0.1)}" width="${r2(S * 0.8)}" height="${r2(S * 0.8)}" rx="${r2(S * 0.13)}" fill="url(#ivory)" stroke="rgba(60,45,30,0.3)" style="filter: drop-shadow(2px 5px 6px rgba(59,42,26,0.25))"/><g transform="translate(${r2(S * 0.1)} ${r2(S * 0.1)})">${pips(v, S * 0.8)}</g></svg>`;
+      const v = res ? res.key + 1 : 6 - i * 3, D = Math.round(S * 0.8);
+      return `<div style="width:${S}px;height:${S}px;display:flex;align-items:center;justify-content:center">${dieHTML([v, ...cubeOthers(v)], D, true, turns[i])}</div>`;
     }
     // a cloth bag of marbles; the last one drawn sits on top
     let s = `<svg width="${S}" height="${S}" viewBox="0 0 100 100"><path d="M22 30Q10 60 18 84Q50 98 82 84Q90 60 78 30Z" fill="url(#cloth)" stroke="rgba(60,40,20,0.4)"/><path d="M24 30Q50 22 76 30" fill="none" stroke="#6B4F2A" stroke-width="3"/>`;
@@ -265,10 +294,21 @@
     // one trial is shown turning; a batch just lands on its last result
     if (kind === 'spinner') for (const i of two ? [0, 1] : [0]) {
       const o = last[i];
-      angle[i] = angle[i] - (angle[i] % 360) + (n === 1 && !reduceMotion ? 1080 : 360) + (o.key + 0.2 + Math.random() * 0.6) * 360 / sections;
+      angle[i] = angle[i] - (angle[i] % 360) + (n === 1 && !reduceMotion ? 1080 : 360) + (o.key + 0.2 + Math.random() * 0.6) * 360 / sections;   // whole turns, then into its section
     }
+    // every run moves: one trial spins or rolls in full; a batch gives a quicker turn that lands on its last result.
+    // Reduce Motion keeps the movement but makes it shorter.
+    const dur = n === 1 ? (reduceMotion ? 800 : 1200) : (reduceMotion ? 450 : 650);
+    const prev = kind === 'cube' ? turns.map(t => ({ ...t })) : null;
     drawDevices();
-    if (kind === 'spinner' && n === 1 && !reduceMotion) pairEl.querySelectorAll('.arrow').forEach((a, i) => { a.style.transition = 'none'; a.style.transform = `rotate(${angle[i] - 1080}deg)`; a.getBoundingClientRect(); a.style.transition = 'transform 1.2s cubic-bezier(.15,.75,.2,1)'; a.style.transform = `rotate(${angle[i]}deg)`; });
+    if (kind === 'spinner') pairEl.querySelectorAll('.arrow').forEach((a, i) => { const back = n === 1 && !reduceMotion ? 1080 : 360; a.style.transition = 'none'; a.style.transform = `rotate(${angle[i] - back}deg)`; a.getBoundingClientRect(); a.style.transition = `transform ${dur}ms cubic-bezier(.15,.75,.2,1)`; a.style.transform = `rotate(${angle[i]}deg)`; });
+    if (kind === 'cube') pairEl.querySelectorAll('.die3d').forEach((el, i) => {
+      // the cube was redrawn at its old turn; now roll it to the new result
+      const D = el.offsetWidth, v = last[i].key + 1;
+      el.querySelector('.cube').style.transform = `rotateX(${prev[i].x - 14}deg) rotateY(${prev[i].y + 18}deg)`; el.getBoundingClientRect();
+      tumble(el, v, cubeOthers(v), D, true, turns[i], dur, () => {});
+    });
+    if (kind === 'bag') pairEl.querySelectorAll('svg').forEach(sv => { const m = sv.querySelectorAll('circle'); const top = [...m].slice(-2); top.forEach(c => c.animate([{ transform: 'translateY(40px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: dur * 0.6, easing: 'cubic-bezier(.2,.8,.3,1.2)' })); });
     drawGraph(); buzz(n === 1 ? 6 : 12);
     live.textContent = `${trials} trials.` + (recordOn ? ' ' + outcomes().map(o => `${o.label || ['red', 'blue', 'green', 'yellow'][o.key]} ${counts.get(String(o.key)) || 0}`).join(', ') : '');
   }
