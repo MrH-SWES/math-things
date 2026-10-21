@@ -7,28 +7,29 @@ Must Fix:
 
 Should Fix Soon:
 - Try it on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
-- On a phone, a 3-whole line cut in eighths has ticks about 11px apart: fine to look at, fiddly to tap. Fewer wholes or fourths are comfortable.
+- On phones the opened square's ten strips are about 10px wide each. Tapping them works, but it's tight; dragging across them is easier.
 
 Notes:
-- Files changed: apps/line-plot/index.html (new app); index.html (menu card).
-- Behavior: a line plot for measurement data in fractions of a unit (Grade 5 Lesson 27).
-  - A metal number line from 0 to 2 wholes, cut in fourths. Whole numbers are always printed; cuts are printed as room allows (every cut, every other cut, or halves only).
-  - Tap above a tick to stamp an ✕ tile; tiles stack up to 12 high. Tap the top tile of a stack to take it off.
-  - ‹ › steppers on the left change the cuts per whole (halves, fourths, eighths); on the right they change the length (1 to 6 wholes). The tool refuses (a short buzz) to drop a cut or a whole that has marks on it.
-  - The eye button (off by default) shows the number of marks, their total, and the lowest and highest value, e.g. "✕ 6  total 3 3/4  1/4 to 1 1/4".
-  - ↺ takes all the marks off.
-- Doctrine principles applied: no words or directions; the data is a stack of objects you can count; totals are an optional shadow; no answer checking or datasets.
-- Desktop (1024×768): add/remove by tap, steppers, refusals, record and keyboard all pass. No console errors. Fixed during testing: labels on a 3-whole eighths line ran together; now they thin out.
-- Mobile (375×812): fits with no horizontal scroll. Fixed during testing: the line sat high with empty space below, and the record line overlapped the eye button.
-- Projector (1920×1080): line is 960px; same tests pass.
-- Accessibility: the plot is focusable; Left/Right move a cursor along the ticks, Space/Up adds, Backspace/Down removes. Steppers are buttons. A polite live region reports each stack, and the total and spread while the record is shown.
+- Files changed: apps/decimal-grid/index.html.
+- Behavior: Decimal Grid now reaches thousandths (Grade 5 Lessons 9, 11 and 14–17).
+  - A new lens bin sits beside the grid bin. Drag the lens onto any small square (a hundredth) and that square opens up big beside itself, cut into ten strips: thousandths. A violet ring marks the square it came from.
+  - Tap a strip to shade up to it; tap the last shaded strip to take it back; drag across to sweep. Shading fills from the left, so the small square in the grid shows the same amount as a violet sliver.
+  - Ten thousandths make a full hundredth, which turns orange like any other shaded square; full columns and full grids still turn tenths-blue and ones-red.
+  - Touching anything else closes the lens. Tapping the lens bin without dragging opens the first grid's cursor square.
+  - Thousandths are violet (#7B00FF), matching Place Value Cards and Line Up the Ones.
+  - The eye record now shows three places when needed: "0.114" with 114/1000. Tenths and hundredths read as before (0.3, 3/10; 0.25, 25/100).
+- Doctrine principles applied: no words or directions; a thousandth is a piece you can see inside a hundredth; the number is the optional shadow; no answer checking.
+- Desktop (1024×768), mobile (375×812), projector (1920×1080): a column plus one hundredth plus four thousandths reads 0.114. Tapping the fourth strip again gives 0.113. Tapping the mat closes the lens. No horizontal scroll and no console errors.
+- Accessibility: on a focused grid, Shift+Right/Left opens the cursor square under the lens and adds or removes a thousandth; Escape closes it. The lens bin opens with Enter or Space. Grid labels say "116 of 1000 shaded" when thousandths are present, and "25 of 100" otherwise.
 - Remaining risks:
-  - Values stop at eighths and 6 wholes; stacks stop at 12.
+  - Only one square can be open at a time.
+  - Thousandths in a square always fill from the left; they can't be scattered.
 
 Acceptance Tests:
-- Tap adds a mark; tapping the top mark removes it. PASS
-- Cuts and length steppers; refusals protect existing marks. PASS
-- Record off by default; count, total and spread correct when on. PASS
-- Keyboard adds and removes. PASS
+- Lens opens a square into ten thousandths. PASS
+- Strips shade and unshade; the grid square shows the sliver. PASS
+- Record reads thousandths as a decimal and as a fraction over 1000. PASS
+- Ten thousandths make a hundredth; columns and wholes still complete. PASS
+- Keyboard reaches thousandths. PASS
 - Fits phone, desktop and projector; no console errors. PASS
 - No frameworks, bundlers, or package managers added. PASS
