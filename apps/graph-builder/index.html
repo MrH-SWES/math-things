@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Graph Builder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F; --text-gray: #86868B; --text-light: #AEAEB2; --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif; color: var(--text-main); height: 100dvh; overflow: hidden;
+      display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; touch-action: none;
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #plot { pointer-events: all; cursor: pointer; outline: none; }
+    #cursor { opacity: 0; }
+    #plot:focus-visible #cursor { opacity: 1; }
+    #board .step { pointer-events: all; cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
+    #record { opacity: 0; transition: opacity 0.3s; }
+    #board.recon #record { opacity: 1; }
+    #board .col { cursor: ns-resize; }
+    .hardware { position: fixed; top: 14px; right: 16px; z-index: 20; display: flex; gap: 10px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none; color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px; background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Graph builder"></main>
+
+<div class="hardware">
+  <button class="icon-btn" id="viewBtn" aria-label="Picture graph" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><g id="viewGlyph" fill="currentColor"><rect x="2" y="7" width="3" height="7" rx="0.6"/><rect x="6.5" y="3" width="3" height="11" rx="0.6"/><rect x="11" y="9" width="3" height="5" rx="0.6"/></g></svg>
+  </button>
+  <button class="icon-btn" id="recordBtn" aria-label="Show the amounts" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" aria-label="Empty the graph">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EEE8"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.08"/></linearGradient>
+    <clipPath id="halfClip" clipPathUnits="objectBoundingBox"><rect x="0" y="0" width="0.5" height="1"/></clipPath>
+  </defs>
+</svg>
+
+<svg id="board">
+  <g id="plot" tabindex="0" role="application" aria-label="Graph. Left and Right choose a column; Up and Down make it taller or shorter.">
+    <g id="frame"></g>
+    <g id="cols"></g>
+    <rect id="cursor" fill="none" stroke="#007AFF" stroke-width="2.5" rx="8" pointer-events="none"/>
+  </g>
+  <g id="controls"></g>
+  <g id="record"></g>
+</svg>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // Each column is a category, told apart by color and a stamped shape. One grid step (or one picture) is worth `scale`.
+  const SCALES = [1, 2, 5, 10], STEPS = 10;
+  const CATS = [
+    { color: '#DC143C', shape: 'circle' }, { color: '#4169E1', shape: 'square' }, { color: '#4CBB17', shape: 'triangle' },
+    { color: '#FF9F0A', shape: 'star' }, { color: '#7B00FF', shape: 'diamond' }, { color: '#00A3A3', shape: 'heart' },
+  ];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), plot = $('plot'), frameG = $('frame'), colsG = $('cols'), cursorEl = $('cursor'),
+        controls = $('controls'), recordG = $('record'), live = $('live');
+
+  let n = 4, scale = 2, picture = false, recordOn = false, cursor = 0;
+  const vals = [6, 9, 3, 5, 0, 0];
+  let X0 = 0, Y0 = 0, GW = 0, GH = 0, step = 0, cw = 0;
+  const unit = () => Number.isInteger(scale / 2) ? scale / 2 : scale;   // the finest a column can move
+  const max = () => scale * STEPS;
+  const colX = i => X0 + (i + 0.5) * cw;
+  const yOf = v => Y0 - v / scale * step;
+
+  function shapePath(shape, r) {
+    const pts = (k, rot, rr) => [...Array(k)].map((_, i) => { const a = rot + i * 2 * Math.PI / k, q = rr(i); return `${r2(q * Math.cos(a))},${r2(q * Math.sin(a))}`; }).join(' ');
+    if (shape === 'circle') return `<circle r="${r2(r)}"/>`;
+    if (shape === 'square') return `<rect x="${r2(-r * 0.85)}" y="${r2(-r * 0.85)}" width="${r2(r * 1.7)}" height="${r2(r * 1.7)}" rx="${r2(r * 0.2)}"/>`;
+    if (shape === 'triangle') return `<polygon points="${pts(3, -Math.PI / 2, () => r * 1.1)}" transform="translate(0 ${r2(r * 0.15)})"/>`;
+    if (shape === 'star') return `<polygon points="${pts(10, -Math.PI / 2, i => i % 2 ? r * 0.48 : r * 1.08)}"/>`;
+    if (shape === 'diamond') return `<polygon points="${pts(4, -Math.PI / 2, () => r * 1.05)}"/>`;
+    return `<path d="M0,${r2(r * 0.9)}C${r2(-r * 1.4)},${r2(-r * 0.1)} ${r2(-r * 0.6)},${r2(-r * 1.2)} 0,${r2(-r * 0.4)}C${r2(r * 0.6)},${r2(-r * 1.2)} ${r2(r * 1.4)},${r2(-r * 0.1)} 0,${r2(r * 0.9)}Z"/>`;
+  }
+  const stamp = (k, x, y, r, half) => `<g transform="translate(${r2(x)} ${r2(y)})" fill="${CATS[k].color}" stroke="rgba(0,0,0,0.25)" stroke-width="1"${half ? ` clip-path="url(#halfClip)"` : ''}>${shapePath(CATS[k].shape, r)}</g>`;
+
+  function layout() {
+    const W = innerWidth, H = innerHeight - 30;
+    GW = Math.min(W - 100, 880);
+    GH = Math.max(200, Math.min(H - 230, 520));
+    step = GH / STEPS;
+    X0 = Math.round((W - GW) / 2 + 18);
+    Y0 = Math.round(Math.max(110, (H - GH) / 2) + GH - 20);
+    cw = GW / n;
+    draw();
+  }
+
+  // ═══════ DRAWING ═══════
+  function draw() {
+    const fs = Math.max(11, Math.min(15, step * 0.42));
+    let f = `<rect x="${X0 - 12}" y="${r2(Y0 - GH - 14)}" width="${r2(GW + 24)}" height="${r2(GH + 74)}" rx="14" fill="url(#tile)" stroke="rgba(60,45,30,0.16)" style="filter: drop-shadow(1.5px 5px 8px rgba(59,42,26,0.16))"/>`;
+    if (!picture) {
+      // the scale printed on the axis, every line or every other when crowded
+      let lines = '';
+      for (let k = 1; k <= STEPS; k++) lines += `M${X0},${r2(Y0 - k * step)}H${r2(X0 + GW)}`;
+      f += `<path d="${lines}" stroke="rgba(60,45,30,0.18)" stroke-width="1"/>`;
+      for (let k = 0; k <= STEPS; k += step < 22 ? 2 : 1)
+        f += `<text x="${X0 - 18}" y="${r2(Y0 - k * step)}" font-size="${r2(fs)}" font-weight="${k ? 600 : 800}" fill="#5A5D63">${k * scale}</text>`;
+      f += `<path d="M${X0},${r2(Y0 - GH - 4)}V${Y0}H${r2(X0 + GW)}" fill="none" stroke="#3A3D42" stroke-width="2.4" stroke-linecap="round"/>`;
+    } else f += `<path d="M${X0},${Y0}H${r2(X0 + GW)}" stroke="#3A3D42" stroke-width="2.4" stroke-linecap="round"/>`;
+    // each column's own stamp under the axis
+    // each column's own label: its stamp on a small metal plate, so it never reads as data
+    const lr = Math.min(11, cw * 0.15);
+    for (let i = 0; i < n; i++) f += `<rect x="${r2(colX(i) - lr * 2)}" y="${r2(Y0 + 26 - lr * 1.6)}" width="${r2(lr * 4)}" height="${r2(lr * 3.2)}" rx="${r2(lr * 0.6)}" fill="#E4E6EA" stroke="rgba(60,62,68,0.25)"/>` + stamp(i, colX(i), Y0 + 26, lr);
+    frameG.innerHTML = f;
+
+    let c = '';
+    const bw = Math.min(cw * 0.62, 110), pr = Math.min(step * 0.42, bw * 0.3);
+    for (let i = 0; i < n; i++) {
+      const x = colX(i), v = vals[i];
+      c += `<rect class="col" data-i="${i}" x="${r2(x - cw / 2)}" y="${r2(Y0 - GH - 10)}" width="${r2(cw)}" height="${r2(GH + 10)}" fill="transparent"/>`;
+      if (!picture) {
+        if (v) c += `<g pointer-events="none"><rect x="${r2(x - bw / 2)}" y="${r2(yOf(v))}" width="${r2(bw)}" height="${r2(Y0 - yOf(v))}" rx="4" fill="${CATS[i].color}"/><rect x="${r2(x - bw / 2)}" y="${r2(yOf(v))}" width="${r2(bw)}" height="${r2(Y0 - yOf(v))}" rx="4" fill="url(#gloss)"/>` +
+          `<rect x="${r2(x - bw / 2 + 5)}" y="${r2(yOf(v) - 3)}" width="${r2(bw - 10)}" height="6" rx="3" fill="#fff" stroke="rgba(0,0,0,0.25)"/></g>`;
+      } else {
+        // one picture per `scale`; a half picture for half of one
+        const whole = Math.floor(v / scale), half = v % scale ? 1 : 0;
+        for (let k = 0; k < whole + half; k++) c += `<g pointer-events="none">${stamp(i, x, Y0 - (k + 0.5) * step, pr, k === whole)}</g>`;
+      }
+    }
+    colsG.innerHTML = c;
+    cursorEl.setAttribute('x', r2(colX(cursor) - cw * 0.45)); cursorEl.setAttribute('y', r2(Y0 - GH - 8));
+    cursorEl.setAttribute('width', r2(cw * 0.9)); cursorEl.setAttribute('height', r2(GH + 50));
+    drawControls(); drawRecord();
+  }
+
+  // the key, with ‹ › to change what one step is worth; ‹ › on the right for more or fewer columns
+  function drawControls() {
+    const y = Y0 + 80;
+    const btn = (id, x, glyph, can, label) => `<g class="step" tabindex="0" role="button" data-id="${id}" aria-label="${label}" aria-disabled="${!can}" opacity="${can ? 1 : 0.35}">` +
+      `<circle cx="${r2(x)}" cy="${r2(y)}" r="17" fill="#FFFFFF" stroke="rgba(60,62,68,0.18)" style="filter: drop-shadow(2px 3px 4px rgba(166,171,189,0.45))"/>` +
+      `<text x="${r2(x)}" y="${r2(y - 1)}" font-size="20" font-weight="600" fill="#6E7076">${glyph}</text></g>`;
+    const si = SCALES.indexOf(scale);
+    let s = btn('scale-', X0 + 8, '‹', si > 0, 'Each step worth less');
+    // the key: one step of the axis, or one picture, equals the scale
+    const kx = X0 + 58;
+    s += picture ? `<g transform="translate(${kx} ${y})" fill="#8E8E93" stroke="rgba(0,0,0,0.25)">${shapePath('circle', 10)}<circle r="4" fill="#fff" stroke="none"/></g>` : `<path d="M${kx - 10},${y + 9}V${y - 9}M${kx - 14},${y + 9}h8M${kx - 14},${y - 9}h8" stroke="#3A3D42" stroke-width="2" fill="none"/>`;
+    s += `<text x="${kx + 34}" y="${y}" font-size="18" font-weight="800" fill="#1D1D1F">= ${scale}</text>`;
+    s += btn('scale+', X0 + 128, '›', si < SCALES.length - 1, 'Each step worth more');
+    s += btn('cols-', X0 + GW - 76, '‹', n > 2, 'Fewer columns');
+    s += `<g transform="translate(${r2(X0 + GW - 52)} ${y})">${[0, 1, 2].map(k => `<rect x="${k * 6}" y="${-4 - k * 3}" width="4" height="${8 + k * 6}" rx="1" fill="#6E7076"/>`).join('')}</g>`;
+    s += btn('cols+', X0 + GW - 8, '›', n < CATS.length, 'More columns');
+    controls.innerHTML = s;
+  }
+
+  function drawRecord() {
+    const fs = Math.max(13, Math.min(18, cw * 0.2));
+    recordG.innerHTML = vals.slice(0, n).map((v, i) =>
+      `<text x="${r2(colX(i))}" y="${r2(Math.max(picture ? Y0 - Math.ceil(v / scale) * step : yOf(v), Y0 - GH) - fs)}" font-size="${r2(fs)}" font-weight="800" fill="#1D1D1F" style="paint-order: stroke; stroke: #FBF9F6; stroke-width: 4px">${v}</text>`).join('');
+  }
+
+  let liveTimer = 0;
+  const say = t => { clearTimeout(liveTimer); liveTimer = setTimeout(() => { live.textContent = t; }, 300); };
+  const describe = i => `Column ${i + 1}: ${picture ? `${Math.floor(vals[i] / scale)}${vals[i] % scale ? ' and a half' : ''} pictures` : `${vals[i] / scale} steps`}` + (recordOn ? `, ${vals[i]}.` : '.');
+
+  function setVal(i, v) {
+    v = Math.max(0, Math.min(max(), Math.round(v / unit()) * unit()));
+    if (v === vals[i]) return;
+    vals[i] = v; buzz(3); draw(); say(describe(i));
+  }
+
+  // ═══════ POINTER ═══════
+  // Drag a column up or down; it snaps to whole steps, or half steps when a half is a whole number.
+  let drag = null;
+  plot.addEventListener('pointerdown', e => {
+    const col = e.target.closest('.col');
+    if (!col) return;
+    e.preventDefault();
+    cursor = +col.dataset.i;
+    drag = { i: cursor, id: e.pointerId };
+    setVal(cursor, (Y0 - e.clientY) / step * scale);
+    draw();
+    try { plot.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  plot.addEventListener('pointermove', e => { if (drag && e.pointerId === drag.id) setVal(drag.i, (Y0 - e.clientY) / step * scale); });
+  const end = e => { if (drag && e.pointerId === drag.id) drag = null; };
+  plot.addEventListener('pointerup', end); plot.addEventListener('pointercancel', end);
+
+  function act(id) {
+    const si = SCALES.indexOf(scale);
+    if (id === 'scale-' || id === 'scale+') {
+      const next = SCALES[si + (id === 'scale+' ? 1 : -1)];
+      // a smaller scale can't hold what is already graphed
+      if (!next || vals.slice(0, n).some(v => v > next * STEPS || v % (Number.isInteger(next / 2) ? next / 2 : next))) { buzz([4, 30, 4]); return; }
+      scale = next;
+    } else if (id === 'cols+') { if (n >= CATS.length) return; n++; }
+    else if (id === 'cols-') { if (n <= 2) return; n--; vals[n] = 0; cursor = Math.min(cursor, n - 1); }
+    buzz(6); layout(); say(`Each ${picture ? 'picture' : 'step'} is ${scale}. ${n} columns.`);
+  }
+  controls.addEventListener('pointerdown', e => { const st = e.target.closest('.step'); if (st) { e.preventDefault(); act(st.dataset.id); } });
+  board.addEventListener('keydown', e => {
+    const st = e.target.closest && e.target.closest('.step');
+    if (st && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); const id = st.dataset.id; act(id); const again = document.querySelector(`.step[data-id="${id}"]`); if (again) again.focus(); return; }
+    if (e.target !== plot) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); cursor = Math.max(0, Math.min(n - 1, cursor + (e.key === 'ArrowRight' ? 1 : -1))); draw(); say(describe(cursor)); }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); setVal(cursor, vals[cursor] + (e.key === 'ArrowUp' ? unit() : -unit())); }
+  });
+
+  // ═══════ HARDWARE ═══════
+  const press = (b, on) => { b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); };
+  $('viewBtn').addEventListener('click', () => {
+    picture = !picture; press($('viewBtn'), picture);
+    $('viewBtn').setAttribute('aria-label', picture ? 'Bar graph' : 'Picture graph');
+    draw(); buzz(6);
+  });
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; board.classList.toggle('recon', recordOn); press($('recordBtn'), recordOn); });
+  $('clearBtn').addEventListener('click', () => { vals.fill(0); draw(); buzz(8); say('Empty.'); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  layout();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
