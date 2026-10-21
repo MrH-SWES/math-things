@@ -6,33 +6,29 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook. Testing used scripted clicks at 1024×768, 375×812 and 1920×1080.
+- Try both on a real iPad or Chromebook, especially Solids, which uses 3D graphics. Testing used scripted pointer events with software WebGL at 1024×768, 375×812 and 1920×1080.
 
 Notes:
-- Files changed: apps/spinner-dice/index.html (new app); index.html (menu card).
-- Behavior: number makers for Grade 1 games and practice (spinners, number cubes and number cards appear in 20 of 27 lessons, and in Grades 2–5 too).
-  - Three bins: spinner, number cube, number cards. Each tap adds one to the mat (up to 4); × on a device puts it away. It starts with two dot cubes.
-  - Tap a device to use it:
-    - A spinner's arrow turns a few times and stops inside a section, never on a line.
-    - A cube tumbles through faces and lands.
-    - A card is drawn from the deck. The deck runs out without repeats, thins as it goes, and the next tap after it's empty reshuffles.
-  - ‹ › under each device step through its settings:
-    - Spinners: 2, 3, 4, 5, 6, 8 or 10 sections (10 is numbered 0–9; new spinners start at 4).
-    - Cubes: dots 1–6, numerals 1–6, 4–9, 0–9.
-    - Cards: 0–10, 0–20, 1–100, 1–120.
-  - The dice button rolls and spins everything at once. The eye (off by default) shows the numbers added together, e.g. 6 + 1 + 4 + 6 = 17.
-- Doctrine principles applied: no words, prompts or answer checking. Each device is a fair random tool; the sum is the optional shadow.
-- Checks:
-  - The spinner's resting angle matched its number at every size (e.g. 101.9° on 2 sections → 1).
-  - Ten draws from 0–10 gave ten different cards, then a reshuffle.
-  - Removing a device and the 4-device limit work.
-  - No horizontal scroll and no console errors.
-- Accessibility: each device is a button (Roll, Spin, Draw a card); ‹ › and × are buttons. The live region reads each result. With reduced motion, results appear without spinning or tumbling.
+- Files changed: apps/solids/index.html (new app); apps/ten-frame/index.html; index.html (menu card).
+- Solids (new, Kindergarten Lessons 6, 13 and 24; Grade 1 Lesson 22): a cube, a box, a sphere, a cylinder, a cone and a square pyramid in enamel colors.
+  - A bin adds a shape at the first open spot along the front of the mat (up to 10).
+  - Drag to slide a shape.
+  - Drop it on a flat top (cube, box, standing cylinder) and it stacks. Drop it on a round or pointed top (sphere, cone, pyramid, lying cylinder) and it slides off beside it.
+  - Tap a shape to tip it onto its side or stand it back up.
+  - The sphere rolls as it moves; a cylinder on its side rolls across its length and slides along it; flat shapes slide.
+  - Dragging a shape onto the cabinet puts it away; ↺ puts them all away.
+  - The shadow-only floor shows the page's ceramic mat.
+  - Tested: a cone dropped on the cube stacked at height 1. A cylinder dropped on the cone slid off to the floor. A tap tipped the cone over.
+- Ten Frame (tool-only pass):
+  - The "Ten-Frame Sandbox" title and the "Clear Desk" word button are gone (↺ icon now).
+  - The number sentence is behind the eye, off by default.
+  - A new frames button switches between two ten-frames, one five-frame and one ten-frame. It skips a size that couldn't hold the counters already down, so none are lost.
+  - Spots are keyboard buttons now.
+- Doctrine principles applied: no words or prompts; the shapes behave like real solids; the numbers are the optional shadow.
+- All: no horizontal scroll and no console errors (fixed during testing: Solids' six bins overflowed phones; they now sit in two rows).
 
 Acceptance Tests:
-- Spinner, cube and cards each make a number fairly. PASS
-- Settings change sections, faces and decks. PASS
-- Deck draws without repeats, then reshuffles. PASS
-- Roll-all and record (off by default). PASS
+- Solids: add, slide, stack on flat, slide off round or pointed, tip, roll, put away. PASS
+- Ten Frame: record off by default; 5-frame, 10-frame, two 10-frames; counters kept. PASS
 - Fits phone, desktop and projector; no console errors. PASS
-- No frameworks, bundlers, or package managers added. PASS
+- No frameworks, bundlers, or package managers added (Three.js from the same CDN as the other 3D apps). PASS
