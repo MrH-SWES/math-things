@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Crossing Lines</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F; --text-gray: #86868B; --text-light: #AEAEB2; --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif; color: var(--text-main); height: 100dvh; overflow: hidden;
+      display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; touch-action: none;
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #plot { pointer-events: all; cursor: pointer; outline: none; }
+    #cursor { opacity: 0; }
+    #plot:focus-visible #cursor { opacity: 1; }
+    #board .step { pointer-events: all; cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
+    #board .rec { opacity: 0; transition: opacity 0.3s; }
+    #board.recon .rec { opacity: 1; }
+    #board .handle { pointer-events: all; cursor: grab; outline: none; }
+    #board .handle:focus-visible circle { stroke: #007AFF; stroke-width: 3; }
+    .hardware { position: fixed; top: 14px; right: 16px; z-index: 20; display: flex; gap: 10px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none; color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px; background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Crossing lines"></main>
+
+<div class="hardware">
+  <button class="icon-btn" id="modeBtn" aria-label="Parallel lines cut by a crossing line" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M1.5 5.5h13M1.5 10.5h13M5 14.5l6-13"/></svg>
+  </button>
+  <button class="icon-btn" id="recordBtn" aria-label="Show the angle measures" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" aria-label="Back to the start">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg id="board">
+  <g id="arcs"></g>
+  <g id="lines"></g>
+  <g id="handles"></g>
+  <g id="labels" class="rec"></g>
+</svg>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // Two lines through a point, or two parallel lines cut by a third. At every crossing, the four angles come in two sizes:
+  // one size is painted red, the other blue, so equal angles share a color.
+  const RED = '#DC143C', BLUE = '#4169E1';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const rad = d => d * Math.PI / 180;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), arcsG = $('arcs'), linesG = $('lines'), handlesG = $('handles'), labelsG = $('labels'), live = $('live');
+  const START = { a: 0, b: 60 };   // a: the line (or the parallels); b: the crossing line, in degrees
+  let st = { ...START }, parallel = false, recordOn = false;
+  let CX = 0, CY = 0, RL = 200, GAP = 120;
+  const norm = d => ((d % 360) + 360) % 360;
+  // the angle from line a round to line b, kept off zero so the lines always cross
+  const theta = () => { let t = norm(st.b - st.a) % 180; return Math.round(t); };
+
+  function layout() {
+    const W = innerWidth, H = innerHeight - 30;
+    CX = W / 2; CY = H / 2 + 10;
+    RL = Math.min(W / 2 - 30, H / 2 - 50, 340);
+    GAP = Math.min(RL * 0.55, 140);
+    draw();
+  }
+  const dirOf = d => [Math.cos(rad(d)), -Math.sin(rad(d))];   // degrees measured counterclockwise, screen y down
+  // where each crossing is: one point, or where the crossing line meets each parallel
+  function vertices() {
+    if (!parallel) return [[CX, CY]];
+    const [ux, uy] = dirOf(st.a), [vx, vy] = dirOf(st.b), nx = -uy, ny = ux;   // normal to the parallels
+    const s = (vx * nx + vy * ny) || 1e-6;
+    return [-1, 1].map(k => { const t = k * GAP / 2 / s; return [CX + vx * t, CY + vy * t]; });
+  }
+
+  function sector(x, y, from, sweep, r, color) {
+    const [x1, y1] = [x + r * Math.cos(rad(from)), y - r * Math.sin(rad(from))], [x2, y2] = [x + r * Math.cos(rad(from + sweep)), y - r * Math.sin(rad(from + sweep))];
+    return `<path d="M${r2(x)},${r2(y)}L${r2(x1)},${r2(y1)}A${r},${r} 0 ${sweep > 180 ? 1 : 0} 0 ${r2(x2)},${r2(y2)}Z" fill="${color}" fill-opacity="0.22" stroke="${color}" stroke-width="2"/>`;
+  }
+  function draw() {
+    const th = theta(), vs = vertices(), ar = Math.max(28, Math.min(46, RL * 0.17));
+    let arcs = '', labels = '';
+    for (const [x, y] of vs) {
+      // four angles, counterclockwise from line a: θ, 180 − θ, θ, 180 − θ
+      [[st.a, th, RED], [st.a + th, 180 - th, BLUE], [st.a + 180, th, RED], [st.a + 180 + th, 180 - th, BLUE]].forEach(([from, sw, c]) => {
+        arcs += sector(x, y, from, sw, ar, c);
+        const mid = from + sw / 2, lr = ar + 20;
+        labels += `<text x="${r2(x + lr * Math.cos(rad(mid)))}" y="${r2(y - lr * Math.sin(rad(mid)))}" font-size="15" font-weight="800" fill="${c}" style="paint-order: stroke; stroke: #FBF9F6; stroke-width: 4px">${sw}°</text>`;
+      });
+    }
+    arcsG.innerHTML = arcs; labelsG.innerHTML = labels;
+    // the lines run off past the handles
+    const seg = (x, y, d, L, color, w) => { const [ux, uy] = dirOf(d); return `<path d="M${r2(x - ux * L)},${r2(y - uy * L)}L${r2(x + ux * L)},${r2(y + uy * L)}" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>`; };
+    let l = '';
+    if (!parallel) l += seg(CX, CY, st.a, RL, '#3A3D42', 4) + seg(CX, CY, st.b, RL, '#3A3D42', 4);
+    else {
+      const [ux, uy] = dirOf(st.a), nx = -uy, ny = ux;
+      for (const k of [-1, 1]) l += seg(CX + nx * k * GAP / 2, CY + ny * k * GAP / 2, st.a, RL * 1.05, '#3A3D42', 4);
+      l += seg(CX, CY, st.b, RL, '#5A5D63', 4);
+      // the little arrow marks that say the two lines are parallel
+      for (const k of [-1, 1]) { const px = CX + nx * k * GAP / 2 + ux * RL * 0.75, py = CY + ny * k * GAP / 2 + uy * RL * 0.75; l += `<path d="M${r2(px - ux * 8 + nx * 6)},${r2(py - uy * 8 + ny * 6)}L${r2(px)},${r2(py)}L${r2(px - ux * 8 - nx * 6)},${r2(py - uy * 8 - ny * 6)}" fill="none" stroke="#3A3D42" stroke-width="2.4" stroke-linejoin="round"/>`; }
+    }
+    for (const [x, y] of vs) l += `<circle cx="${r2(x)}" cy="${r2(y)}" r="5" fill="#3A3D42"/>`;
+    linesG.innerHTML = l;
+    // a handle at one end of each line turns it about the middle
+    // with parallels, the first handle sits on the end of the upper line
+    const handle = (key, d, label) => { const [ux, uy] = dirOf(d), off = parallel && key === 'a' ? GAP / 2 : 0, x = CX + ux * RL * 0.95 + uy * off, y = CY + uy * RL * 0.95 - ux * off; return `<g class="handle" data-k="${key}" tabindex="0" role="slider" aria-label="${label}" aria-valuenow="${norm(d)}"><circle cx="${r2(x)}" cy="${r2(y)}" r="16" fill="#fff" stroke="rgba(60,62,68,0.35)" stroke-width="2" style="filter: drop-shadow(1px 3px 3px rgba(60,40,20,0.3))"/><circle cx="${r2(x)}" cy="${r2(y)}" r="5" fill="#3A3D42"/><circle cx="${r2(x)}" cy="${r2(y)}" r="26" fill="transparent"/></g>`; };
+    handlesG.innerHTML = handle('a', st.a, parallel ? 'Turn the parallel lines' : 'Turn the first line') + handle('b', st.b, 'Turn the crossing line');
+  }
+  const say = () => { const th = theta(); live.textContent = recordOn ? `Angles of ${th} and ${180 - th} degrees${parallel ? ' at both crossings' : ''}.` : (parallel ? 'Two crossings.' : 'One crossing.'); };
+
+  // ═══════ TURNING ═══════
+  // a line turns to follow the finger, in whole degrees, and never lies on top of the other
+  function setAngle(k, d) {
+    d = Math.round(norm(d));
+    const other = k === 'a' ? st.b : st.a, t = norm(d - other) % 180;
+    if (t < 5 || t > 175) return;
+    if (d !== st[k]) { st[k] = d; buzz(1); draw(); }
+  }
+  let drag = null;
+  handlesG.addEventListener('pointerdown', e => { const h = e.target.closest('.handle'); if (!h) return; e.preventDefault(); drag = { k: h.dataset.k, id: e.pointerId }; try { h.setPointerCapture(e.pointerId); } catch (err) {} });
+  // the upper parallel's handle sits a little off the turning line, so its angle is corrected by that offset
+  const handleOffset = k => parallel && k === 'a' ? Math.atan2(GAP / 2, RL * 0.95) * 180 / Math.PI : 0;
+  addEventListener('pointermove', e => { if (!drag || drag.id !== e.pointerId) return; setAngle(drag.k, Math.atan2(-(e.clientY - CY), e.clientX - CX) * 180 / Math.PI - handleOffset(drag.k)); });
+  const end = e => { if (drag && drag.id === e.pointerId) { const k = drag.k; drag = null; say(); const h = handlesG.querySelector(`.handle[data-k="${k}"]`); if (h) h.focus({ preventScroll: true }); } };
+  addEventListener('pointerup', end); addEventListener('pointercancel', end);
+  handlesG.addEventListener('keydown', e => {
+    const h = e.target.closest('.handle'); if (!h) return;
+    const d = { ArrowLeft: 1, ArrowUp: 1, ArrowRight: -1, ArrowDown: -1 }[e.key];
+    if (d) { e.preventDefault(); const k = h.dataset.k; setAngle(k, st[k] + d * (e.shiftKey ? 10 : 1)); const again = handlesG.querySelector(`.handle[data-k="${k}"]`); again && again.focus(); say(); }
+  });
+
+  const press = (b, on) => { b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); };
+  $('modeBtn').addEventListener('click', () => { parallel = !parallel; press($('modeBtn'), parallel); $('modeBtn').setAttribute('aria-label', parallel ? 'Two lines crossing' : 'Parallel lines cut by a crossing line'); draw(); say(); buzz(6); });
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; board.classList.toggle('recon', recordOn); press($('recordBtn'), recordOn); say(); });
+  $('clearBtn').addEventListener('click', () => { st = { ...START }; draw(); buzz(8); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  layout();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
