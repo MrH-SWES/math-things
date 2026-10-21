@@ -44,6 +44,8 @@
     #board .num { font-family: 'Lexend', sans-serif; font-weight: 600; text-anchor: middle; dominant-baseline: central; fill: #34373C; pointer-events: none; }
     #record { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     #board.rec #record { opacity: 1; }
+    #board .step { pointer-events: all; cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
     #record text { font-family: 'Lexend', sans-serif; font-weight: 800; dominant-baseline: central; fill: #3A3D42; }
 
     /* ── CABINET ── */
@@ -151,6 +153,7 @@
     <rect id="cursor" rx="6"/>
   </g>
   <g id="record"></g>
+  <g id="pager"></g>
 </svg>
 
 <div id="live" class="sr-only" aria-live="polite"></div>
@@ -180,7 +183,11 @@
   const recordBtn = $('recordBtn'), clearBtn = $('clearBtn');
 
   // each cell: the chip colors on it (a set of indexes) and whether a cover hides it
-  const cells = [...Array(100)].map(() => ({ chips: new Set(), covered: false }));
+  // Each hundred (1–100, 101–200, … 901–1,000) is its own page with its own chips and covers.
+  const blank = () => [...Array(100)].map(() => ({ chips: new Set(), covered: false }));
+  const pages = [blank()];
+  let page = 0, cells = pages[0];
+  const numOf = n => page * 100 + n + 1;
   let tool = 0, recordOn = false, cursor = 0;
   let C = 48, GAP = 3, BX = 0, BY = 0;   // cell size, gap, top-left of the first cell
 
@@ -217,21 +224,59 @@
       `<rect x="${r2(fx)}" y="${r2(fy)}" width="${r2(fs)}" height="${r2(fs)}" rx="${r2(m * 0.9)}" fill="url(#frameMetal)" stroke="rgba(60,62,68,0.22)" filter="url(#frameShadow)"/>` +
       `<rect x="${r2(fx)}" y="${r2(fy)}" width="${r2(fs)}" height="${r2(fs)}" rx="${r2(m * 0.9)}" fill="url(#brushed)"/>` +
       `<rect x="${r2(BX - GAP)}" y="${r2(BY - GAP)}" width="${r2(size + 2 * GAP)}" height="${r2(size + 2 * GAP)}" rx="${r2(C * 0.12)}" fill="#C9CBD0"/>`;
-    let t = '', nums = '';
-    const rr = r2(C * 0.12), font = r2(Math.max(11, C * 0.36));
+    let t = '';
+    const rr = r2(C * 0.12);
     for (let n = 0; n < 100; n++) {
       const p = cellXY(n);
       t += `<rect x="${r2(p.x)}" y="${r2(p.y)}" width="${r2(C)}" height="${r2(C)}" rx="${rr}" fill="url(#tile)" stroke="rgba(0,0,0,0.08)"/>`;
-      nums += `<text class="num" x="${r2(p.x + C / 2)}" y="${r2(p.y + C / 2 + 0.5)}" font-size="${font}">${n + 1}</text>`;
     }
     tilesG.innerHTML = t;
-    numsG.innerHTML = nums;
+    drawNums();
+    drawPager();
     cursorEl.setAttribute('width', r2(C + 4));
     cursorEl.setAttribute('height', r2(C + 4));
     for (let n = 0; n < 100; n++) drawCell(n);
     moveCursor(cursor);
     drawRecord();
   }
+
+  function drawNums() {
+    const font = Math.max(11, C * 0.36);
+    let nums = '';
+    for (let n = 0; n < 100; n++) {
+      const p = cellXY(n), v = numOf(n), f = r2(font * (v >= 1000 ? 0.7 : v >= 100 ? 0.84 : 1));
+      nums += `<text class="num" x="${r2(p.x + C / 2)}" y="${r2(p.y + C / 2 + 0.5)}" font-size="${f}">${v}</text>`;
+    }
+    numsG.innerHTML = nums;
+  }
+
+  // ‹ › above the chart's right corner turn to the next or last hundred
+  function drawPager() {
+    const size = off(9) + C, m = Math.max(10, C * 0.3), y = BY - m - 26, x = BX + size;
+    const btn = (id, cx, glyph, can, label) => `<g class="step" tabindex="0" role="button" data-id="${id}" aria-label="${label}" aria-disabled="${!can}" opacity="${can ? 1 : 0.35}">` +
+      `<circle cx="${r2(cx)}" cy="${r2(y)}" r="16" fill="#FFFFFF" stroke="rgba(60,62,68,0.18)" style="filter: drop-shadow(2px 3px 4px rgba(166,171,189,0.45))"/>` +
+      `<text x="${r2(cx)}" y="${r2(y - 1)}" font-size="19" font-weight="600" fill="#6E7076" text-anchor="middle" dominant-baseline="central" font-family="Lexend, sans-serif">${glyph}</text></g>`;
+    $('pager').innerHTML = btn('page-', x - 40, '‹', page > 0, 'The hundred before') + btn('page+', x - 2, '›', page < 9, 'The next hundred');
+  }
+  function turn(d) {
+    const next = page + d;
+    if (next < 0 || next > 9) { buzz([4, 30, 4]); return; }
+    page = next;
+    cells = pages[page] || (pages[page] = blank());
+    chart.setAttribute('aria-label', `Hundred chart, ${page * 100 + 1} to ${page * 100 + 100}. Arrow keys move, Space lays or lifts the chosen chip or cover.`);
+    drawNums(); drawPager();
+    for (let n = 0; n < 100; n++) drawCell(n);
+    anim(numsG, [{ opacity: 0.2 }, { opacity: 1 }], 220);
+    buzz(6); changed();
+    live.textContent = `${page * 100 + 1} to ${page * 100 + 100}.`;
+  }
+  $('pager').addEventListener('pointerdown', e => { const st = e.target.closest('.step'); if (st) { e.preventDefault(); turn(st.dataset.id === 'page+' ? 1 : -1); } });
+  $('pager').addEventListener('keydown', e => {
+    const st = e.target.closest('.step');
+    if (!st || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); const id = st.dataset.id; turn(id === 'page+' ? 1 : -1);
+    const again = document.querySelector(`#pager .step[data-id="${id}"]`); if (again) again.focus();
+  });
 
   // ═══════ CELLS ═══════
   const chipEls = [], coverEls = [];
@@ -360,7 +405,7 @@
     const c = cells[n];
     if (c.covered) return 'Covered.';
     const on = [...c.chips].sort().map(k => CHIPS[k].name);
-    return `${n + 1}` + (on.length ? `, ${on.join(' and ')} chip` : '');
+    return `${numOf(n)}` + (on.length ? `, ${on.join(' and ')} chip` : '');
   }
   chart.addEventListener('keydown', e => {
     const mv = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -10, ArrowDown: 10 }[e.key];
@@ -410,7 +455,8 @@
     }
   });
   clearBtn.addEventListener('click', () => {
-    cells.forEach((c, n) => { if (c.chips.size || c.covered) { c.chips.clear(); c.covered = false; drawCell(n); } });
+    pages.forEach(pg => pg && pg.forEach(c => { c.chips.clear(); c.covered = false; }));
+    for (let n = 0; n < 100; n++) drawCell(n);
     anim(chipsG, [{ opacity: 0.3 }, { opacity: 1 }], 200);
     buzz(8);
     changed();
