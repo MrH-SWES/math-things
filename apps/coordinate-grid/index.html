@@ -53,6 +53,9 @@
   <button class="icon-btn" id="sizeBtn" aria-label="Bigger grid: 0 to 20" aria-pressed="false">
     <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 2v12h12"/><path d="M2 8h12M8 2v12M2 5h12M2 11h12M5 2v12M11 2v12" stroke-width="0.7"/></svg>
   </button>
+  <button class="icon-btn" id="quadBtn" aria-label="Four quadrants: negative numbers too" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 1.5v13M1.5 8h13"/><path d="M5 1.5v13M11 1.5v13M1.5 5h13M1.5 11h13" stroke-width="0.6"/></svg>
+  </button>
   <button class="icon-btn" id="joinBtn" aria-label="Join the points with a line" aria-pressed="false">
     <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13L6 8l4 2 4-7"/><circle cx="2" cy="13" r="1.4" fill="currentColor"/><circle cx="6" cy="8" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="14" cy="3" r="1.4" fill="currentColor"/></svg>
   </button>
@@ -97,35 +100,43 @@
   const board = $('board'), plot = $('plot'), gridG = $('grid'), joinG = $('join'), guidesG = $('guides'),
         pointsG = $('points'), pairsG = $('pairs'), cursorEl = $('cursor'), live = $('live');
 
-  let N = 10, s = 40, X0 = 0, Y0 = 0, recordOn = false, joinOn = false;
+  // the grid runs from LO to N on both axes: 0 to 10, 0 to 20, or −10 to 10 for four quadrants
+  let N = 10, LO = 0, s = 40, X0 = 0, Y0 = 0, recordOn = false, joinOn = false;
+  const span = () => N - LO;
+  const num = v => v < 0 ? '−' + -v : String(v);
   const pts = [];                       // { x, y } in grid units, in the order they were put down
   let active = null, cur = { x: 0, y: 0 };
-  const sx = x => X0 + x * s, sy = y => Y0 - y * s;
+  const sx = x => X0 + (x - LO) * s, sy = y => Y0 - (y - LO) * s;
   const at = (x, y) => pts.find(p => p.x === x && p.y === y);
 
   function layout() {
     const W = innerWidth, H = innerHeight - 30, top = 74;
-    s = Math.max(12, Math.min((W - 80) / N, (H - top - 50) / N, 60));
-    X0 = Math.round((W - N * s) / 2 + 14);
-    Y0 = Math.round(Math.max(top, (H - N * s) / 2 - 10) + N * s);
+    s = Math.max(12, Math.min((W - 80) / span(), (H - top - 50) / span(), 60));
+    X0 = Math.round((W - span() * s) / 2 + 14);
+    Y0 = Math.round(Math.max(top, (H - span() * s) / 2 - 10) + span() * s);
     drawGrid(); draw();
   }
 
   // ═══════ THE GRID ═══════
   function drawGrid() {
-    const L = N * s, every = s < 26 ? 2 : 1, fs = Math.max(10, Math.min(15, s * 0.42));
-    let g = `<rect x="${sx(0) - 10}" y="${sy(N) - 10}" width="${r2(L + 20)}" height="${r2(L + 20)}" rx="12" fill="url(#tile)" stroke="rgba(60,45,30,0.18)" style="filter: drop-shadow(1.5px 5px 8px rgba(59,42,26,0.16))"/>`;
+    const L = span() * s, every = s < 26 ? 2 : 1, fs = Math.max(10, Math.min(15, s * 0.42));
+    let g = `<rect x="${sx(LO) - 10}" y="${sy(N) - 10}" width="${r2(L + 20)}" height="${r2(L + 20)}" rx="12" fill="url(#tile)" stroke="rgba(60,45,30,0.18)" style="filter: drop-shadow(1.5px 5px 8px rgba(59,42,26,0.16))"/>`;
     let fine = '', bold = '';
-    for (let k = 1; k <= N; k++) {
-      const line = `M${r2(sx(k))},${r2(sy(0))}V${r2(sy(N))}M${r2(sx(0))},${r2(sy(k))}H${r2(sx(N))}`;
+    for (let k = LO; k <= N; k++) {
+      if (!k) continue;
+      const line = `M${r2(sx(k))},${r2(sy(LO))}V${r2(sy(N))}M${r2(sx(LO))},${r2(sy(k))}H${r2(sx(N))}`;
       if (k % 5 === 0) bold += line; else fine += line;
     }
     g += `<path d="${fine}" stroke="rgba(60,45,30,0.16)" stroke-width="1"/><path d="${bold}" stroke="rgba(60,45,30,0.32)" stroke-width="1.3"/>`;
     // axes: the two number lines that meet at 0
-    g += `<path d="M${r2(sx(0))},${r2(sy(0))}H${r2(sx(N) + 6)}M${r2(sx(0))},${r2(sy(0))}V${r2(sy(N) - 6)}" stroke="#3A3D42" stroke-width="2.6" stroke-linecap="round"/>`;
-    for (let k = 0; k <= N; k += every) {
-      g += `<text x="${r2(sx(k))}" y="${r2(sy(0) + fs + 6)}" font-size="${r2(fs)}" font-weight="${k ? 600 : 800}" fill="#5A5D63">${k}</text>`;
-      if (k) g += `<text x="${r2(sx(0) - fs - 4)}" y="${r2(sy(k))}" font-size="${r2(fs)}" font-weight="600" fill="#5A5D63">${k}</text>`;
+    const ext = LO ? 6 : 0;
+    g += `<path d="M${r2(sx(LO) - ext)},${r2(sy(0))}H${r2(sx(N) + 6)}M${r2(sx(0))},${r2(sy(LO) + ext)}V${r2(sy(N) - 6)}" stroke="#3A3D42" stroke-width="2.6" stroke-linecap="round"/>`;
+    // the numbers sit beside the axes; in four quadrants they ride inside the grid, on a light halo
+    const halo = LO ? ' style="paint-order: stroke; stroke: #FBF9F6; stroke-width: 3px"' : '';
+    for (let k = LO; k <= N; k++) {
+      if (k % every) continue;
+      g += `<text x="${r2(sx(k) - (LO && !k ? fs * 0.5 : 0))}" y="${r2(sy(0) + fs + 6)}" font-size="${r2(fs)}" font-weight="${k ? 600 : 800}" fill="#5A5D63"${halo}>${num(k)}</text>`;
+      if (k) g += `<text x="${r2(sx(0) - fs - 4 - (k < 0 ? fs * 0.25 : 0))}" y="${r2(sy(k))}" font-size="${r2(fs)}" font-weight="600" fill="#5A5D63"${halo}>${num(k)}</text>`;
     }
     gridG.innerHTML = g;
   }
@@ -143,14 +154,14 @@
     const fs = Math.max(11, Math.min(16, s * 0.38));
     pairsG.innerHTML = pts.map(p => {
       const right = p.x < N - 2, x = sx(p.x) + (right ? R + 4 : -R - 4), y = sy(p.y) - R - fs * 0.5;
-      return `<text x="${r2(x)}" y="${r2(Math.max(y, sy(N) - 4))}" font-size="${r2(fs)}" font-weight="800" fill="#1D1D1F" text-anchor="${right ? 'start' : 'end'}" style="paint-order: stroke; stroke: #FBF9F6; stroke-width: 4px">(${p.x}, ${p.y})</text>`;
+      return `<text x="${r2(x)}" y="${r2(Math.max(y, sy(N) - 4))}" font-size="${r2(fs)}" font-weight="800" fill="#1D1D1F" text-anchor="${right ? 'start' : 'end'}" style="paint-order: stroke; stroke: #FBF9F6; stroke-width: 4px">(${num(p.x)}, ${num(p.y)})</text>`;
     }).join('');
     cursorEl.setAttribute('cx', r2(sx(cur.x))); cursorEl.setAttribute('cy', r2(sy(cur.y))); cursorEl.setAttribute('r', r2(R + 5));
   }
 
   let liveTimer = 0;
   function say(text) { clearTimeout(liveTimer); liveTimer = setTimeout(() => { live.textContent = text; }, 250); }
-  const pair = p => `(${p.x}, ${p.y})`;
+  const pair = p => `(${p.x}, ${p.y})`;   // read aloud, a minus sign is said as negative
 
   function toggleAt(x, y) {
     const p = at(x, y);
@@ -163,8 +174,8 @@
   // ═══════ POINTER ═══════
   // Tap a crossing to put a point there; tap a point to take it off; drag a point to move it.
   const lattice = e => {
-    const x = Math.round((e.clientX - X0) / s), y = Math.round((Y0 - e.clientY) / s);
-    if (x < 0 || y < 0 || x > N || y > N) return null;
+    const x = Math.round((e.clientX - X0) / s) + LO, y = Math.round((Y0 - e.clientY) / s) + LO;
+    if (x < LO || y < LO || x > N || y > N) return null;
     return Math.hypot(e.clientX - sx(x), e.clientY - sy(y)) <= Math.max(14, s * 0.45) ? { x, y } : null;
   };
   let drag = null;
@@ -182,7 +193,7 @@
     if (!drag || e.pointerId !== drag.id) return;
     if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6) return;
     drag.moved = true;
-    const x = Math.max(0, Math.min(N, Math.round((e.clientX - X0) / s))), y = Math.max(0, Math.min(N, Math.round((Y0 - e.clientY) / s)));
+    const x = Math.max(LO, Math.min(N, Math.round((e.clientX - X0) / s) + LO)), y = Math.max(LO, Math.min(N, Math.round((Y0 - e.clientY) / s) + LO));
     if ((x !== drag.p.x || y !== drag.p.y) && !at(x, y)) { drag.p.x = x; drag.p.y = y; cur = { x, y }; buzz(2); draw(); }
   });
   const end = e => {
@@ -196,14 +207,14 @@
   // the whole grid takes touches, so a near miss isn't a page gesture
   const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   hit.setAttribute('fill', 'transparent'); plot.insertBefore(hit, plot.firstChild);
-  const sizeHit = () => { hit.setAttribute('x', sx(0) - 20); hit.setAttribute('y', sy(N) - 20); hit.setAttribute('width', N * s + 40); hit.setAttribute('height', N * s + 40); };
+  const sizeHit = () => { hit.setAttribute('x', sx(LO) - 20); hit.setAttribute('y', sy(N) - 20); hit.setAttribute('width', span() * s + 40); hit.setAttribute('height', span() * s + 40); };
 
   // ═══════ KEYBOARD ═══════
   plot.addEventListener('keydown', e => {
     const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
     if (mv) {
       e.preventDefault();
-      cur = { x: Math.max(0, Math.min(N, cur.x + mv[0])), y: Math.max(0, Math.min(N, cur.y + mv[1])) };
+      cur = { x: Math.max(LO, Math.min(N, cur.x + mv[0])), y: Math.max(LO, Math.min(N, cur.y + mv[1])) };
       draw(); say(`${pair(cur)}${at(cur.x, cur.y) ? ', a point' : ''}.`);
     } else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleAt(cur.x, cur.y); }
     else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); if (at(cur.x, cur.y)) toggleAt(cur.x, cur.y); }
@@ -213,8 +224,18 @@
   const press = (btn, on) => { btn.classList.toggle('active', on); btn.setAttribute('aria-pressed', String(on)); };
   $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; board.classList.toggle('recon', recordOn); press($('recordBtn'), recordOn); });
   $('joinBtn').addEventListener('click', () => { joinOn = !joinOn; press($('joinBtn'), joinOn); draw(); });
+  $('quadBtn').addEventListener('click', () => {
+    // −10 to 10 on both axes; going back to one quadrant can't drop points with a negative coordinate
+    if (LO) { if (pts.some(p => p.x < 0 || p.y < 0)) { buzz([4, 30, 4]); return; } LO = 0; }
+    else { if (pts.some(p => p.x > 10 || p.y > 10)) { buzz([4, 30, 4]); return; } LO = -10; N = 10; press($('sizeBtn'), false); }
+    $('sizeBtn').setAttribute('aria-disabled', String(!!LO)); $('sizeBtn').style.opacity = LO ? 0.35 : '';
+    press($('quadBtn'), !!LO);
+    cur = { x: Math.max(LO, Math.min(N, cur.x)), y: Math.max(LO, Math.min(N, cur.y)) };
+    layout(); sizeHit(); buzz(6);
+  });
   $('sizeBtn').addEventListener('click', () => {
     // the grid can't shrink out from under a point
+    if (LO) { buzz([4, 30, 4]); return; }
     if (N === 20 && pts.some(p => p.x > 10 || p.y > 10)) { buzz([4, 30, 4]); return; }
     N = N === 10 ? 20 : 10;
     cur = { x: Math.min(cur.x, N), y: Math.min(cur.y, N) };

@@ -52,6 +52,12 @@
 <main id="surface" aria-label="Line plot"></main>
 
 <div class="hardware">
+  <button class="icon-btn" id="boxBtn" aria-label="Box plot" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1.5 8h3M11.5 8h3M1.5 5.5v5M14.5 5.5v5"/><rect x="4.5" y="4.5" width="7" height="7" rx="0.8"/><path d="M7.5 4.5v7"/></svg>
+  </button>
+  <button class="icon-btn" id="meanBtn" aria-label="Balance point" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.5h13"/><path d="M8 7.5l-3.5 6h7z" fill="currentColor"/></svg>
+  </button>
   <button class="icon-btn" id="recordBtn" aria-label="Show the count, total and spread" aria-pressed="false">
     <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
   </button>
@@ -73,6 +79,7 @@
   <g id="plot" tabindex="0" role="application" aria-label="Line plot. Arrow keys move along the line; Space adds a mark, Backspace takes one off.">
     <g id="line"></g>
     <g id="marks"></g>
+    <g id="summary"></g>
     <rect id="cursor" fill="none" stroke="#007AFF" stroke-width="2.5" rx="8"/>
   </g>
   <g id="controls"></g>
@@ -95,7 +102,7 @@
   const board = $('board'), plot = $('plot'), lineG = $('line'), marksG = $('marks'), cursorEl = $('cursor'),
         controls = $('controls'), recordG = $('record'), live = $('live');
 
-  let cuts = 4, wholes = 2, recordOn = false, cursor = 0;
+  let cuts = 4, wholes = 2, recordOn = false, cursor = 0, boxOn = false, meanOn = false;
   const counts = new Map();                // eighths → how many marks
   let L = 0, X0 = 0, Y = 0, step = 0, mark = 24;
 
@@ -148,6 +155,7 @@
       }
     }
     marksG.innerHTML = m;
+    drawSummary();
     cursor = Math.min(cursor, n);
     const cx = X0 + cursor * step;
     cursorEl.setAttribute('x', r2(cx - Math.max(12, step * 0.45)));
@@ -158,9 +166,31 @@
     drawRecord();
   }
 
+  // ═══════ SHAPE OF THE DATA ═══════
+  // The marks as a sorted list (in eighths); quartiles are medians of the lower and upper halves.
+  function data() { const a = []; for (const [e, c] of [...counts].sort((p, q) => p[0] - q[0])) for (let i = 0; i < c; i++) a.push(e); return a; }
+  const median = a => a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2;
+  function five(a) { return { lo: a[0], q1: median(a.slice(0, Math.floor(a.length / 2))), med: median(a), q3: median(a.slice(Math.ceil(a.length / 2))), hi: a[a.length - 1] }; }
+  const mean = a => a.reduce((p, q) => p + q, 0) / a.length;
+  const px = e => X0 + e / 8 * cuts * step;
+  function drawSummary() {
+    const a = data(), g = $('summary');
+    let s = '';
+    // the box plot hangs under the numbers: whiskers to the ends, a box from quartile to quartile, a bar at the median
+    if (boxOn && a.length >= 2) {
+      const f = five(a), y = Y + 58, h = 20;
+      s += `<path d="M${r2(px(f.lo))},${y}H${r2(px(f.q1))}M${r2(px(f.q3))},${y}H${r2(px(f.hi))}M${r2(px(f.lo))},${y - 8}v16M${r2(px(f.hi))},${y - 8}v16" stroke="#3A3D42" stroke-width="2"/>` +
+        `<rect x="${r2(px(f.q1))}" y="${y - h / 2}" width="${r2(Math.max(2, px(f.q3) - px(f.q1)))}" height="${h}" rx="3" fill="#E7EEFF" stroke="#4169E1" stroke-width="2"/>` +
+        `<path d="M${r2(px(f.med))},${y - h / 2}v${h}" stroke="#4169E1" stroke-width="3.5"/>`;
+    }
+    // the mean is the balance point: a fulcrum under the line
+    if (meanOn && a.length) s += `<path d="M${r2(px(mean(a)))},${Y + 5}l-9,15h18z" fill="#DC143C" stroke="#fff" stroke-width="1.5"/>`;
+    g.innerHTML = s;
+  }
+
   // steppers: cuts per whole on the left, number of wholes on the right
   function drawControls() {
-    const y = Y + 70;
+    const y = Y + 100;
     let s = '';
     const btn = (id, x, glyph, can, label) => `<g class="step" tabindex="0" role="button" data-id="${id}" aria-label="${label}" aria-disabled="${!can}" opacity="${can ? 1 : 0.35}">` +
       `<circle cx="${r2(x)}" cy="${r2(y)}" r="17" fill="#FFFFFF" stroke="rgba(60,62,68,0.18)" style="filter: drop-shadow(2px 3px 4px rgba(166,171,189,0.45))"/>` +
@@ -184,7 +214,13 @@
   function drawRecord() {
     const { n, total, lo, hi } = stats(), fs = 18;
     const y = Math.max(Y - 22 - MAX_STACK * mark - 24, innerWidth < 600 ? 96 : 60);
-    recordG.innerHTML = n ? `<text x="${r2(X0 + L / 2)}" y="${r2(y)}" font-size="${fs}" font-weight="800" fill="#1D1D1F"><tspan fill="#2B4C8C">✕</tspan> ${n} &#160;&#160; total ${mixed(total)} &#160;&#160; ${mixed(lo)} to ${mixed(hi)}</text>` : '';
+    // with the box plot or balance point out, the record adds their numbers (as decimals)
+    const a = data(), d = v => String(+(v / 8).toFixed(2));
+    let extra = '';
+    if (boxOn && a.length >= 2) { const f = five(a); extra += ` &#160;&#160; <tspan fill="#4169E1">median ${d(f.med)} &#160;IQR ${d(f.q3 - f.q1)}</tspan>`; }
+    if (meanOn && a.length) { const m = mean(a); extra += ` &#160;&#160; <tspan fill="#DC143C">mean ${d(m)} &#160;MAD ${d(a.reduce((p, q) => p + Math.abs(q - m), 0) / a.length)}</tspan>`; }
+    recordG.innerHTML = n ? `<text x="${r2(X0 + L / 2)}" y="${r2(y)}" font-size="${fs}" font-weight="800" fill="#1D1D1F"><tspan fill="#2B4C8C">✕</tspan> ${n} &#160;&#160; total ${mixed(total)} &#160;&#160; ${mixed(lo)} to ${mixed(hi)}</text>` +
+      (extra ? `<text x="${r2(X0 + L / 2)}" y="${r2(y + fs * 1.4)}" font-size="${innerWidth < 500 ? 13 : fs}" font-weight="800" fill="#1D1D1F">${extra.replace(/^ &#160;&#160; /, '')}</text>` : '') : '';
   }
 
   let liveTimer = 0;
@@ -262,6 +298,12 @@
     $('recordBtn').classList.toggle('active', recordOn);
     $('recordBtn').setAttribute('aria-pressed', String(recordOn));
     announce();
+  });
+  for (const [id, key] of [['boxBtn', 'box'], ['meanBtn', 'mean']]) $(id).addEventListener('click', () => {
+    if (key === 'box') boxOn = !boxOn; else meanOn = !meanOn;
+    const on = key === 'box' ? boxOn : meanOn;
+    $(id).classList.toggle('active', on); $(id).setAttribute('aria-pressed', String(on));
+    draw(); buzz(6);
   });
   $('clearBtn').addEventListener('click', () => { counts.clear(); draw(); announce(); buzz(8); });
   let frame = 0;

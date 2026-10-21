@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Algebra Tiles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board .tile { pointer-events: all; cursor: grab; outline: none; }
+    #board .tile:focus-visible rect.face { stroke: #007AFF; stroke-width: 3; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    #record { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 4; font-weight: 900; font-size: clamp(20px, 3vw, 32px); opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    #record.on { opacity: 1; }
+    #record .op { color: var(--text-light); font-weight: 400; margin: 0 0.15em; }
+    #record .neg { color: #DC143C; }
+    @media (max-width: 600px) { #record { top: 60px; font-size: 18px; } }
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: flex; gap: clamp(6px, 1.2vw, 12px); }
+    .bin {
+      width: clamp(58px, 11vw, 88px);
+      height: clamp(52px, 9vw, 72px);
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%);
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s;
+    }
+    /* the chosen bin sits pressed into the cabinet */
+    .bin[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 72%; height: 72%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      @media (min-width: 600px) { .hardware { display: grid; grid-template-columns: 42px 42px; align-items: center; } #matBtn { grid-row: span 2; } }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Algebra tile mat"></main>
+<div id="record" aria-hidden="true"></div>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Tile bins">
+    <div id="bins">
+      <button class="bin" data-kind="2" aria-label="x squared tiles"></button>
+      <button class="bin" data-kind="1" aria-label="x tiles"></button>
+      <button class="bin" data-kind="0" aria-label="Unit tiles"></button>
+    </div>
+    <div class="hardware">
+      <button class="icon-btn" id="matBtn" aria-label="Split the mat into two sides" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M6.5 7.2h3M6.5 9h3" stroke-width="1.3"/></svg>
+      </button>
+      <button class="icon-btn" id="recordBtn" aria-label="Show the expression" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Clear the mat">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg id="board">
+  <g id="mat"></g>
+  <g id="layer"></g>
+</svg>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // Tiles in units: a unit tile is 1 × 1; x is a length that is not a whole number of units, so x tiles can't be counted as ones.
+  const X = 3.4;
+  const KINDS = [
+    { name: 'unit', w: 1, h: 1, color: '#F5C518', label: '1' },
+    { name: 'x', w: 1, h: X, color: '#3BA55C', label: 'x' },
+    { name: 'x squared', w: X, h: X, color: '#4169E1', label: 'x²' },
+  ];
+  const NEG = '#DC143C';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), layer = $('layer'), matG = $('mat'), dock = $('dock'), record = $('record'), live = $('live');
+
+  let U = 22, split = false, recordOn = false, nextId = 1;
+  const tiles = new Map();   // id → { id, kind, neg, x, y, el }   positions in units
+  let last = null;
+
+  function setU() { U = Math.max(14, Math.min(26, Math.min(innerWidth / 34, (dock.getBoundingClientRect().top - 40) / 20))); }
+  const bounds = () => ({ w: innerWidth / U, h: dock.getBoundingClientRect().top / U });
+
+  // ═══════ DRAWING ═══════
+  function drawMat() {
+    const B = bounds();
+    if (!split) { matG.innerHTML = ''; return; }
+    // the equation mat: two sides with an equals bar between them
+    const cx = B.w / 2 * U;
+    matG.innerHTML = `<rect x="${r2(cx - 5)}" y="64" width="10" height="${r2(B.h * U - 80)}" rx="5" fill="#D5D7DB" stroke="rgba(60,62,68,0.25)"/>` +
+      `<g transform="translate(${r2(cx)} ${r2(B.h / 2 * U)})"><circle r="20" fill="#fff" stroke="rgba(60,62,68,0.25)"/><path d="M-9,-4h18M-9,4h18" stroke="#3A3D42" stroke-width="3" stroke-linecap="round"/></g>`;
+  }
+  function tileMarkup(t) {
+    const K = KINDS[t.kind], w = K.w * U, h = K.h * U, c = t.neg ? NEG : K.color;
+    return `<rect class="face" width="${r2(w)}" height="${r2(h)}" rx="${r2(Math.min(5, U * 0.2))}" fill="${c}" stroke="rgba(0,0,0,0.3)" stroke-width="1.2"/>` +
+      `<rect x="2" y="2" width="${r2(w - 4)}" height="${r2(h * 0.45)}" rx="${r2(Math.min(4, U * 0.15))}" fill="#fff" opacity="0.18"/>` +
+      `<text x="${r2(w / 2)}" y="${r2(h / 2)}" font-size="${r2(Math.min(U * 0.62, w * 0.55))}" font-weight="800" fill="#fff">${t.neg ? '−' : ''}${K.label}</text>`;
+  }
+  function build(t) {
+    const g = t.el || document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'tile'); g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', `${t.neg ? 'negative ' : ''}${KINDS[t.kind].name} tile`);
+    g.dataset.id = t.id; g.innerHTML = tileMarkup(t);
+    g.style.filter = 'drop-shadow(1px 3px 3px rgba(60,40,20,0.3))';
+    if (!t.el) layer.appendChild(g);
+    t.el = g; place(t);
+  }
+  function place(t, dur = 0) {
+    t.el.style.transition = dur && !reduceMotion ? `transform ${dur}ms cubic-bezier(.2,.85,.25,1.04)` : 'none';
+    t.el.style.transform = `translate(${r2(t.x * U)}px,${r2(t.y * U)}px)`;
+  }
+  const box = t => ({ l: t.x, t: t.y, r: t.x + KINDS[t.kind].w, b: t.y + KINDS[t.kind].h });
+  function clampT(t) {
+    const B = bounds(), K = KINDS[t.kind];
+    t.x = Math.max(0.3, Math.min(B.w - K.w - 0.3, t.x)); t.y = Math.max(0.3, Math.min(B.h - K.h - 0.3, t.y));
+  }
+
+  // ═══════ RECORD ═══════
+  // Read each side as it lies: positive and negative tiles of each kind, largest first, nothing combined.
+  function sideText(list) {
+    const parts = [];
+    for (const k of [2, 1, 0]) for (const neg of [false, true]) {
+      const n = list.filter(t => t.kind === k && t.neg === neg).length;
+      if (!n) continue;
+      const term = k === 0 ? String(n) : (n === 1 ? '' : n) + (k === 2 ? 'x²' : 'x');
+      parts.push({ neg, term });
+    }
+    if (!parts.length) return '0';
+    return parts.map((p, i) => (i ? `<span class="op">${p.neg ? '−' : '+'}</span>` : p.neg ? '<span class="neg">−</span>' : '') + `<span${p.neg ? ' class="neg"' : ''}>${p.term}</span>`).join('');
+  }
+  function changed() {
+    const all = [...tiles.values()], mid = bounds().w / 2;
+    const center = t => t.x + KINDS[t.kind].w / 2;
+    record.innerHTML = split ? sideText(all.filter(t => center(t) < mid)) + '<span class="op">=</span>' + sideText(all.filter(t => center(t) >= mid)) : sideText(all);
+    clearTimeout(changed.t);
+    changed.t = setTimeout(() => { live.textContent = record.textContent.replace(/−/g, ' minus ') || 'Empty.'; }, 400);
+  }
+
+  // ═══════ ZERO PAIRS ═══════
+  // A tile dropped onto its opposite (same kind, other sign) makes a zero pair: both leave the mat.
+  function zeroPair(t) {
+    const a = box(t), area = (a.r - a.l) * (a.b - a.t);
+    for (const o of tiles.values()) {
+      if (o === t || o.kind !== t.kind || o.neg === t.neg) continue;
+      const b = box(o), ov = Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
+      if (ov > area * 0.4) { vanish(t); vanish(o); buzz([8, 40, 8]); live.textContent = 'A zero pair.'; return true; }
+    }
+    return false;
+  }
+  function vanish(t) {
+    tiles.delete(t.id); if (last === t) last = null;
+    t.el.style.pointerEvents = 'none';
+    if (reduceMotion) t.el.remove();
+    else t.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }).onfinish = () => t.el.remove();
+  }
+
+  // Tapped-out tiles line up by kind above the cabinet: x² on the left, x in the middle, units on the right.
+  function homeSpot(kind, n) {
+    // on a split mat they start on the left side
+    const B = bounds(), K = KINDS[kind], cx = split ? B.w / 4 + 1.5 : B.w / 2, per = [6, 6, 3][kind];
+    const x0 = [cx + 4.5, cx - 3, cx - 12][kind];
+    return { x: x0 + (n % per) * (K.w + 0.3), y: B.h - K.h - 1 - Math.floor(n / per) * (K.h + 0.3) };
+  }
+
+  // ═══════ POINTER ═══════
+  const drags = new Map();
+  let lastTap = null;
+  function add(kind, x, y) {
+    const t = { id: nextId++, kind, neg: false, x, y };
+    tiles.set(t.id, t); build(t); return t;
+  }
+  dock.addEventListener('pointerdown', e => {
+    const bin = e.target.closest('.bin'); if (!bin) return;
+    e.preventDefault();
+    const k = +bin.dataset.kind, K = KINDS[k];
+    const t = add(k, e.clientX / U - K.w / 2, e.clientY / U - K.h / 2);
+    drags.set(e.pointerId, { t, ox: K.w / 2, oy: K.h / 2, sx: e.clientX, sy: e.clientY, moved: false, bin: true });
+    try { t.el.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  layer.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.tile'); if (!g) return;
+    const t = tiles.get(+g.dataset.id); if (!t) return;
+    e.preventDefault(); layer.appendChild(t.el); last = t;
+    drags.set(e.pointerId, { t, ox: e.clientX / U - t.x, oy: e.clientY / U - t.y, sx: e.clientX, sy: e.clientY, moved: false });
+    try { g.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  addEventListener('pointermove', e => {
+    const s = drags.get(e.pointerId); if (!s) return;
+    if (!s.moved && Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < 6) return;
+    s.moved = true;
+    s.t.x = e.clientX / U - s.ox; s.t.y = e.clientY / U - s.oy; place(s.t);
+  });
+  function endDrag(e) {
+    const s = drags.get(e.pointerId); if (!s) return;
+    drags.delete(e.pointerId);
+    const t = s.t, r = dock.getBoundingClientRect();
+    if (s.bin && !s.moved) {
+      // a tapped bin sets its tile on the mat above it, beside the last one
+      Object.assign(t, homeSpot(t.kind, [...tiles.values()].filter(o => o !== t && o.kind === t.kind).length));
+      clampT(t); place(t, 200); buzz(5); changed(); return;
+    }
+    if (s.moved && e.clientY >= r.top && e.clientX >= r.left && e.clientX <= r.right) { vanish(t); buzz(4); changed(); return; }
+    if (!s.moved) {
+      // a tap flips the tile to its opposite
+      t.neg = !t.neg; build(t); buzz(6); changed(); return;
+    }
+    clampT(t); place(t);
+    if (!zeroPair(t)) buzz(3);
+    changed();
+  }
+  addEventListener('pointerup', endDrag); addEventListener('pointercancel', endDrag);
+
+  // ═══════ KEYBOARD ═══════
+  layer.addEventListener('keydown', e => {
+    const g = e.target.closest('.tile'); const t = g && tiles.get(+g.dataset.id); if (!t) return;
+    const mv = { ArrowLeft: [-0.5, 0], ArrowRight: [0.5, 0], ArrowUp: [0, -0.5], ArrowDown: [0, 0.5] }[e.key];
+    if (mv) { e.preventDefault(); t.x += mv[0] * (e.shiftKey ? 4 : 1); t.y += mv[1] * (e.shiftKey ? 4 : 1); clampT(t); place(t, 80); clearTimeout(t.settle); t.settle = setTimeout(() => { if (tiles.has(t.id) && !zeroPair(t)) {} changed(); }, 400); }
+    else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); t.neg = !t.neg; build(t); t.el.focus(); changed(); }
+    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); vanish(t); changed(); }
+  });
+  dock.addEventListener('keydown', e => {
+    const bin = e.target.closest('.bin'); if (!bin || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    const k = +bin.dataset.kind, spot = homeSpot(k, [...tiles.values()].filter(o => o.kind === k).length);
+    const t = add(k, spot.x, spot.y);
+    clampT(t); place(t); t.el.focus(); changed();
+  });
+
+  // ═══════ HARDWARE ═══════
+  const press = (b, on) => { b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); };
+  $('matBtn').addEventListener('click', () => { split = !split; press($('matBtn'), split); drawMat(); changed(); buzz(6); });
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; record.classList.toggle('on', recordOn); press($('recordBtn'), recordOn); });
+  $('clearBtn').addEventListener('click', () => { [...tiles.values()].forEach(vanish); changed(); buzz(8); });
+  document.querySelectorAll('.bin').forEach(b => {
+    const K = KINDS[+b.dataset.kind], s = 8;
+    const w = K.w * s, h = K.h * s;
+    b.innerHTML = `<svg viewBox="-2 -2 ${r2(w + 12)} ${r2(h + 8)}" aria-hidden="true"><rect x="6" y="0" width="${r2(w)}" height="${r2(h)}" rx="2" fill="${K.color}" opacity="0.6"/><rect x="0" y="4" width="${r2(w)}" height="${r2(h)}" rx="2" fill="${K.color}" stroke="rgba(0,0,0,0.3)"/></svg>`;
+  });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { setU(); drawMat(); tiles.forEach(t => { build(t); clampT(t); place(t); }); changed(); }); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  setU(); drawMat(); changed();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>

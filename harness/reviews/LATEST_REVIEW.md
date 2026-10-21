@@ -6,29 +6,34 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try both on a real iPad or Chromebook, especially Solids, which uses 3D graphics. Testing used scripted pointer events with software WebGL at 1024×768, 375×812 and 1920×1080.
+- Try these on a real iPad or Chromebook. Testing used scripted pointer and keyboard events at 1024×768, 375×812 and 1920×1080.
+- Algebra Tiles: x tiles stand upright only (no turning), which is enough for expressions and equations but not for area models of products.
 
 Notes:
-- Files changed: apps/solids/index.html (new app); apps/ten-frame/index.html; index.html (menu card).
-- Solids (new, Kindergarten Lessons 6, 13 and 24; Grade 1 Lesson 22): a cube, a box, a sphere, a cylinder, a cone and a square pyramid in enamel colors.
-  - A bin adds a shape at the first open spot along the front of the mat (up to 10).
-  - Drag to slide a shape.
-  - Drop it on a flat top (cube, box, standing cylinder) and it stacks. Drop it on a round or pointed top (sphere, cone, pyramid, lying cylinder) and it slides off beside it.
-  - Tap a shape to tip it onto its side or stand it back up.
-  - The sphere rolls as it moves; a cylinder on its side rolls across its length and slides along it; flat shapes slide.
-  - Dragging a shape onto the cabinet puts it away; ↺ puts them all away.
-  - The shadow-only floor shows the page's ceramic mat.
-  - Tested: a cone dropped on the cube stacked at height 1. A cylinder dropped on the cone slid off to the floor. A tap tipped the cone over.
-- Ten Frame (tool-only pass):
-  - The "Ten-Frame Sandbox" title and the "Clear Desk" word button are gone (↺ icon now).
-  - The number sentence is behind the eye, off by default.
-  - A new frames button switches between two ten-frames, one five-frame and one ten-frame. It skips a size that couldn't hold the counters already down, so none are lost.
-  - Spots are keyboard buttons now.
-- Doctrine principles applied: no words or prompts; the shapes behave like real solids; the numbers are the optional shadow.
-- All: no horizontal scroll and no console errors (fixed during testing: Solids' six bins overflowed phones; they now sit in two rows).
+- Files changed: apps/algebra-tiles/index.html, apps/double-number-line/index.html (new apps); apps/coordinate-grid/index.html; apps/line-plot/index.html; index.html (menu cards).
+- Algebra Tiles (new, Grade 6 Lessons 4, 19, 21, 24):
+  - x² (blue), x (green) and unit (yellow) tiles; x is 3.4 units long, so it can't be counted as ones.
+  - Drag from a bin, or tap a bin to line one up by kind. Tap a tile to flip it negative (red, −).
+  - Drop a tile on its opposite and the zero pair leaves the mat. Drag a tile to the cabinet to put it away.
+  - The mat button splits the mat with an equals bar for equations.
+  - The eye (off by default) reads the mat as it lies, nothing combined: "2x − x + 2 − 1", or "x − x = x + 1" on a split mat.
+- Double Number Line (new, Lessons 13–18):
+  - Two lines share their ticks: the top counts by a (+/−, 1–50), the bottom by b. Only 0 and the first pair (3 and 5) are printed; the eye prints the rest.
+  - ‹ › set 2–12 spaces, and cut each space into 1–10 parts for unit rates.
+  - A reader bar drags across both lines and snaps to ticks and cuts. With the eye on it shows both values, e.g. 1 and 1 2/3 at the first third.
+- Coordinate Grid:
+  - A four-quadrant button switches to −10 to 10 on both axes (numbers sit inside the grid on a light halo). Ordered pairs use true minus signs: (−4, 2).
+  - It won't return to one quadrant while a point has a negative coordinate; the size button rests while in four quadrants.
+- Line Plot:
+  - A box plot button hangs a box plot under the numbers: whiskers, quartile box, median bar. Quartiles are the medians of the lower and upper halves.
+  - A balance-point button puts a red fulcrum under the line at the mean.
+  - With the eye on, a second record line adds median and IQR and/or mean and MAD. For 2, 3, 3, 5, 6, 6, 6, 9: median 5.5, IQR 3, mean 5, MAD 1.75 (checked by hand).
+- All: no horizontal scroll and no console errors.
 
 Acceptance Tests:
-- Solids: add, slide, stack on flat, slide off round or pointed, tip, roll, put away. PASS
-- Ten Frame: record off by default; 5-frame, 10-frame, two 10-frames; counters kept. PASS
+- Algebra Tiles: add, flip, zero pairs, equation mat, record. PASS
+- Double Number Line: counts, cuts, reader, record off by default. PASS
+- Coordinate Grid: four quadrants with refusals; first quadrant unchanged. PASS
+- Line Plot: box plot, mean fulcrum, correct statistics; earlier tests still pass. PASS
 - Fits phone, desktop and projector; no console errors. PASS
-- No frameworks, bundlers, or package managers added (Three.js from the same CDN as the other 3D apps). PASS
+- No frameworks, bundlers, or package managers added. PASS
