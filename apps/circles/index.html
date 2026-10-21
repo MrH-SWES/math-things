@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Circles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    #mat { flex: 1; min-height: 0; position: relative; }
+    #board { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #record { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 4; font-weight: 900; font-size: clamp(18px, 2.8vw, 30px); opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    #record.on { opacity: 1; }
+    #record .op { color: var(--text-light); font-weight: 400; margin: 0 0.2em; }
+    @media (max-width: 600px) { #record { top: 62px; font-size: 15px; } }
+    .knob { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; background: var(--surface); box-shadow: var(--shadow-raised); color: var(--text-gray); font: 600 16px 'Lexend', sans-serif; cursor: pointer; padding: 0; line-height: 1; }
+    .knob:disabled { opacity: 0.35; cursor: default; }
+    .knob:focus-visible { border-color: #007AFF; outline: none; }
+    .dims { display: flex; gap: 10px; align-items: center; }
+    .dim { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .dim svg { width: 26px; height: 26px; }
+    .foldrow { display: flex; align-items: center; gap: 10px; }
+    #cabinet { flex-wrap: wrap; justify-content: center; }
+    #fold { -webkit-appearance: none; appearance: none; width: clamp(140px, 26vw, 260px); height: 10px; border-radius: 5px; background: linear-gradient(180deg, #D5D7DB, #ECEEF1); box-shadow: var(--shadow-milled); outline: none; }
+    #fold::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #A9ADB3); box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: grab; }
+    #fold::-moz-range-thumb { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #A9ADB3); border: none; }
+    #fold:focus-visible { box-shadow: 0 0 0 3px #007AFF; }
+    .foldrow { display: flex; align-items: center; gap: 10px; }
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: flex; gap: clamp(6px, 1.2vw, 12px); }
+    .bin {
+      width: clamp(58px, 11vw, 88px);
+      height: clamp(52px, 9vw, 72px);
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%);
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s;
+    }
+    /* the chosen bin sits pressed into the cabinet */
+    .bin[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 72%; height: 72%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    </style>
+</head>
+<body>
+<main id="mat" aria-label="Circle mat"><svg id="board" role="img"></svg></main>
+<div id="record" aria-hidden="true"></div>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Controls">
+    <div id="bins">
+      <button class="bin" data-mode="roll" aria-label="Roll the circle out along a line" aria-pressed="true"><svg viewBox="0 0 48 40" aria-hidden="true"><circle cx="16" cy="18" r="11" fill="none" stroke="#DC143C" stroke-width="3"/><path d="M5 31h38" stroke="#DC143C" stroke-width="3"/><path d="M5 35h11M16 35h11M27 35h11" stroke="#4169E1" stroke-width="2"/></svg></button>
+      <button class="bin" data-mode="wedges" aria-label="Cut the circle into wedges and lay them in a row" aria-pressed="false"><svg viewBox="0 0 48 40" aria-hidden="true"><path d="M6 30L10 12L14 30ZM14 30L18 12L22 30ZM22 30L26 12L30 30ZM30 30L34 12L38 30Z" fill="#FF9F0A" stroke="#fff"/><path d="M10 12L14 30L18 12ZM18 12L22 30L26 12ZM26 12L30 30L34 12Z" fill="#4CBB17" stroke="#fff"/></svg></button>
+    </div>
+    <div class="dims" id="dims"></div>
+    <div class="foldrow">
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8" fill="none" stroke="#86868B" stroke-width="1.6"/></svg>
+      <input id="fold" type="range" min="0" max="100" value="0" aria-label="Unroll">
+      <svg width="26" height="22" viewBox="0 0 26 22" aria-hidden="true"><path d="M2 14h22" stroke="#86868B" stroke-width="1.6"/></svg>
+    </div>
+    <div class="hardware">
+      <button class="icon-btn" id="recordBtn" aria-label="Show the measurements" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // Roll: the circle rolls one turn along a line, laying its edge down; the line is marked off in diameters.
+  // Wedges: the circle is cut into equal wedges that slide into a row, tips up and down, close to a rectangle.
+  const RIM = '#DC143C', DIA = '#4169E1', A = '#FF9F0A', B = '#4CBB17';
+  const WEDGES = [4, 8, 16, 32];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), record = $('record'), fold = $('fold'), live = $('live');
+  let mode = 'roll', r = 2, n = 8, t = 0, recordOn = false;
+
+  function draw() {
+    const W = board.clientWidth, H = board.clientHeight;
+    if (mode === 'roll') drawRoll(W, H); else drawWedges(W, H);
+    drawRecord();
+  }
+
+  // ═══════ ROLL ═══════
+  function drawRoll(W, H) {
+    const C = 2 * Math.PI * r, U = Math.max(14, Math.min(70, (W - 60) / (C + 2 * r + 1), (H - 80) / (2 * r + 3)));
+    const x0 = Math.max(30, (W - (C + 2 * r) * U) / 2) + r * U, ground = Math.min(H - 70, H / 2 + r * U);
+    const R = r * U, cx = x0 + t * C * U, cy = ground - R, turn = t * 360;
+    let s = `<path d="M${r2(x0 - R - 20)},${r2(ground)}H${r2(x0 + C * U + R + 20)}" stroke="#C4C7CC" stroke-width="3"/>`;
+    // the line is marked in diameters: 1, 2, 3 and the start of a fourth
+    for (let k = 0; k * 2 * r <= C + 2 * r; k++) {
+      const x = x0 + k * 2 * r * U;
+      s += `<path d="M${r2(x)},${r2(ground + 8)}v14" stroke="${DIA}" stroke-width="2"/>`;
+      if (k) s += `<text x="${r2(x)}" y="${r2(ground + 34)}" font-size="13" font-weight="800" fill="${DIA}">${k}</text>`;
+      if ((k + 1) * 2 * r <= C + 2 * r) s += `<path d="M${r2(x + 3)},${r2(ground + 15)}H${r2(x + 2 * r * U - 3)}" stroke="${DIA}" stroke-width="5" stroke-linecap="round" opacity="${(k + 1) * 2 * r <= C ? 0.7 : 0.25}"/>`;
+    }
+    // the edge laid down so far
+    s += `<path d="M${r2(x0)},${r2(ground)}H${r2(cx)}" stroke="${RIM}" stroke-width="6" stroke-linecap="round"/>`;
+    // the circle: the part of the rim still on it, and a diameter rod across it
+    // rolling right turns the circle clockwise: the rim already laid down runs clockwise from the bottom, the rest is still on the circle
+    const left = 1 - t, a0 = Math.PI / 2 + t * 2 * Math.PI, a1 = Math.PI / 2 + 2 * Math.PI;
+    const rim = left > 0.999 ? `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(R)}" fill="none" stroke="${RIM}" stroke-width="6"/>` :
+      left > 0.001 ? `<path d="M${r2(cx + R * Math.cos(a0))},${r2(cy + R * Math.sin(a0))}A${r2(R)},${r2(R)} 0 ${left > 0.5 ? 1 : 0} 1 ${r2(cx + R * Math.cos(a1))},${r2(cy + R * Math.sin(a1))}" fill="none" stroke="${RIM}" stroke-width="6" stroke-linecap="round"/>` : '';
+    s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(R)}" fill="#FFFFFF" fill-opacity="0.75" stroke="#C4C7CC" stroke-width="2"/>` + rim +
+      `<g transform="rotate(${r2(turn)} ${r2(cx)} ${r2(cy)})"><path d="M${r2(cx - R)},${r2(cy)}H${r2(cx + R)}" stroke="${DIA}" stroke-width="5" stroke-linecap="round"/><circle cx="${r2(cx)}" cy="${r2(cy)}" r="4" fill="${DIA}"/></g>`;
+    board.innerHTML = s;
+  }
+
+  // ═══════ WEDGES ═══════
+  function drawWedges(W, H) {
+    const th = 2 * Math.PI / n, rowW = Math.PI * r + r * th / 2;
+    const U = Math.max(14, Math.min(80, (W - 80) / Math.max(2 * r, rowW), (H - 100) / (2 * r + 0.5)));
+    const R = r * U, ccx = W / 2, ccy = H / 2;
+    const x0 = W / 2 - rowW * U / 2, yTop = H / 2 - R / 2;
+    const half = th / 2, wedge = `M0,0L${r2(R * Math.sin(-half))},${r2(R * Math.cos(half))}A${r2(R)},${r2(R)} 0 0 0 ${r2(R * Math.sin(half))},${r2(R * Math.cos(half))}Z`;
+    let s = '';
+    for (let i = 0; i < n; i++) {
+      // in the circle: tip at the center, turned to its place; in the row: tips alternate down and up
+      const ang0 = (i + 0.5) * th * 180 / Math.PI - 180, up = i % 2 === 1;
+      const tx = x0 + (Math.floor(i / 2) + (up ? 1 : 0.5)) * R * th, ty = up ? yTop + R : yTop;
+      const ang1 = up ? 180 : 0;
+      let d = ang1 - ang0; d = ((d + 540) % 360) - 180;
+      const x = ccx + (tx - ccx) * t, y = ccy + (ty - ccy) * t, a = ang0 + d * t;
+      s += `<path d="${wedge}" transform="translate(${r2(x)} ${r2(y)}) rotate(${r2(a)})" fill="${i % 2 ? B : A}" fill-opacity="0.85" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>`;
+    }
+    // once laid out: brackets for half the circle around (along the row) and the radius (its height)
+    if (t > 0.98) {
+      s += `<path d="M${r2(x0 + R * th / 2)},${r2(yTop + R + 18)}h${r2(Math.PI * R)}" stroke="${RIM}" stroke-width="3"/><path d="M${r2(x0 + R * th / 2)},${r2(yTop + R + 12)}v12M${r2(x0 + R * th / 2 + Math.PI * R)},${r2(yTop + R + 12)}v12" stroke="${RIM}" stroke-width="2"/>`;
+      s += `<path d="M${r2(x0 - 16)},${r2(yTop)}v${r2(R)}" stroke="${DIA}" stroke-width="3"/><path d="M${r2(x0 - 22)},${r2(yTop)}h12M${r2(x0 - 22)},${r2(yTop + R)}h12" stroke="${DIA}" stroke-width="2"/>`;
+    }
+    board.innerHTML = s;
+  }
+
+  // ═══════ RECORD ═══════
+  const p2 = v => (Math.round(v * 100) / 100).toFixed(2);
+  function drawRecord() {
+    record.innerHTML = mode === 'roll'
+      ? `C<span class="op">=</span>π<span class="op">×</span>${2 * r}<span class="op">≈</span>${p2(2 * Math.PI * r)}`
+      : `A<span class="op">≈</span>π<span class="op">×</span>${r}<span class="op">×</span>${r}<span class="op">≈</span>${p2(Math.PI * r * r)}`;
+  }
+
+  // ═══════ CONTROLS ═══════
+  function drawDims() {
+    const knob = (k, d, can, label) => `<button class="knob" data-k="${k}" data-d="${d}" aria-label="${label}" ${can ? '' : 'disabled'}>${d > 0 ? '+' : '−'}</button>`;
+    let s = `<div class="dim">${knob('r', 1, r < 5, 'Bigger circle')}<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="#86868B" stroke-width="1.5"/><path d="M13 13h10" stroke="${DIA}" stroke-width="2.5"/></svg>${knob('r', -1, r > 1, 'Smaller circle')}</div>`;
+    if (mode === 'wedges') s += `<div class="dim">${knob('n', 1, n < 32, 'More wedges')}<svg viewBox="-13 -13 26 26" aria-hidden="true">${[...Array(Math.min(n, 16))].map((_, i, a) => { const a0 = i * 2 * Math.PI / a.length; return `<path d="M0,0L${r2(11 * Math.cos(a0))},${r2(11 * Math.sin(a0))}" stroke="#86868B" stroke-width="1"/>`; }).join('')}<circle r="11" fill="none" stroke="#86868B" stroke-width="1.5"/></svg>${knob('n', -1, n > 4, 'Fewer wedges')}</div>`;
+    $('dims').innerHTML = s;
+  }
+  $('dims').addEventListener('click', e => {
+    const b = e.target.closest('.knob'); if (!b || b.disabled) return;
+    if (b.dataset.k === 'r') r += +b.dataset.d;
+    else n = WEDGES[WEDGES.indexOf(n) + +b.dataset.d];
+    buzz(5); drawDims(); draw();
+    const again = $('dims').querySelector(`.knob[data-k="${b.dataset.k}"][data-d="${b.dataset.d}"]`); if (again && !again.disabled) again.focus();
+    live.textContent = b.dataset.k === 'r' ? `Radius ${r}.` : `${n} wedges.`;
+  });
+  fold.addEventListener('input', () => {
+    const was = t; t = fold.value / 100; draw();
+    if ((was < 1 && t === 1) || (was > 0 && t === 0)) buzz(8);
+    fold.setAttribute('aria-valuetext', t === 0 ? 'a circle' : t === 1 ? (mode === 'roll' ? 'rolled out' : 'laid in a row') : 'moving');
+  });
+  document.querySelectorAll('.bin').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode; document.querySelectorAll('.bin').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+    t = 0; fold.value = 0; fold.setAttribute('aria-label', mode === 'roll' ? 'Unroll' : 'Lay the wedges in a row');
+    board.setAttribute('aria-label', mode === 'roll' ? 'A circle that rolls out along a line marked in diameters' : 'A circle cut into wedges');
+    drawDims(); draw(); buzz(6);
+  }));
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; record.classList.toggle('on', recordOn); $('recordBtn').classList.toggle('active', recordOn); $('recordBtn').setAttribute('aria-pressed', String(recordOn)); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(draw); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  drawDims(); draw();
+  window.__circles = { set: v => { fold.value = v; fold.dispatchEvent(new Event('input')); } };   // used by the screen tests
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>

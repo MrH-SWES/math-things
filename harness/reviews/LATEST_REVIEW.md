@@ -6,29 +6,29 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try both on a real iPad or Chromebook, especially Nets, which uses 3D graphics. Testing used scripted events (software WebGL for Nets) at 1024×768, 375×812 and 1920×1080.
+- Try these on a real iPad or Chromebook. Testing used scripted events at 1024×768, 375×812 and 1920×1080.
+- Circles: halfway through laying out the wedges, they swing through each other on their way to the row. It's fine at both ends but busy in the middle on phones.
 
 Notes:
-- Files changed: apps/nets/index.html (triangular prism added).
-- Triangular prism: a tent of two slanted sides on a rectangular base, closed by an isosceles triangle at each end. + / − set length (1–6), base side (2–6) and slant side, which must be longer than half the base. It unfolds into the classic net of three rectangles and two triangles. The eye lists the face areas. An end triangle's area that isn't whole shows to one decimal place with ≈ (e.g. 30 + 20 + 20 + 7.9 + 7.9 ≈ 85.8); the default 5 × 6 × 5 tent (triangle height 4) reads 30 + 25 + 25 + 12 + 12 = 104.
-- Earlier in this round: Nets and Inequalities were added (apps/nets, apps/inequalities, menu cards).
-- Nets (new, Grade 6 Lesson 3, surface area):
-  - A rectangular prism or a square pyramid built from hinged faces. Rectangles are ruled into unit squares.
-  - The slider in the cabinet turns every hinge together, from the closed solid to its flat net. The camera rises to look straight down, and the net settles square to the screen.
-  - Prism: + / − for length, width and height (1–6). Pyramid: base side (2–6) and slant height. The slant must be longer than half the base, or the triangles couldn't meet.
-  - Drag the mat (or use Left/Right) to turn the solid.
-  - The eye (off by default) lists every face's area and the total: "8 + 8 + 12 + 12 + 6 + 6 = 52" for 4 × 2 × 3, and "16 + 6 + 6 + 6 + 6 = 40" for base 4 and slant 3. Both checked by hand.
-- Inequalities (new, Lesson 26):
-  - A number line from −10 to 10 (or 0 to 20).
-  - Drag the boundary bead along the line. Tap it to fill it (included) or empty it (not included). Tap the shaded ray to point it the other way.
-  - The eye shows the inequality with true symbols: x > 3, x ≥ −2, x ≤ −2.
-- Doctrine principles applied: no words or prompts; the numbers are the optional shadow.
+- Files changed: apps/chance-lab/index.html, apps/circles/index.html (new apps); index.html (menu cards).
+- Chance Lab (new, Grade 7 Lessons 30–33; also useful for 22–23):
+  - Three number makers:
+    - A spinner with 2–8 equal sections.
+    - A number cube.
+    - A cloth bag of marbles in four colors (+ / − for each color, up to 24 marbles).
+  - Run 1, 10, 100 or 1,000 trials. A single trial spins or rolls on screen; a batch lands on its last result.
+  - One device: a bar for each result, scaled as a share of all trials. Two at once (the pair button): a grid of every pair of results, shaded by how often it came up (the sample space for compound events).
+  - The eye (off by default) adds each count, the number of trials, and a dashed line where each bar "should" land by its chance.
+  - Changing the device clears the results, since they belong to the old device.
+  - Checked: 1,000 spins on 4 sections gave 243, 254, 225, 279; 500 draws from a 3-red, 1-blue bag gave 381 to 119; 1,000 pairs of cubes filled all 36 cells, summing to 1,000.
+- Circles (new, Lesson 6):
+  - Roll: the circle rolls one turn along a line, laying its red edge down, while its blue diameter turns with it. The line is marked off in diameters (1, 2, 3, and a faint fourth), so the edge visibly comes out a little more than 3 diameters.
+  - Wedges: the circle is cut into 4, 8, 16 or 32 wedges that slide into a row, tips alternating, close to a rectangle. Brackets show its length (half the way around) and height (the radius).
+  - + / − set the radius (1–5). The eye shows C = π × d ≈ … or A ≈ π × r × r ≈ … to two decimals.
 - Both: no horizontal scroll and no console errors.
-- Remaining risks:
-  - Inequalities shows one boundary at a time (no compound inequalities).
 
 Acceptance Tests:
-- Nets: fold and unfold, dimensions, pyramid and prism slant guards, correct surface areas for all three solids. PASS
-- Inequalities: drag, fill/empty, flip direction, range, keyboard, correct symbols. PASS
+- Chance Lab: three devices, batches, pairs grid, record off by default; frequencies near the chances. PASS
+- Circles: roll and wedges at all slider positions; radius and wedge steppers; correct records. PASS
 - Fits phone, desktop and projector; no console errors. PASS
-- No frameworks, bundlers, or package managers added (Three.js from the same CDN as the other 3D apps). PASS
+- No frameworks, bundlers, or package managers added. PASS

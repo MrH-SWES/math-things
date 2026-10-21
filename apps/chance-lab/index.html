@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Chance Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      touch-action: none;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    #lab { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: clamp(16px, 4vw, 56px); padding: 64px 16px 12px; flex-wrap: wrap; }
+    .devices { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .pair { display: flex; gap: 14px; }
+    .settings { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .knob { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; background: var(--surface); box-shadow: var(--shadow-raised); color: var(--text-gray); font: 600 16px 'Lexend', sans-serif; cursor: pointer; padding: 0; line-height: 1; }
+    .knob:disabled { opacity: 0.35; cursor: default; }
+    .knob:focus-visible, .run:focus-visible { border-color: #007AFF; outline: none; }
+    .chip { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .chip .dot { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset -2px -2px 3px rgba(0,0,0,0.25); }
+    .runs { display: flex; gap: 8px; }
+    .run { min-width: 54px; height: 40px; border-radius: 20px; border: 2px solid transparent; background: var(--surface); box-shadow: var(--shadow-raised); font: 800 15px 'Lexend', sans-serif; color: #3A3D42; cursor: pointer; padding: 0 10px; }
+    .run:active { box-shadow: var(--shadow-milled); }
+    #graph { flex: 1 1 300px; max-width: 560px; height: min(340px, 40vh); overflow: visible; }
+    #graph text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #graph .rec { opacity: 0; transition: opacity 0.3s; }
+    #graph.recon .rec { opacity: 1; }
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #bins { display: flex; gap: clamp(6px, 1.2vw, 12px); }
+    .bin {
+      width: clamp(58px, 11vw, 88px);
+      height: clamp(52px, 9vw, 72px);
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%);
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s;
+    }
+    /* the chosen bin sits pressed into the cabinet */
+    .bin[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); }
+    .bin:active { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin svg { width: 72%; height: 72%; overflow: visible; pointer-events: none; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      @media (min-width: 600px) { .hardware { display: grid; grid-template-columns: 42px 42px; align-items: center; } #pairBtn { grid-row: span 2; } }
+  </style>
+</head>
+<body>
+<main id="lab" aria-label="Chance lab">
+  <div class="devices">
+    <div class="pair" id="pair"></div>
+    <div class="settings" id="settings"></div>
+    <div class="runs" role="group" aria-label="Run trials">
+      <button class="run" data-n="1" aria-label="Run once">1</button>
+      <button class="run" data-n="10" aria-label="Run 10 times">10</button>
+      <button class="run" data-n="100" aria-label="Run 100 times">100</button>
+      <button class="run" data-n="1000" aria-label="Run 1,000 times">1000</button>
+    </div>
+  </div>
+  <svg id="graph" role="img" aria-label="Results"></svg>
+</main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Bins">
+    <div id="bins">
+      <button class="bin" data-kind="spinner" aria-label="Spinner" aria-pressed="true"></button>
+      <button class="bin" data-kind="cube" aria-label="Number cube" aria-pressed="false"></button>
+      <button class="bin" data-kind="bag" aria-label="Bag of marbles" aria-pressed="false"></button>
+    </div>
+    <div class="hardware">
+      <button class="icon-btn" id="pairBtn" aria-label="Two at once" aria-pressed="false">
+        <svg width="22" height="20" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1" y="3" width="9" height="9" rx="2"/><rect x="12" y="3" width="9" height="9" rx="2"/></svg>
+      </button>
+      <button class="icon-btn" id="recordBtn" aria-label="Show the numbers" aria-pressed="false">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+      </button>
+      <button class="icon-btn" id="clearBtn" aria-label="Clear the results">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="ivory" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#ECE8E1"/></linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F5F7"/><stop offset="0.5" stop-color="#DADCE1"/><stop offset="1" stop-color="#C4C7CC"/></linearGradient>
+    <linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C9A97A"/><stop offset="1" stop-color="#9C7B4E"/></linearGradient>
+  </defs>
+</svg>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // One number maker (or two at once), run many times. The graph shows how often each result came up.
+  const SEG = ['#DC143C', '#4169E1', '#4CBB17', '#FF9F0A', '#7B00FF', '#00A3A3', '#E8559B', '#8B6A58'];
+  const MARBLES = ['#DC143C', '#4169E1', '#4CBB17', '#FFC300'];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const pairEl = $('pair'), settings = $('settings'), graph = $('graph'), live = $('live');
+
+  let kind = 'spinner', sections = 4, bag = [3, 1, 0, 0], two = false, recordOn = false;
+  let last = [null, null], angle = [0, 0];
+  let counts = new Map(), trials = 0;
+
+  // the outcomes of one device, with their chances
+  function outcomes() {
+    if (kind === 'spinner') return [...Array(sections)].map((_, i) => ({ key: i, label: String(i + 1), color: SEG[i], p: 1 / sections }));
+    if (kind === 'cube') return [1, 2, 3, 4, 5, 6].map(v => ({ key: v - 1, label: String(v), color: '#3A3D42', p: 1 / 6 }));
+    const total = bag.reduce((a, b) => a + b, 0);
+    return bag.map((n, i) => ({ key: i, label: '', color: MARBLES[i], p: n / total, n })).filter(o => o.n > 0);
+  }
+  function pick(outs) {
+    let r = Math.random();
+    for (const o of outs) { if ((r -= o.p) < 0) return o; }
+    return outs[outs.length - 1];
+  }
+
+  // ═══════ DEVICES ═══════
+  function pips(v, S) {
+    const p = { 1: [[2, 2]], 2: [[1, 1], [3, 3]], 3: [[1, 1], [2, 2], [3, 3]], 4: [[1, 1], [3, 1], [1, 3], [3, 3]], 5: [[1, 1], [3, 1], [2, 2], [1, 3], [3, 3]], 6: [[1, 1], [3, 1], [1, 2], [3, 2], [1, 3], [3, 3]] }[v];
+    return p.map(([x, y]) => `<circle cx="${r2(S * x / 4)}" cy="${r2(S * y / 4)}" r="${r2(S * 0.08)}" fill="#1D1D1F"/>`).join('');
+  }
+  function deviceSVG(i, S) {
+    const res = last[i];
+    if (kind === 'spinner') {
+      const R = S / 2 - 6, c = S / 2;
+      let s = `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}"><circle cx="${c}" cy="${c}" r="${R + 4}" fill="url(#metal)" stroke="rgba(60,62,68,0.3)"/>`;
+      for (let k = 0; k < sections; k++) {
+        const a0 = -Math.PI / 2 + k * 2 * Math.PI / sections, a1 = a0 + 2 * Math.PI / sections, am = (a0 + a1) / 2;
+        s += `<path d="M${c},${c}L${r2(c + R * Math.cos(a0))},${r2(c + R * Math.sin(a0))}A${R},${R} 0 0 1 ${r2(c + R * Math.cos(a1))},${r2(c + R * Math.sin(a1))}Z" fill="${SEG[k]}" fill-opacity="0.8" stroke="#fff" stroke-width="2"/>` +
+          `<text x="${r2(c + R * 0.66 * Math.cos(am))}" y="${r2(c + R * 0.66 * Math.sin(am))}" font-size="${r2(S * 0.11)}" font-weight="800" fill="#fff" text-anchor="middle" dominant-baseline="central" font-family="Lexend">${k + 1}</text>`;
+      }
+      return s + `<g class="arrow" style="transform-origin:${c}px ${c}px;transform:rotate(${angle[i]}deg)"><path d="M${c},${r2(c - R * 0.86)}L${r2(c + S * 0.05)},${c}L${c},${r2(c + R * 0.2)}L${r2(c - S * 0.05)},${c}Z" fill="#2B2D31"/></g><circle cx="${c}" cy="${c}" r="${r2(S * 0.05)}" fill="#ccc" stroke="#888"/></svg>`;
+    }
+    if (kind === 'cube') {
+      const v = res ? res.key + 1 : 6 - i * 3;
+      return `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}"><rect x="${r2(S * 0.1)}" y="${r2(S * 0.1)}" width="${r2(S * 0.8)}" height="${r2(S * 0.8)}" rx="${r2(S * 0.13)}" fill="url(#ivory)" stroke="rgba(60,45,30,0.3)" style="filter: drop-shadow(2px 5px 6px rgba(59,42,26,0.25))"/><g transform="translate(${r2(S * 0.1)} ${r2(S * 0.1)})">${pips(v, S * 0.8)}</g></svg>`;
+    }
+    // a cloth bag of marbles; the last one drawn sits on top
+    let s = `<svg width="${S}" height="${S}" viewBox="0 0 100 100"><path d="M22 30Q10 60 18 84Q50 98 82 84Q90 60 78 30Z" fill="url(#cloth)" stroke="rgba(60,40,20,0.4)"/><path d="M24 30Q50 22 76 30" fill="none" stroke="#6B4F2A" stroke-width="3"/>`;
+    let k = 0;
+    bag.forEach((n, c) => { for (let j = 0; j < n; j++, k++) s += `<circle cx="${30 + (k % 6) * 8 + (Math.floor(k / 6) % 2) * 4}" cy="${78 - Math.floor(k / 6) * 7}" r="4" fill="${MARBLES[c]}" opacity="0.85"/>`; });
+    if (res) s += `<circle cx="50" cy="14" r="9" fill="${MARBLES[res.key]}" stroke="#fff" stroke-width="2"/><circle cx="47" cy="11" r="3" fill="#fff" opacity="0.6"/>`;
+    return s + `</svg>`;
+  }
+  const size = () => Math.max(100, Math.min(200, innerHeight * 0.24, (innerWidth < 700 ? innerWidth - 60 : 420) / (two ? 2 : 1) - 20));
+  function drawDevices() {
+    const S = Math.round(size());
+    pairEl.innerHTML = [0, 1].slice(0, two ? 2 : 1).map(i => `<div class="dev" data-i="${i}">${deviceSVG(i, S)}</div>`).join('');
+  }
+  function drawSettings() {
+    if (kind === 'spinner') settings.innerHTML = `<button class="knob" data-s="-" aria-label="Fewer sections" ${sections > 2 ? '' : 'disabled'}>‹</button><svg width="30" height="30" viewBox="-15 -15 30 30" aria-hidden="true">${[...Array(sections)].map((_, k) => { const a0 = -Math.PI / 2 + k * 2 * Math.PI / sections, a1 = a0 + 2 * Math.PI / sections; return `<path d="M0,0L${r2(13 * Math.cos(a0))},${r2(13 * Math.sin(a0))}A13,13 0 0 1 ${r2(13 * Math.cos(a1))},${r2(13 * Math.sin(a1))}Z" fill="${SEG[k]}" fill-opacity="0.8" stroke="#fff"/>`; }).join('')}</svg><button class="knob" data-s="+" aria-label="More sections" ${sections < 8 ? '' : 'disabled'}>›</button>`;
+    else if (kind === 'bag') settings.innerHTML = bag.map((n, c) => `<div class="chip"><button class="knob" data-c="${c}" data-d="1" aria-label="One more marble of this color" ${n < 9 && bag.reduce((a, b) => a + b, 0) < 24 ? '' : 'disabled'}>+</button><span class="dot" style="background:${MARBLES[c]}"></span><button class="knob" data-c="${c}" data-d="-1" aria-label="One less marble of this color" ${n > 0 && bag.reduce((a, b) => a + b, 0) > 1 ? '' : 'disabled'}>−</button></div>`).join('');
+    else settings.innerHTML = '';
+  }
+
+  // ═══════ RESULTS ═══════
+  // One device: a bar for each result, as a share of all trials. Two: a grid of every pair, shaded by how often it came up.
+  const keyOf = (a, b) => two ? a.key + ',' + b.key : String(a.key);
+  function drawGraph() {
+    const W = graph.clientWidth, H = graph.clientHeight, outs = outcomes();
+    let s = '';
+    if (!two) {
+      const n = outs.length, bw = (W - 40) / n, top = 30, base = H - 36;
+      // the bars are shares, so the scale runs to the biggest share or the biggest chance, whichever is taller
+      const maxShare = Math.max(...outs.map(o => Math.max(o.p, trials ? (counts.get(String(o.key)) || 0) / trials : 0)), 0.01);
+      const yOf = v => base - v / maxShare * (base - top);
+      s += `<path d="M30,${base}H${W - 6}" stroke="#3A3D42" stroke-width="2"/>`;
+      outs.forEach((o, i) => {
+        const c = counts.get(String(o.key)) || 0, share = trials ? c / trials : 0, x = 34 + i * bw;
+        s += `<rect x="${r2(x + bw * 0.15)}" y="${r2(yOf(share))}" width="${r2(bw * 0.7)}" height="${r2(base - yOf(share))}" rx="3" fill="${o.color}" opacity="0.85"/>`;
+        s += kind === 'bag' ? `<circle cx="${r2(x + bw / 2)}" cy="${base + 16}" r="8" fill="${o.color}"/>` : kind === 'cube' ? `<g transform="translate(${r2(x + bw / 2 - 10)} ${base + 6})"><rect width="20" height="20" rx="4" fill="#fff" stroke="#aaa"/>${pips(o.key + 1, 20)}</g>` : `<text x="${r2(x + bw / 2)}" y="${base + 16}" font-size="14" font-weight="800" fill="${o.color}">${o.label}</text>`;
+        // the record: the count, and a dashed line where the chance says the bar should land
+        s += `<g class="rec"><path d="M${r2(x + bw * 0.08)},${r2(yOf(o.p))}h${r2(bw * 0.84)}" stroke="#1D1D1F" stroke-width="2" stroke-dasharray="5 4"/><text x="${r2(x + bw / 2)}" y="${r2(Math.min(yOf(share), yOf(o.p)) - 12)}" font-size="13" font-weight="800" fill="#1D1D1F">${c}</text></g>`;
+      });
+    } else {
+      const n = outs.length, cs = Math.min((W - 60) / n, (H - 60) / n), x0 = (W - n * cs) / 2 + 14, y0 = 28;
+      let mx = 1; for (const v of counts.values()) mx = Math.max(mx, v);
+      outs.forEach((a, i) => outs.forEach((b, j) => {
+        const c = counts.get(a.key + ',' + b.key) || 0;
+        s += `<rect x="${r2(x0 + j * cs + 1)}" y="${r2(y0 + i * cs + 1)}" width="${r2(cs - 2)}" height="${r2(cs - 2)}" rx="3" fill="#4169E1" fill-opacity="${r2(0.06 + 0.84 * c / mx)}" stroke="rgba(60,62,68,0.15)"/>`;
+        s += `<text class="rec" x="${r2(x0 + j * cs + cs / 2)}" y="${r2(y0 + i * cs + cs / 2)}" font-size="${r2(Math.min(14, cs * 0.32))}" font-weight="800" fill="${c / mx > 0.55 ? '#fff' : '#1D1D1F'}">${c}</text>`;
+      }));
+      const mark = (o, x, y) => kind === 'bag' ? `<circle cx="${r2(x)}" cy="${r2(y)}" r="7" fill="${o.color}"/>` : kind === 'cube' ? `<g transform="translate(${r2(x - 9)} ${r2(y - 9)})"><rect width="18" height="18" rx="4" fill="#fff" stroke="#aaa"/>${pips(o.key + 1, 18)}</g>` : `<text x="${r2(x)}" y="${r2(y)}" font-size="13" font-weight="800" fill="${o.color}">${o.label}</text>`;
+      outs.forEach((o, k) => { s += mark(o, x0 + k * cs + cs / 2, y0 - 14) + mark(o, x0 - 16, y0 + k * cs + cs / 2); });
+    }
+    s += `<text class="rec" x="${W / 2}" y="${H - 6}" font-size="13" font-weight="700" fill="#86868B">${trials}</text>`;
+    graph.innerHTML = s;
+  }
+
+  // ═══════ RUNNING ═══════
+  function run(n) {
+    const outs = outcomes();
+    for (let k = 0; k < n; k++) {
+      const a = pick(outs), b = two ? pick(outs) : null;
+      const key = keyOf(a, b);
+      counts.set(key, (counts.get(key) || 0) + 1); trials++;
+      last = [a, b];
+    }
+    // one trial is shown turning; a batch just lands on its last result
+    if (kind === 'spinner') for (const i of two ? [0, 1] : [0]) {
+      const o = last[i];
+      angle[i] = angle[i] - (angle[i] % 360) + (n === 1 && !reduceMotion ? 1080 : 360) + (o.key + 0.2 + Math.random() * 0.6) * 360 / sections;
+    }
+    drawDevices();
+    if (kind === 'spinner' && n === 1 && !reduceMotion) pairEl.querySelectorAll('.arrow').forEach((a, i) => { a.style.transition = 'none'; a.style.transform = `rotate(${angle[i] - 1080}deg)`; a.getBoundingClientRect(); a.style.transition = 'transform 1.2s cubic-bezier(.15,.75,.2,1)'; a.style.transform = `rotate(${angle[i]}deg)`; });
+    drawGraph(); buzz(n === 1 ? 6 : 12);
+    live.textContent = `${trials} trials.` + (recordOn ? ' ' + outcomes().map(o => `${o.label || ['red', 'blue', 'green', 'yellow'][o.key]} ${counts.get(String(o.key)) || 0}`).join(', ') : '');
+  }
+  function reset() { counts = new Map(); trials = 0; last = [null, null]; drawDevices(); drawSettings(); drawGraph(); }
+
+  document.querySelectorAll('.run').forEach(b => b.addEventListener('click', () => run(+b.dataset.n)));
+  settings.addEventListener('click', e => {
+    const k = e.target.closest('.knob'); if (!k || k.disabled) return;
+    if (k.dataset.s) sections += k.dataset.s === '+' ? 1 : -1;
+    else bag[+k.dataset.c] += +k.dataset.d;
+    // changing the device starts the results over: they belong to the old one
+    reset(); buzz(5);
+    const again = settings.querySelector(k.dataset.s ? `.knob[data-s="${k.dataset.s}"]` : `.knob[data-c="${k.dataset.c}"][data-d="${k.dataset.d}"]`); if (again && !again.disabled) again.focus();
+  });
+  document.querySelectorAll('.bin').forEach(b => b.addEventListener('click', () => {
+    kind = b.dataset.kind; document.querySelectorAll('.bin').forEach(o => o.setAttribute('aria-pressed', String(o === b))); reset(); buzz(6);
+  }));
+  const press = (b, on) => { b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); };
+  $('pairBtn').addEventListener('click', () => { two = !two; press($('pairBtn'), two); reset(); buzz(6); });
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; graph.classList.toggle('recon', recordOn); press($('recordBtn'), recordOn); });
+  $('clearBtn').addEventListener('click', () => { reset(); buzz(8); });
+
+  const binArt = {
+    spinner: `<svg viewBox="-24 -20 48 40">${[0, 1, 2, 3].map(i => { const a0 = -Math.PI / 2 + i * Math.PI / 2, a1 = a0 + Math.PI / 2; return `<path d="M0,0L${r2(17 * Math.cos(a0))},${r2(17 * Math.sin(a0))}A17,17 0 0 1 ${r2(17 * Math.cos(a1))},${r2(17 * Math.sin(a1))}Z" fill="${SEG[i]}" fill-opacity="0.8" stroke="#fff"/>`; }).join('')}</svg>`,
+    cube: `<svg viewBox="0 0 48 40"><rect x="10" y="6" width="28" height="28" rx="6" fill="#fff" stroke="#aaa"/><g transform="translate(10 6)">${pips(5, 28)}</g></svg>`,
+    bag: `<svg viewBox="0 0 100 100"><path d="M22 34Q10 62 18 84Q50 98 82 84Q90 62 78 34Z" fill="url(#cloth)"/><circle cx="40" cy="22" r="9" fill="#DC143C"/><circle cx="60" cy="24" r="9" fill="#4169E1"/></svg>`,
+  };
+  document.querySelectorAll('.bin').forEach(b => { b.innerHTML = binArt[b.dataset.kind]; });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { drawDevices(); drawGraph(); }); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  reset();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
