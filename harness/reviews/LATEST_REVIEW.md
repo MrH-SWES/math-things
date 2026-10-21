@@ -6,24 +6,22 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try a roll on a real iPad or Chromebook, with Reduce Motion both on and off.
+- Try it on a real iPad or Chromebook; it uses 3D graphics. Testing used software WebGL at 1024×768, 375×812 and 1920×1080.
 
 Notes:
-- Files changed: apps/spinner-dice/index.html, apps/chance-lab/index.html.
-- Teacher request: spinners and dice should animate.
-- Cause found: both apps honored the system Reduce Motion setting by skipping all movement. School iPads and Chromebooks often have it on, so spinners jumped straight to their result and dice didn't move. Chance Lab's cube never animated, and its batch runs didn't move either.
-- Spinners now always spin. Normally they make about four turns over 1.6 s (Chance Lab: 1.2 s). With Reduce Motion they make one gentler turn over about 0.9 s instead of none.
-- Number cubes are now real 3D cubes (CSS 3D, no library).
-  - Before each roll, the result is written on the front face and other values on the rest. The cube tumbles one or two whole turns with a little hop and lands showing the result, tipped slightly toward the viewer so it reads as a cube.
-  - Rolls take 1.2 s normally and 0.65 s with Reduce Motion.
-  - Works for dot cubes and numeral cubes (1–6, 4–9, 0–9).
-- Chance Lab: every run now moves. A single trial gets the full spin or roll; a batch (10, 100, 1,000) gets a quicker 0.65 s turn landing on its last result. Drawn marbles rise out of the bag.
-- Number cards keep their flip with Reduce Motion on (it's small).
-- Checks: sampled the arrow and cube transforms every 220 ms during a roll, with and without Reduce Motion; both change and then settle. The landed front faces matched the record (e.g. dice 5 and 6 with record 5 + 6 + 3 = 14). Earlier Spinner & Dice tests still pass. No horizontal scroll and no console errors.
+- Files changed: apps/slicing-solids/index.html (new app); index.html (menu card).
+- Slicing Solids (new, Grade 7 Lesson 27: plane sections of 3D figures):
+  - Six solids: rectangular prism, triangular prism (lying along its length, a corner up), square pyramid, cylinder, cone and sphere.
+  - A translucent cutting sheet passes through the solid. One slider moves it from one side of the solid to the other, always passing through it. A second slider tilts it from level (0°) to upright (90°).
+  - The part above the sheet fades to a ghost; the part below stays solid, and the cut face is painted red.
+  - The cut's true shape, seen straight on, is drawn in a panel in the corner.
+  - Drag the mat (or use Left/Right) to walk around the solid.
+  - The cut is found by intersecting the sheet with every triangle of the solid and taking the outline of those points. All six solids are convex, so the outline is the true cut. Points are snapped to a fine grid first; without that, rounding left a false corner on the triangular prism's level cut, which this round fixed.
+- No record (eye) here: the cut's shape is the point, and an area in the model's own units would mean nothing to a student.
+- Checks (number of corners in the cut): box level, tilted 35° and upright → 4. Pyramid level → 4; upright through the tip → 3. Triangular prism upright → 3; level → 4; tilted 45° → 3. Cylinder level → round; upright → 4. Cone tilted 60° → a curved arch. Sphere → a circle. No horizontal scroll and no console errors.
 
 Acceptance Tests:
-- Spinners spin with Reduce Motion on and off. PASS
-- Dice tumble in 3D and land on the recorded value. PASS
-- Chance Lab batches animate. PASS
+- Six solids; move and tilt the cut; ghost above, red face, true shape in the corner. PASS
+- Cut shapes correct for the cases above. PASS
 - Fits phone, desktop and projector; no console errors. PASS
-- No frameworks, bundlers, or package managers added. PASS
+- No frameworks, bundlers, or package managers added (Three.js from the same CDN as the other 3D apps). PASS
