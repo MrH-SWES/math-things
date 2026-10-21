@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Things. | Ten-Frame Sandbox</title>
+    <title>Math Things. | Ten Frame</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -80,6 +80,19 @@
             text-shadow: 0 4px 16px rgba(0,0,0,0.04);
         }
         .equation-display.pop { transform: scale(1.08); }
+        .equation-display { opacity: 0; transition: opacity 0.3s, transform 0.2s var(--spring); }
+        body.rec .equation-display { opacity: 1; }
+        .icon-btn {
+            width: 52px; height: 52px; border-radius: 50%; border: 2px solid transparent; padding: 0;
+            background: var(--surface); color: var(--text-gray); cursor: pointer;
+            box-shadow: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+            display: flex; align-items: center; justify-content: center; transition: all 0.25s var(--spring);
+        }
+        .icon-btn:active { transform: scale(0.94); }
+        .icon-btn.active { box-shadow: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px #fff; color: var(--text-main); }
+        .icon-btn:focus-visible { border-color: #007AFF; outline: none; }
+        .hardware { display: flex; gap: 14px; }
+        .ten-frame.five { grid-template-columns: repeat(5, 1fr); }
         .eq-red { color: var(--coin-red); }
         .eq-bead { color: var(--coin-bead-text); } 
         .eq-operator { color: var(--text-light); font-weight: 300; font-size: 4.5rem; }
@@ -241,31 +254,31 @@
 
     <header>
         <div class="logo">Math Things<span class="logo-bead"></span></div>
-        <div class="header-label">Ten-Frame Sandbox</div>
+        <div class="header-label"></div>
         <div style="width:130px"></div>
     </header>
 
     <main>
         <div class="equation-display" id="equationDisplay">0</div>
 
-        <div class="desk-container">
-            <div class="ten-frame">
-                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
-                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
-            </div>
-            
-            <div class="ten-frame">
-                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
-                <div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div><div class="dimple"></div>
-            </div>
-        </div>
+        <div class="desk-container" id="desk"></div>
 
         <div class="controls">
             <div class="coin-toggles">
                 <div class="selector red active" data-color="red"></div>
                 <div class="selector bead" data-color="bead"></div>
             </div>
-            <button class="btn-clear" id="clearBtn">Clear Desk</button>
+            <div class="hardware">
+                <button class="icon-btn" id="framesBtn" aria-label="Frames: two ten-frames. Change to one five-frame.">
+                    <svg width="26" height="20" viewBox="0 0 26 20" aria-hidden="true"><g id="framesGlyph" fill="none" stroke="currentColor" stroke-width="1.5"></g></svg>
+                </button>
+                <button class="icon-btn" id="recordBtn" aria-label="Show the numbers" aria-pressed="false">
+                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+                </button>
+                <button class="icon-btn" id="clearBtn" aria-label="Take all the counters off">
+                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+                </button>
+            </div>
         </div>
     </main>
 
@@ -276,7 +289,44 @@
     <script>
         let activeColor = 'red';
         const equationDisplay = document.getElementById('equationDisplay');
-        const dimples = document.querySelectorAll('.dimple');
+        let dimples = [];
+        const desk = document.getElementById('desk');
+        // The desk holds one five-frame, one ten-frame or two ten-frames. Counters already down stay down
+        // (filling the new frames in order) as long as they fit.
+        const LAYOUTS = [[10, 10], [5], [10]];
+        const LAYOUT_NAMES = ['two ten-frames', 'one five-frame', 'one ten-frame'];
+        let layout = 0;
+        function buildDesk() {
+            const kept = [...desk.querySelectorAll('.coin:not(.pop-out)')].map(c => c.classList.contains('bead') ? 'bead' : 'red');
+            desk.innerHTML = LAYOUTS[layout].map(n => `<div class="ten-frame${n === 5 ? ' five' : ''}">${'<div class="dimple" tabindex="0" role="button" aria-label="Spot"></div>'.repeat(n)}</div>`).join('');
+            dimples = [...desk.querySelectorAll('.dimple')];
+            kept.slice(0, dimples.length).forEach((color, i) => {
+                const coin = document.createElement('div');
+                coin.className = `coin ${color}`;
+                dimples[i].appendChild(coin);
+                dimples[i].classList.add('has-coin');
+            });
+            const g = document.getElementById('framesGlyph');
+            // the button shows the frames on the desk: two ten-frames, one five-frame or one ten-frame
+            const frame = (y, rows) => `<rect x="3" y="${y}" width="20" height="${rows * 4}" rx="1"/>` + [1, 2, 3, 4].map(i => `<path d="M${3 + i * 4},${y}v${rows * 4}" stroke-width="0.8"/>`).join('') + (rows > 1 ? `<path d="M3,${y + 4}h20" stroke-width="0.8"/>` : '');
+            g.innerHTML = layout === 0 ? frame(1, 2) + frame(11, 2) : layout === 1 ? frame(8, 1) : frame(6, 2);
+            const next = (layout + 1) % LAYOUTS.length;
+            document.getElementById('framesBtn').setAttribute('aria-label', `Frames: ${LAYOUT_NAMES[layout]}. Change to ${LAYOUT_NAMES[next]}.`);
+            updateEquation();
+        }
+        // the frames only change to a size that holds every counter already down
+        document.getElementById('framesBtn').addEventListener('click', () => {
+            const n = desk.querySelectorAll('.coin:not(.pop-out)').length;
+            for (let k = 1; k < LAYOUTS.length; k++) {
+                const next = (layout + k) % LAYOUTS.length;
+                if (LAYOUTS[next].reduce((a, b) => a + b, 0) >= n) { layout = next; buildDesk(); return; }
+            }
+        });
+        document.getElementById('recordBtn').addEventListener('click', e => {
+            const on = document.body.classList.toggle('rec');
+            e.currentTarget.classList.toggle('active', on);
+            e.currentTarget.setAttribute('aria-pressed', String(on));
+        });
         const selectors = document.querySelectorAll('.selector');
 
         // Glowing Coin Toggle Logic
@@ -321,9 +371,12 @@
             equationDisplay.classList.add('pop');
         }
 
-        // Coin Placement Logic
-        dimples.forEach(dimple => {
-            dimple.addEventListener('click', () => {
+        // Coin Placement Logic: one listener on the desk, since the frames are rebuilt
+        desk.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('dimple')) { e.preventDefault(); e.target.click(); } });
+        desk.addEventListener('click', e => {
+            const dimple = e.target.closest('.dimple');
+            if (!dimple) return;
+            {
                 // If dimple has a coin, pluck it out
                 if (dimple.classList.contains('has-coin')) {
                     const coin = dimple.querySelector('.coin');
@@ -348,7 +401,7 @@
                 dimple.classList.add('has-coin');
                 
                 updateEquation();
-            });
+            }
         });
 
         // Clear Desk Logic
@@ -366,6 +419,7 @@
             });
             setTimeout(updateEquation, 160);
         });
+        buildDesk();
 
     </script>
   <script src="../../math-things-home.js"></script>
