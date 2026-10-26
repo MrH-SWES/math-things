@@ -231,11 +231,11 @@ test('two fingers starting on the same block pinch without trading or moving it'
 });
 
 test('two fingers starting on separate blocks pinch without dragging either',async()=>{
- await fresh();await spawnKind(2);await dragTo(await box(),FX+260,FY+250);
+ await fresh();await spawnKind(2);await dragTo(await box(),FX+150,FY+140);
  await spawnKind(2);await dragTo(await box(1),FX+620,FY+250);
  const a=await box(0),b=await box(1),before=await labels();
  await touch('touchStart',[[a.cx,a.cy]]);await touch('touchStart',[[a.cx,a.cy],[b.cx,b.cy]]);
- for(let i=1;i<=4;i++)await touch('touchMove',[[a.cx-i*12,a.cy],[b.cx+i*12,b.cy]]);
+ for(let i=1;i<=4;i++)await touch('touchMove',[[a.cx-i*20,a.cy],[b.cx+i*20,b.cy]]);
  await touch('touchEnd',[]);await sleep(80);
  assert.ok((await view()).s>1.2,'separate-block pinch changes camera scale');
  assert.deepEqual(await labels(),before);

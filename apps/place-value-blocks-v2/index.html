@@ -40,7 +40,7 @@
     #surface { flex: 1; min-height: 0; touch-action: none; }
 
     /* ── BOARD (pieces float above everything so they can be carried back to the bins) ── */
-    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board { touch-action: none; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
     #board .train { cursor: grab; outline: none; touch-action: none; }
     #board .train use { pointer-events: visiblePainted; }
     #board .train.dragging { cursor: grabbing; }
