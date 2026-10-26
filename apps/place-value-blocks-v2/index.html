@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Math Things. | Place Value Blocks</title>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
   <style>
@@ -32,17 +32,16 @@
       -webkit-user-select: none;
       -webkit-touch-callout: none;
       -webkit-font-smoothing: antialiased;
-      touch-action: none;
       /* the mat: warm, quiet ceramic */
       background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
     }
 
     /* ── MAT ── */
-    #surface { flex: 1; min-height: 0; }
+    #surface { flex: 1; min-height: 0; touch-action: none; }
 
     /* ── BOARD (pieces float above everything so they can be carried back to the bins) ── */
     #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
-    #board .train { cursor: grab; outline: none; }
+    #board .train { cursor: grab; outline: none; touch-action: none; }
     #board .train use { pointer-events: visiblePainted; }
     #board .train.dragging { cursor: grabbing; }
     #board .fx { transform-box: fill-box; transform-origin: 50% 100%; }
@@ -107,6 +106,26 @@
     .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
     .icon-btn:focus-visible { border-color: #007AFF; }
 
+    /* ── ZOOM (views the mat closer or farther; the page itself never scales) ── */
+    #zoom {
+      position: fixed; top: 12px; right: 12px; z-index: 6;
+      display: flex; align-items: center; gap: 2px; padding: 3px;
+      border-radius: 24px; background: rgba(255,255,255,0.7);
+      box-shadow: 0 2px 8px rgba(110,95,75,0.16);
+      opacity: 1; transition: opacity 0.2s;
+    }
+    #zoom:hover, #zoom:focus-within, #zoom.zoomed { opacity: 1; }
+    #zoom button {
+      min-width: 38px; height: 38px; border-radius: 19px; padding: 0 6px;
+      border: 2px solid transparent; background: transparent; color: var(--text-main);
+      display: flex; align-items: center; justify-content: center;
+      font: 800 12px 'Lexend', sans-serif; cursor: pointer; outline: none; touch-action: manipulation;
+    }
+    #zoom button:active { background: rgba(0,0,0,0.05); }
+    #zoom button:focus-visible { border-color: #007AFF; }
+    #zoom button:disabled { opacity: 0.35; cursor: default; }
+    #zoom #zoomReset { min-width: 52px; }
+
     /* ── RECORD (optional, follows the blocks) ── */
     #record {
       position: fixed; top: 14px; left: 50%; transform: translate(-50%, -6px);
@@ -165,6 +184,16 @@
 
 <div id="record" aria-hidden="true"></div>
 
+<div id="zoom" role="group" aria-label="Zoom the mat">
+  <button id="zoomOut" aria-label="Zoom out">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10"/></svg>
+  </button>
+  <button id="zoomReset" aria-label="Zoom 100%. Reset zoom">100%</button>
+  <button id="zoomIn" aria-label="Zoom in">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10M8 3v10"/></svg>
+  </button>
+</div>
+
 <!-- Enamel paints, shared by the mat and the bins -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -194,7 +223,10 @@
 
 <svg id="board" aria-hidden="false">
   <defs id="defs"></defs>
-  <g id="layer"></g>
+  <clipPath id="matClip"><rect id="matClipRect" width="0" height="0"/></clipPath>
+  <!-- the mat is drawn through the view; a piece being carried rides above it, unclipped -->
+  <g id="mat"><g id="layer"></g></g>
+  <g id="carry"></g>
 </svg>
 
 <div id="live" class="sr-only" aria-live="polite"></div>
@@ -235,6 +267,8 @@
   const $ = id => document.getElementById(id);
   const defs = $('defs'), layer = $('layer'), dock = $('dock'), footer = $('footer');
   const record = $('record'), live = $('live'), recordBtn = $('recordBtn'), clearBtn = $('clearBtn'), oneBtn = $('oneBtn');
+  const mat = $('mat'), carry = $('carry'), matClipRect = $('matClipRect');
+  const zoomBox = $('zoom'), zoomIn = $('zoomIn'), zoomOut = $('zoomOut'), zoomReset = $('zoomReset');
 
   let U = 20;                    // pixels per unit
   const trains = new Map();      // id → a piece, or a run of same-size pieces joined together
@@ -366,6 +400,7 @@
   }
 
   function lift(t, on) {
+    if (on !== t.held) (on ? carry : layer).appendChild(t.el);
     t.held = on;
     t.el.setAttribute('filter', on ? 'url(#lift)' : 'url(#rest)');
     t.el.classList.toggle('dragging', on);
@@ -637,8 +672,9 @@
   // A tapped bin sets its piece on the mat just above itself, beside anything already there.
   function stagePos(k) {
     const r = dock.querySelector(`.bin[data-kind="${k}"]`).getBoundingClientRect(), K = KINDS[k];
-    const x0 = (r.left + r.width / 2) / U - (K.w + K.depth * DS) / 2;
-    const y0 = dock.getBoundingClientRect().top / U - K.h - 0.8;
+    const above = toMat(r.left + r.width / 2, dock.getBoundingClientRect().top);
+    const x0 = above.x - (K.w + K.depth * DS) / 2;
+    const y0 = above.y - K.h - 0.8;
     const probe = { kind: k, count: 1 };
     const step = K.w + K.depth * DS + 0.6;
     for (let j = 0; j < 12; j++) {
@@ -663,26 +699,194 @@
 
   dock.querySelectorAll('.bin').forEach(bin => { bin.innerHTML = mini(+bin.dataset.kind); });
 
+  // ═══════ VIEW ═══════
+  // Zooming looks at the mat closer or farther; the mat itself and the page never change size.
+  // On screen, a mat point p sits at p * s + (x, y), and every pointer is carried back through that.
+  const ZMIN = 0.5, ZMAX = 3;
+  const view = { s: 1, x: 0, y: 0 };
+  const toMat = (cx, cy) => ({ x: (cx - view.x) / view.s / U, y: (cy - view.y) / view.s / U });
+
+  // Zoomed in, the mat always fills the view; zoomed out, it never leaves it.
+  function clampView() {
+    const fit = (o, size) => {
+      const m = size * view.s;
+      return m >= size ? Math.min(0, Math.max(size - m, o)) : Math.max(0, Math.min(size - m, o));
+    };
+    view.x = fit(view.x, innerWidth);
+    view.y = fit(view.y, dock.getBoundingClientRect().top);
+  }
+
+  function applyView() {
+    clampView();
+    const tf = `translate(${r2(view.x)} ${r2(view.y)}) scale(${view.s})`;
+    layer.setAttribute('transform', tf);
+    carry.setAttribute('transform', tf);
+    // close up, resting pieces stop at the cabinet so the bins stay in sight and in reach
+    matClipRect.setAttribute('width', innerWidth);
+    matClipRect.setAttribute('height', Math.max(0, dock.getBoundingClientRect().top));
+    if (view.s > 1) mat.setAttribute('clip-path', 'url(#matClip)'); else mat.removeAttribute('clip-path');
+    const pct = Math.round(view.s * 100) + '%';
+    zoomReset.textContent = pct;
+    zoomReset.setAttribute('aria-label', `Zoom ${pct}. Reset zoom`);
+    zoomIn.disabled = view.s >= ZMAX;
+    zoomOut.disabled = view.s <= ZMIN;
+    zoomBox.classList.toggle('zoomed', view.s !== 1);
+  }
+
+  // Scale by f, keeping the mat point under (cx, cy) right where it is.
+  function zoomAt(f, cx, cy) {
+    if (drags.size || fingers.size) return; // keep active drag/pinch anchors stable
+    const s = Math.min(ZMAX, Math.max(ZMIN, view.s * f));
+    if (s === view.s) return;
+    view.x = cx - (cx - view.x) * s / view.s;
+    view.y = cy - (cy - view.y) * s / view.s;
+    view.s = Math.abs(s - 1) < 0.02 ? 1 : s;
+    applyView();
+  }
+  const matCenter = () => [innerWidth / 2, dock.getBoundingClientRect().top / 2];
+  function zoomStep(f) {
+    zoomAt(f, ...matCenter());
+    live.textContent = `Zoom ${Math.round(view.s * 100)}%`;
+  }
+  function resetView() {
+    if (drags.size || fingers.size) return;
+    view.s = 1; view.x = 0; view.y = 0;
+    applyView();
+    live.textContent = 'Zoom 100%';
+  }
+  zoomIn.addEventListener('click', () => zoomStep(1.25));
+  zoomOut.addEventListener('click', () => zoomStep(1 / 1.25));
+  zoomReset.addEventListener('click', resetView);
+
+  // Zoom gestures belong to the mat and the blocks on it; the cabinet, the zoom buttons and the footer keep the page's own.
+  const inMat = e => !!e.target.closest('#surface, #board') &&
+    !e.target.closest('a, button') && e.clientY < dock.getBoundingClientRect().top;
+  // the open mat, where a finger pans or pinches instead of grabbing something
+  const onMat = e => inMat(e) && !e.target.closest('.train, a, button');
+
+  // Ctrl/⌘ + wheel, and a trackpad pinch (which arrives as Ctrl + wheel), zoom the mat — not the page.
+  addEventListener('wheel', e => {
+    if (!(e.ctrlKey || e.metaKey) || !inMat(e)) return;
+    e.preventDefault();
+    const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
+    zoomAt(Math.exp(-Math.max(-120, Math.min(120, dy)) * 0.0025), e.clientX, e.clientY);
+  }, { passive: false });
+
+  // Safari's trackpad pinch arrives as gesture events instead.
+  let gestureFrom = 1;
+  addEventListener('gesturestart', e => { if (!inMat(e)) return; e.preventDefault(); gestureFrom = view.s; }, { passive: false });
+  addEventListener('gesturechange', e => {
+    if (!inMat(e)) return;
+    e.preventDefault();
+    // on touch screens the fingers already pinch through pointer events
+    if (fingers.size < 2 && !drags.size) zoomAt(gestureFrom * e.scale / view.s, e.clientX, e.clientY);
+  }, { passive: false });
+  addEventListener('gestureend', e => { if (inMat(e)) e.preventDefault(); }, { passive: false });
+
+  // Fingers (or a mouse) on the open mat: one pans a zoomed view, two pinch.
+  const fingers = new Map();   // pointerId → { x, y }
+  let pinch = null, pan = null;
+
+  function startPinch() {
+    const [a, b] = [...fingers.values()];
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    pan = null;
+    pinch = { d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), s: view.s, mx: (cx - view.x) / view.s, my: (cy - view.y) / view.s };
+  }
+  function startPan() {
+    const [id, f] = [...fingers][0];
+    pinch = null;
+    pan = { id, sx: f.x, sy: f.y, vx: view.x, vy: view.y };
+  }
+
+  // Claim a second touch before a block can start another drag. This also works
+  // when both fingers begin on the same block or on two different blocks.
+  addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch' || !inMat(e)) return;
+    // A bin-origin or mouse drag owns its camera until it ends.
+    if ([...drags.values()].some(s => s.bin !== null || !s.touch)) return;
+    const active = [...drags].filter(([id, s]) => s.touch && s.bin === null);
+    if (!fingers.size && !active.length) return;
+    for (const [id, s] of active) {
+      fingers.set(id, { x: s.cx, y: s.cy });
+      cancelDrag({ pointerId: id });
+      try { $('surface').setPointerCapture(id); } catch (err) {}
+    }
+    fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    lastTap = null;
+    if (fingers.size >= 2) startPinch(); else startPan();
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    try { $('surface').setPointerCapture(e.pointerId); } catch (err) {}
+  }, true);
+
+  addEventListener('pointerdown', e => {
+    if (drags.size || (e.pointerType === 'mouse' && e.button !== 0) || !onMat(e)) return;
+    fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { $('surface').setPointerCapture(e.pointerId); } catch (err) {}
+    if (fingers.size >= 2) startPinch(); else startPan();
+  });
+
+  addEventListener('pointermove', e => {
+    const f = fingers.get(e.pointerId);
+    if (!f) return;
+    f.x = e.clientX; f.y = e.clientY;
+    if (pinch && fingers.size >= 2) {
+      const [a, b] = [...fingers.values()];
+      const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      view.s = Math.min(ZMAX, Math.max(ZMIN, pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d));
+      view.x = cx - pinch.mx * view.s;
+      view.y = cy - pinch.my * view.s;
+      applyView();
+    } else if (pan && pan.id === e.pointerId) {
+      view.x = pan.vx + f.x - pan.sx;
+      view.y = pan.vy + f.y - pan.sy;
+      applyView();
+    }
+  });
+
+  function liftFinger(e) {
+    if (!fingers.delete(e.pointerId)) return;
+    if (pinch && Math.abs(view.s - 1) < 0.04) { view.s = 1; applyView(); }
+    if (fingers.size >= 2) startPinch();
+    else if (fingers.size === 1) startPan();   // the finger left behind carries on panning, without a jump
+    else pinch = pan = null;
+  }
+  addEventListener('pointerup', liftFinger);
+  addEventListener('pointercancel', liftFinger);
+
+  // + / − / 0 zoom from the keyboard, unless a modifier means the browser's own shortcut.
+  addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomStep(1.25); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomStep(1 / 1.25); }
+    else if (e.key === '0') { e.preventDefault(); resetView(); }
+  });
+
   // ═══════ POINTER ═══════
   const drags = new Map();   // pointerId → drag state
   let lastTap = null;
-  const toUnits = e => ({ x: e.clientX / U, y: e.clientY / U });
+  const toUnits = e => toMat(e.clientX, e.clientY);
 
   layer.addEventListener('pointerdown', e => {
     const g = e.target.closest('.train');
     const t = g && trains.get(+g.dataset.id);
     if (!t || t.busy || t.held) return;
     e.preventDefault();
+    // a second finger joining a pinch on the mat is part of the pinch, not a grab
+    if (fingers.size) return;
     layer.appendChild(t.el);
     try { t.el.setPointerCapture(e.pointerId); } catch (err) {}
     const use = e.target.closest('use'), p = toUnits(e);
-    drags.set(e.pointerId, { t, i: use ? +use.dataset.i : 0, sx: p.x, sy: p.y, ox: p.x - t.x, oy: p.y - t.y, moved: false, bin: null });
+    drags.set(e.pointerId, { t, i: use ? +use.dataset.i : 0, sx: p.x, sy: p.y, ox: p.x - t.x, oy: p.y - t.y, moved: false, bin: null,
+      cx: e.clientX, cy: e.clientY, touch: e.pointerType === 'touch' });
   });
 
   dock.addEventListener('pointerdown', e => {
     const bin = e.target.closest('.bin');
     if (!bin) return;
     e.preventDefault();
+    if (fingers.size) return; // finish the camera gesture before taking a new piece
     const k = +bin.dataset.kind, K = KINDS[k], p = toUnits(e);
     const ox = (K.w + K.depth * DS) / 2, oy = K.h / 2;
     const t = addTrain(k, 1, p.x - ox, p.y - oy);
@@ -696,8 +900,9 @@
     const s = drags.get(e.pointerId);
     if (!s) return;
     const p = toUnits(e);
+    s.cx = e.clientX; s.cy = e.clientY;
     if (!s.moved) {
-      if (Math.hypot(p.x - s.sx, p.y - s.sy) * U < 6) return;
+      if (Math.hypot(p.x - s.sx, p.y - s.sy) * U * view.s < 6) return;
       s.moved = true;
       // grabbing the end piece of a joined run pulls just that piece off
       if (s.bin === null && s.t.count > 1 && s.i === s.t.count - 1) {
@@ -712,6 +917,7 @@
         changed();
       }
       lift(s.t, true);
+      try { s.t.el.setPointerCapture(e.pointerId); } catch (err) {}
     }
     s.t.x = p.x - s.ox;
     s.t.y = p.y - s.oy;
@@ -738,7 +944,21 @@
     else lastTap = { id: t.id, time: now };
   }
   addEventListener('pointerup', endDrag);
-  addEventListener('pointercancel', endDrag);
+  // Cancellation is not a drop or a tap: never trade, snap, or delete a
+  // pre-existing piece. An unfinished bin gesture has no committed piece.
+  function cancelDrag(e) {
+    const s = drags.get(e.pointerId);
+    if (!s) return;
+    drags.delete(e.pointerId);
+    lastTap = null;
+    const t = s.t;
+    lift(t, false);
+    if (s.bin !== null) { trains.delete(t.id); t.el.remove(); changed(); return; }
+    const c = clampXY(t, t.x, t.y);
+    t.x = c.x; t.y = c.y;
+    place(t);
+  }
+  addEventListener('pointercancel', cancelDrag);
 
   // ═══════ KEYBOARD ═══════
   dock.addEventListener('keydown', e => {
@@ -813,14 +1033,17 @@
         t.x = c.x; t.y = c.y;
         place(t);
       }
+      applyView();
     });
   });
   addEventListener('contextmenu', e => e.preventDefault());
 
   setU();
+  applyView();
   setOne(0);
 })();
 </script>
 <script src="../../math-things-home.js"></script>
 </body>
 </html>
+
