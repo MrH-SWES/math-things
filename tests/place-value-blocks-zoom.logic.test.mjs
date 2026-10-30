@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-const html=readFileSync(new URL('../apps/place-value-blocks-v2/index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../apps/place-value-blocks/index.html',import.meta.url),'utf8');
 const actual=html.slice(html.indexOf('  // ═══════ VIEW ═══════'),html.indexOf('  // ═══════ KEYBOARD ═══════'));
 assert.ok(actual.includes('function cancelDrag')&&actual.includes('function zoomAt'),'production sections found');
 function fixture(){
