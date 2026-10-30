@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Math Things. | Math, in your hands.</title>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
@@ -18,6 +18,7 @@
       --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
+      /* Teaching Table reads each card's --card-color; the menu itself colours cards by domain */
       --millions:          #FF00FF;
       --hundred-thousands: #6B3FA0;
       --ten-thousands:     #FF7F00;
@@ -28,11 +29,11 @@
       --tenths:            #64D2FF;
       --hundredths:        #FF9F0A;
       --thousandths:       #7B00FF;
+
+      --head-h: 132px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { scroll-behavior: smooth; }
 
     body {
       font-family: 'Lexend', sans-serif;
@@ -44,402 +45,290 @@
 
     /* ── HEADER ── */
     header {
-      padding: 48px 40px 32px;
-      max-width: 1200px;
+      max-width: 1440px;
       margin: 0 auto;
-    }
-
-    .brand {
-      font-weight: 900;
-      font-size: 2rem;
-      letter-spacing: -0.04em;
-      color: var(--text-main);
-    }
-
-    .brand span {
-      color: var(--text-gray);
-      font-weight: 400;
-    }
-
-    .tagline {
-      margin-top: 6px;
-      font-size: 0.9rem;
-      color: var(--text-light);
-      font-weight: 400;
-      letter-spacing: 0.02em;
-    }
-
-    /* ── SECTION HEADING ── */
-    .section-heading {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 40px 16px;
-    }
-
-    .section-heading h2 {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-light);
-    }
-
-    /* ── APP GRID ── */
-    .app-grid {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 40px 80px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      padding: 40px 32px 24px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
       gap: 16px;
+      flex-wrap: wrap;
     }
+    .brand { font-weight: 900; font-size: 2rem; letter-spacing: -0.04em; color: var(--text-main); }
+    .brand span { color: var(--text-gray); font-weight: 400; }
+    .tagline { margin-top: 6px; font-size: 0.9rem; color: var(--text-light); letter-spacing: 0.02em; }
+    .table-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 14px;
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-soft);
+      color: var(--text-main); text-decoration: none; font-weight: 700; font-size: 0.9rem;
+      transition: transform 0.25s var(--spring), box-shadow 0.25s var(--ease);
+    }
+    .table-link:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .table-link:focus-visible, .app-card:focus-visible, .more-link:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+
+    /* ── MAP: domains across the top, grades down the side ──
+       The markup runs domain by domain (each heading, then its apps in teaching order), which is the
+       order Teaching Table reads it in; the grid places each cell under its domain and beside its grade. */
+    .map-wrap { max-width: 1440px; margin: 0 auto; padding: 0 32px 56px; }
+    .map {
+      display: grid;
+      grid-template-columns: 56px repeat(6, minmax(140px, 1fr));
+      grid-template-rows: auto repeat(var(--rows), auto);
+      column-gap: 12px;
+    }
+    .domain { display: contents; }
+    .section-heading {
+      grid-row: 1; grid-column: var(--col);
+      position: sticky; top: 0; z-index: 3;
+      background: var(--bg);
+      padding: 16px 2px 12px;
+      border-bottom: 3px solid var(--dom);
+    }
+    /* the header row's corner: a clear strip across the top whose label stays at the left edge */
+    .corner { grid-row: 1; grid-column: 1 / -1; position: sticky; top: 0; z-index: 4; pointer-events: none; }
+    .corner span {
+      position: sticky; left: 0;
+      display: flex; align-items: flex-end; width: 56px; height: 100%;
+      padding: 16px 2px 12px; background: var(--bg);
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-light);
+    }
+    .section-heading h2 { font-size: 0.82rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.25; color: var(--text-main); }
+    .section-heading p { margin-top: 3px; font-size: 0.68rem; color: var(--text-gray); line-height: 1.3; }
+    .band {
+      grid-column: 1 / -1;
+      border-top: 1px solid rgba(0,0,0,0.07);
+      min-height: 64px;
+      background: var(--bg);
+    }
+    .band.alt { background: #FAFAFB; }
+    /* the grade stays at the left edge, over anything that scrolls beneath it */
+    .grade {
+      position: sticky; left: 0; z-index: 2;
+      display: block; width: 56px; height: 100%; padding: 14px 0 0 2px;
+      background: inherit;
+      font-size: 1.15rem; font-weight: 900; letter-spacing: -0.03em; color: var(--text-gray);
+    }
+    .cell { grid-column: var(--col); display: flex; flex-direction: column; gap: 8px; padding: 12px 0; position: relative; z-index: 1; }
 
     /* ── APP CARD ── */
     .app-card {
       display: block;
       background: var(--surface);
-      border-radius: 20px;
-      padding: 24px 20px 20px;
+      border-radius: 14px;
+      padding: 12px 12px 12px 14px;
       text-decoration: none;
       color: inherit;
       box-shadow: var(--shadow-soft);
       border: 1px solid var(--border);
+      border-left: 4px solid var(--dom);
       transition: transform 0.25s var(--spring), box-shadow 0.25s var(--ease);
-      position: relative;
-      overflow: hidden;
     }
-
-    .app-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--card-color, var(--text-light));
-      border-radius: 20px 20px 0 0;
-    }
-
-    .app-card:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .app-card:active {
-      transform: translateY(0px) scale(0.98);
-    }
-
-    .app-family {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--card-color, var(--text-light));
-      margin-bottom: 8px;
-    }
-
-    .app-name {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-main);
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-    }
+    .app-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .app-card:active { transform: scale(0.98); }
+    .app-name { display: block; font-size: 0.92rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
 
     /* ── FOOTER ── */
     footer {
-      text-align: center;
-      padding: 24px;
-      font-size: 0.75rem;
-      color: var(--text-light);
-      font-weight: 400;
+      max-width: 1440px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 20px 32px 32px;
+      font-size: 0.75rem; color: var(--text-light);
       border-top: 1px solid var(--border);
     }
+    .more-link { color: var(--text-gray); font-weight: 700; text-decoration: none; }
+    .more-link:hover { color: var(--text-main); }
 
-    /* ── RESPONSIVE ── */
-    @media (max-width: 600px) {
-      header { padding: 32px 20px 24px; }
-      .section-heading { padding: 0 20px 12px; }
-      .app-grid { padding: 0 20px 60px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    /* On narrower screens the map scrolls inside its own window, so the domains and grades stay in view. */
+    @media (max-width: 1000px) {
+      header { padding: 28px 16px 16px; }
       .brand { font-size: 1.5rem; }
+      .map-wrap { padding: 0; overflow: auto; height: calc(100dvh - var(--head-h)); overscroll-behavior: contain; }
+      .map { grid-template-columns: 64px repeat(6, minmax(140px, 1fr)); padding-right: 16px; }
+      .corner span, .grade { width: 64px; padding-left: 16px; }
+      footer { padding: 16px; }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand">Math Things.<span> | Math, in your hands.</span></div>
-    <div class="tagline">Digital manipulatives for K–5 classrooms.</div>
+    <div>
+      <div class="brand">Math Things.<span> | Math, in your hands.</span></div>
+      <div class="tagline">Digital manipulatives, by domain, in the order they come up in class.</div>
+    </div>
+    <a class="table-link" href="apps/teaching-table/">Teaching Table</a>
   </header>
 
-  <!-- New Classroom Manipulatives: recovered from Claude tool-only-v2 -->
-  <div class="section-heading"><h2>New Classroom Manipulatives</h2></div>
-  <div class="app-grid">
-    <a class="app-card" href="apps/place-value-blocks-v2/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Core</div><div class="app-name">Place Value Blocks v2</div>
-    </a>
-    <a class="app-card" href="apps/rounding-blocks/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Core</div><div class="app-name">Rounding Blocks</div>
-    </a>
-    <a class="app-card" href="apps/counters-and-cups/" style="--card-color: var(--ones);">
-      <div class="app-family">Core</div><div class="app-name">Counters &amp; Cups</div>
-    </a>
-    <a class="app-card" href="apps/protractor/" style="--card-color: var(--tens);">
-      <div class="app-family">Geometry</div><div class="app-name">Protractor</div>
-    </a>
-    <a class="app-card" href="apps/decimal-grid/" style="--card-color: var(--tenths);">
-      <div class="app-family">Core</div><div class="app-name">Decimal Grid</div>
-    </a>
-    <a class="app-card" href="apps/money/" style="--card-color: var(--thousands);">
-      <div class="app-family">Core</div><div class="app-name">Money</div>
-    </a>
-    <a class="app-card" href="apps/geoboard/" style="--card-color: var(--ten-thousands);">
-      <div class="app-family">Geometry</div><div class="app-name">Geoboard</div>
-    </a>
-    <a class="app-card" href="apps/pattern-blocks/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Geometry</div><div class="app-name">Pattern Blocks</div>
-    </a>
-    <a class="app-card" href="apps/hundred-chart/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Core</div><div class="app-name">Hundred Chart</div>
-    </a>
-    <a class="app-card" href="apps/symmetry-fold/" style="--card-color: var(--tens);">
-      <div class="app-family">Geometry</div><div class="app-name">Symmetry Fold</div>
-    </a>
-    <a class="app-card" href="apps/pan-balance/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Measurement</div><div class="app-name">Pan Balance</div>
-    </a>
-    <a class="app-card" href="apps/liquid-volume/" style="--card-color: var(--tenths);">
-      <div class="app-family">Measurement</div><div class="app-name">Liquid Volume</div>
-    </a>
-    <a class="app-card" href="apps/area-model/" style="--card-color: var(--tenths);">
-      <div class="app-family">Bridge</div><div class="app-name">Area Model</div>
-    </a>
-    <a class="app-card" href="apps/line-plot/" style="--card-color: var(--ones);">
-      <div class="app-family">Measurement</div><div class="app-name">Line Plot</div>
-    </a>
-    <a class="app-card" href="apps/coordinate-grid/" style="--card-color: var(--ones);">
-      <div class="app-family">Geometry</div><div class="app-name">Coordinate Grid</div>
-    </a>
-    <a class="app-card" href="apps/graph-builder/" style="--card-color: var(--tens);">
-      <div class="app-family">Measurement</div><div class="app-name">Graph Builder</div>
-    </a>
-    <a class="app-card" href="apps/facts-table/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Core</div><div class="app-name">Facts Table</div>
-    </a>
-    <a class="app-card" href="apps/bar-model/" style="--card-color: var(--tens);">
-      <div class="app-family">Bridge</div><div class="app-name">Bar Model</div>
-    </a>
-    <a class="app-card" href="apps/spinner-dice/" style="--card-color: var(--ones);">
-      <div class="app-family">Core</div><div class="app-name">Spinner &amp; Dice</div>
-    </a>
-    <a class="app-card" href="apps/solids/" style="--card-color: var(--thousands);">
-      <div class="app-family">Geometry</div><div class="app-name">Solids</div>
-    </a>
-    <a class="app-card" href="apps/algebra-tiles/" style="--card-color: var(--thousands);">
-      <div class="app-family">Bridge</div><div class="app-name">Algebra Tiles</div>
-    </a>
-    <a class="app-card" href="apps/double-number-line/" style="--card-color: var(--tens);">
-      <div class="app-family">Bridge</div><div class="app-name">Double Number Line</div>
-    </a>
-    <a class="app-card" href="apps/nets/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Geometry</div><div class="app-name">Nets</div>
-    </a>
-    <a class="app-card" href="apps/inequalities/" style="--card-color: var(--tens);">
-      <div class="app-family">Bridge</div><div class="app-name">Inequalities</div>
-    </a>
-    <a class="app-card" href="apps/chance-lab/" style="--card-color: var(--ones);">
-      <div class="app-family">Concept</div><div class="app-name">Chance Lab</div>
-    </a>
-    <a class="app-card" href="apps/circles/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Geometry</div><div class="app-name">Circles</div>
-    </a>
-    <a class="app-card" href="apps/crossing-lines/" style="--card-color: var(--tens);">
-      <div class="app-family">Geometry</div><div class="app-name">Crossing Lines</div>
-    </a>
-    <a class="app-card" href="apps/slicing-solids/" style="--card-color: var(--ones);">
-      <div class="app-family">Geometry</div><div class="app-name">Slicing Solids</div>
-    </a>
-    <a class="app-card" href="apps/puzzle-cube/" style="--card-color: var(--thousands);">
-      <div class="app-family">Geometry</div><div class="app-name">Puzzle Cube</div>
-    </a>
+  <main class="map-wrap" aria-label="Math Things by domain and grade">
+  <!-- Each domain is a heading followed by its apps, grade by grade, in the order lessons reach them.
+       To move an app, move its <a> line into another cell (style="grid-row" is the grade row: 2 = K, 3 = grade 1, …).
+       Teaching Table reads this page: v3 shelves apps under each <h2>; the original table groups them by the hidden
+       .app-family label (Core, Concept, Bridge, Algorithm, Exploration). Each card's --card-color tints its button there. -->
+  <div class="map" style="--rows: 8">
+    <div class="corner" aria-hidden="true"><span>Grade</span></div>
+    <div class="band" style="grid-row: 2"><span class="grade">K</span></div>
+    <div class="band alt" style="grid-row: 3"><span class="grade">1</span></div>
+    <div class="band" style="grid-row: 4"><span class="grade">2</span></div>
+    <div class="band alt" style="grid-row: 5"><span class="grade">3</span></div>
+    <div class="band" style="grid-row: 6"><span class="grade">4</span></div>
+    <div class="band alt" style="grid-row: 7"><span class="grade">5</span></div>
+    <div class="band" style="grid-row: 8"><span class="grade">6</span></div>
+    <div class="band alt" style="grid-row: 9"><span class="grade">7</span></div>
+
+    <section class="domain" style="--col: 2; --dom: #FF9F0A;" aria-label="Counting &amp; Cardinality">
+      <div class="section-heading"><h2>Counting &amp; Cardinality</h2></div>
+      <div class="cell" style="grid-row: 2" aria-label="Grade K">
+        <a class="app-card" href="apps/cardinality-table/" style="--card-color: var(--ones);"><span class="app-name">Cardinality Table</span><span class="app-family" hidden>Concept</span></a>
+        <a class="app-card" href="apps/ten-frame/" style="--card-color: var(--ones);"><span class="app-name">Ten Frame</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/spinner-dice/" style="--card-color: var(--ones);"><span class="app-name">Spinner &amp; Dice</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/rekenrek/" style="--card-color: var(--tens);"><span class="app-name">Rekenrek</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/hundred-chart/" style="--card-color: var(--hundredths);"><span class="app-name">Hundred Chart</span><span class="app-family" hidden>Core</span></a>
+      </div>
+    </section>
+
+    <section class="domain" style="--col: 3; --dom: #FF375F;" aria-label="Operations &amp; Algebraic Thinking">
+      <div class="section-heading"><h2>Operations &amp; Algebraic Thinking</h2><p>then Expressions &amp; Equations</p></div>
+      <div class="cell" style="grid-row: 2" aria-label="Grade K">
+        <a class="app-card" href="apps/number-bond/" style="--card-color: var(--thousands);"><span class="app-name">Number Bond</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 3" aria-label="Grade 1">
+        <a class="app-card" href="apps/frog-number-line/" style="--card-color: var(--thousands);"><span class="app-name">Frog Number Line</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/bar-model/" style="--card-color: var(--tens);"><span class="app-name">Bar Model</span><span class="app-family" hidden>Bridge</span></a>
+        <a class="app-card" href="apps/balance-scale/" style="--card-color: var(--tens);"><span class="app-name">Balance Scale</span><span class="app-family" hidden>Bridge</span></a>
+        <a class="app-card" href="apps/facts-table/" style="--card-color: var(--hundreds);"><span class="app-name">Facts Table</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 4" aria-label="Grade 2">
+        <a class="app-card" href="apps/pair-sorter/" style="--card-color: var(--ten-thousands);"><span class="app-name">Pair Sorter</span><span class="app-family" hidden>Concept</span></a>
+        <a class="app-card" href="apps/array-builder/" style="--card-color: var(--hundreds);"><span class="app-name">Array Builder</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+      <div class="cell" style="grid-row: 5" aria-label="Grade 3">
+        <a class="app-card" href="apps/counters-and-cups/" style="--card-color: var(--ones);"><span class="app-name">Counters &amp; Cups</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/array-architect/" style="--card-color: var(--ten-thousands);"><span class="app-name">Array Architect</span><span class="app-family" hidden>Bridge</span></a>
+        <a class="app-card" href="apps/division-architect/" style="--card-color: var(--hundredths);"><span class="app-name">Division Architect</span><span class="app-family" hidden>Bridge</span></a>
+        <a class="app-card" href="apps/missing-side-rectangle/" style="--card-color: var(--hundred-thousands);"><span class="app-name">Missing Side Rectangle</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+      <div class="cell" style="grid-row: 6" aria-label="Grade 4">
+        <a class="app-card" href="apps/prime-altar/" style="--card-color: var(--thousandths);"><span class="app-name">Prime Altar</span><span class="app-family" hidden>Concept</span></a>
+      </div>
+      <div class="cell" style="grid-row: 8" aria-label="Grade 6">
+        <a class="app-card" href="apps/algebra-tiles/" style="--card-color: var(--thousands);"><span class="app-name">Algebra Tiles</span><span class="app-family" hidden>Bridge</span></a>
+        <a class="app-card" href="apps/inequalities/" style="--card-color: var(--tens);"><span class="app-name">Inequalities</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+    </section>
+
+    <section class="domain" style="--col: 4; --dom: #0A84FF;" aria-label="Number &amp; Operations in Base Ten">
+      <div class="section-heading"><h2>Number &amp; Operations in Base Ten</h2><p>then The Number System</p></div>
+      <div class="cell" style="grid-row: 3" aria-label="Grade 1">
+        <a class="app-card" href="apps/number-line/" style="--card-color: var(--tenths);"><span class="app-name">Number Line</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/place-value-blocks-v2/" style="--card-color: var(--hundreds);"><span class="app-name">Place Value Blocks v2</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 4" aria-label="Grade 2">
+        <a class="app-card" href="apps/place-value-blocks/" style="--card-color: var(--hundreds);"><span class="app-name">Place Value Blocks</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/place-value-cards/" style="--card-color: var(--ten-thousands);"><span class="app-name">Place Value Cards</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/zooming-number-line/" style="--card-color: var(--hundredths);"><span class="app-name">Zooming Number Line</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 5" aria-label="Grade 3">
+        <a class="app-card" href="apps/rounding-blocks/" style="--card-color: var(--hundreds);"><span class="app-name">Rounding Blocks</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 6" aria-label="Grade 4">
+        <a class="app-card" href="apps/line-up-the-ones/" style="--card-color: var(--ones);"><span class="app-name">Line Up the Ones</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/multiplication-machine/" style="--card-color: var(--thousands);"><span class="app-name">Multiplication Machine</span><span class="app-family" hidden>Algorithm</span></a>
+        <a class="app-card" href="apps/area-excavator/" style="--card-color: var(--thousands);"><span class="app-name">Area Excavator</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+      <div class="cell" style="grid-row: 7" aria-label="Grade 5">
+        <a class="app-card" href="apps/decimal-order/" style="--card-color: var(--tenths);"><span class="app-name">Decimal Order</span><span class="app-family" hidden>Concept</span></a>
+      </div>
+      <div class="cell" style="grid-row: 8" aria-label="Grade 6">
+        <a class="app-card" href="apps/long-division-buddy/" style="--card-color: var(--tens);"><span class="app-name">Long Division Buddy</span><span class="app-family" hidden>Algorithm</span></a>
+      </div>
+    </section>
+
+    <section class="domain" style="--col: 5; --dom: #30D158;" aria-label="Number &amp; Operations — Fractions">
+      <div class="section-heading"><h2>Number &amp; Operations — Fractions</h2><p>then Ratios &amp; Proportional Relationships</p></div>
+      <div class="cell" style="grid-row: 5" aria-label="Grade 3">
+        <a class="app-card" href="apps/fraction-pieces/" style="--card-color: var(--ones);"><span class="app-name">Fraction Pieces</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/fraction-lab/" style="--card-color: var(--thousands);"><span class="app-name">Fraction Lab</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/fraction-number-line/" style="--card-color: var(--hundredths);"><span class="app-name">Fraction &amp; Decimal Number Line</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/lego-fractions/" style="--card-color: var(--ones);"><span class="app-name">Lego Fractions</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+      <div class="cell" style="grid-row: 6" aria-label="Grade 4">
+        <a class="app-card" href="apps/equivalent-fractions/" style="--card-color: var(--tens);"><span class="app-name">Equivalent Fractions</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/decimal-grid/" style="--card-color: var(--tenths);"><span class="app-name">Decimal Grid</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 7" aria-label="Grade 5">
+        <a class="app-card" href="apps/division-machine/" style="--card-color: var(--hundredths);"><span class="app-name">Division Machine</span><span class="app-family" hidden>Algorithm</span></a>
+        <a class="app-card" href="apps/area-model/" style="--card-color: var(--tenths);"><span class="app-name">Area Model</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+      <div class="cell" style="grid-row: 8" aria-label="Grade 6">
+        <a class="app-card" href="apps/double-number-line/" style="--card-color: var(--tens);"><span class="app-name">Double Number Line</span><span class="app-family" hidden>Bridge</span></a>
+      </div>
+    </section>
+
+    <section class="domain" style="--col: 6; --dom: #BF5AF2;" aria-label="Measurement &amp; Data">
+      <div class="section-heading"><h2>Measurement &amp; Data</h2><p>then Statistics &amp; Probability</p></div>
+      <div class="cell" style="grid-row: 2" aria-label="Grade K">
+        <a class="app-card" href="apps/color-sorter/" style="--card-color: var(--thousands);"><span class="app-name">Color Sorter</span><span class="app-family" hidden>Concept</span></a>
+      </div>
+      <div class="cell" style="grid-row: 3" aria-label="Grade 1">
+        <a class="app-card" href="apps/measure-bench/" style="--card-color: var(--ten-thousands);"><span class="app-name">Measure Bench</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/the-dial/" style="--card-color: var(--hundred-thousands);"><span class="app-name">The Dial</span><span class="app-family" hidden>Concept</span></a>
+        <a class="app-card" href="apps/graph-builder/" style="--card-color: var(--tens);"><span class="app-name">Graph Builder</span><span class="app-family" hidden>Measurement</span></a>
+      </div>
+      <div class="cell" style="grid-row: 4" aria-label="Grade 2">
+        <a class="app-card" href="apps/money/" style="--card-color: var(--thousands);"><span class="app-name">Money</span><span class="app-family" hidden>Core</span></a>
+        <a class="app-card" href="apps/line-plot/" style="--card-color: var(--ones);"><span class="app-name">Line Plot</span><span class="app-family" hidden>Measurement</span></a>
+      </div>
+      <div class="cell" style="grid-row: 5" aria-label="Grade 3">
+        <a class="app-card" href="apps/liquid-volume/" style="--card-color: var(--tenths);"><span class="app-name">Liquid Volume</span><span class="app-family" hidden>Measurement</span></a>
+        <a class="app-card" href="apps/pan-balance/" style="--card-color: var(--hundreds);"><span class="app-name">Pan Balance</span><span class="app-family" hidden>Measurement</span></a>
+        <a class="app-card" href="apps/dimensional-builder/" style="--card-color: var(--ones);"><span class="app-name">Dimensional Builder</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 6" aria-label="Grade 4">
+        <a class="app-card" href="apps/protractor/" style="--card-color: var(--tens);"><span class="app-name">Protractor</span><span class="app-family" hidden>Geometry</span></a>
+      </div>
+      <div class="cell" style="grid-row: 7" aria-label="Grade 5">
+        <a class="app-card" href="apps/volume-space/" style="--card-color: var(--thousands);"><span class="app-name">Volume Space</span><span class="app-family" hidden>Core</span></a>
+      </div>
+      <div class="cell" style="grid-row: 9" aria-label="Grade 7">
+        <a class="app-card" href="apps/chance-lab/" style="--card-color: var(--ones);"><span class="app-name">Chance Lab</span><span class="app-family" hidden>Concept</span></a>
+      </div>
+    </section>
+
+    <section class="domain" style="--col: 7; --dom: #5E5CE6;" aria-label="Geometry">
+      <div class="section-heading"><h2>Geometry</h2></div>
+      <div class="cell" style="grid-row: 2" aria-label="Grade K">
+        <a class="app-card" href="apps/solids/" style="--card-color: var(--thousands);"><span class="app-name">Solids</span><span class="app-family" hidden>Geometry</span></a>
+        <a class="app-card" href="apps/pattern-blocks/" style="--card-color: var(--hundreds);"><span class="app-name">Pattern Blocks</span><span class="app-family" hidden>Geometry</span></a>
+        <a class="app-card" href="apps/geoboard/" style="--card-color: var(--ten-thousands);"><span class="app-name">Geoboard</span><span class="app-family" hidden>Geometry</span></a>
+      </div>
+      <div class="cell" style="grid-row: 6" aria-label="Grade 4">
+        <a class="app-card" href="apps/geo-lab/" style="--card-color: var(--hundred-thousands);"><span class="app-name">Geo Lab</span><span class="app-family" hidden>Exploration</span></a>
+        <a class="app-card" href="apps/symmetry-fold/" style="--card-color: var(--tens);"><span class="app-name">Symmetry Fold</span><span class="app-family" hidden>Geometry</span></a>
+      </div>
+      <div class="cell" style="grid-row: 7" aria-label="Grade 5">
+        <a class="app-card" href="apps/coordinate-grid/" style="--card-color: var(--ones);"><span class="app-name">Coordinate Grid</span><span class="app-family" hidden>Geometry</span></a>
+      </div>
+      <div class="cell" style="grid-row: 8" aria-label="Grade 6">
+        <a class="app-card" href="apps/nets/" style="--card-color: var(--hundredths);"><span class="app-name">Nets</span><span class="app-family" hidden>Geometry</span></a>
+      </div>
+      <div class="cell" style="grid-row: 9" aria-label="Grade 7">
+        <a class="app-card" href="apps/circles/" style="--card-color: var(--hundredths);"><span class="app-name">Circles</span><span class="app-family" hidden>Geometry</span></a>
+        <a class="app-card" href="apps/crossing-lines/" style="--card-color: var(--tens);"><span class="app-name">Crossing Lines</span><span class="app-family" hidden>Geometry</span></a>
+        <a class="app-card" href="apps/slicing-solids/" style="--card-color: var(--ones);"><span class="app-name">Slicing Solids</span><span class="app-family" hidden>Geometry</span></a>
+      </div>
+    </section>
   </div>
+  </main>
 
-  <!-- Core Manipulatives -->
-  <div class="section-heading"><h2>Core Manipulatives</h2></div>
-  <div class="app-grid">
-    <a class="app-card" href="apps/ten-frame/" style="--card-color: var(--ones);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Ten Frame</div>
-    </a>
-    <a class="app-card" href="apps/rekenrek/" style="--card-color: var(--tens);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Rekenrek</div>
-    </a>
-    <a class="app-card" href="apps/number-bond/" style="--card-color: var(--thousands);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Number Bond</div>
-    </a>
-    <a class="app-card" href="apps/place-value-blocks/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Place Value Blocks</div>
-    </a>
-    <a class="app-card" href="apps/place-value-cards/" style="--card-color: var(--ten-thousands);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Place Value Cards</div>
-    </a>
-    <a class="app-card" href="apps/line-up-the-ones/" style="--card-color: var(--ones);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Line Up the Ones</div>
-    </a>
-    <a class="app-card" href="apps/number-line/" style="--card-color: var(--tenths);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Number Line</div>
-    </a>
-    <a class="app-card" href="apps/zooming-number-line/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Zooming Number Line</div>
-    </a>
-    <a class="app-card" href="apps/frog-number-line/" style="--card-color: var(--thousands);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Frog Number Line</div>
-    </a>
-    <a class="app-card" href="apps/fraction-number-line/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Fraction &amp; Decimal Number Line</div>
-    </a>
-    <a class="app-card" href="apps/fraction-pieces/" style="--card-color: var(--ones);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Fraction Pieces</div>
-    </a>
-    <a class="app-card" href="apps/fraction-lab/" style="--card-color: var(--thousands);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Fraction Lab</div>
-    </a>
-    <a class="app-card" href="apps/equivalent-fractions/" style="--card-color: var(--tens);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Equivalent Fractions</div>
-    </a>
-    <a class="app-card" href="apps/measure-bench/" style="--card-color: var(--ten-thousands);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Measure Bench</div>
-    </a>
-    <a class="app-card" href="apps/dimensional-builder/" style="--card-color: var(--ones);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Dimensional Builder</div>
-    </a>
-    <a class="app-card" href="apps/volume-space/" style="--card-color: var(--thousands);">
-      <div class="app-family">Core</div>
-      <div class="app-name">Volume Space</div>
-    </a>
-  </div>
-
-  <!-- Concept Machines -->
-  <div class="section-heading"><h2>Concept Machines</h2></div>
-  <div class="app-grid">
-    <a class="app-card" href="apps/rounding-waves/" style="--card-color: var(--tens);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Rounding Waves</div>
-    </a>
-    <a class="app-card" href="apps/prime-altar/" style="--card-color: var(--thousandths);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Prime Altar</div>
-    </a>
-    <a class="app-card" href="apps/the-dial/" style="--card-color: var(--hundred-thousands);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">The Dial</div>
-    </a>
-    <a class="app-card" href="apps/decimal-order/" style="--card-color: var(--tenths);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Decimal Order</div>
-    </a>
-    <a class="app-card" href="apps/cardinality-table/" style="--card-color: var(--ones);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Cardinality Table</div>
-    </a>
-    <a class="app-card" href="apps/color-sorter/" style="--card-color: var(--thousands);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Color Sorter</div>
-    </a>
-    <a class="app-card" href="apps/pair-sorter/" style="--card-color: var(--ten-thousands);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Pair Sorter</div>
-    </a>
-    <a class="app-card" href="apps/walker-ellie/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Concept</div>
-      <div class="app-name">Walker Ellie</div>
-    </a>
-  </div>
-
-  <!-- Bridges -->
-  <div class="section-heading"><h2>Bridges</h2></div>
-  <div class="app-grid">
-    <a class="app-card" href="apps/array-builder/" style="--card-color: var(--hundreds);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Array Builder</div>
-    </a>
-    <a class="app-card" href="apps/array-architect/" style="--card-color: var(--ten-thousands);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Array Architect</div>
-    </a>
-    <a class="app-card" href="apps/division-architect/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Division Architect</div>
-    </a>
-    <a class="app-card" href="apps/area-excavator/" style="--card-color: var(--thousands);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Area Excavator</div>
-    </a>
-    <a class="app-card" href="apps/lego-fractions/" style="--card-color: var(--ones);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Lego Fractions</div>
-    </a>
-    <a class="app-card" href="apps/balance-scale/" style="--card-color: var(--tens);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Balance Scale</div>
-    </a>
-    <a class="app-card" href="apps/missing-side-rectangle/" style="--card-color: var(--hundred-thousands);">
-      <div class="app-family">Bridge</div>
-      <div class="app-name">Missing Side Rectangle</div>
-    </a>
-  </div>
-
-  <!-- Algorithm Machines -->
-  <div class="section-heading"><h2>Algorithm Machines</h2></div>
-  <div class="app-grid">
-    <a class="app-card" href="apps/division-machine/" style="--card-color: var(--hundredths);">
-      <div class="app-family">Algorithm</div>
-      <div class="app-name">Division Machine</div>
-    </a>
-    <a class="app-card" href="apps/long-division-buddy/" style="--card-color: var(--tens);">
-      <div class="app-family">Algorithm</div>
-      <div class="app-name">Long Division Buddy</div>
-    </a>
-    <a class="app-card" href="apps/multiplication-machine/" style="--card-color: var(--thousands);">
-      <div class="app-family">Algorithm</div>
-      <div class="app-name">Multiplication Machine</div>
-    </a>
-  </div>
-
-  <!-- Exploration -->
-  <div class="section-heading"><h2>Exploration</h2></div>
-  <div class="app-grid">
-    <a class="app-card" href="apps/teaching-table/" style="--card-color: var(--millions);">
-      <div class="app-family">Exploration</div>
-      <div class="app-name">Teaching Table</div>
-    </a>
-    <a class="app-card" href="apps/geo-lab/" style="--card-color: var(--hundred-thousands);">
-      <div class="app-family">Exploration</div>
-      <div class="app-name">Geo Lab</div>
-    </a>
-    <a class="app-card" href="apps/euclids-playground/" style="--card-color: var(--thousandths);">
-      <div class="app-family">Exploration</div>
-      <div class="app-name">Euclid's Playground</div>
-    </a>
-    <a class="app-card" href="apps/sentences/" style="--card-color: var(--ten-thousands);">
-      <div class="app-family">Exploration</div>
-      <div class="app-name">Sentences</div>
-    </a>
-  </div>
-
-  <footer>Math Things. | Math, in your hands.</footer>
-
+  <footer>
+    <span>Math Things. | Math, in your hands.</span>
+    <a class="more-link" href="more.html">More Math Things →</a>
+  </footer>
+  <script>
+    // the narrow-screen map window fills what the header leaves
+    const fit = () => document.documentElement.style.setProperty('--head-h', document.querySelector('header').offsetHeight + 'px');
+    addEventListener('resize', fit); fit();
+  </script>
 </body>
 </html>
