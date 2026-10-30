@@ -6,30 +6,35 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- The order inside each column follows the Common Core progression and the i-Ready Classroom Mathematics lesson order as best known, without the books at hand. Move any card that sits in the wrong place, by grade or by lesson. Each is one line in index.html.
-- Try the menu on a real iPad and phone. Testing used headless Chromium at 1440×900, 1280×800, 768×1024 and 390×844.
+- Open the Teaching Table once on the private site to confirm sign-in, books and covers. Their addresses are unchanged (/apps/teaching-table/books/ and /covers/), but the page now sits one folder higher.
 
 Notes:
-- Files changed: index.html (the menu); more.html (new); harness/reviews/LATEST_REVIEW.md.
-- The menu is now a grid. Domains run across the top in Common Core order: Counting & Cardinality, Operations & Algebraic Thinking, Number & Operations in Base Ten, Fractions, Measurement & Data, Geometry. Grades K–7 run down the side.
-  - Each app sits under its domain at the grade where it is first needed, in lesson order within that grade.
-  - Grades 6–7 continue each K–5 strand, and the headings say where it goes: Expressions & Equations, The Number System, Ratios & Proportional Relationships, Statistics & Probability.
-  - There are 61 apps on the grid.
-  - The domain headings and grade labels stay in view while scrolling. On narrow screens the grid scrolls inside its own window.
-- Off the main menu, on a new More page (link at the bottom):
-  - Walker & Ellie, Rounding Waves and Sentences, as asked.
-  - Puzzle Cube (a toy) and Euclid's Playground (a compass-and-straightedge sandbox, high-school level), as the "goofy" ones.
-  - Trig Explorer and Curriculum Hub. Neither was on the menu before; now they are reachable.
-- Teaching Table is a button in the header. The three model-audition experiments stay unlisted, as before.
-- Teaching Table still reads this page, and is unchanged:
-  - v3's shelf now groups apps by domain in the same order as the menu.
-  - The original table still groups by each card's family label, now hidden. Its own built-in list keeps the apps that moved to More.
-- Kept on the grid although whimsical, because the math is real and in the standards: Prime Altar (factors, 4.OA.B.4) and Color Sorter (sorting, K.MD.B.3).
+- Files changed:
+  - apps/teaching-table/: v3 moved up and the old table removed.
+  - apps/teaching-table/v3/index.html: now a redirect.
+  - tests/teaching-table-scan.test.mjs: points at the new path.
+  - index.html and more.html.
+  - harness/reviews/LATEST_REVIEW.md.
+- Teaching Table:
+  - What was v3 is now the Teaching Table, at apps/teaching-table/. Its own title was already "Teaching Table".
+  - The original "i-Ready Table" is removed, along with its support files: accessibility, curriculum, table-v2 and tts-client.
+  - apps/teaching-table/v3/ redirects to the Teaching Table and keeps any query or #fragment, so old bookmarks work.
+  - Saved boards and downloaded books are kept. Both live in browser storage shared across the site, under unchanged names (math-things-teaching-table-v3 and teaching-table-curriculum-v1); the "v3" in the first is internal only.
+  - Paths now relative to the new folder: the home page, the shared home-link script, books/ and covers/.
+- Place Value Blocks:
+  - What was Place Value Blocks v2 is now just "Place Value Blocks" on the menu (Base Ten, grade 1). Its folder is still place-value-blocks-v2, so links keep working.
+  - The original Place Value Blocks (with the decimal change) moves to the More page as "Place Value Blocks (original)".
+- The menu cards no longer carry hidden family labels; only the removed table read them. Teaching Table shelves apps by the domain headings.
+- The menu has 60 apps; More has 8.
+- Checks:
+  - The 15 Teaching Table tests pass at the new path, as they did before the move.
+  - The v3 address redirects with its query and fragment.
+  - The Teaching Table's Math Things shelf lists all 60 apps by domain.
+  - All 62 menu links resolve.
+  - No console errors at 1440, 1280, 768 or 390 wide.
 
 Acceptance Tests:
-- Domains across the top, apps down each column in the order they are introduced. PASS
-- Walker & Ellie, Rounding Waves, Sentences and the other non-curricular apps are off the main menu but reachable on More. PASS
-- Every link on both pages resolves (63 on the menu). PASS
-- Both Teaching Tables parse the new menu: v3 by domain; the original by its old families. PASS
-- No horizontal page scroll and no console errors at any tested size. PASS
+- Teaching Table opens the former v3; the old table is gone; old v3 links still arrive. PASS
+- Place Value Blocks on the menu is the former v2; the original is on More. PASS
+- Teaching Table tests pass (15/15). PASS
 - No frameworks, bundlers, or package managers added. PASS
