@@ -79,7 +79,9 @@
 <script>
 const CC=['#4A2613', '#15322E', '#702A24', '#1A2B3C', '#A52A2A', '#0047AB', '#FFBF00', '#008080', '#CF3476', '#4CBB17', '#FFD700', '#4169E1', '#DC143C', '#64D2FF', '#FF9F0A', '#7B00FF'];
 const NAMES=['Trillions','Hundred-Billions','Ten-Billions','Billions','Hundred-Millions','Ten-Millions','Millions','Hundred-Thousands','Ten-Thousands','Thousands','Hundreds','Tens','Ones','Tenths','Hundredths','Thousandths'];
-const SHAPES=['cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube'];
+// Whole places repeat cube, stick, flat leftward from the one cube. A one breaks the way a hundred flat does,
+// into ten sticks, so below it the pattern restarts from a flat: tenths are sticks, hundredths cubes, thousandths flats.
+const SHAPES=['cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','flat','stick','cube','stick','cube','flat'];
 const DEC=13,ONES=12,NP=16;
 const P=NAMES.map((n,i)=>({name:n,color:CC[i],shape:SHAPES[i],exp:12-i}));
 const U=8,N=10,GAP=0.2,DEP=0.3,ZOOM_MIN=0.01,ZOOM_MAX=100;
@@ -95,7 +97,9 @@ function bp(i,u){return i*u*(1+GAP)}
 function stickLen(u){return bp(N-1,u)+u}
 function fv(v){if(Math.abs(v)>=1)return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,',');if(v===0)return'0';const d=Math.max(1,Math.round(-Math.log10(Math.abs(v))));return String(parseFloat((Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toFixed(d+1)))}
 function addCommas(s){const p=s.split('.');let wf='',w=(p[0]||'0').split('').reverse();for(let i=0;i<w.length;i++){if(i>0&&i%3===0)wf=','+wf;wf=w[i]+wf}return p[1]!==undefined?wf+'.'+p[1]:wf}
-function unitForPlace(pi){const z=U*zoomLvl,sL=stickLen(z),e=P[pi].exp;if(e>=0&&e<=2)return z;if(e>=3&&e<=5)return sL;if(e>=6&&e<=8)return stickLen(sL);if(e>=9&&e<=11)return stickLen(stickLen(sL));if(e===12)return stickLen(stickLen(stickLen(sL)));if(e>=-3&&e<=-1)return z/(stickLen(z)/z);return z}
+function unitForPlace(pi){const z=U*zoomLvl,sL=stickLen(z),e=P[pi].exp;if(e>=0&&e<=2)return z;if(e>=3&&e<=5)return sL;if(e>=6&&e<=8)return stickLen(sL);if(e>=9&&e<=11)return stickLen(stickLen(sL));if(e===12)return stickLen(stickLen(stickLen(sL)));const k=stickLen(z)/z;if(e===-1||e===-2)return z/k;if(e===-3)return z/k/k;return z}
+// A cube made of ten flats of the next place down is drawn as that grid of smaller cubes. The one is not: its tenths are sticks.
+function cubeSubUnit(pi){if(pi>=NP-1||pi===ONES||P[pi+1].shape!=='flat'||(pi>ONES&&!showDecimals))return 0;return unitForPlace(pi+1)}
 function secDims(u,shape){const sL=stickLen(u),d=u*DEP,ds=d*0.6;if(shape==='cube')return{w:u+d,h:sL+d};if(shape==='stick')return{w:sL+d,h:sL+d};return{w:sL+ds*N+d,h:sL+ds*N+d}}
 function getDEC_GAP(){return unitForPlace(ONES)*0.75}
 function colW(pi){const u=unitForPlace(pi),dims=secDims(u,P[pi].shape);return dims.w+Math.max(P[pi].shape==='cube'?u*3:u*0.5,30)}
@@ -209,12 +213,12 @@ function drawPlace(ctx,ox,oy,pi,cW,H,zoom,od){
   const p=P[pi],cnt=(od||digits)[pi],col=p.color,u=unitForPlace(pi);if(u<0.3)return;
   if(cnt===0&&!showZeros&&!isPlaceInNumeral(pi,od))return;
   // Sub-unit: the unit of the next smaller place. Used to draw macro-cubes as grids.
-  const subU=(pi<NP-1&&(pi<ONES||(showDecimals&&pi===ONES)))?unitForPlace(pi+1):u;
+  const subU=cubeSubUnit(pi)||u;
   const step=u*(1+GAP),d=u*DEP,sL=stickLen(u),ds=d*0.6;
   const cx=ox,floor=oy+H-2,cy=floor-sL;
   const headerY=cy-ds*N-d-u*1.5,hsz=u*1.2;
   if(p.shape==='cube'){
-    const isMacro=u>unitForPlace(ONES)||(showDecimals&&pi===ONES); // thousands and above use sub-cube grid; ones too when decimals shown
+    const isMacro=subU<u&&subU>=0.8; // thousands and above, and hundredths, are grids of the place below, once those are big enough to see
     if(isMacro){
       if(u>1){for(let i=N-1;i>=0;i--){const y=cy+bp(i,u),slot=N-1-i;ghostMacroCube(ctx,cx,y,subU);}}
       for(let i=0;i<N;i++){const y=cy+bp(i,u),slot=N-1-i;if(slot<cnt)isoMacroCube(ctx,cx,y,subU,col);}
@@ -323,8 +327,67 @@ function animCubeToFlat(ctx,W,H,floorY,srcPi,dstPi,cnt){
   if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
 }
 
+// ═══════ THE ONE AND ITS TENTHS ═══════
+// The one is the only place the pattern breaks. A one breaks the way a hundred flat does: it becomes a flat of ten
+// tenth sticks, and ten tenths come together as that flat before it settles back into the one cube.
+function oneTenthGeom(floorY){const z=unitForPlace(ONES),t=unitForPlace(DEC);return{z,t,oX:worldX(ONES),tX:worldX(DEC),oCy:floorY/zoomLvl-2-stickLen(z),tCy:floorY/zoomLvl-2-stickLen(t),oC:P[ONES].color,tC:P[DEC].color}}
+function atWorld(ctx,wx,wy){const vcx=document.getElementById('vp').clientWidth/2;ctx.save();ctx.translate(wx*zoomLvl-panX+vcx,wy*zoomLvl);ctx.scale(zoomLvl,zoomLvl)}
+// ten tenth sticks stacked back into depth as a flat (spread 0), or standing side by side (spread 1)
+function drawTenthsFlat(ctx,x,y,col,spread,layers=N,alpha=1,lastAlpha=alpha){
+  const t=unitForPlace(DEC),ds=t*DEP*0.6;
+  for(let la=layers-1;la>=0;la--){const ox=ds*la*(1-spread)+bp(la,t)*spread,oy=-ds*la*(1-spread),a=la===N-1?lastAlpha:alpha;for(let r=N-1;r>=0;r--)iso(ctx,x+ox,y+oy+bp(r,t),t,col,a)}
+}
+// k=0 the one cube; k=1 the one as its flat of tenths. The cube narrows and fades as the flat comes through.
+function drawOneMorph(ctx,x,y,k,col){
+  const z=unitForPlace(ONES),t=unitForPlace(DEC);
+  if(k<1){ctx.save();ctx.globalAlpha=1-k;isoBox(ctx,x,y,z+(t-z)*k,z,col);ctx.restore()}
+  if(k>0)drawTenthsFlat(ctx,x,y,col,0,N,k);
+}
+// ÷10: each one becomes its flat of tenths, the flat shrinks to a single tenth stick, and the stick hops right
+function animOneToTenth(ctx,W,H,floorY,cnt){
+  const g=oneTenthGeom(floorY),DUR=3000;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);
+  for(let b=0;b<cnt;b++){const stg=b*0.025,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt))),oy=g.oCy+bp(N-1-b,g.z);
+    if(ft<0.3){const ep=easeInOut(ft/0.3);atWorld(ctx,g.oX,oy);drawOneMorph(ctx,0,0,ep,lerpColor(g.oC,g.tC,ep));ctx.restore()}
+    else if(ft<0.5){const ep=easeInOut((ft-0.3)/0.2);atWorld(ctx,g.oX,oy);drawTenthsFlat(ctx,0,0,g.tC,0,Math.max(1,N-Math.round((N-1)*ep)));ctx.restore()}
+    else{const ep=easeInOut((ft-0.5)/0.5),ex=g.tX+bp(b,g.t),arc=-Math.sin(ep*Math.PI)*g.z*0.5;atWorld(ctx,g.oX+(ex-g.oX)*ep,oy+(g.tCy-oy)*ep+arc);drawTenthsFlat(ctx,0,0,g.tC,0,1);ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// ×10: each tenth stick hops left onto a one's place, grows into a flat of ten tenths, and settles into a one cube
+function animTenthToOne(ctx,W,H,floorY,cnt){
+  const g=oneTenthGeom(floorY),DUR=3000;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);
+  for(let b=0;b<cnt;b++){const stg=b*0.025,ft=Math.max(0,Math.min(1,(t-stg)/(1-stg*cnt))),sx=g.tX+bp(b,g.t),oy=g.oCy+bp(N-1-b,g.z);
+    if(ft<0.42){const ep=easeInOut(ft/0.42),arc=-Math.sin(ep*Math.PI)*g.z*0.5;atWorld(ctx,sx+(g.oX-sx)*ep,g.tCy+(oy-g.tCy)*ep+arc);drawTenthsFlat(ctx,0,0,g.tC,0,1);ctx.restore()}
+    else if(ft<0.64){const ep=easeOut((ft-0.42)/0.22);atWorld(ctx,g.oX,oy);drawTenthsFlat(ctx,0,0,g.tC,0,Math.min(N,1+Math.round((N-1)*ep)));ctx.restore()}
+    else{const ep=easeInOut((ft-0.64)/0.36);atWorld(ctx,g.oX,oy);drawOneMorph(ctx,0,0,1-ep,lerpColor(g.tC,g.oC,ep));ctx.restore()}}
+  if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// carry: ten tenth sticks close up into a flat, the flat carries over to the ones, and settles into one cube
+function carryTenthsToOne(ctx,W,H,floorY){
+  const g=oneTenthGeom(floorY),landY=g.oCy+bp(N-1-digits[ONES],g.z),DUR=3000;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);
+    if(t<0.28){atWorld(ctx,g.tX,g.tCy);drawTenthsFlat(ctx,0,0,g.tC,1-easeInOut(t/0.28));ctx.restore()}
+    else if(t<0.62){const ep=easeInOut((t-0.28)/0.34),arc=-Math.sin(ep*Math.PI)*g.z*0.6;atWorld(ctx,g.tX+(g.oX-g.tX)*ep,g.tCy+(landY-g.tCy)*ep+arc);drawTenthsFlat(ctx,0,0,g.tC,0);ctx.restore()}
+    else if(t<0.88){const ep=easeInOut((t-0.62)/0.26);atWorld(ctx,g.oX,landY);drawOneMorph(ctx,0,0,1-ep,lerpColor(g.tC,g.oC,ep));ctx.restore()}
+    else{const ep=easeOut((t-0.88)/0.12),bounce=-Math.sin(ep*Math.PI)*g.z*0.15*(1-ep);atWorld(ctx,g.oX,landY+bounce);iso(ctx,0,0,g.z,g.oC);ctx.restore()}
+    if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+// borrow: a one cube becomes its flat of tenths, carries over, and breaks into ten tenth sticks (one is spent)
+function borrowOneToTenths(ctx,W,H,floorY){
+  const g=oneTenthGeom(floorY),cubeY=g.oCy+bp(N-1-digits[ONES],g.z),DUR=3400;
+  return new Promise(res=>{const t0=performance.now();function f(now){const t=Math.min(1,(now-t0)/DUR);ctx.clearRect(0,0,W,H);
+    if(t<0.24){const ep=easeInOut(t/0.24);atWorld(ctx,g.oX,cubeY);drawOneMorph(ctx,0,0,ep,lerpColor(g.oC,g.tC,ep));ctx.restore()}
+    else if(t<0.58){const ep=easeInOut((t-0.24)/0.34),arc=-Math.sin(ep*Math.PI)*g.z*0.6;atWorld(ctx,g.oX+(g.tX-g.oX)*ep,cubeY+(g.tCy-cubeY)*ep+arc);drawTenthsFlat(ctx,0,0,g.tC,0);ctx.restore()}
+    else if(t<0.68){const ep=easeOut((t-0.58)/0.10),bounce=-Math.sin(ep*Math.PI)*g.t*0.35*(1-ep*0.5);atWorld(ctx,g.tX,g.tCy+bounce);drawTenthsFlat(ctx,0,0,g.tC,0);ctx.restore()}
+    else if(t<0.86){atWorld(ctx,g.tX,g.tCy);drawTenthsFlat(ctx,0,0,g.tC,easeInOut((t-0.68)/0.18));ctx.restore()}
+    else{atWorld(ctx,g.tX,g.tCy);drawTenthsFlat(ctx,0,0,g.tC,1,N,1,1-easeOut((t-0.86)/0.14));ctx.restore()}
+    if(t<1)requestAnimationFrame(f);else res()}requestAnimationFrame(f)});
+}
+
 // ═══════ CARRY ANIMATION ═══════
 function animFullColumnCarry(ctx,W,H,floorY,srcPi,dstPi){
+  if(srcPi===DEC&&dstPi===ONES)return carryTenthsToOne(ctx,W,H,floorY);
   const sC=P[srcPi].color,dC=P[dstPi].color;
   const sU=unitForPlace(srcPi),sSL=stickLen(sU);
   const dU=unitForPlace(dstPi),dSL=stickLen(dU);
@@ -384,8 +447,9 @@ function animFullColumnCarry(ctx,W,H,floorY,srcPi,dstPi){
     const landY=dCy+bp(N-1-slot,dU);
     const sDs=sU*DEP*0.6;
     const DUR=2600;
-    // Sub-unit for drawing the macro cube at the destination
-    const dstSubU=(dstPi<NP-1&&(dstPi<ONES||(showDecimals&&dstPi===ONES)))?unitForPlace(dstPi+1):dU;
+    // Sub-unit for drawing the macro cube at the destination; too small to see, it lands as a plain cube
+    const dstSubU=cubeSubUnit(dstPi)||dU;
+    const drawLanded=(col)=>{if(dstSubU<dU&&dstSubU>=0.8)isoMacroCube(ctx,0,0,dstSubU,col);else iso(ctx,0,0,dU,col)};
     return new Promise(res=>{
       const t0=performance.now();
       function f(now){
@@ -410,10 +474,10 @@ function animFullColumnCarry(ctx,W,H,floorY,srcPi,dstPi){
         } else if(t<0.80){
           const ep=easeOut((t-0.58)/0.22),col=lerpColor(sC,dC,ep);
           ctx.save();ctx.translate(dColOriginX*zoomLvl-panX+vcx, landY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
-          isoMacroCube(ctx,0,0,dstSubU,col);ctx.restore();
+          drawLanded(col);ctx.restore();
         } else {
           ctx.save();ctx.translate(dColOriginX*zoomLvl-panX+vcx, landY*zoomLvl);ctx.scale(zoomLvl,zoomLvl);
-          isoMacroCube(ctx,0,0,dstSubU,dC);ctx.restore();
+          drawLanded(dC);ctx.restore();
         }
         if(t<1)requestAnimationFrame(f);else res();
       }
@@ -449,6 +513,7 @@ function animFullColumnCarry(ctx,W,H,floorY,srcPi,dstPi){
 
 // ═══════ BORROW ANIMATION ═══════
 function animFullColumnBorrow(ctx,W,H,floorY,srcPi,dstPi){
+  if(srcPi===ONES&&dstPi===DEC)return borrowOneToTenths(ctx,W,H,floorY);
   const sC=P[srcPi].color,dC=P[dstPi].color;
   const sU=unitForPlace(srcPi),sSL=stickLen(sU);
   const dU=unitForPlace(dstPi),dSL=stickLen(dU);
@@ -584,6 +649,8 @@ function animFullColumnBorrow(ctx,W,H,floorY,srcPi,dstPi){
 }
 
 function animateTransition(ctx,W,H,floorY,srcPi,dstPi,cnt){
+  if(srcPi===ONES&&dstPi===DEC)return animOneToTenth(ctx,W,H,floorY,cnt);
+  if(srcPi===DEC&&dstPi===ONES)return animTenthToOne(ctx,W,H,floorY,cnt);
   const tt=P[srcPi].shape+'→'+P[dstPi].shape;
   switch(tt){
     case 'cube→stick':return animCubeToStick(ctx,W,H,floorY,srcPi,dstPi,cnt);

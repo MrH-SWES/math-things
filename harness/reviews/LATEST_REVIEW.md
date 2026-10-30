@@ -6,28 +6,34 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad and Chromebook; it uses 3D graphics. Testing used software WebGL in headless Chromium at 1280×720, 1024×768, 768×1024 (touch) and 390×844.
+- Try it on a real iPad or Chromebook. Testing used headless Chromium at 1280×720.
 
 Notes:
-- Files changed: apps/puzzle-cube/index.html (new app); index.html (menu card); harness/reviews/LATEST_REVIEW.md.
-- Puzzle Cube (new): a 3 × 3 × 3 twisting puzzle cube that works like the one in your hand, and does nothing else.
-  - Object: twenty-six satin graphite pieces on a hidden core, with glossy enamel tiles in the traditional layout: white opposite yellow, green opposite blue, red opposite orange.
-  - Drag any tile and the layer it belongs to turns with the finger. The direction of the drag picks the layer, so dragging a centre tile turns a middle layer. Let go and it clicks onto the nearest quarter turn; a quick flick carries it on to the next.
-  - Drag the empty mat to turn the whole cube in your hands, as in Slicing Solids.
-  - The mat is endless, like Place Value Blocks V2: the same zoom buttons, pinch, Ctrl/⌘ + scroll and + / − / 0 keys. Two fingers, trackpad scroll or a right-drag slide the view; the cube never leaves the screen.
-  - No scramble, solve, timer or move count. Reloading the page gives a solved cube.
-  - Keyboard (and screen readers) use standard cube notation, named from where you are looking: F B U D L R faces, M E S middle layers, X Y Z or the arrow keys for the whole cube, Shift for the other way. Each turn is announced, for example "The right face turned clockwise."
-  - Named "Puzzle Cube" rather than the trademarked name.
-  - Three.js from the same CDN and version as the other 3D apps.
+- Files changed: apps/place-value-blocks/index.html (the original Place Value Blocks); harness/reviews/LATEST_REVIEW.md.
+- Place Value Blocks (original): decimals now restart the shape pattern at the one.
+  - Whole numbers are unchanged: ones cubes, tens sticks, hundreds flats, thousands cubes, and so on.
+  - A one breaks the way a hundred flat does: into ten sticks. So tenths are sticks, each as tall as a one cube. Hundredths are cubes, ten to a tenth stick. Thousandths are flats, ten to a hundredth cube.
+  - This is the only place the pattern breaks. When a one breaks into tenths, it first turns into a flat of ten tenth sticks:
+    - Borrowing: the flat carries over to the tenths and stands up as ten sticks.
+    - ÷10: the flat shrinks to a single stick.
+  - Going the other way, ten tenths close up into that flat and it settles into the one cube:
+    - Carrying: the ten sticks close into a flat, carry over, and become one cube.
+    - ×10: each tenth stick grows into a flat, then becomes a one cube.
+  - The one is now always drawn as a plain cube. It used to be drawn as ten tenth flats, which no longer exist.
+  - A hundredth cube is drawn as its ten thousandth slices once they are big enough to see, the way a thousand cube shows its hundred flats.
+  - Fixed along the way: a cube landing from a carry of flats chose its inner grid only for whole places. The thousandths → hundredths carry would have drawn a cube ten times too big.
 - Checks:
-  - R U R′ U′ six times, and a 25-move scramble followed by its inverse, return a solved cube identical to the start, pixel for pixel. So do whole-cube turns and their inverses.
-  - Keyed R moves the front's right column up to the top, with yellow coming up from the bottom.
-  - Pushing up on the right face's front column turns the front face counterclockwise. Pulling the top centre toward you (one finger, touch) turns the middle column.
+  - ÷10: 3.4 → 0.34; 4.56 → 0.456.
+  - ×10: 0.34 → 3.4; 0.456 → 4.56.
+  - + a tenth: 2.9 → 3. − a tenth: 3 → 2.9.
+  - + a hundredth: 0.09 → 0.1. − a hundredth: 0.1 → 0.09.
+  - + a thousandth: 0.009 → 0.01. − a thousandth: 0.01 → 0.009.
+  - Mid-animation frames show each one passing through its flat of tenth sticks.
+  - 1,234 and 4,567,890 render pixel-identical to before.
+  - No console errors.
 
 Acceptance Tests:
-- Every layer turns by dragging; quarter turns snap; a flick completes a turn. PASS
-- The whole cube turns by dragging the mat. PASS
-- Zoom (buttons, Ctrl + wheel, pinch), pan and reset. PASS
-- Turns are exact: the sequences above return to solved. PASS
-- Fits phone, tablet, desktop and projector; no console errors. PASS
+- Tenths are sticks, hundredths cubes, thousandths flats, each a tenth of the place above. PASS
+- A one breaks like a hundred flat (borrow and ÷10), and ten tenths make a one through that flat (carry and ×10). PASS
+- Tens, hundreds, thousands and up behave exactly as before. PASS
 - No frameworks, bundlers, or package managers added. PASS
