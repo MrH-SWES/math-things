@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Things. | More</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #F5F5F7;
+      --surface: #FFFFFF;
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --border: rgba(0,0,0,0.06);
+      --shadow-soft: 0 2px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-hover: 0 8px 30px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lexend', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    header, main, footer { max-width: 1100px; margin: 0 auto; }
+    header { padding: 40px 32px 24px; }
+    .brand { font-weight: 900; font-size: 2rem; letter-spacing: -0.04em; color: var(--text-main); text-decoration: none; }
+    .brand span { color: var(--text-gray); font-weight: 400; }
+    .tagline { margin-top: 6px; font-size: 0.9rem; color: var(--text-light); letter-spacing: 0.02em; }
+    main { padding: 0 32px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .app-card {
+      display: block; background: var(--surface); border-radius: 16px; padding: 18px 16px;
+      text-decoration: none; color: inherit; box-shadow: var(--shadow-soft); border: 1px solid var(--border);
+      transition: transform 0.25s var(--spring), box-shadow 0.25s var(--ease);
+    }
+    .app-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .app-card:focus-visible, .back:focus-visible { outline: 3px solid #007AFF; outline-offset: 3px; }
+    .app-name { display: block; font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+    .app-note { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--text-gray); line-height: 1.35; }
+    footer { padding: 20px 32px 32px; font-size: 0.75rem; color: var(--text-light); border-top: 1px solid var(--border); }
+    .back { color: var(--text-gray); font-weight: 700; text-decoration: none; }
+    .back:hover { color: var(--text-main); }
+    @media (max-width: 600px) { header { padding: 28px 16px 16px; } main { padding: 0 16px 48px; } footer { padding: 16px; } .brand { font-size: 1.5rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="./">Math Things.<span> | More</span></a>
+    <div class="tagline">Off the main menu, still here.</div>
+  </header>
+  <main aria-label="More Math Things">
+    <a class="app-card" href="apps/walker-ellie/"><span class="app-name">Walker &amp; Ellie</span><span class="app-note">Coordinates as a walk down the street and a ride in the elevator.</span></a>
+    <a class="app-card" href="apps/rounding-waves/"><span class="app-name">Rounding Waves</span><span class="app-note">A ball drops on a wave and rolls to the nearest multiple.</span></a>
+    <a class="app-card" href="apps/puzzle-cube/"><span class="app-name">Puzzle Cube</span><span class="app-note">A 3 × 3 × 3 twisting cube.</span></a>
+    <a class="app-card" href="apps/euclids-playground/"><span class="app-name">Euclid's Playground</span><span class="app-note">Compass and straightedge constructions.</span></a>
+    <a class="app-card" href="apps/trig-explorer/"><span class="app-name">Trig Explorer</span><span class="app-note">The unit circle and special right triangles.</span></a>
+    <a class="app-card" href="apps/sentences/"><span class="app-name">Sentences</span><span class="app-note">Build-A-Sentence: nouns, verbs and tenses.</span></a>
+    <a class="app-card" href="apps/curriculum-hub/"><span class="app-name">Curriculum Hub</span><span class="app-note">An earlier map of tools against the K–5 standards.</span></a>
+  </main>
+  <footer><a class="back" href="./">← All Math Things</a></footer>
+</body>
+</html>

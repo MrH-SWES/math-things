@@ -6,34 +6,30 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Try it on a real iPad or Chromebook. Testing used headless Chromium at 1280×720.
+- The order inside each column follows the Common Core progression and the i-Ready Classroom Mathematics lesson order as best known, without the books at hand. Move any card that sits in the wrong place, by grade or by lesson. Each is one line in index.html.
+- Try the menu on a real iPad and phone. Testing used headless Chromium at 1440×900, 1280×800, 768×1024 and 390×844.
 
 Notes:
-- Files changed: apps/place-value-blocks/index.html (the original Place Value Blocks); harness/reviews/LATEST_REVIEW.md.
-- Place Value Blocks (original): decimals now restart the shape pattern at the one.
-  - Whole numbers are unchanged: ones cubes, tens sticks, hundreds flats, thousands cubes, and so on.
-  - A one breaks the way a hundred flat does: into ten sticks. So tenths are sticks, each as tall as a one cube. Hundredths are cubes, ten to a tenth stick. Thousandths are flats, ten to a hundredth cube.
-  - This is the only place the pattern breaks. When a one breaks into tenths, it first turns into a flat of ten tenth sticks:
-    - Borrowing: the flat carries over to the tenths and stands up as ten sticks.
-    - ÷10: the flat shrinks to a single stick.
-  - Going the other way, ten tenths close up into that flat and it settles into the one cube:
-    - Carrying: the ten sticks close into a flat, carry over, and become one cube.
-    - ×10: each tenth stick grows into a flat, then becomes a one cube.
-  - The one is now always drawn as a plain cube. It used to be drawn as ten tenth flats, which no longer exist.
-  - A hundredth cube is drawn as its ten thousandth slices once they are big enough to see, the way a thousand cube shows its hundred flats.
-  - Fixed along the way: a cube landing from a carry of flats chose its inner grid only for whole places. The thousandths → hundredths carry would have drawn a cube ten times too big.
-- Checks:
-  - ÷10: 3.4 → 0.34; 4.56 → 0.456.
-  - ×10: 0.34 → 3.4; 0.456 → 4.56.
-  - + a tenth: 2.9 → 3. − a tenth: 3 → 2.9.
-  - + a hundredth: 0.09 → 0.1. − a hundredth: 0.1 → 0.09.
-  - + a thousandth: 0.009 → 0.01. − a thousandth: 0.01 → 0.009.
-  - Mid-animation frames show each one passing through its flat of tenth sticks.
-  - 1,234 and 4,567,890 render pixel-identical to before.
-  - No console errors.
+- Files changed: index.html (the menu); more.html (new); harness/reviews/LATEST_REVIEW.md.
+- The menu is now a grid. Domains run across the top in Common Core order: Counting & Cardinality, Operations & Algebraic Thinking, Number & Operations in Base Ten, Fractions, Measurement & Data, Geometry. Grades K–7 run down the side.
+  - Each app sits under its domain at the grade where it is first needed, in lesson order within that grade.
+  - Grades 6–7 continue each K–5 strand, and the headings say where it goes: Expressions & Equations, The Number System, Ratios & Proportional Relationships, Statistics & Probability.
+  - There are 61 apps on the grid.
+  - The domain headings and grade labels stay in view while scrolling. On narrow screens the grid scrolls inside its own window.
+- Off the main menu, on a new More page (link at the bottom):
+  - Walker & Ellie, Rounding Waves and Sentences, as asked.
+  - Puzzle Cube (a toy) and Euclid's Playground (a compass-and-straightedge sandbox, high-school level), as the "goofy" ones.
+  - Trig Explorer and Curriculum Hub. Neither was on the menu before; now they are reachable.
+- Teaching Table is a button in the header. The three model-audition experiments stay unlisted, as before.
+- Teaching Table still reads this page, and is unchanged:
+  - v3's shelf now groups apps by domain in the same order as the menu.
+  - The original table still groups by each card's family label, now hidden. Its own built-in list keeps the apps that moved to More.
+- Kept on the grid although whimsical, because the math is real and in the standards: Prime Altar (factors, 4.OA.B.4) and Color Sorter (sorting, K.MD.B.3).
 
 Acceptance Tests:
-- Tenths are sticks, hundredths cubes, thousandths flats, each a tenth of the place above. PASS
-- A one breaks like a hundred flat (borrow and ÷10), and ten tenths make a one through that flat (carry and ×10). PASS
-- Tens, hundreds, thousands and up behave exactly as before. PASS
+- Domains across the top, apps down each column in the order they are introduced. PASS
+- Walker & Ellie, Rounding Waves, Sentences and the other non-curricular apps are off the main menu but reachable on More. PASS
+- Every link on both pages resolves (63 on the menu). PASS
+- Both Teaching Tables parse the new menu: v3 by domain; the original by its old families. PASS
+- No horizontal page scroll and no console errors at any tested size. PASS
 - No frameworks, bundlers, or package managers added. PASS
