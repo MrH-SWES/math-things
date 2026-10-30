@@ -1,98 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Math Things. | Rounding Blocks</title>
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<style>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Math Things. | Rounding Blocks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
 
-  :root {
-    --ink:#1D1D1F; --quiet:#86868B; --ones:#DC143C; --tens:#4169E1;
-    --hundreds:#FFD700; --thousands:#4CBB17;
-    --ten-thousands:#FF7F00; --hundred-thousands:#6B3FA0;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;min-height:100%;height:100%}
-  body{font-family:Lexend,system-ui,-apple-system,sans-serif;color:var(--ink);
-    background:radial-gradient(ellipse at 50% 38%,#FBF9F6 0%,#F2EFEA 58%,#E8E4DD 100%);
-    display:flex;flex-direction:column;overflow:hidden}
-  button,input,select{font:inherit}
-  .bar{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,30px);
-    flex-wrap:wrap;padding:13px 20px;background:rgba(255,255,255,.78);
-    border-bottom:1px solid #ddd9d1;z-index:2;min-height:78px}
-  .brand{font-size:17px;font-weight:900;letter-spacing:-.045em;white-space:nowrap;margin-right:auto}
-  .controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
-  .field{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#6b6b70;font-weight:700;letter-spacing:.02em}
-  .field input,.field select{border:1px solid #c7c5c0;border-radius:12px;padding:9px 12px;background:#fff;
-    font-size:17px;color:var(--ink);font-weight:700;min-height:44px}
-  .field input{width:143px}
-  .field select{width:167px}
-  .field input:focus-visible,.field select:focus-visible,button:focus-visible{outline:3px solid #007AFF;outline-offset:3px}
-  .reset{align-self:end;border:1px solid #c7c5c0;border-radius:12px;background:#fff;color:#3d3d41;
-    min-height:44px;padding:8px 16px;cursor:pointer;font-size:14px;font-weight:700}
-  main{flex:1;min-height:0;display:flex;flex-direction:column}
-  .frame-stage{position:relative;flex:0 0 clamp(236px,43vh,368px);width:100%;border-bottom:1px solid rgba(60,40,20,.08)}
-  .frame-holder{position:absolute;top:9px;left:50%;transform:translateX(-50%);
-    display:flex;flex-direction:column;align-items:center;gap:7px}
-  .frame-caption{font-weight:700;font-size:12px;letter-spacing:.02em;color:#66656a;white-space:nowrap}
-  #roundFrame{display:block;width:clamp(206px,36vh,318px);height:clamp(206px,36vh,318px);
-    filter:drop-shadow(0 5px 9px rgba(85,74,58,.14));touch-action:none}
-  .places-viewport{flex:1;min-height:0;overflow:auto hidden;padding:14px 18px 20px}
-  .places{display:flex;justify-content:center;gap:clamp(8px,1.2vw,18px);min-width:max-content;margin:0 auto;min-height:100%}
-  .place{width:clamp(110px,13.5vw,158px);min-height:160px;border-radius:16px;
-    padding:7px 8px;text-align:center;position:relative}
-  .place-label{font-size:12px;font-weight:800;color:#68676a;white-space:nowrap;letter-spacing:-.02em;
-    padding-bottom:11px}
-  .place.below .place-label{color:#252528}
-  .block-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;justify-items:center}
-  .block{display:flex;align-items:center;justify-content:center;
-    width:100%;height:72px;padding:0;border:0;background:transparent;
-    border-radius:9px;position:relative;touch-action:none}
-  .block svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(1px 3px 3px rgba(60,40,20,.3));pointer-events:none}
-  button.block{cursor:grab}
-  button.block:active{cursor:grabbing}
-  .block.dragging{z-index:10;cursor:grabbing;filter:drop-shadow(0 6px 7px rgba(60,40,20,.23))}
-  .block.static{pointer-events:none}
-  .block:not(.static):focus-visible{outline:3px solid #007AFF}
-  footer{flex:0 0 auto;min-height:28px;display:flex;justify-content:center;align-items:center;
-    gap:9px;color:#99979a;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-    background:linear-gradient(180deg,#DADCE1,#E4E6EA)}
-  .bead{width:3px;height:3px;border-radius:50%;background:#aaa;display:inline-block}
-  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  @media(max-width:760px){
-    .bar{justify-content:center;padding:8px 10px;gap:9px}
-    .brand{margin:0;text-align:center;width:100%;font-size:14px}
-    .controls{gap:8px}
-    .field input{width:105px}
-    .field select{width:142px}
-    .field input,.field select{font-size:14px;padding:7px}
-    .reset{padding:7px 9px}
-    .frame-stage{flex-basis:clamp(215px,39vh,335px)}
-    #roundFrame{width:clamp(190px,34vh,285px);height:clamp(190px,34vh,285px)}
-    .places{justify-content:flex-start}
-  }
-  @media(max-height:620px){
-    .frame-stage{flex-basis:210px}
-    #roundFrame{width:180px;height:180px}
-    .frame-holder{top:2px;gap:2px}
-    .place{min-height:115px}
-    .block{height:52px}
-  }
+    /* ── FRAME (the next place up, empty, with its halfway line) ── */
+    #frameStage { position: relative; flex: 0 0 clamp(210px, 41vh, 360px); border-bottom: 1px solid rgba(60,40,20,0.07); }
+    #frameHolder { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    #frameCaption { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; color: var(--text-gray); line-height: 18px; }
+    #roundFrame {
+      display: block; overflow: visible; touch-action: none; outline: none; border-radius: 4px;
+      filter: drop-shadow(0 5px 9px rgba(85,74,58,0.14));
+      transition: transform 0.18s ease-out, filter 0.18s ease-out;
+    }
+    #roundFrame .fill { cursor: grab; transition: opacity 0.15s; }
+    #roundFrame:focus-visible { outline: 3px solid #007AFF; outline-offset: 5px; }
+    /* a block held over the frame: the frame lifts a little to take it */
+    #frameStage.over #roundFrame { transform: translateY(-3px); filter: drop-shadow(0 10px 14px rgba(85,74,58,0.26)); }
 
-  /* All blocks share one physical unit scale. The visible SVG is never stretched to its button. */
-  .places-viewport { overflow: auto; overscroll-behavior: contain; }
-  .places { align-items: flex-start; min-height: 0; }
-  .place { flex: 0 0 auto; padding: 7px 5px 14px; }
-  .block-grid { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; align-items: flex-start; gap: 7px; }
-  .block { flex: 0 0 auto; width: var(--hit-w); height: var(--hit-h); min-width: 30px; min-height: 30px; padding: 0; }
-  .block svg { width: var(--visual-w); height: var(--visual-h); flex: 0 0 auto; }
-  #roundFrame { width: auto; height: auto; display: block; max-width: none; max-height: none; }
-  @media(max-width:760px) { .place { padding: 7px 3px 14px; } .block-grid { gap: 5px; } }
-</style>
+    /* ── MAT (the number, in blocks, by place) ── */
+    #matView { flex: 1; min-height: 0; position: relative; display: flex; overflow: auto; overscroll-behavior: contain; padding: 10px 16px 14px; }
+    #places { margin: auto; display: flex; align-items: flex-start; gap: 16px; }
+    .place { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; }
+    .place-label {
+      height: 34px; padding-bottom: 8px; display: flex; align-items: flex-end; justify-content: center;
+      font-size: 12px; line-height: 13px; font-weight: 800; letter-spacing: -0.01em; text-align: center; color: var(--text-gray);
+    }
+    .place.moves .place-label { color: var(--text-main); }
+    .blocks { display: grid; grid-template-columns: repeat(var(--per), var(--bw)); grid-auto-rows: var(--bh); gap: 8px; justify-content: center; }
+    .block {
+      width: var(--bw); height: var(--bh); display: flex; align-items: center; justify-content: center;
+      border: 0; padding: 0; background: transparent; border-radius: 10px; touch-action: none; outline: none;
+    }
+    .block svg { flex: 0 0 auto; overflow: visible; pointer-events: none; filter: drop-shadow(1px 3px 3px rgba(60,40,20,0.3)); }
+    button.block { cursor: grab; }
+    button.block:focus-visible { box-shadow: 0 0 0 3px #007AFF; }
+    .block.gone { visibility: hidden; }
+
+    /* ── CARRY (a block in hand rides above everything) ── */
+    #carry { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
+    .flyer { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+    .flyer svg { position: absolute; overflow: visible; filter: drop-shadow(1px 3px 3px rgba(60,40,20,0.3)); }
+    .flyer.held svg { filter: drop-shadow(3px 10px 8px rgba(60,40,20,0.26)); }
+
+    /* ── CABINET ── */
+    #dock { flex-shrink: 0; display: flex; justify-content: center; padding: 0 12px; }
+    #cabinet {
+      display: flex; align-items: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      padding: 12px clamp(12px, 2vw, 20px);
+      border-radius: 24px 24px 0 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(0,0,0,0.018) 1px 2px, transparent 2px 4px),
+        linear-gradient(180deg, #EFF0F3 0%, #DADCE1 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-bottom: none;
+      box-shadow: 0 -8px 22px rgba(110,95,75,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    #number {
+      width: 9.5ch; height: 56px; padding: 0 10px;
+      border: 2px solid transparent; border-radius: 16px;
+      background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%);
+      box-shadow: var(--shadow-milled);
+      font: 800 26px 'Lexend', sans-serif; letter-spacing: -0.02em; color: var(--text-main);
+      text-align: center; outline: none;
+      -webkit-user-select: text; user-select: text;
+    }
+    #number:focus { border-color: #007AFF; }
+    #bins { display: flex; gap: clamp(6px, 1vw, 10px); }
+    .bin {
+      width: clamp(58px, 8vw, 74px); height: clamp(62px, 8.5vw, 72px);
+      border: 2px solid transparent; border-radius: 16px; padding: 0;
+      background: linear-gradient(180deg, #ECEEF1 0%, #F6F7F9 100%);
+      box-shadow: var(--shadow-raised);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      color: var(--text-gray); cursor: pointer; outline: none;
+      transition: transform 0.2s var(--spring), box-shadow 0.2s, opacity 0.2s;
+    }
+    /* the chosen bin sits pressed into the cabinet */
+    .bin[aria-pressed="true"] { background: linear-gradient(180deg, #DFE1E6 0%, #ECEEF1 100%); box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .bin:active:not(:disabled) { transform: scale(0.97); }
+    .bin:focus-visible { border-color: #007AFF; }
+    .bin:disabled { opacity: 0.3; box-shadow: none; cursor: default; }
+    .bin svg { flex: 0 0 auto; overflow: visible; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(60,40,20,0.25)); }
+    .bin .num { font: 800 11px/1 'Lexend', sans-serif; letter-spacing: -0.01em; }
+    .hardware { display: flex; flex-direction: column; gap: 10px; padding-left: clamp(4px, 1vw, 10px); border-left: 1px solid rgba(0,0,0,0.07); }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none;
+      color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    @media (max-width: 600px) {
+      #cabinet { display: grid; grid-template-columns: 1fr auto; width: 100%; gap: 10px; padding: 10px 12px; }
+      #number { grid-column: 1; grid-row: 1; width: 100%; height: 50px; font-size: 24px; }
+      .hardware { grid-column: 2; grid-row: 1; border-left: none; padding-left: 0; }
+      #bins { grid-column: 1 / -1; grid-row: 2; justify-content: space-between; }
+      .bin { flex: 1 1 0; width: auto; max-width: 74px; height: 62px; }
+    }
+    /* short landscape screens: the frame stands beside the mat instead of above it */
+    @media (max-height: 520px) and (min-aspect-ratio: 4/3) {
+      body { display: grid; grid-template-columns: minmax(180px, 34vw) 1fr; grid-template-rows: minmax(0, 1fr) auto auto; }
+      #frameStage { grid-column: 1; grid-row: 1; border-bottom: none; border-right: 1px solid rgba(60,40,20,0.07); }
+      #matView { grid-column: 2; grid-row: 1; }
+      #dock, #footer { grid-column: 1 / -1; }
+      #cabinet { padding-top: 8px; padding-bottom: 8px; }
+      .bin { height: 58px; }
+    }
+  </style>
 </head>
 <body>
-<header class="bar"><div class="brand">Math Things. <span style="font-weight:400;color:#777">/ Rounding Blocks</span></div><div class="controls"><label class="field">Number<input id="number" type="text" inputmode="numeric" value="245" aria-label="Number" maxlength="7" autocomplete="off"></label><label class="field">Round to nearest<select id="roundTo" aria-label="Round to nearest"><option value="1">10</option><option value="2" selected>100</option><option value="3">1,000</option><option value="4">10,000</option><option value="5">100,000</option></select></label><button class="reset" id="reset" type="button">Reset</button></div></header>
-<main><section class="frame-stage" id="frameStage" aria-label="Rounding frame"><div class="frame-holder" id="frameHolder"><div class="frame-caption" id="frameCaption">100 frame</div><svg id="roundFrame" viewBox="0 0 300 300" role="img" aria-label="Empty frame divided in half"></svg></div></section><div class="places-viewport"><div class="places" id="places" aria-label="Base-ten blocks on the mat"></div></div></main>
-<footer>Math Things <span class="bead"></span> Math, in your hands <span class="bead"></span></footer>
+<section id="frameStage" aria-label="Rounding frame">
+  <div id="frameHolder">
+    <div id="frameCaption" aria-hidden="true">100</div>
+    <svg id="roundFrame" role="button" tabindex="0" aria-label="Rounding frame"></svg>
+  </div>
+</section>
+
+<main id="matView" aria-label="The number, in base-ten blocks"><div id="places"></div></main>
+
+<div id="dock">
+  <div id="cabinet" role="toolbar" aria-label="Controls">
+    <input id="number" type="text" inputmode="numeric" value="245" maxlength="7" autocomplete="off" spellcheck="false" aria-label="Number">
+    <div id="bins" role="group" aria-label="Round to the nearest"></div>
+    <div class="hardware">
+      <button class="icon-btn" id="resetBtn" type="button" aria-label="Put every block back on the mat">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<div id="carry" aria-hidden="true"></div>
+
+<!-- Enamel paints, shared by the mat, the frame and the bins -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
@@ -116,52 +204,71 @@
     <linearGradient id="gf3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#66D232"/><stop offset="0.5" stop-color="#4CBB17"/><stop offset="1" stop-color="#3D9B12"/></linearGradient>
     <linearGradient id="gt3" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7BEA45"/><stop offset="1" stop-color="#5EE024"/></linearGradient>
     <linearGradient id="gs3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#368812"/><stop offset="1" stop-color="#28660B"/></linearGradient>
-
-    <!-- Place-value continuations from Math Things material palette -->
-    <linearGradient id="gf4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFA74C"/><stop offset=".5" stop-color="#FF7F00"/><stop offset="1" stop-color="#D46B00"/></linearGradient>
+    <!-- ten thousands -->
+    <linearGradient id="gf4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFA74C"/><stop offset="0.5" stop-color="#FF7F00"/><stop offset="1" stop-color="#D46B00"/></linearGradient>
     <linearGradient id="gt4" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FFBF79"/><stop offset="1" stop-color="#FF983A"/></linearGradient>
     <linearGradient id="gs4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#AA5000"/><stop offset="1" stop-color="#783900"/></linearGradient>
-    <linearGradient id="gf5" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9067C7"/><stop offset=".5" stop-color="#6B3FA0"/><stop offset="1" stop-color="#512B85"/></linearGradient>
+    <!-- hundred thousands -->
+    <linearGradient id="gf5" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9067C7"/><stop offset="0.5" stop-color="#6B3FA0"/><stop offset="1" stop-color="#512B85"/></linearGradient>
     <linearGradient id="gt5" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#AE85DC"/><stop offset="1" stop-color="#8961B8"/></linearGradient>
     <linearGradient id="gs5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#47266F"/><stop offset="1" stop-color="#351D55"/></linearGradient>
   </defs>
 </svg>
-<div class="sr-only" aria-live="polite" id="live"></div>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
 <script>
-
-(function(){
+(() => {
   'use strict';
-  // Names, geometry, material rendering, and palette follow Place Value Blocks V2.
-  // The two larger forms extend the Math Things place-value palette.
-  const KINDS=[
-    {name:'unit cube',plural:'unit cubes',w:1,h:1,depth:1,value:1},
-    {name:'ten rod',plural:'ten rods',w:1,h:10,depth:1,value:10},
-    {name:'hundred flat',plural:'hundred flats',w:10,h:10,depth:1,value:100},
-    {name:'thousand cube',plural:'thousand cubes',w:10,h:10,depth:10,value:1000},
-    {name:'ten-thousand rod',plural:'ten-thousand rods',w:10,h:100,depth:10,value:10000},
-    {name:'hundred-thousand flat',plural:'hundred-thousand flats',w:100,h:100,depth:10,value:100000}
-  ];
-  const LABELS=['Ones','Tens','Hundreds','Thousands','Ten thousands','Hundred thousands'];
-  const DS=0.354;
-  const r2=v=>Math.round(v*100)/100;
 
-  function pieceMarkup(k, u) {
+  // ═══════ PIECES ═══════
+  // Names, geometry, enamel and palette follow Place Value Blocks V2; the two larger forms continue the
+  // Math Things place-value palette. Sizes are in units (one unit cube = 1). Depth is drawn as a 45° oblique.
+  const KINDS = [
+    { name: 'unit cube',             plural: 'unit cubes',             w: 1,   h: 1,   depth: 1,  value: 1 },
+    { name: 'ten rod',               plural: 'ten rods',               w: 1,   h: 10,  depth: 1,  value: 10 },
+    { name: 'hundred flat',          plural: 'hundred flats',          w: 10,  h: 10,  depth: 1,  value: 100 },
+    { name: 'thousand cube',         plural: 'thousand cubes',         w: 10,  h: 10,  depth: 10, value: 1000 },
+    { name: 'ten-thousand rod',      plural: 'ten-thousand rods',      w: 10,  h: 100, depth: 10, value: 10000 },
+    { name: 'hundred-thousand flat', plural: 'hundred-thousand flats', w: 100, h: 100, depth: 10, value: 100000 },
+  ];
+  const PLACES = ['Ones', 'Tens', 'Hundreds', 'Thousands', 'Ten thousands', 'Hundred thousands'];
+  const WORDS = ['one', 'ten', 'hundred', 'thousand', 'ten thousand', 'hundred thousand'];
+  const DS = 0.354;               // on-screen depth of one unit, as a fraction of a unit
+  const MAX = 999999;
+  const HIT = 44;                 // the smallest a block's touch target gets, in pixels
+  const UMIN = 0.6, UMAX = 16;    // pixels per unit on the mat
+  const GAP = 8, COL_GAP = 16, COL_MIN = 72, LABEL_H = 34;   // must match the mat's CSS
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const r4 = v => Math.round(v * 10000) / 10000;
+  const fmt = n => n.toLocaleString('en-US');
+  const $ = id => document.getElementById(id);
+  const sideBySide = matchMedia('(max-height: 520px) and (min-aspect-ratio: 4/3)');
+
+  // ═══════ DRAWING ═══════
+  // Enameled cast iron: beveled front face with a specular sheen, lit top, shaded side, engraved divisions.
+  // Divisions are drawn where they can be seen: every unit, or at small scales only the seams of the next place up.
+  function pieceMarkup(k, u, paint = k) {
     const K = KINDS[k], W = K.w * u, H = K.h * u, d = K.depth * DS * u, e = DS * u;
     const rad = r2(Math.min(u * 0.13, 5)), sw = r2(Math.max(0.5, Math.min(1.1, u / 20)));
+    const step = u >= 2.5 ? 1 : u * 10 >= 2.5 ? 10 : Infinity;
     const top = `M0,0H${r2(W)}L${r2(W + d)},${r2(-d)}H${r2(d)}Z`;
     const side = `M${r2(W)},0L${r2(W + d)},${r2(-d)}V${r2(H - d)}L${r2(W)},${r2(H)}Z`;
     let g = '';
-    for (let i = 1; i < K.w; i++) { const x = r2(i * u); g += `M${x},0V${r2(H)}M${x},0l${r2(d)},${r2(-d)}`; }
-    for (let j = 1; j < K.h; j++) { const y = r2(j * u); g += `M0,${y}H${r2(W)}M${r2(W)},${y}l${r2(d)},${r2(-d)}`; }
-    for (let s = 1; s < K.depth; s++) { const o = r2(s * e); g += `M${o},${-o}H${r2(W + o)}M${r2(W + o)},${-o}V${r2(H - o)}`; }
+    for (let i = step; i < K.w; i += step) { const x = r2(i * u); g += `M${x},0V${r2(H)}M${x},0l${r2(d)},${r2(-d)}`; }
+    for (let j = step; j < K.h; j += step) { const y = r2(j * u); g += `M0,${y}H${r2(W)}M${r2(W)},${y}l${r2(d)},${r2(-d)}`; }
+    for (let s = step; s < K.depth; s += step) { const o = r2(s * e); g += `M${o},${-o}H${r2(W + o)}M${r2(W + o)},${-o}V${r2(H - o)}`; }
     const edge = 'rgba(40,20,10,0.22)';
     return (
-      `<path d="${top}" fill="url(#gt${k})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
-      `<path d="${side}" fill="url(#gs${k})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+      `<path d="${top}" fill="url(#gt${paint})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+      `<path d="${side}" fill="url(#gs${paint})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
       // fill the two back corners behind the rounded front face so no light leaks through
-      `<rect width="${rad}" height="${rad}" fill="url(#gt${k})"/>` +
-      `<rect x="${r2(W - rad)}" width="${rad}" height="${rad}" fill="url(#gs${k})"/>` +
-      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#gf${k})"/>` +
+      `<rect width="${rad}" height="${rad}" fill="url(#gt${paint})"/>` +
+      `<rect x="${r2(W - rad)}" width="${rad}" height="${rad}" fill="url(#gs${paint})"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#gf${paint})"/>` +
       `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#sheen)"/>` +
       (g
         ? `<path d="${g}" fill="none" stroke="rgba(30,10,5,0.28)" stroke-width="${sw}"/>` +
@@ -172,334 +279,512 @@
     );
   }
 
-
-
-  const numberInput=document.getElementById('number');
-  const roundSelect=document.getElementById('roundTo');
-  const resetButton=document.getElementById('reset');
-  const places=document.getElementById('places');
-  const stage=document.getElementById('frameStage');
-  const holder=document.getElementById('frameHolder');
-  const frame=document.getElementById('roundFrame');
-  const live=document.getElementById('live');
-  let number=245;
-  let roundKind=2;
-  let blocks=[];
-  let placed=[];
-  let nextId=1;
-  let pointer=null;
-  let lastTap=null;
-
-  
-function matUnit(){
-    // A single world-unit scale applies to every denomination, never per-piece normalization.
-    // Large high-place blocks reduce the camera's common scale, not their own size alone.
-    const maxKind=Math.min(5,Math.floor(Math.log10(Math.max(1,number))));
-    const K=KINDS[maxKind];
-    const available=Math.max(160,places.parentElement.clientHeight-45);
-    return Math.min(7.3,Math.max(1.4,(available-12)/(K.h+K.depth*DS+1)));
+  const picSize = (k, u) => { const K = KINDS[k], d = K.depth * DS * u; return { d, w: r2(K.w * u + d + 8), h: r2(K.h * u + d + 8) }; };
+  function blockPicture(k, u) {
+    const p = picSize(k, u);
+    return { ...p, svg: `<svg viewBox="-4 ${r2(-p.d - 4)} ${p.w} ${p.h}" width="${p.w}" height="${p.h}" aria-hidden="true" focusable="false">${pieceMarkup(k, u)}</svg>` };
   }
 
-  function blockPicture(k,u){
-    const K=KINDS[k],d=K.depth*DS*u;
-    const width=r2(K.w*u+d+8),height=r2(K.h*u+d+8);
-    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 '+r2(-d-4)+' '+width+' '+height+
-      '" width="'+width+'" height="'+height+'" aria-hidden="true"><g>'+pieceMarkup(k,u)+'</g></svg>';
-    return {svg,width,height};
+  // A bin shows the block its frame is shaped like. A ten-thousand rod and a hundred-thousand flat are
+  // a rod and a flat ten times larger, so they are drawn that way, by the seams between their thousand cubes.
+  function binPicture(k) {
+    const g = k > 3 ? k - 3 : k, K = KINDS[g], d = K.depth * DS, u = 38 / (Math.max(K.w, K.h) + d);
+    const w = r2((K.w + d) * u + 4), h = r2((K.h + d) * u + 4);
+    return `<svg viewBox="-2 ${r2(-d * u - 2)} ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" focusable="false">${pieceMarkup(g, u, k)}</svg>`;
   }
 
+  // ═══════ STATE ═══════
+  const stage = $('frameStage'), holder = $('frameHolder'), caption = $('frameCaption'), frame = $('roundFrame');
+  const matView = $('matView'), places = $('places'), numberInput = $('number'), bins = $('bins'), resetBtn = $('resetBtn');
+  const carry = $('carry'), live = $('live');
 
-  function boundedNumber(s){
-    const digits=String(s).replace(/[^0-9]/g,'');
-    if(!digits)return 0;
-    return Math.max(0,Math.min(999999,Number(digits)));
-  }
+  let number = 245;
+  let chosen = 2;        // the place the teacher picked to round to
+  let roundKind = 2;     // the place in use: never above the number's own highest place
+  let highest = 2;
+  let blocks = [];       // { id, kind, inFrame, seq }
+  let U = 8;             // pixels per unit on the mat
+  let seq = 0;           // the order blocks went into the frame
+  let gen = 0;           // bumps when the mat is rebuilt, so motion already under way is dropped
+  const arriving = new Set();   // blocks still gliding into the frame: their place there stays hidden
+  let drag = null, lastTap = null;
 
-  function allowedKinds(){
-    // Keep the next place above the highest occupied place unavailable.
-    // The nearest ten remains usable for single-digit numbers.
-    return Math.max(1, Math.floor(Math.log10(Math.max(1,number))));
-  }
+  const digit = k => Math.floor(number / KINDS[k].value) % 10;
+  const blockById = id => blocks.find(b => b.id === id);
+  const nodeOf = b => places.querySelector(`.block[data-id="${b.id}"]`);
+  const fillOf = b => frame.querySelector(`.fill[data-id="${b.id}"]`);
+  const held = () => blocks.reduce((s, b) => s + (b.inFrame ? KINDS[b.kind].value : 0), 0);
+  const say = msg => { live.textContent = `${msg} ${fmt(held())} of ${fmt(KINDS[roundKind].value)} in the frame.`; };
 
-  function updateOptions(){
-    const highest=allowedKinds();
-    for(const option of roundSelect.options){
-      option.disabled=Number(option.value)>highest;
+  // ═══════ MAT LAYOUT ═══════
+  // Every block on the mat shares one unit scale: the largest that lets every place sit in view at once.
+  // Each place packs its blocks into as few across as its height allows.
+  function packPlace(k, u, maxH) {
+    const n = digit(k), p = picSize(k, u), bw = Math.max(HIT, p.w), bh = Math.max(HIT, p.h);
+    let per = Math.max(1, n);
+    for (let c = 1; c < n; c++) {
+      const rows = Math.ceil(n / c);
+      if (LABEL_H + rows * bh + (rows - 1) * GAP <= maxH) { per = c; break; }
     }
-    if(roundKind>highest)roundKind=highest;
-    roundSelect.value=String(roundKind);
+    return sizePlace({ k, n, bw, bh }, per);
+  }
+  function sizePlace(c, per) {
+    const rows = c.n ? Math.ceil(c.n / per) : 0;
+    return { ...c, per, w: Math.max(COL_MIN, per * c.bw + (per - 1) * GAP), h: LABEL_H + rows * c.bh + Math.max(0, rows - 1) * GAP };
+  }
+  function layoutAt(u, maxW, maxH) {
+    const cols = [];
+    for (let k = highest; k >= 0; k--) cols.push(packPlace(k, u, maxH));
+    const across = list => list.reduce((s, c) => s + c.w, 0) + COL_GAP * (list.length - 1);
+    const w = across(cols), h = Math.max(...cols.map(c => c.h));
+    return { u, cols, w, h, fits: w <= maxW && h <= maxH, movingFits: across(cols.filter(c => c.k < roundKind)) <= maxW && h <= maxH };
+  }
+  // the largest scale that passes `test`, or null if even the smallest fails
+  function largest(test, maxW, maxH) {
+    let best = layoutAt(UMAX, maxW, maxH);
+    if (test(best)) return best;
+    best = layoutAt(UMIN, maxW, maxH);
+    if (!test(best)) return null;
+    let lo = UMIN, hi = UMAX;
+    for (let i = 0; i < 18; i++) {
+      const mid = (lo + hi) / 2, L = layoutAt(mid, maxW, maxH);
+      if (test(L)) { lo = mid; best = L; } else hi = mid;
+    }
+    return best;
+  }
+  function fitLayout(maxW, maxH) {
+    // When the whole number cannot be in view, the places that move are; the mat scrolls to the rest.
+    const best = largest(L => L.fits, maxW, maxH) || largest(L => L.movingFits, maxW, maxH) || layoutAt(UMIN, maxW, maxH);
+    // Spare width goes to fewer, tidier rows, up to five across like a row of a ten-frame:
+    // first to the tallest place, so the whole mat gets shorter, then to the rest from the ones up.
+    const cols = best.cols;
+    let spare = maxW - best.w;
+    const widen = i => {
+      const c = cols[i], rows = Math.ceil(c.n / c.per);
+      for (let per = c.per + 1; per <= Math.min(c.n, 5); per++) {
+        if (Math.ceil(c.n / per) >= rows) continue;
+        const wider = sizePlace(c, per);
+        if (wider.w - c.w > spare) return false;
+        spare -= wider.w - c.w;
+        cols[i] = wider;
+        return true;
+      }
+      return false;
+    };
+    for (;;) {
+      const tallest = cols.reduce((t, c, i) => c.h > cols[t].h ? i : t, 0);
+      if (!widen(tallest)) break;
+    }
+    for (let i = cols.length - 1; i >= 0; i--) while (widen(i));
+    return best;
   }
 
-  
-function build(){
-    blocks=[];
-    placed=[];
-    nextId=1;
-    pointer=null;
-    lastTap=null;
-    updateOptions();
-    places.textContent='';
-    const highest=Math.max(1,Math.floor(Math.log10(Math.max(1,number))));
-    const u=matUnit();
-    const pictures=KINDS.map((K,k)=>blockPicture(k,u));
-    const narrow=innerWidth<760;
-    for(let k=highest;k>=0;k--){
-      const digit=Math.floor(number/KINDS[k].value)%10;
-      const col=document.createElement('section');
-      col.className='place'+(k<roundKind?' below':'');
-      col.dataset.kind=String(k);
-      const p=pictures[k];
-      const baseWidth=narrow?105:145;
-      // Never shrink the block to fit a column; expand the mat and scroll instead.
-      col.style.width=Math.ceil(Math.max(baseWidth,k>1&&digit?p.width+20:baseWidth))+'px';
-      const label=document.createElement('div');
-      label.className='place-label';
-      label.textContent=LABELS[k];
-      col.appendChild(label);
-      const grid=document.createElement('div');
-      grid.className='block-grid';
-      for(let i=0;i<digit;i++){
-        const block={id:nextId++,kind:k,used:false,el:null};
-        const canMove=k<roundKind;
-        const node=document.createElement(canMove?'button':'div');
-        node.className='block'+(canMove?'':' static');
-        node.style.setProperty('--hit-w',Math.max(30,p.width)+'px');
-        node.style.setProperty('--hit-h',Math.max(30,p.height)+'px');
-        node.style.setProperty('--visual-w',p.width+'px');
-        node.style.setProperty('--visual-h',p.height+'px');
-        if(canMove){
-          node.type='button';
-          node.setAttribute('aria-label','Move one '+KINDS[k].name+' into the frame');
-          node.dataset.id=String(block.id);
-          node.addEventListener('pointerdown',beginDrag);
-          node.addEventListener('pointermove',moveDrag);
-          node.addEventListener('pointerup',endDrag);
-          node.addEventListener('pointercancel',cancelDrag);
-          node.addEventListener('dblclick',function(){moveIntoFrame(block);});
-          node.addEventListener('keydown',function(e){
-            if(e.key==='Enter'||e.key===' '){e.preventDefault();moveIntoFrame(block);}
-          });
-        } else node.setAttribute('aria-label',KINDS[k].name);
-        node.innerHTML=p.svg;
+  function renderMat() {
+    const L = fitLayout(matView.clientWidth - 32, matView.clientHeight - 24);
+    U = L.u;
+    places.textContent = '';
+    for (const c of L.cols) {
+      const K = KINDS[c.k], moves = c.k < roundKind, pic = blockPicture(c.k, U);
+      const col = document.createElement('div');
+      col.className = 'place' + (moves ? ' moves' : '');
+      col.dataset.kind = c.k;
+      col.style.width = c.w + 'px';
+      col.setAttribute('role', 'group');
+      col.setAttribute('aria-label', `${PLACES[c.k]}: ${c.n} ${c.n === 1 ? K.name : K.plural}`);
+      const label = document.createElement('div');
+      label.className = 'place-label';
+      label.textContent = PLACES[c.k];
+      label.setAttribute('aria-hidden', 'true');
+      const grid = document.createElement('div');
+      grid.className = 'blocks';
+      grid.style.cssText = `--per:${c.per};--bw:${c.bw}px;--bh:${c.bh}px`;
+      for (const b of blocks) {
+        if (b.kind !== c.k) continue;
+        const node = document.createElement(moves ? 'button' : 'div');
+        node.className = 'block' + (b.inFrame ? ' gone' : '');
+        node.dataset.id = b.id;
+        if (moves) { node.type = 'button'; node.setAttribute('aria-label', `Move one ${K.name} into the frame`); }
+        else node.setAttribute('aria-hidden', 'true');
+        node.innerHTML = pic.svg;
         grid.appendChild(node);
-        block.el=node;
-        blocks.push(block);
       }
-      col.appendChild(grid);
+      col.append(label, grid);
       places.appendChild(col);
     }
-    document.getElementById('frameCaption').textContent=
-      KINDS[roundKind].value.toLocaleString('en-US')+' frame';
-    drawFrame();
-    requestAnimationFrame(function(){
-      const source=places.querySelector('[data-kind="'+(roundKind-1)+'"]');
-      const viewport=places.parentElement;
-      if(narrow&&source){
-        // Keep the manipulatives being moved into the frame visible on small screens.
-        viewport.scrollLeft=Math.max(0,source.offsetLeft-viewport.clientWidth*0.57);
-      }
-      positionFrame();
+  }
+
+  // ═══════ FRAME ═══════
+  // The frame is the next place up, empty: a rod, flat, cube, larger rod or larger flat. Its ten sections are
+  // ten copies of the place below it. A block always fills exactly its own share; larger blocks pack first, so
+  // a block never straddles a section (every value divides a section, and everything before it is a multiple of it).
+  function packFrame() {
+    const K = KINDS[roundKind], W = K.w, H = K.h, major = K.value / 10;
+    const across = roundKind === 2 || roundKind === 5;   // a flat fills column by column; a rod or cube row by row
+    const inside = blocks.filter(b => b.inFrame).sort((a, b) => b.kind - a.kind || a.seq - b.seq);
+    let cursor = 0;
+    return inside.map(b => {
+      const v = KINDS[b.kind].value, section = Math.floor(cursor / major), at = cursor - section * major;
+      cursor += v;
+      return across
+        ? { b, x: section * W / 10, y: H - (at + v) / major * H, w: W / 10, h: v / major * H }
+        : { b, x: at / major * W, y: H - (section + 1) * H / 10, w: v / major * W, h: H / 10 };
     });
   }
 
+  function drawFrame() {
+    const K = KINDS[roundKind], W = K.w, H = K.h, d = K.depth * DS, target = K.value;
+    const across = roundKind === 2 || roundKind === 5;
+    caption.textContent = fmt(target);
+    // leave room for the Math Things. home link in the top corner when the frame might sit under it
+    const top = innerWidth < 760 || sideBySide.matches ? 46 : 10;
+    holder.style.top = top + 'px';
+    // Fit the camera to the frame's own shape without changing its aspect ratio.
+    const maxW = Math.max(110, Math.min(360, stage.clientWidth - 32));
+    const maxH = Math.max(100, stage.clientHeight - top - caption.offsetHeight - 18);
+    const scale = Math.min((maxW - 8) / (W + d), (maxH - 8) / (H + d));
+    const px = 1 / scale;   // one screen pixel, in frame units: every line keeps its weight at every frame size
+    const pad = 4 * px;
+    frame.setAttribute('viewBox', [-pad, -d - pad, W + d + 2 * pad, H + d + 2 * pad].map(r4).join(' '));
+    frame.setAttribute('width', r2((W + d) * scale + 8));
+    frame.setAttribute('height', r2((H + d) * scale + 8));
 
-  function positionFrame(){
-    // On wider screens the empty frame sits above the place feeding it.
-    // On narrow screens it stays centered while the mat can scroll sideways.
-    if(innerWidth<760){
-      holder.style.left='50%';
-      return;
+    const fills = packFrame().map(({ b, x, y, w, h }) =>
+      `<rect class="fill" data-id="${b.id}" x="${r4(x)}" y="${r4(y)}" width="${r4(w)}" height="${r4(h)}" fill="url(#gf${b.kind})"` +
+      ` stroke="rgba(40,20,10,.22)" stroke-width="${r4(0.6 * px)}"${arriving.has(b.id) ? ' style="opacity:0;pointer-events:none"' : ''}/>`);
+
+    const line = (dd, op, wpx) => `<path d="${dd}" stroke="#918d84" stroke-opacity="${op}" stroke-width="${r4(wpx * px)}"/>`;
+    let grid = '';
+    for (let i = 1; i < 10; i++) {
+      // the ten sections are the ten copies of the next smaller place
+      if (across) {
+        grid += line(`M${r4(i * W / 10)} 0V${H}`, 0.58, 1.1);
+        grid += line(`M0 ${r4(i * H / 10)}H${W}`, 0.24, 0.85);
+      } else {
+        grid += line(`M0 ${r4(i * H / 10)}H${W}`, 0.55, 1.1);
+        if (roundKind >= 3) grid += line(`M${r4(i * W / 10)} 0V${H}`, 0.22, 0.85);
+      }
     }
-    const nextPlace=places.querySelector('[data-kind="'+(roundKind-1)+'"]');
-    if(!nextPlace)return;
-    const col=nextPlace.getBoundingClientRect();
-    const area=stage.getBoundingClientRect();
-    const safe=(frame.getBoundingClientRect().width/2)+16;
-    const x=Math.max(safe,Math.min(area.width-safe,col.left+col.width/2-area.left));
-    holder.style.left=x+'px';
+    const mid = across
+      ? `M${r4(W / 2)} 0V${H}M${r4(W / 2)} 0L${r4(W / 2 + d)} ${r4(-d)}`
+      : `M0 ${r4(H / 2)}H${W}L${r4(W + d)} ${r4(H / 2 - d)}`;
+    const dash = `${r4(8.6 * px)} ${r4(5.8 * px)}`;
+    const back = 'rgba(119,110,94,.72)';
+    frame.innerHTML =
+      `<defs><clipPath id="roundingFrameFace"><rect width="${W}" height="${H}"/></clipPath></defs>` +
+      `<path d="M0 0H${W}L${r4(W + d)} ${r4(-d)}H${r4(d)}Z" fill="#eeeae2" stroke="${back}" stroke-width="${r4(1.8 * px)}"/>` +
+      `<path d="M${W} 0L${r4(W + d)} ${r4(-d)}V${r4(H - d)}L${W} ${H}Z" fill="#dfdad0" stroke="${back}" stroke-width="${r4(1.8 * px)}"/>` +
+      `<rect width="${W}" height="${H}" fill="#faf9f6"/>` +
+      `<g clip-path="url(#roundingFrameFace)">${fills.join('')}</g>` +
+      `<g fill="none" pointer-events="none">${grid}</g>` +
+      `<rect width="${W}" height="${H}" fill="none" stroke="${back}" stroke-width="${r4(2.4 * px)}" pointer-events="none"/>` +
+      // the halfway line is permanent: it never moves and never says which way a number goes
+      `<g fill="none" pointer-events="none" stroke-dasharray="${dash}">` +
+      `<path d="${mid}" stroke="#fff" stroke-width="${r4(4.6 * px)}"/>` +
+      `<path d="${mid}" stroke="#53565b" stroke-width="${r4(2.4 * px)}"/></g>`;
+    const n = held();
+    frame.setAttribute('aria-label',
+      `${WORDS[roundKind][0].toUpperCase() + WORDS[roundKind].slice(1)} frame with a halfway line at ${fmt(target / 2)}. ` +
+      `${fmt(n)} of ${fmt(target)} inside.` + (n ? ' Enter takes the last block back out.' : ''));
   }
 
-  function findBlock(id){
-    return blocks.find(b=>b.id===id);
+  // On a wide screen, with the whole mat in view, the frame sits above the place that feeds it.
+  function positionFrame() {
+    const area = stage.getBoundingClientRect(), fw = frame.getBoundingClientRect().width;
+    let x = area.width / 2;
+    const feeding = places.querySelector(`.place[data-kind="${roundKind - 1}"]`);
+    if (feeding && innerWidth >= 760 && !sideBySide.matches && matView.scrollWidth <= matView.clientWidth + 1) {
+      const col = feeding.getBoundingClientRect();
+      x = col.left + col.width / 2 - area.left;
+    }
+    const minX = fw / 2 + (parseFloat(holder.style.top) < 40 ? 140 : 16), maxX = area.width - fw / 2 - 16;
+    holder.style.left = r2(Math.max(minX, Math.min(maxX, x))) + 'px';
   }
 
-  function beginDrag(e){
-    if(pointer!==null||e.button!==0&&e.pointerType==='mouse')return;
-    const b=findBlock(Number(e.currentTarget.dataset.id));
-    if(!b||b.used)return;
-    pointer={id:e.pointerId,block:b,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};
-    b.el.setPointerCapture(e.pointerId);
+  function layout(fresh) {
+    renderMat();
+    drawFrame();
+    if (fresh) {
+      // where the mat has to scroll, start with the blocks that move in view
+      const feeding = places.querySelector(`.place[data-kind="${roundKind - 1}"]`);
+      matView.scrollTop = 0;
+      matView.scrollLeft = feeding && matView.scrollWidth > matView.clientWidth ? Math.max(0, feeding.offsetLeft - 16) : 0;
+    }
+    positionFrame();
+  }
+
+  function rebuild() {
+    gen++;
+    drag = null; lastTap = null;
+    carry.textContent = '';
+    arriving.clear();
+    stage.classList.remove('over');
+    highest = Math.max(1, String(number).length - 1);
+    roundKind = Math.min(chosen, highest);
+    blocks = [];
+    let id = 0;
+    for (let k = highest; k >= 0; k--) for (let i = 0; i < digit(k); i++) blocks.push({ id: ++id, kind: k, inFrame: false, seq: 0 });
+    bins.querySelectorAll('.bin').forEach(b => {
+      const k = +b.dataset.kind;
+      b.disabled = k > highest;
+      b.setAttribute('aria-pressed', String(k === roundKind));
+    });
+    layout(true);
+  }
+
+  // ═══════ MOTION ═══════
+  // A block in hand, or on its way, rides in the carry layer. A flyer's origin is the block's front-face corner,
+  // so the same picture can settle on its slot at full size or squeeze onto its share of the frame.
+  const pose = p => ({ transform: `translate(${r2(p.x)}px,${r2(p.y)}px) scale(${r4(p.sx)},${r4(p.sy)})` });
+  function makeFlyer(k) {
+    const pic = blockPicture(k, U), f = document.createElement('div');
+    f.className = 'flyer';
+    f.innerHTML = pic.svg;
+    f.firstChild.style.cssText = `left:-4px;top:${r2(-pic.d - 4)}px`;
+    carry.appendChild(f);
+    return f;
+  }
+  function slotPose(b) {
+    const r = nodeOf(b).firstChild.getBoundingClientRect();
+    return { x: r.left + 4, y: r.top + KINDS[b.kind].depth * DS * U + 4, sx: 1, sy: 1 };
+  }
+  function fillPose(b) {
+    const r = fillOf(b).getBoundingClientRect(), K = KINDS[b.kind];
+    return { x: r.left, y: r.top, sx: r.width / (K.w * U), sy: r.height / (K.h * U) };
+  }
+  function glide(f, from, to, dur, done, fade) {
+    Object.assign(f.style, pose(to));
+    if (reduceMotion) { done(); return; }
+    const g = gen;
+    const frames = fade
+      ? [{ ...pose(from), opacity: 1 }, { ...pose(to), opacity: 1, offset: 0.72 }, { ...pose(to), opacity: 0 }]
+      : [pose(from), pose(to)];
+    f.animate(frames, { duration: dur, easing: 'cubic-bezier(.2,.85,.25,1)' }).onfinish = () => { if (g === gen) done(); };
+  }
+  function thud() {
+    if (!reduceMotion) frame.animate([{ transform: 'translateY(2px)' }, { transform: 'translateY(0)' }], { duration: 200, easing: 'cubic-bezier(.3,0,.3,1)' });
+  }
+  // A block at or above the rounding place stays put: it shakes its head.
+  function resist(node) {
+    if (!reduceMotion) node.firstChild.animate([0, -4, 4, -3, 3, 0].map(v => ({ transform: `translateX(${v}px)` })), { duration: 260 });
+    buzz(4);
+  }
+
+  // ═══════ MOVES ═══════
+  function intoFrame(b, from, f = null, quiet = false) {
+    b.inFrame = true;
+    b.seq = ++seq;
+    arriving.add(b.id);
+    nodeOf(b).classList.add('gone');
+    drawFrame();
+    f = f || makeFlyer(b.kind);
+    f.classList.remove('held');
+    const g = gen;
+    const reveal = () => {
+      if (g !== gen || !arriving.delete(b.id)) return;
+      const el = fillOf(b);
+      if (el) el.removeAttribute('style');
+    };
+    if (!reduceMotion) setTimeout(reveal, 210);
+    glide(f, from, fillPose(b), 300, () => { f.remove(); reveal(); thud(); }, true);
+    buzz(6);
+    if (!quiet) say(`One ${KINDS[b.kind].name} into the frame.`);
+  }
+
+  function keepInView(node) {
+    const v = matView.getBoundingClientRect(), r = node.getBoundingClientRect();
+    if (r.left < v.left) matView.scrollLeft -= v.left - r.left + 12;
+    else if (r.right > v.right) matView.scrollLeft += r.right - v.right + 12;
+    if (r.top < v.top) matView.scrollTop -= v.top - r.top + 12;
+    else if (r.bottom > v.bottom) matView.scrollTop += r.bottom - v.bottom + 12;
+  }
+
+  function toMat(b, from, f = null, quiet = false) {
+    const node = nodeOf(b), wasIn = b.inFrame;
+    if (wasIn) { b.inFrame = false; arriving.delete(b.id); drawFrame(); }
+    node.classList.add('gone');
+    if (!quiet) keepInView(node);
+    f = f || makeFlyer(b.kind);
+    f.classList.remove('held');
+    glide(f, from, slotPose(b), 260, () => { f.remove(); node.classList.remove('gone'); }, false);
+    if (wasIn && !quiet) { buzz(4); say(`One ${KINDS[b.kind].name} back on the mat.`); }
+  }
+
+  // ═══════ POINTER ═══════
+  // Drag a block up into the frame, or drag it back out; a double-tap carries it either way.
+  const overFrame = (x, y) => { const r = stage.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
+  const startDrag = (e, b, from) => {
+    drag = { pid: e.pointerId, b, from, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, moved: false, f: null, ox: 0, oy: 0 };
+  };
+
+  places.addEventListener('pointerdown', e => {
+    const node = e.target.closest('.block');
+    if (!node || drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const b = blockById(+node.dataset.id);
+    if (!b || b.inFrame || node.classList.contains('gone')) return;
     e.preventDefault();
-  }
-  function moveDrag(e){
-    if(!pointer||pointer.id!==e.pointerId)return;
-    const dx=e.clientX-pointer.startX,dy=e.clientY-pointer.startY;
-    if(Math.abs(dx)+Math.abs(dy)>6)pointer.moved=true;
-    if(pointer.moved){
-      pointer.block.el.classList.add('dragging');
-      pointer.block.el.style.transform='translate('+dx+'px,'+dy+'px)';
+    if (b.kind >= roundKind) { resist(node); return; }
+    startDrag(e, b, 'mat');
+  });
+
+  frame.addEventListener('pointerdown', e => {
+    const fill = e.target.closest('.fill');
+    if (!fill || drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const b = blockById(+fill.dataset.id);
+    if (!b || !b.inFrame || arriving.has(b.id)) return;
+    e.preventDefault();
+    startDrag(e, b, 'frame');
+  });
+
+  function pickUp(s) {
+    const b = s.b, K = KINDS[b.kind];
+    s.f = makeFlyer(b.kind);
+    s.f.classList.add('held');
+    if (s.from === 'mat') {
+      const p = slotPose(b);
+      s.ox = s.sx - p.x; s.oy = s.sy - p.y;
+      nodeOf(b).classList.add('gone');
+    } else {
+      // out of the frame a block is its own size again, held by its middle
+      const p = fillPose(b);
+      s.ox = K.w * U / 2; s.oy = K.h * U / 2;
+      b.inFrame = false;
+      drawFrame();
+      if (!reduceMotion) s.f.animate([pose(p), pose({ x: s.x - s.ox, y: s.y - s.oy, sx: 1, sy: 1 })], { duration: 140, easing: 'ease-out' });
     }
-    pointer.x=e.clientX;pointer.y=e.clientY;
   }
-  function overFrame(x,y){
-    const r=frame.getBoundingClientRect();
-    return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;
-  }
-  function endDrag(e){
-    if(!pointer||pointer.id!==e.pointerId)return;
-    const state=pointer;
-    pointer=null;
-    const b=state.block;
-    if(!b.used){
-      b.el.classList.remove('dragging');
-      b.el.style.transform='';
+
+  addEventListener('pointermove', e => {
+    const s = drag;
+    if (!s || e.pointerId !== s.pid) return;
+    s.x = e.clientX; s.y = e.clientY;
+    if (!s.moved) {
+      if (Math.hypot(s.x - s.sx, s.y - s.sy) < 6) return;
+      s.moved = true;
+      lastTap = null;
+      pickUp(s);
     }
-    if(state.moved){
-      lastTap=null;
-      if(overFrame(e.clientX,e.clientY))moveIntoFrame(b);
+    Object.assign(s.f.style, pose({ x: s.x - s.ox, y: s.y - s.oy, sx: 1, sy: 1 }));
+    stage.classList.toggle('over', overFrame(s.x, s.y));
+  });
+
+  function release(e) {
+    const s = drag;
+    if (!s || e.pointerId !== s.pid) return;
+    drag = null;
+    stage.classList.remove('over');
+    const b = s.b;
+    if (s.moved) {
+      const at = { x: s.x - s.ox, y: s.y - s.oy, sx: 1, sy: 1 };
+      // a cancelled drag is not a drop: the block goes back where it came from
+      const land = e.type === 'pointerup' ? overFrame(s.x, s.y) : s.from === 'frame';
+      if (land) intoFrame(b, at, s.f, e.type !== 'pointerup');
+      else {
+        toMat(b, at, s.f);
+        if (s.from === 'frame') { buzz(4); say(`One ${KINDS[b.kind].name} back on the mat.`); }
+      }
       return;
     }
-    const t=performance.now();
-    if(lastTap&&lastTap.id===b.id&&t-lastTap.time<380){
-      lastTap=null;
-      moveIntoFrame(b);
-    }else lastTap={id:b.id,time:t};
+    if (e.type !== 'pointerup') return;
+    const key = s.from + b.id, now = performance.now();
+    if (lastTap && lastTap.key === key && now - lastTap.time < 380) {
+      lastTap = null;
+      if (s.from === 'mat') intoFrame(b, slotPose(b)); else toMat(b, fillPose(b));
+    } else lastTap = { key, time: now };
   }
-  function cancelDrag(e){
-    if(!pointer||pointer.id!==e.pointerId)return;
-    const b=pointer.block;
-    pointer=null;
-    if(!b.used){b.el.classList.remove('dragging');b.el.style.transform='';}
-    lastTap=null;
+  addEventListener('pointerup', release);
+  addEventListener('pointercancel', release);
+
+  // ═══════ KEYBOARD ═══════
+  places.addEventListener('keydown', e => {
+    const node = e.target.closest('button.block');
+    if (!node || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    const b = blockById(+node.dataset.id);
+    if (!b || b.inFrame) return;
+    // focus moves on to the next block of the same place, then any block that moves, then the frame
+    const sibs = [...node.parentNode.querySelectorAll('button.block:not(.gone)')], i = sibs.indexOf(node);
+    const next = sibs[i + 1] || sibs[i - 1] || [...places.querySelectorAll('button.block:not(.gone)')].find(n => n !== node) || frame;
+    intoFrame(b, slotPose(b));
+    next.focus({ preventScroll: true });
+  });
+
+  frame.addEventListener('keydown', e => {
+    if (!['Enter', ' ', 'Backspace', 'Delete'].includes(e.key)) return;
+    e.preventDefault();
+    const last = blocks.filter(b => b.inFrame).sort((a, b) => b.seq - a.seq)[0];
+    if (last) toMat(last, fillPose(last));
+  });
+
+  // ═══════ CABINET ═══════
+  for (let k = 1; k <= 5; k++) {
+    const bin = document.createElement('button');
+    bin.className = 'bin';
+    bin.type = 'button';
+    bin.dataset.kind = k;
+    bin.setAttribute('aria-label', `Round to the nearest ${WORDS[k]}`);
+    bin.innerHTML = binPicture(k) + `<span class="num" aria-hidden="true">${fmt(KINDS[k].value)}</span>`;
+    bin.addEventListener('click', () => {
+      if (k === roundKind) return;
+      chosen = k;
+      rebuild();
+      buzz(6);
+      live.textContent = `Round to the nearest ${WORDS[roundKind]}. Every block is back on the mat.`;
+    });
+    bins.appendChild(bin);
   }
-  function moveIntoFrame(b){
-    if(!b||b.used||b.kind>=roundKind)return;
-    b.used=true;
-    placed.push(b);
-    b.el.remove();
+
+  // A number is whole and from 0 to 999,999; anything else typed keeps the number already there.
+  function readNumber(s) {
+    const v = parseFloat(String(s).replace(/[,\s]/g, ''));
+    return Number.isFinite(v) ? Math.min(MAX, Math.floor(Math.abs(v))) : null;
+  }
+  numberInput.addEventListener('change', () => {
+    const n = readNumber(numberInput.value);
+    numberInput.value = fmt(n === null ? number : n);
+    if (n === null || n === number) return;
+    number = n;
+    rebuild();
+    live.textContent = `${fmt(number)}, rounding to the nearest ${WORDS[roundKind]}.`;
+  });
+  numberInput.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    // Enter on a hardware keyboard also puts the shared number pad away, so it stops covering the cabinet
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    numberInput.blur();
+  });
+  // typing replaces the number; select() would focus the field again, so only while it still has focus
+  numberInput.addEventListener('focus', () => requestAnimationFrame(() => { if (document.activeElement === numberInput) numberInput.select(); }));
+
+  resetBtn.addEventListener('click', () => {
+    const inside = blocks.filter(b => b.inFrame);
+    if (!inside.length) return;
+    const from = new Map(inside.map(b => [b, fillPose(b)]));
+    inside.forEach(b => { b.inFrame = false; arriving.delete(b.id); });
     drawFrame();
-    live.textContent='Moved one '+KINDS[b.kind].name+' into the frame.';
-  }
-
-  
-function drawFrame(){
-    const K=KINDS[roundKind],W=K.w,H=K.h,d=K.depth*DS;
-    const target=K.value,major=target/10;
-    const horizontal=roundKind===2||roundKind===5;
-    // Each target is the actual rod / flat / cube / larger rod / larger flat silhouette.
-    // Fit the camera to that physical shape without changing its aspect ratio.
-    const pad=0.55;
-    const vbX=-pad,vbY=-d-pad,vbW=W+d+pad*2,vbH=H+d+pad*2;
-    const maxW=Math.max(140,Math.min(345,stage.clientWidth-30));
-    const maxH=Math.max(145,stage.clientHeight-29);
-    const scale=Math.min(maxW/vbW,maxH/vbH);
-    frame.setAttribute('viewBox',[r2(vbX),r2(vbY),r2(vbW),r2(vbH)].join(' '));
-    frame.style.width=r2(vbW*scale)+'px';
-    frame.style.height=r2(vbH*scale)+'px';
-
-    // One block is always exactly its value's fraction of this target. Packing
-    // highest first keeps smaller blocks together even if students move them first.
-    const ordered=[...placed].sort((a,b)=>b.kind-a.kind);
-    let cursor=0;
-    const fills=[];
-    for(const b of ordered){
-      let amount=KINDS[b.kind].value;
-      while(amount>0){
-        const section=Math.min(9,Math.floor(cursor/major));
-        const inSection=cursor-section*major;
-        const part=Math.min(amount,major-inSection);
-        if(part<=0)break;
-        let x,y,w,h;
-        if(horizontal){
-          x=section*W/10;
-          w=W/10;
-          h=part/major*H;
-          y=H-(inSection+part)/major*H;
-        }else{
-          x=inSection/major*W;
-          w=part/major*W;
-          y=H-(section+1)*H/10;
-          h=H/10;
-        }
-        fills.push('<rect x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+
-          '" height="'+r2(h)+'" fill="url(#gf'+b.kind+')" stroke="rgba(40,20,10,.22)" stroke-width=".025"/>');
-        cursor+=part;
-        amount-=part;
-      }
-    }
-
-    const back='rgba(119,110,94,.72)';
-    const top='M0 0 H'+W+' L'+r2(W+d)+' '+r2(-d)+' H'+r2(d)+' Z';
-    const side='M'+W+' 0 L'+r2(W+d)+' '+r2(-d)+' V'+r2(H-d)+' L'+W+' '+H+' Z';
-    let grid='';
-    for(let i=1;i<10;i++){
-      // The ten subdivisions are always the ten adjacent copies of the next smaller place.
-      if(horizontal){
-        const x=i*W/10;
-        grid+='<path d="M'+r2(x)+' 0 V'+H+'" stroke="#918d84" stroke-opacity=".58" stroke-width=".045"/>';
-        if(roundKind===2) grid+='<path d="M0 '+i+' H'+W+'" stroke="#918d84" stroke-opacity=".24" stroke-width=".035"/>';
-        if(roundKind===5) grid+='<path d="M0 '+r2(i*H/10)+' H'+W+'" stroke="#918d84" stroke-opacity=".24" stroke-width=".045"/>';
-      }else{
-        const y=i*H/10;
-        grid+='<path d="M0 '+r2(y)+' H'+W+'" stroke="#918d84" stroke-opacity=".55" stroke-width=".045"/>';
-        if(roundKind===3||roundKind===4)
-          grid+='<path d="M'+r2(i*W/10)+' 0 V'+H+'" stroke="#918d84" stroke-opacity=".22" stroke-width=".045"/>';
-      }
-    }
-    let half;
-    if(horizontal){
-      const mid=W/2;
-      half='<path d="M'+r2(mid)+' 0 V'+H+' M'+r2(mid)+' 0 L'+r2(mid+d)+' '+r2(-d)+
-        '" stroke="#fff" stroke-width=".19" stroke-dasharray=".36 .24" fill="none"/>'+
-        '<path d="M'+r2(mid)+' 0 V'+H+' M'+r2(mid)+' 0 L'+r2(mid+d)+' '+r2(-d)+
-        '" stroke="#53565b" stroke-width=".10" stroke-dasharray=".36 .24" fill="none"/>';
-    }else{
-      const mid=H/2;
-      half='<path d="M0 '+r2(mid)+' H'+W+' L'+r2(W+d)+' '+r2(mid-d)+
-        '" stroke="#fff" stroke-width=".19" stroke-dasharray=".36 .24" fill="none"/>'+
-        '<path d="M0 '+r2(mid)+' H'+W+' L'+r2(W+d)+' '+r2(mid-d)+
-        '" stroke="#53565b" stroke-width=".10" stroke-dasharray=".36 .24" fill="none"/>';
-    }
-    frame.innerHTML=
-      '<defs><clipPath id="roundingFrameFace"><rect width="'+W+'" height="'+H+'"/></clipPath></defs>'+
-      '<path d="'+top+'" fill="#eeeae2" stroke="'+back+'" stroke-width=".08"/>'+
-      '<path d="'+side+'" fill="#dfdad0" stroke="'+back+'" stroke-width=".08"/>'+
-      '<rect width="'+W+'" height="'+H+'" fill="#faf9f6"/>'+
-      '<g clip-path="url(#roundingFrameFace)">'+fills.join('')+'</g>'+
-      '<g fill="none">'+grid+'</g>'+
-      '<rect width="'+W+'" height="'+H+'" fill="none" stroke="'+back+'" stroke-width=".10"/>'+
-      half;
-    frame.setAttribute('aria-label',KINDS[roundKind].name+' frame with a permanent halfway line');
-  }
-
-
-  function changeNumber(){
-    const n=boundedNumber(numberInput.value);
-    number=n;
-    numberInput.value=String(n);
-    build();
-  }
-  numberInput.addEventListener('change',changeNumber);
-  numberInput.addEventListener('keydown',function(e){
-    if(e.key==='Enter'){e.preventDefault();numberInput.blur();}
+    inside.forEach(b => toMat(b, from.get(b), null, true));
+    buzz(8);
+    live.textContent = 'Every block is back on the mat.';
   });
-  roundSelect.addEventListener('change',function(){
-    // Ensure typed input is committed before the rounding place changes.
-    number=boundedNumber(numberInput.value);
-    numberInput.value=String(number);
-    roundKind=Number(roundSelect.value);
-    build();
+
+  let resizeFrame = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      // keep what is in the frame; drop anything in hand or in flight where it belongs
+      gen++;
+      drag = null; lastTap = null;
+      carry.textContent = '';
+      arriving.clear();
+      stage.classList.remove('over');
+      layout(false);
+    });
   });
-  resetButton.addEventListener('click',function(){build();});
-  addEventListener('resize',function(){
-    // Repaint to preserve frame aspect ratio. Rebuilding blocks is unnecessary on a resize.
-    drawFrame();
-    requestAnimationFrame(positionFrame);
-  });
-  // Double-click and drag are the only manipulations. No scoring or reveal.
-  build();
+  addEventListener('contextmenu', e => { if (e.target !== numberInput) e.preventDefault(); });
+
+  rebuild();
 })();
-
 </script>
+<script src="../../math-things-home.js"></script>
 </body>
 </html>
