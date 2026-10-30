@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Puzzle Cube</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F;
+      --text-gray: #86868B;
+      --text-light: #AEAEB2;
+      --surface: #FFFFFF;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif;
+      color: var(--text-main);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-font-smoothing: antialiased;
+      /* the mat: warm, quiet ceramic */
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+
+    /* ── MAT ── */
+    #stage { flex: 1; min-height: 0; position: relative; touch-action: none; }
+    #stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; cursor: grab; }
+    #stage canvas.held { cursor: grabbing; }
+    #stage canvas:focus-visible { box-shadow: inset 0 0 0 3px #007AFF; }
+
+    /* ── ZOOM (views the mat closer or farther; the page itself never scales) ── */
+    #zoom {
+      position: fixed; top: 12px; right: 12px; z-index: 6;
+      display: flex; align-items: center; gap: 2px; padding: 3px;
+      border-radius: 24px; background: rgba(255,255,255,0.7);
+      box-shadow: 0 2px 8px rgba(110,95,75,0.16);
+    }
+    #zoom button {
+      min-width: 38px; height: 38px; border-radius: 19px; padding: 0 6px;
+      border: 2px solid transparent; background: transparent; color: var(--text-main);
+      display: flex; align-items: center; justify-content: center;
+      font: 800 12px 'Lexend', sans-serif; cursor: pointer; outline: none; touch-action: manipulation;
+    }
+    #zoom button:active { background: rgba(0,0,0,0.05); }
+    #zoom button:focus-visible { border-color: #007AFF; }
+    #zoom button:disabled { opacity: 0.35; cursor: default; }
+    #zoom #zoomReset { min-width: 52px; }
+
+    /* ── FOOTER ── */
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+<main id="stage" aria-label="A puzzle cube on a mat"></main>
+
+<div id="zoom" role="group" aria-label="Zoom the mat">
+  <button id="zoomOut" aria-label="Zoom out">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10"/></svg>
+  </button>
+  <button id="zoomReset" aria-label="Zoom 100%. Reset zoom">100%</button>
+  <button id="zoomIn" aria-label="Zoom in">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10M8 3v10"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// A 3 × 3 × 3 puzzle cube: twenty-six pieces turning on a hidden core. It does what the one in your hand does:
+// any layer turns, the whole cube turns, and nothing keeps score.
+// The cube's own axes: +x right, +y up, +z front. Faces start in the traditional layout:
+// white up, yellow down, green front, blue back, red right, orange left.
+const FACES = [
+  { axis: 0, sign: 1,  color: 0xB71234 },   // red
+  { axis: 0, sign: -1, color: 0xFF5800 },   // orange
+  { axis: 1, sign: 1,  color: 0xF4F3EE },   // white
+  { axis: 1, sign: -1, color: 0xFFD500 },   // yellow
+  { axis: 2, sign: 1,  color: 0x009B48 },   // green
+  { axis: 2, sign: -1, color: 0x0046AD },   // blue
+];
+const AX = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
+const QUARTER = Math.PI / 2;
+const ELEV = THREE.MathUtils.degToRad(18);   // the camera looks down on the mat a little
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+const $ = id => document.getElementById(id);
+const stage = $('stage'), live = $('live');
+const zoomIn = $('zoomIn'), zoomOut = $('zoomOut'), zoomReset = $('zoomReset');
+
+// ═══════ SCENE ═══════
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NeutralToneMapping;
+stage.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+canvas.tabIndex = 0;
+canvas.setAttribute('role', 'application');
+canvas.setAttribute('aria-label',
+  'Puzzle cube. Drag a face to turn a layer; drag the mat to turn the whole cube. ' +
+  'Keys: F, B, U, D, L and R turn the front, back, top, bottom, left and right faces; M, E and S turn the middle layers; ' +
+  'X, Y and Z or the arrow keys turn the whole cube. Hold Shift to turn the other way.');
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.35;
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.9));
+// a key light from high on the right, and a soft fill from the front
+const sun = new THREE.DirectionalLight(0xfff6ea, 1.3);
+sun.position.set(3.5, 8, 4);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+fill.position.set(-3, 2, 7);
+scene.add(fill);
+// The ceramic mat is the page itself. A held cube casts a soft pool of shadow on it, the same from every side.
+const pool = document.createElement('canvas');
+pool.width = pool.height = 128;
+const pc = pool.getContext('2d'), grad = pc.createRadialGradient(64, 64, 0, 64, 64, 64);
+grad.addColorStop(0, 'rgba(43,33,22,0.34)'); grad.addColorStop(0.45, 'rgba(43,33,22,0.18)'); grad.addColorStop(1, 'rgba(43,33,22,0)');
+pc.fillStyle = grad; pc.fillRect(0, 0, 128, 128);
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4),
+  new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(pool), transparent: true, depthWrite: false, toneMapped: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = -2.7;
+scene.add(shadow);
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+
+// ═══════ THE CUBE ═══════
+// Satin graphite pieces; each outer face carries a glossy enamel tile.
+const cube = new THREE.Group();
+cube.quaternion.setFromEuler(new THREE.Euler(0, -0.6, 0)).premultiply(new THREE.Quaternion().setFromAxisAngle(AX[0], 0.36));
+scene.add(cube);
+const pivot = new THREE.Group();   // the layer being turned rides on this
+cube.add(pivot);
+
+const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x1B1B1E, roughness: 0.5, clearcoat: 0.3, clearcoatRoughness: 0.5 });
+const bodyGeo = new RoundedBoxGeometry(0.96, 0.96, 0.96, 4, 0.1);
+function roundedSquare(size, r) {
+  const s = size / 2, sh = new THREE.Shape();
+  sh.moveTo(-s + r, -s); sh.lineTo(s - r, -s); sh.quadraticCurveTo(s, -s, s, -s + r);
+  sh.lineTo(s, s - r); sh.quadraticCurveTo(s, s, s - r, s);
+  sh.lineTo(-s + r, s); sh.quadraticCurveTo(-s, s, -s, s - r);
+  sh.lineTo(-s, -s + r); sh.quadraticCurveTo(-s, -s, -s + r, -s);
+  return sh;
+}
+const tileGeo = new THREE.ExtrudeGeometry(roundedSquare(0.8, 0.12),
+  { depth: 0.004, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.014, bevelSegments: 3, curveSegments: 8 });
+const tileMats = FACES.map(f => new THREE.MeshPhysicalMaterial({ color: f.color, roughness: 0.38, clearcoat: 0.8, clearcoatRoughness: 0.18 }));
+// turns a tile's +z face to look along the face's outward axis
+const TILE_TURN = [[0, Math.PI / 2, 0], [0, -Math.PI / 2, 0], [-Math.PI / 2, 0, 0], [Math.PI / 2, 0, 0], [0, 0, 0], [0, Math.PI, 0]];
+
+const cubies = [];
+for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+  if (!x && !y && !z) continue;
+  const piece = new THREE.Group();
+  piece.userData.pos = new THREE.Vector3(x, y, z);
+  piece.position.set(x, y, z);
+  piece.add(new THREE.Mesh(bodyGeo, bodyMat));
+  FACES.forEach((f, i) => {
+    if ([x, y, z][f.axis] !== f.sign) return;
+    const tile = new THREE.Mesh(tileGeo, tileMats[i]);
+    tile.rotation.set(...TILE_TURN[i]);
+    tile.position.setComponent(f.axis, f.sign * 0.49);
+    piece.add(tile);
+  });
+  cube.add(piece);
+  cubies.push(piece);
+}
+// a dark core fills the seams, so light never shows through between the layers
+cube.add(new THREE.Mesh(new THREE.SphereGeometry(1.38, 32, 16), bodyMat));
+
+// ═══════ LAYERS ═══════
+let turn = null;   // { axis, layer, members }
+function startTurn(axis, layer) {
+  pivot.quaternion.identity();
+  pivot.updateMatrixWorld(true);
+  turn = { axis, layer, members: cubies.filter(c => Math.round(c.userData.pos.getComponent(axis)) === layer) };
+  turn.members.forEach(c => pivot.attach(c));
+}
+function setTurn(angle) { pivot.quaternion.setFromAxisAngle(AX[turn.axis], angle); dirty = true; }
+// The layer clicks home on a quarter turn: every piece lands exactly on the grid, square to the cube.
+function endTurn(quarters) {
+  setTurn(quarters * QUARTER);
+  pivot.updateMatrixWorld(true);
+  const m = new THREE.Matrix4();
+  for (const c of turn.members) {
+    cube.attach(c);
+    c.position.round();
+    c.userData.pos.copy(c.position);
+    m.makeRotationFromQuaternion(c.quaternion);
+    for (const i of [0, 1, 2, 4, 5, 6, 8, 9, 10]) m.elements[i] = Math.round(m.elements[i]);
+    c.quaternion.setFromRotationMatrix(m);
+  }
+  pivot.quaternion.identity();
+  const done = turn;
+  turn = null;
+  dirty = true;
+  return done;
+}
+
+// ═══════ MOTION ═══════
+// One motion at a time: a layer settling, a keyed turn, or the whole cube turning. Keyed turns wait in line.
+let anim = null;
+const queue = [];
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+function play(a) {
+  anim = { ...a, t0: performance.now() };
+  if (reduceMotion || !a.dur) finishAnim();
+}
+function finishAnim() {
+  if (!anim) return;
+  const a = anim;
+  anim = null;
+  a.step(1);
+  a.end && a.end();
+}
+function next() { while (!anim && queue.length) play(queue.shift()()); }
+// a hand on the cube finishes anything still moving
+function flush() {
+  finishAnim();
+  while (queue.length) { play(queue.shift()()); finishAnim(); }
+}
+
+function turnMotion(axis, layer, quarters, said) {
+  return () => {
+    startTurn(axis, layer);
+    return {
+      dur: 230, step: k => setTurn(quarters * QUARTER * easeOut(k)),
+      end: () => { endTurn(quarters); buzz(5); if (said) live.textContent = said; },
+    };
+  };
+}
+function cubeMotion(worldAxis, angle, said) {
+  return () => {
+    const q0 = cube.quaternion.clone(), q1 = new THREE.Quaternion().setFromAxisAngle(worldAxis, angle).multiply(q0);
+    return {
+      dur: 300, step: k => { cube.quaternion.slerpQuaternions(q0, q1, easeOut(k)); dirty = true; },
+      end: () => { if (said) live.textContent = said; },
+    };
+  };
+}
+
+// ═══════ CAMERA AND VIEW ═══════
+// The mat is endless. Zoom looks closer or farther; panning slides the view; the cube never leaves the screen.
+let W = 1, H = 1, dirty = true;
+const ZMIN = 0.5, ZMAX = 3;
+const view = { s: 1, x: 0, y: 0 };
+
+function resize() {
+  W = Math.max(1, stage.clientWidth); H = Math.max(1, stage.clientHeight);
+  renderer.setSize(W, H, false);
+  camera.aspect = W / H;
+  // the camera stands back until the cube, turned any way, fills about half the shorter side of the screen
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = 2.75 / (0.62 * t * Math.min(1, camera.aspect));
+  camera.position.set(0, Math.sin(ELEV) * dist, Math.cos(ELEV) * dist);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+  applyView();
+}
+
+function applyView() {
+  const m = 48;
+  view.x = Math.min(W - m - W / 2 * view.s, Math.max(m - W / 2 * view.s, view.x));
+  view.y = Math.min(H - m - H / 2 * view.s, Math.max(m - H / 2 * view.s, view.y));
+  // on screen, a point p of the unzoomed view sits at p * s + (x, y)
+  if (view.s === 1 && !view.x && !view.y) camera.clearViewOffset();
+  else camera.setViewOffset(W, H, -view.x / view.s, -view.y / view.s, W / view.s, H / view.s);
+  const pct = Math.round(view.s * 100) + '%';
+  zoomReset.textContent = pct;
+  zoomReset.setAttribute('aria-label', `Zoom ${pct}. Reset zoom`);
+  zoomIn.disabled = view.s >= ZMAX;
+  zoomOut.disabled = view.s <= ZMIN;
+  dirty = true;
+}
+// scale by f, keeping the point under (cx, cy) right where it is
+function zoomAt(f, cx, cy) {
+  const s = Math.min(ZMAX, Math.max(ZMIN, view.s * f));
+  if (s === view.s) return;
+  view.x = cx - (cx - view.x) * s / view.s;
+  view.y = cy - (cy - view.y) * s / view.s;
+  view.s = Math.abs(s - 1) < 0.02 ? 1 : s;
+  applyView();
+}
+function zoomStep(f) { zoomAt(f, W / 2, H / 2); live.textContent = `Zoom ${Math.round(view.s * 100)}%`; }
+function resetView() { view.s = 1; view.x = 0; view.y = 0; applyView(); live.textContent = 'Zoom 100%'; }
+zoomIn.addEventListener('click', () => zoomStep(1.25));
+zoomOut.addEventListener('click', () => zoomStep(1 / 1.25));
+zoomReset.addEventListener('click', resetView);
+
+// where a point of the cube appears on the canvas
+const toScreen = v => {
+  const p = v.clone().applyMatrix4(cube.matrixWorld).project(camera);
+  return { x: (p.x + 1) / 2 * W, y: (1 - p.y) / 2 * H };
+};
+
+// ═══════ HANDS ═══════
+const raycaster = new THREE.Raycaster();
+const pointers = new Map();   // pointerId → { x, y } on the canvas
+let g = null;                 // what one finger (or the mouse) is doing: press, twist, spin or pan
+let pinch = null;
+const at = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+
+// The tile under a point: where it was touched, in the cube's own frame, which face that is, and which piece.
+function pick(p) {
+  cube.updateMatrixWorld(true);
+  raycaster.setFromCamera(new THREE.Vector2(p.x / W * 2 - 1, 1 - p.y / H * 2), camera);
+  const hit = raycaster.intersectObject(cube, true)[0];
+  if (!hit) return null;
+  const local = cube.worldToLocal(hit.point.clone());
+  let na = 0;
+  for (let i = 1; i < 3; i++) if (Math.abs(local.getComponent(i)) > Math.abs(local.getComponent(na))) na = i;
+  if (Math.abs(local.getComponent(na)) < 1.3) return null;   // the core, glimpsed through a seam
+  let piece = hit.object;
+  while (piece && !piece.userData.pos) piece = piece.parent;
+  if (!piece) return null;
+  return { p: local, na, pos: piece.userData.pos.clone() };
+}
+
+// The finger has chosen a direction. Of the two layers through the touched piece that can carry the tile
+// sideways, take the one whose motion on screen lines up best with the finger.
+function beginTwist(p) {
+  cube.updateMatrixWorld(true);
+  const dx = p.x - g.sx, dy = p.y - g.sy, len = Math.hypot(dx, dy);
+  let best = null;
+  for (let b = 0; b < 3; b++) {
+    if (b === g.hit.na) continue;
+    const vel = AX[b].clone().cross(g.hit.p);   // how the touched point moves per radian of turn
+    const a = toScreen(g.hit.p), c = toScreen(g.hit.p.clone().addScaledVector(vel, 0.01));
+    const sv = { x: (c.x - a.x) / 0.01, y: (c.y - a.y) / 0.01 }, m = Math.hypot(sv.x, sv.y);
+    if (m < 1e-3) continue;
+    const align = Math.abs(sv.x * dx + sv.y * dy) / (m * len);
+    if (!best || align > best.align) best = { b, sv, m2: m * m, align };
+  }
+  if (!best) { g = { kind: 'spin', id: g.id }; return; }
+  Object.assign(g, { kind: 'twist', axis: best.b, sv: best.sv, m2: best.m2, angle: 0, trail: [] });
+  startTurn(best.b, Math.round(g.hit.pos.getComponent(best.b)));
+  twistTo(p);
+}
+// the tile stays under the finger
+function twistTo(p) {
+  g.angle = ((p.x - g.sx) * g.sv.x + (p.y - g.sy) * g.sv.y) / g.m2;
+  setTurn(g.angle);
+  const now = performance.now();
+  g.trail.push({ t: now, a: g.angle });
+  while (g.trail.length > 2 && now - g.trail[0].t > 90) g.trail.shift();
+}
+// Let go and the layer settles on the nearest quarter turn; a flick carries it on to the next.
+function release(cancelled) {
+  const s = g;
+  let ahead = s.angle;
+  if (!cancelled && s.trail.length > 1) {
+    const a = s.trail[0], b = s.trail[s.trail.length - 1];
+    if (b.t > a.t) ahead += (b.a - a.a) / (b.t - a.t) * 120;
+  }
+  const q = Math.round(ahead / QUARTER), from = s.angle;
+  play({
+    dur: 90 + 200 * Math.min(1.5, Math.abs(q * QUARTER - from) / QUARTER),
+    step: k => setTurn(from + (q * QUARTER - from) * easeOut(k)),
+    end: () => {
+      const t = endTurn(q);
+      if (((q % 4) + 4) % 4) { buzz(5); live.textContent = describe(t.axis, t.layer, q); }
+    },
+  });
+}
+
+// Turning the whole cube: it follows the finger, as if held at its middle.
+function spin(dx, dy) {
+  const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+  const up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+  cube.updateMatrixWorld(true);
+  const a = toScreen(cube.worldToLocal(right.clone().multiplyScalar(-1.5))), b = toScreen(cube.worldToLocal(right.clone().multiplyScalar(1.5)));
+  const k = 2.6 / Math.max(60, Math.hypot(b.x - a.x, b.y - a.y));   // radians per pixel
+  cube.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(up, dx * k));
+  cube.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(right, dy * k));
+  cube.quaternion.normalize();
+  dirty = true;
+}
+
+function startPinch() {
+  const [a, b] = [...pointers.values()];
+  const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+  pinch = { d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), s: view.s, mx: (cx - view.x) / view.s, my: (cy - view.y) / view.s };
+}
+
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  canvas.focus({ preventScroll: true });
+  const p = at(e);
+  pointers.set(e.pointerId, p);
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  canvas.classList.add('held');
+  // a second finger turns the gesture into moving the view: let go of any layer first
+  if (pointers.size === 2) {
+    if (g && g.kind === 'twist') release(true);
+    g = null;
+    startPinch();
+    return;
+  }
+  if (pointers.size > 2) return;
+  flush();
+  if (e.pointerType === 'mouse' && e.button !== 0) { g = { kind: 'pan', id: e.pointerId }; return; }
+  const hit = pick(p);
+  g = hit ? { kind: 'press', id: e.pointerId, sx: p.x, sy: p.y, hit } : { kind: 'spin', id: e.pointerId };
+});
+
+canvas.addEventListener('pointermove', e => {
+  const last = pointers.get(e.pointerId);
+  if (!last) return;
+  const p = at(e), dx = p.x - last.x, dy = p.y - last.y;
+  pointers.set(e.pointerId, p);
+  if (pinch && pointers.size >= 2) {
+    const [a, b] = [...pointers.values()];
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    view.s = Math.min(ZMAX, Math.max(ZMIN, pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d));
+    view.x = cx - pinch.mx * view.s;
+    view.y = cy - pinch.my * view.s;
+    applyView();
+    return;
+  }
+  if (!g || g.id !== e.pointerId) return;
+  if (g.kind === 'spin') spin(dx, dy);
+  else if (g.kind === 'pan') { view.x += dx; view.y += dy; applyView(); }
+  else if (g.kind === 'press') { if (Math.hypot(p.x - g.sx, p.y - g.sy) >= 8) beginTwist(p); }
+  else if (g.kind === 'twist') twistTo(p);
+});
+
+function lift(e) {
+  if (!pointers.delete(e.pointerId)) return;
+  if (!pointers.size) canvas.classList.remove('held');
+  if (pinch) {
+    if (pointers.size >= 2) startPinch();
+    else {
+      pinch = null;
+      // the finger left behind carries on moving the view, without a jump
+      if (pointers.size === 1) g = { kind: 'pan', id: [...pointers.keys()][0] };
+    }
+    return;
+  }
+  if (!g || g.id !== e.pointerId) return;
+  if (g.kind === 'twist') release(e.type === 'pointercancel');
+  g = null;
+  next();
+}
+canvas.addEventListener('pointerup', lift);
+canvas.addEventListener('pointercancel', lift);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// Ctrl/⌘ + wheel, and a trackpad pinch (which arrives as Ctrl + wheel), zoom the mat; scrolling slides it.
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? H : 1;
+  if (e.ctrlKey || e.metaKey) {
+    const p = at(e);
+    zoomAt(Math.exp(-Math.max(-120, Math.min(120, e.deltaY * unit)) * 0.0025), p.x, p.y);
+  } else {
+    view.x -= e.deltaX * unit; view.y -= e.deltaY * unit;
+    applyView();
+  }
+}, { passive: false });
+// Safari's trackpad pinch arrives as gesture events instead
+let gestureFrom = 1;
+addEventListener('gesturestart', e => { e.preventDefault(); gestureFrom = view.s; }, { passive: false });
+addEventListener('gesturechange', e => {
+  e.preventDefault();
+  if (pointers.size < 2) { const p = at(e); zoomAt(gestureFrom * e.scale / view.s, p.x, p.y); }
+}, { passive: false });
+addEventListener('gestureend', e => e.preventDefault(), { passive: false });
+
+// ═══════ KEYS ═══════
+// Turns are named the way cubers name them, from where you are looking: F front, B back, U up, D down,
+// L left, R right; M, E and S the middle layers; X, Y and Z the whole cube. Shift turns the other way.
+function viewFaces() {
+  camera.updateMatrixWorld();
+  const inv = cube.quaternion.clone().invert();
+  const dirs = [['F', camera.position.clone().normalize()],
+                ['U', new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1)],
+                ['R', new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0)]];
+  const used = new Set(), out = {};
+  for (const [name, dir] of dirs) {
+    const d = dir.applyQuaternion(inv);
+    let a = -1;
+    for (let i = 0; i < 3; i++) if (!used.has(i) && (a < 0 || Math.abs(d.getComponent(i)) > Math.abs(d.getComponent(a)))) a = i;
+    used.add(a);
+    out[name] = { axis: a, sign: Math.sign(d.getComponent(a)) || 1 };
+  }
+  return out;
+}
+// each layer: the axis it turns on, which layer, and the face whose clockwise it follows (outward sign)
+const LAYERS = {
+  f: v => [v.F.axis, v.F.sign, v.F.sign, 'front face'],
+  b: v => [v.F.axis, -v.F.sign, -v.F.sign, 'back face'],
+  u: v => [v.U.axis, v.U.sign, v.U.sign, 'top face'],
+  d: v => [v.U.axis, -v.U.sign, -v.U.sign, 'bottom face'],
+  r: v => [v.R.axis, v.R.sign, v.R.sign, 'right face'],
+  l: v => [v.R.axis, -v.R.sign, -v.R.sign, 'left face'],
+  m: v => [v.R.axis, 0, -v.R.sign, 'middle column'],
+  e: v => [v.U.axis, 0, -v.U.sign, 'middle row'],
+  s: v => [v.F.axis, 0, v.F.sign, 'middle slice'],
+};
+const WAYS = ['', 'clockwise', 'halfway around', 'counterclockwise'];
+// clockwise, seen from outside the face a layer follows, is a negative turn about that face's outward axis
+function describe(axis, layer, quarters) {
+  const v = viewFaces();
+  for (const key in LAYERS) {
+    const [a, l, ref, name] = LAYERS[key](v);
+    if (a === axis && l === layer) return `The ${name} turned ${WAYS[(((-ref * quarters) % 4) + 4) % 4]}.`;
+  }
+  return '';
+}
+const WHOLE = { x: 'R', y: 'U', z: 'F', arrowup: ['R', 1], arrowdown: ['R', -1], arrowleft: ['U', 1], arrowright: ['U', -1] };
+
+addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest && e.target.closest('a, button') && (e.key === 'Enter' || e.key === ' ')) return;
+  if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomStep(1.25); return; }
+  if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomStep(1 / 1.25); return; }
+  if (e.key === '0') { e.preventDefault(); resetView(); return; }
+  if (g) return;   // a hand is on the cube
+  const key = e.key.toLowerCase(), back = e.shiftKey ? -1 : 1;
+  if (LAYERS[key]) {
+    e.preventDefault();
+    queue.push(() => {
+      const [axis, layer, ref, name] = LAYERS[key](viewFaces()), q = -ref * back;
+      return turnMotion(axis, layer, q, `The ${name} turned ${back > 0 ? 'clockwise' : 'counterclockwise'}.`)();
+    });
+    next();
+  } else if (WHOLE[key]) {
+    e.preventDefault();
+    const [face, dir] = Array.isArray(WHOLE[key]) ? WHOLE[key] : [WHOLE[key], back];
+    queue.push(() => {
+      const f = viewFaces()[face];
+      const axis = AX[f.axis].clone().multiplyScalar(f.sign).applyQuaternion(cube.quaternion);
+      return cubeMotion(axis, -QUARTER * dir, 'The whole cube turned.')();
+    });
+    next();
+  }
+});
+
+// ═══════ RUN ═══════
+function frame(now) {
+  if (anim) {
+    const k = Math.min(1, (now - anim.t0) / anim.dur);
+    if (k >= 1) { finishAnim(); next(); } else anim.step(k);
+  }
+  if (dirty) { dirty = false; renderer.render(scene, camera); }
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', resize);
+resize();
+requestAnimationFrame(frame);
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
