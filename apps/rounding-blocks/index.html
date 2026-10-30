@@ -77,6 +77,16 @@
     .place{min-height:115px}
     .block{height:52px}
   }
+
+  /* All blocks share one physical unit scale. The visible SVG is never stretched to its button. */
+  .places-viewport { overflow: auto; overscroll-behavior: contain; }
+  .places { align-items: flex-start; min-height: 0; }
+  .place { flex: 0 0 auto; padding: 7px 5px 14px; }
+  .block-grid { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; align-items: flex-start; gap: 7px; }
+  .block { flex: 0 0 auto; width: var(--hit-w); height: var(--hit-h); min-width: 30px; min-height: 30px; padding: 0; }
+  .block svg { width: var(--visual-w); height: var(--visual-h); flex: 0 0 auto; }
+  #roundFrame { width: auto; height: auto; display: block; max-width: none; max-height: none; }
+  @media(max-width:760px) { .place { padding: 7px 3px 14px; } .block-grid { gap: 5px; } }
 </style>
 </head>
 <body>
@@ -180,14 +190,24 @@
   let pointer=null;
   let lastTap=null;
 
-  function blockPicture(k){
-    const K=KINDS[k];
-    const u=[31,5.6,6.1,6.0,0.62,0.53][k];
-    const d=K.depth*DS*u;
-    const w=K.w*u+d+8;
-    const h=K.h*u+d+8;
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 '+r2(-d-4)+' '+r2(w)+' '+r2(h)+'" aria-hidden="true"><g>'+pieceMarkup(k,u)+'</g></svg>';
+  
+function matUnit(){
+    // A single world-unit scale applies to every denomination, never per-piece normalization.
+    // Large high-place blocks reduce the camera's common scale, not their own size alone.
+    const maxKind=Math.min(5,Math.floor(Math.log10(Math.max(1,number))));
+    const K=KINDS[maxKind];
+    const available=Math.max(160,places.parentElement.clientHeight-45);
+    return Math.min(7.3,Math.max(1.4,(available-12)/(K.h+K.depth*DS+1)));
   }
+
+  function blockPicture(k,u){
+    const K=KINDS[k],d=K.depth*DS*u;
+    const width=r2(K.w*u+d+8),height=r2(K.h*u+d+8);
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 '+r2(-d-4)+' '+width+' '+height+
+      '" width="'+width+'" height="'+height+'" aria-hidden="true"><g>'+pieceMarkup(k,u)+'</g></svg>';
+    return {svg,width,height};
+  }
+
 
   function boundedNumber(s){
     const digits=String(s).replace(/[^0-9]/g,'');
@@ -210,7 +230,8 @@
     roundSelect.value=String(roundKind);
   }
 
-  function build(){
+  
+function build(){
     blocks=[];
     placed=[];
     nextId=1;
@@ -218,11 +239,19 @@
     lastTap=null;
     updateOptions();
     places.textContent='';
-    for(let k=5;k>=0;k--){
+    const highest=Math.max(1,Math.floor(Math.log10(Math.max(1,number))));
+    const u=matUnit();
+    const pictures=KINDS.map((K,k)=>blockPicture(k,u));
+    const narrow=innerWidth<760;
+    for(let k=highest;k>=0;k--){
       const digit=Math.floor(number/KINDS[k].value)%10;
       const col=document.createElement('section');
       col.className='place'+(k<roundKind?' below':'');
       col.dataset.kind=String(k);
+      const p=pictures[k];
+      const baseWidth=narrow?105:145;
+      // Never shrink the block to fit a column; expand the mat and scroll instead.
+      col.style.width=Math.ceil(Math.max(baseWidth,k>1&&digit?p.width+20:baseWidth))+'px';
       const label=document.createElement('div');
       label.className='place-label';
       label.textContent=LABELS[k];
@@ -234,6 +263,10 @@
         const canMove=k<roundKind;
         const node=document.createElement(canMove?'button':'div');
         node.className='block'+(canMove?'':' static');
+        node.style.setProperty('--hit-w',Math.max(30,p.width)+'px');
+        node.style.setProperty('--hit-h',Math.max(30,p.height)+'px');
+        node.style.setProperty('--visual-w',p.width+'px');
+        node.style.setProperty('--visual-h',p.height+'px');
         if(canMove){
           node.type='button';
           node.setAttribute('aria-label','Move one '+KINDS[k].name+' into the frame');
@@ -247,7 +280,7 @@
             if(e.key==='Enter'||e.key===' '){e.preventDefault();moveIntoFrame(block);}
           });
         } else node.setAttribute('aria-label',KINDS[k].name);
-        node.innerHTML=blockPicture(k);
+        node.innerHTML=p.svg;
         grid.appendChild(node);
         block.el=node;
         blocks.push(block);
@@ -258,8 +291,17 @@
     document.getElementById('frameCaption').textContent=
       KINDS[roundKind].value.toLocaleString('en-US')+' frame';
     drawFrame();
-    requestAnimationFrame(positionFrame);
+    requestAnimationFrame(function(){
+      const source=places.querySelector('[data-kind="'+(roundKind-1)+'"]');
+      const viewport=places.parentElement;
+      if(narrow&&source){
+        // Keep the manipulatives being moved into the frame visible on small screens.
+        viewport.scrollLeft=Math.max(0,source.offsetLeft-viewport.clientWidth*0.57);
+      }
+      positionFrame();
+    });
   }
+
 
   function positionFrame(){
     // On wider screens the empty frame sits above the place feeding it.
@@ -339,42 +381,97 @@
     live.textContent='Moved one '+KINDS[b.kind].name+' into the frame.';
   }
 
-  function drawFrame(){
-    // Every move occupies exactly its base-ten fraction of the target.
-    // A column is 1/10 of the target, filled from its top down.
-    // No rounding decision, success state, or animation is produced.
-    const target=KINDS[roundKind].value;
-    let position=0;
-    const chunks=[];
-    for(const b of placed){
-      const fraction=KINDS[b.kind].value/target;
-      const end=Math.min(1,position+fraction);
-      for(let c=0;c<10;c++){
-        const left=c/10,right=(c+1)/10;
-        const start=Math.max(left,position);
-        const stop=Math.min(right,end);
-        if(stop-start<1e-12)continue;
-        const x=c*30;
-        const y=(start-left)*3000;
-        const h=(stop-start)*3000;
-        chunks.push('<rect x="'+r2(x)+'" y="'+r2(y)+'" width="30" height="'+r2(h)+
-          '" fill="url(#gf'+b.kind+')" stroke="rgba(30,10,5,.24)" stroke-width=".4"/>');
+  
+function drawFrame(){
+    const K=KINDS[roundKind],W=K.w,H=K.h,d=K.depth*DS;
+    const target=K.value,major=target/10;
+    const horizontal=roundKind===2||roundKind===5;
+    // Each target is the actual rod / flat / cube / larger rod / larger flat silhouette.
+    // Fit the camera to that physical shape without changing its aspect ratio.
+    const pad=0.55;
+    const vbX=-pad,vbY=-d-pad,vbW=W+d+pad*2,vbH=H+d+pad*2;
+    const maxW=Math.max(140,Math.min(345,stage.clientWidth-30));
+    const maxH=Math.max(145,stage.clientHeight-29);
+    const scale=Math.min(maxW/vbW,maxH/vbH);
+    frame.setAttribute('viewBox',[r2(vbX),r2(vbY),r2(vbW),r2(vbH)].join(' '));
+    frame.style.width=r2(vbW*scale)+'px';
+    frame.style.height=r2(vbH*scale)+'px';
+
+    // One block is always exactly its value's fraction of this target. Packing
+    // highest first keeps smaller blocks together even if students move them first.
+    const ordered=[...placed].sort((a,b)=>b.kind-a.kind);
+    let cursor=0;
+    const fills=[];
+    for(const b of ordered){
+      let amount=KINDS[b.kind].value;
+      while(amount>0){
+        const section=Math.min(9,Math.floor(cursor/major));
+        const inSection=cursor-section*major;
+        const part=Math.min(amount,major-inSection);
+        if(part<=0)break;
+        let x,y,w,h;
+        if(horizontal){
+          x=section*W/10;
+          w=W/10;
+          h=part/major*H;
+          y=H-(inSection+part)/major*H;
+        }else{
+          x=inSection/major*W;
+          w=part/major*W;
+          y=H-(section+1)*H/10;
+          h=H/10;
+        }
+        fills.push('<rect x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+
+          '" height="'+r2(h)+'" fill="url(#gf'+b.kind+')" stroke="rgba(40,20,10,.22)" stroke-width=".025"/>');
+        cursor+=part;
+        amount-=part;
       }
-      position=end;
     }
+
+    const back='rgba(119,110,94,.72)';
+    const top='M0 0 H'+W+' L'+r2(W+d)+' '+r2(-d)+' H'+r2(d)+' Z';
+    const side='M'+W+' 0 L'+r2(W+d)+' '+r2(-d)+' V'+r2(H-d)+' L'+W+' '+H+' Z';
     let grid='';
     for(let i=1;i<10;i++){
-      const p=i*30;
-      grid+='<path d="M'+p+' 0 V300 M0 '+p+' H300" fill="none" stroke="#9f9a91" stroke-opacity=".45" stroke-width=".75"/>';
+      // The ten subdivisions are always the ten adjacent copies of the next smaller place.
+      if(horizontal){
+        const x=i*W/10;
+        grid+='<path d="M'+r2(x)+' 0 V'+H+'" stroke="#918d84" stroke-opacity=".58" stroke-width=".045"/>';
+        if(roundKind===2) grid+='<path d="M0 '+i+' H'+W+'" stroke="#918d84" stroke-opacity=".24" stroke-width=".035"/>';
+        if(roundKind===5) grid+='<path d="M0 '+r2(i*H/10)+' H'+W+'" stroke="#918d84" stroke-opacity=".24" stroke-width=".045"/>';
+      }else{
+        const y=i*H/10;
+        grid+='<path d="M0 '+r2(y)+' H'+W+'" stroke="#918d84" stroke-opacity=".55" stroke-width=".045"/>';
+        if(roundKind===3||roundKind===4)
+          grid+='<path d="M'+r2(i*W/10)+' 0 V'+H+'" stroke="#918d84" stroke-opacity=".22" stroke-width=".045"/>';
+      }
+    }
+    let half;
+    if(horizontal){
+      const mid=W/2;
+      half='<path d="M'+r2(mid)+' 0 V'+H+' M'+r2(mid)+' 0 L'+r2(mid+d)+' '+r2(-d)+
+        '" stroke="#fff" stroke-width=".19" stroke-dasharray=".36 .24" fill="none"/>'+
+        '<path d="M'+r2(mid)+' 0 V'+H+' M'+r2(mid)+' 0 L'+r2(mid+d)+' '+r2(-d)+
+        '" stroke="#53565b" stroke-width=".10" stroke-dasharray=".36 .24" fill="none"/>';
+    }else{
+      const mid=H/2;
+      half='<path d="M0 '+r2(mid)+' H'+W+' L'+r2(W+d)+' '+r2(mid-d)+
+        '" stroke="#fff" stroke-width=".19" stroke-dasharray=".36 .24" fill="none"/>'+
+        '<path d="M0 '+r2(mid)+' H'+W+' L'+r2(W+d)+' '+r2(mid-d)+
+        '" stroke="#53565b" stroke-width=".10" stroke-dasharray=".36 .24" fill="none"/>';
     }
     frame.innerHTML=
-      '<rect width="300" height="300" rx="2" fill="#f9f8f5"/>'+
-      chunks.join('')+
-      grid+
-      '<rect width="300" height="300" rx="2" fill="none" stroke="#aaa59b" stroke-width="2"/>'+
-      '<line x1="150" y1="0" x2="150" y2="300" stroke="#faf9f7" stroke-width="5" stroke-dasharray="9 7"/>'+
-      '<line x1="150" y1="0" x2="150" y2="300" stroke="#55565b" stroke-width="2.7" stroke-dasharray="9 7"/>';
+      '<defs><clipPath id="roundingFrameFace"><rect width="'+W+'" height="'+H+'"/></clipPath></defs>'+
+      '<path d="'+top+'" fill="#eeeae2" stroke="'+back+'" stroke-width=".08"/>'+
+      '<path d="'+side+'" fill="#dfdad0" stroke="'+back+'" stroke-width=".08"/>'+
+      '<rect width="'+W+'" height="'+H+'" fill="#faf9f6"/>'+
+      '<g clip-path="url(#roundingFrameFace)">'+fills.join('')+'</g>'+
+      '<g fill="none">'+grid+'</g>'+
+      '<rect width="'+W+'" height="'+H+'" fill="none" stroke="'+back+'" stroke-width=".10"/>'+
+      half;
+    frame.setAttribute('aria-label',KINDS[roundKind].name+' frame with a permanent halfway line');
   }
+
 
   function changeNumber(){
     const n=boundedNumber(numberInput.value);
@@ -394,7 +491,11 @@
     build();
   });
   resetButton.addEventListener('click',function(){build();});
-  addEventListener('resize',function(){requestAnimationFrame(positionFrame);});
+  addEventListener('resize',function(){
+    // Repaint to preserve frame aspect ratio. Rebuilding blocks is unnecessary on a resize.
+    drawFrame();
+    requestAnimationFrame(positionFrame);
+  });
   // Double-click and drag are the only manipulations. No scoring or reveal.
   build();
 })();
