@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Things. | Rounding Blocks</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --ink:#1D1D1F; --quiet:#86868B; --ones:#DC143C; --tens:#4169E1;
+    --hundreds:#FFD700; --thousands:#4CBB17;
+    --ten-thousands:#FF7F00; --hundred-thousands:#6B3FA0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;height:100%}
+  body{font-family:Lexend,system-ui,-apple-system,sans-serif;color:var(--ink);
+    background:radial-gradient(ellipse at 50% 38%,#FBF9F6 0%,#F2EFEA 58%,#E8E4DD 100%);
+    display:flex;flex-direction:column;overflow:hidden}
+  button,input,select{font:inherit}
+  .bar{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,30px);
+    flex-wrap:wrap;padding:13px 20px;background:rgba(255,255,255,.78);
+    border-bottom:1px solid #ddd9d1;z-index:2;min-height:78px}
+  .brand{font-size:17px;font-weight:900;letter-spacing:-.045em;white-space:nowrap;margin-right:auto}
+  .controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
+  .field{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#6b6b70;font-weight:700;letter-spacing:.02em}
+  .field input,.field select{border:1px solid #c7c5c0;border-radius:12px;padding:9px 12px;background:#fff;
+    font-size:17px;color:var(--ink);font-weight:700;min-height:44px}
+  .field input{width:143px}
+  .field select{width:167px}
+  .field input:focus-visible,.field select:focus-visible,button:focus-visible{outline:3px solid #007AFF;outline-offset:3px}
+  .reset{align-self:end;border:1px solid #c7c5c0;border-radius:12px;background:#fff;color:#3d3d41;
+    min-height:44px;padding:8px 16px;cursor:pointer;font-size:14px;font-weight:700}
+  main{flex:1;min-height:0;display:flex;flex-direction:column}
+  .frame-stage{position:relative;flex:0 0 clamp(236px,43vh,368px);width:100%;border-bottom:1px solid rgba(60,40,20,.08)}
+  .frame-holder{position:absolute;top:9px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:7px}
+  .frame-caption{font-weight:700;font-size:12px;letter-spacing:.02em;color:#66656a;white-space:nowrap}
+  #roundFrame{display:block;width:clamp(206px,36vh,318px);height:clamp(206px,36vh,318px);
+    filter:drop-shadow(0 5px 9px rgba(85,74,58,.14));touch-action:none}
+  .places-viewport{flex:1;min-height:0;overflow:auto hidden;padding:14px 18px 20px}
+  .places{display:flex;justify-content:center;gap:clamp(8px,1.2vw,18px);min-width:max-content;margin:0 auto;min-height:100%}
+  .place{width:clamp(110px,13.5vw,158px);min-height:160px;border-radius:16px;
+    padding:7px 8px;text-align:center;position:relative}
+  .place-label{font-size:12px;font-weight:800;color:#68676a;white-space:nowrap;letter-spacing:-.02em;
+    padding-bottom:11px}
+  .place.below .place-label{color:#252528}
+  .block-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;justify-items:center}
+  .block{display:flex;align-items:center;justify-content:center;
+    width:100%;height:72px;padding:0;border:0;background:transparent;
+    border-radius:9px;position:relative;touch-action:none}
+  .block svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(1px 3px 3px rgba(60,40,20,.3));pointer-events:none}
+  button.block{cursor:grab}
+  button.block:active{cursor:grabbing}
+  .block.dragging{z-index:10;cursor:grabbing;filter:drop-shadow(0 6px 7px rgba(60,40,20,.23))}
+  .block.static{pointer-events:none}
+  .block:not(.static):focus-visible{outline:3px solid #007AFF}
+  footer{flex:0 0 auto;min-height:28px;display:flex;justify-content:center;align-items:center;
+    gap:9px;color:#99979a;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    background:linear-gradient(180deg,#DADCE1,#E4E6EA)}
+  .bead{width:3px;height:3px;border-radius:50%;background:#aaa;display:inline-block}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  @media(max-width:760px){
+    .bar{justify-content:center;padding:8px 10px;gap:9px}
+    .brand{margin:0;text-align:center;width:100%;font-size:14px}
+    .controls{gap:8px}
+    .field input{width:105px}
+    .field select{width:142px}
+    .field input,.field select{font-size:14px;padding:7px}
+    .reset{padding:7px 9px}
+    .frame-stage{flex-basis:clamp(215px,39vh,335px)}
+    #roundFrame{width:clamp(190px,34vh,285px);height:clamp(190px,34vh,285px)}
+    .places{justify-content:flex-start}
+  }
+  @media(max-height:620px){
+    .frame-stage{flex-basis:210px}
+    #roundFrame{width:180px;height:180px}
+    .frame-holder{top:2px;gap:2px}
+    .place{min-height:115px}
+    .block{height:52px}
+  }
+</style>
+</head>
+<body>
+<header class="bar"><div class="brand">Math Things. <span style="font-weight:400;color:#777">/ Rounding Blocks</span></div><div class="controls"><label class="field">Number<input id="number" type="text" inputmode="numeric" value="245" aria-label="Number" maxlength="7" autocomplete="off"></label><label class="field">Round to nearest<select id="roundTo" aria-label="Round to nearest"><option value="1">10</option><option value="2" selected>100</option><option value="3">1,000</option><option value="4">10,000</option><option value="5">100,000</option></select></label><button class="reset" id="reset" type="button">Reset</button></div></header>
+<main><section class="frame-stage" id="frameStage" aria-label="Rounding frame"><div class="frame-holder" id="frameHolder"><div class="frame-caption" id="frameCaption">100 frame</div><svg id="roundFrame" viewBox="0 0 300 300" role="img" aria-label="Empty frame divided in half"></svg></div></section><div class="places-viewport"><div class="places" id="places" aria-label="Base-ten blocks on the mat"></div></div></main>
+<footer>Math Things <span class="bead"></span> Math, in your hands <span class="bead"></span></footer>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.45"/>
+      <stop offset="0.35" stop-color="#fff" stop-opacity="0.1"/>
+      <stop offset="0.6" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- ones -->
+    <linearGradient id="gf0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EE4466"/><stop offset="0.5" stop-color="#DC143C"/><stop offset="1" stop-color="#B50F31"/></linearGradient>
+    <linearGradient id="gt0" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FF5A75"/><stop offset="1" stop-color="#FF3B5C"/></linearGradient>
+    <linearGradient id="gs0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A0102A"/><stop offset="1" stop-color="#7A081A"/></linearGradient>
+    <!-- tens -->
+    <linearGradient id="gf1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5F84F0"/><stop offset="0.5" stop-color="#4169E1"/><stop offset="1" stop-color="#3052C2"/></linearGradient>
+    <linearGradient id="gt1" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#829AFF"/><stop offset="1" stop-color="#6682FF"/></linearGradient>
+    <linearGradient id="gs1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2238AA"/><stop offset="1" stop-color="#16288A"/></linearGradient>
+    <!-- hundreds -->
+    <linearGradient id="gf2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE55C"/><stop offset="0.5" stop-color="#FFD700"/><stop offset="1" stop-color="#E5B900"/></linearGradient>
+    <linearGradient id="gt2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FFF08A"/><stop offset="1" stop-color="#FFE44D"/></linearGradient>
+    <linearGradient id="gs2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8960F"/><stop offset="1" stop-color="#A67808"/></linearGradient>
+    <!-- thousands -->
+    <linearGradient id="gf3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#66D232"/><stop offset="0.5" stop-color="#4CBB17"/><stop offset="1" stop-color="#3D9B12"/></linearGradient>
+    <linearGradient id="gt3" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7BEA45"/><stop offset="1" stop-color="#5EE024"/></linearGradient>
+    <linearGradient id="gs3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#368812"/><stop offset="1" stop-color="#28660B"/></linearGradient>
+
+    <!-- Place-value continuations from Math Things material palette -->
+    <linearGradient id="gf4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFA74C"/><stop offset=".5" stop-color="#FF7F00"/><stop offset="1" stop-color="#D46B00"/></linearGradient>
+    <linearGradient id="gt4" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FFBF79"/><stop offset="1" stop-color="#FF983A"/></linearGradient>
+    <linearGradient id="gs4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#AA5000"/><stop offset="1" stop-color="#783900"/></linearGradient>
+    <linearGradient id="gf5" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9067C7"/><stop offset=".5" stop-color="#6B3FA0"/><stop offset="1" stop-color="#512B85"/></linearGradient>
+    <linearGradient id="gt5" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#AE85DC"/><stop offset="1" stop-color="#8961B8"/></linearGradient>
+    <linearGradient id="gs5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#47266F"/><stop offset="1" stop-color="#351D55"/></linearGradient>
+  </defs>
+</svg>
+<div class="sr-only" aria-live="polite" id="live"></div>
+<script>
+
+(function(){
+  'use strict';
+  // Names, geometry, material rendering, and palette follow Place Value Blocks V2.
+  // The two larger forms extend the Math Things place-value palette.
+  const KINDS=[
+    {name:'unit cube',plural:'unit cubes',w:1,h:1,depth:1,value:1},
+    {name:'ten rod',plural:'ten rods',w:1,h:10,depth:1,value:10},
+    {name:'hundred flat',plural:'hundred flats',w:10,h:10,depth:1,value:100},
+    {name:'thousand cube',plural:'thousand cubes',w:10,h:10,depth:10,value:1000},
+    {name:'ten-thousand rod',plural:'ten-thousand rods',w:10,h:100,depth:10,value:10000},
+    {name:'hundred-thousand flat',plural:'hundred-thousand flats',w:100,h:100,depth:10,value:100000}
+  ];
+  const LABELS=['Ones','Tens','Hundreds','Thousands','Ten thousands','Hundred thousands'];
+  const DS=0.354;
+  const r2=v=>Math.round(v*100)/100;
+
+  function pieceMarkup(k, u) {
+    const K = KINDS[k], W = K.w * u, H = K.h * u, d = K.depth * DS * u, e = DS * u;
+    const rad = r2(Math.min(u * 0.13, 5)), sw = r2(Math.max(0.5, Math.min(1.1, u / 20)));
+    const top = `M0,0H${r2(W)}L${r2(W + d)},${r2(-d)}H${r2(d)}Z`;
+    const side = `M${r2(W)},0L${r2(W + d)},${r2(-d)}V${r2(H - d)}L${r2(W)},${r2(H)}Z`;
+    let g = '';
+    for (let i = 1; i < K.w; i++) { const x = r2(i * u); g += `M${x},0V${r2(H)}M${x},0l${r2(d)},${r2(-d)}`; }
+    for (let j = 1; j < K.h; j++) { const y = r2(j * u); g += `M0,${y}H${r2(W)}M${r2(W)},${y}l${r2(d)},${r2(-d)}`; }
+    for (let s = 1; s < K.depth; s++) { const o = r2(s * e); g += `M${o},${-o}H${r2(W + o)}M${r2(W + o)},${-o}V${r2(H - o)}`; }
+    const edge = 'rgba(40,20,10,0.22)';
+    return (
+      `<path d="${top}" fill="url(#gt${k})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+      `<path d="${side}" fill="url(#gs${k})" stroke="${edge}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+      // fill the two back corners behind the rounded front face so no light leaks through
+      `<rect width="${rad}" height="${rad}" fill="url(#gt${k})"/>` +
+      `<rect x="${r2(W - rad)}" width="${rad}" height="${rad}" fill="url(#gs${k})"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#gf${k})"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="url(#sheen)"/>` +
+      (g
+        ? `<path d="${g}" fill="none" stroke="rgba(30,10,5,0.28)" stroke-width="${sw}"/>` +
+          `<path d="${g}" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="${sw}" transform="translate(${sw} ${sw})"/>`
+        : '') +
+      `<rect x="${r2(sw / 2)}" y="${r2(sw / 2)}" width="${r2(W - sw)}" height="${r2(H - sw)}" rx="${rad}" fill="none" stroke="rgba(255,255,255,0.38)" stroke-width="${sw}"/>` +
+      `<rect width="${r2(W)}" height="${r2(H)}" rx="${rad}" fill="none" stroke="${edge}" stroke-width="${sw}"/>`
+    );
+  }
+
+
+
+  const numberInput=document.getElementById('number');
+  const roundSelect=document.getElementById('roundTo');
+  const resetButton=document.getElementById('reset');
+  const places=document.getElementById('places');
+  const stage=document.getElementById('frameStage');
+  const holder=document.getElementById('frameHolder');
+  const frame=document.getElementById('roundFrame');
+  const live=document.getElementById('live');
+  let number=245;
+  let roundKind=2;
+  let blocks=[];
+  let placed=[];
+  let nextId=1;
+  let pointer=null;
+  let lastTap=null;
+
+  function blockPicture(k){
+    const K=KINDS[k];
+    const u=[31,5.6,6.1,6.0,0.62,0.53][k];
+    const d=K.depth*DS*u;
+    const w=K.w*u+d+8;
+    const h=K.h*u+d+8;
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 '+r2(-d-4)+' '+r2(w)+' '+r2(h)+'" aria-hidden="true"><g>'+pieceMarkup(k,u)+'</g></svg>';
+  }
+
+  function boundedNumber(s){
+    const digits=String(s).replace(/[^0-9]/g,'');
+    if(!digits)return 0;
+    return Math.max(0,Math.min(999999,Number(digits)));
+  }
+
+  function allowedKinds(){
+    // Keep the next place above the highest occupied place unavailable.
+    // The nearest ten remains usable for single-digit numbers.
+    return Math.max(1, Math.floor(Math.log10(Math.max(1,number))));
+  }
+
+  function updateOptions(){
+    const highest=allowedKinds();
+    for(const option of roundSelect.options){
+      option.disabled=Number(option.value)>highest;
+    }
+    if(roundKind>highest)roundKind=highest;
+    roundSelect.value=String(roundKind);
+  }
+
+  function build(){
+    blocks=[];
+    placed=[];
+    nextId=1;
+    pointer=null;
+    lastTap=null;
+    updateOptions();
+    places.textContent='';
+    for(let k=5;k>=0;k--){
+      const digit=Math.floor(number/KINDS[k].value)%10;
+      const col=document.createElement('section');
+      col.className='place'+(k<roundKind?' below':'');
+      col.dataset.kind=String(k);
+      const label=document.createElement('div');
+      label.className='place-label';
+      label.textContent=LABELS[k];
+      col.appendChild(label);
+      const grid=document.createElement('div');
+      grid.className='block-grid';
+      for(let i=0;i<digit;i++){
+        const block={id:nextId++,kind:k,used:false,el:null};
+        const canMove=k<roundKind;
+        const node=document.createElement(canMove?'button':'div');
+        node.className='block'+(canMove?'':' static');
+        if(canMove){
+          node.type='button';
+          node.setAttribute('aria-label','Move one '+KINDS[k].name+' into the frame');
+          node.dataset.id=String(block.id);
+          node.addEventListener('pointerdown',beginDrag);
+          node.addEventListener('pointermove',moveDrag);
+          node.addEventListener('pointerup',endDrag);
+          node.addEventListener('pointercancel',cancelDrag);
+          node.addEventListener('dblclick',function(){moveIntoFrame(block);});
+          node.addEventListener('keydown',function(e){
+            if(e.key==='Enter'||e.key===' '){e.preventDefault();moveIntoFrame(block);}
+          });
+        } else node.setAttribute('aria-label',KINDS[k].name);
+        node.innerHTML=blockPicture(k);
+        grid.appendChild(node);
+        block.el=node;
+        blocks.push(block);
+      }
+      col.appendChild(grid);
+      places.appendChild(col);
+    }
+    document.getElementById('frameCaption').textContent=
+      KINDS[roundKind].value.toLocaleString('en-US')+' frame';
+    drawFrame();
+    requestAnimationFrame(positionFrame);
+  }
+
+  function positionFrame(){
+    // On wider screens the empty frame sits above the place feeding it.
+    // On narrow screens it stays centered while the mat can scroll sideways.
+    if(innerWidth<760){
+      holder.style.left='50%';
+      return;
+    }
+    const nextPlace=places.querySelector('[data-kind="'+(roundKind-1)+'"]');
+    if(!nextPlace)return;
+    const col=nextPlace.getBoundingClientRect();
+    const area=stage.getBoundingClientRect();
+    const safe=(frame.getBoundingClientRect().width/2)+16;
+    const x=Math.max(safe,Math.min(area.width-safe,col.left+col.width/2-area.left));
+    holder.style.left=x+'px';
+  }
+
+  function findBlock(id){
+    return blocks.find(b=>b.id===id);
+  }
+
+  function beginDrag(e){
+    if(pointer!==null||e.button!==0&&e.pointerType==='mouse')return;
+    const b=findBlock(Number(e.currentTarget.dataset.id));
+    if(!b||b.used)return;
+    pointer={id:e.pointerId,block:b,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};
+    b.el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+  function moveDrag(e){
+    if(!pointer||pointer.id!==e.pointerId)return;
+    const dx=e.clientX-pointer.startX,dy=e.clientY-pointer.startY;
+    if(Math.abs(dx)+Math.abs(dy)>6)pointer.moved=true;
+    if(pointer.moved){
+      pointer.block.el.classList.add('dragging');
+      pointer.block.el.style.transform='translate('+dx+'px,'+dy+'px)';
+    }
+    pointer.x=e.clientX;pointer.y=e.clientY;
+  }
+  function overFrame(x,y){
+    const r=frame.getBoundingClientRect();
+    return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;
+  }
+  function endDrag(e){
+    if(!pointer||pointer.id!==e.pointerId)return;
+    const state=pointer;
+    pointer=null;
+    const b=state.block;
+    if(!b.used){
+      b.el.classList.remove('dragging');
+      b.el.style.transform='';
+    }
+    if(state.moved){
+      lastTap=null;
+      if(overFrame(e.clientX,e.clientY))moveIntoFrame(b);
+      return;
+    }
+    const t=performance.now();
+    if(lastTap&&lastTap.id===b.id&&t-lastTap.time<380){
+      lastTap=null;
+      moveIntoFrame(b);
+    }else lastTap={id:b.id,time:t};
+  }
+  function cancelDrag(e){
+    if(!pointer||pointer.id!==e.pointerId)return;
+    const b=pointer.block;
+    pointer=null;
+    if(!b.used){b.el.classList.remove('dragging');b.el.style.transform='';}
+    lastTap=null;
+  }
+  function moveIntoFrame(b){
+    if(!b||b.used||b.kind>=roundKind)return;
+    b.used=true;
+    placed.push(b);
+    b.el.remove();
+    drawFrame();
+    live.textContent='Moved one '+KINDS[b.kind].name+' into the frame.';
+  }
+
+  function drawFrame(){
+    // Every move occupies exactly its base-ten fraction of the target.
+    // A column is 1/10 of the target, filled from its top down.
+    // No rounding decision, success state, or animation is produced.
+    const target=KINDS[roundKind].value;
+    let position=0;
+    const chunks=[];
+    for(const b of placed){
+      const fraction=KINDS[b.kind].value/target;
+      const end=Math.min(1,position+fraction);
+      for(let c=0;c<10;c++){
+        const left=c/10,right=(c+1)/10;
+        const start=Math.max(left,position);
+        const stop=Math.min(right,end);
+        if(stop-start<1e-12)continue;
+        const x=c*30;
+        const y=(start-left)*3000;
+        const h=(stop-start)*3000;
+        chunks.push('<rect x="'+r2(x)+'" y="'+r2(y)+'" width="30" height="'+r2(h)+
+          '" fill="url(#gf'+b.kind+')" stroke="rgba(30,10,5,.24)" stroke-width=".4"/>');
+      }
+      position=end;
+    }
+    let grid='';
+    for(let i=1;i<10;i++){
+      const p=i*30;
+      grid+='<path d="M'+p+' 0 V300 M0 '+p+' H300" fill="none" stroke="#9f9a91" stroke-opacity=".45" stroke-width=".75"/>';
+    }
+    frame.innerHTML=
+      '<rect width="300" height="300" rx="2" fill="#f9f8f5"/>'+
+      chunks.join('')+
+      grid+
+      '<rect width="300" height="300" rx="2" fill="none" stroke="#aaa59b" stroke-width="2"/>'+
+      '<line x1="150" y1="0" x2="150" y2="300" stroke="#faf9f7" stroke-width="5" stroke-dasharray="9 7"/>'+
+      '<line x1="150" y1="0" x2="150" y2="300" stroke="#55565b" stroke-width="2.7" stroke-dasharray="9 7"/>';
+  }
+
+  function changeNumber(){
+    const n=boundedNumber(numberInput.value);
+    number=n;
+    numberInput.value=String(n);
+    build();
+  }
+  numberInput.addEventListener('change',changeNumber);
+  numberInput.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();numberInput.blur();}
+  });
+  roundSelect.addEventListener('change',function(){
+    // Ensure typed input is committed before the rounding place changes.
+    number=boundedNumber(numberInput.value);
+    numberInput.value=String(number);
+    roundKind=Number(roundSelect.value);
+    build();
+  });
+  resetButton.addEventListener('click',function(){build();});
+  addEventListener('resize',function(){requestAnimationFrame(positionFrame);});
+  // Double-click and drag are the only manipulations. No scoring or reveal.
+  build();
+})();
+
+</script>
+</body>
+</html>
