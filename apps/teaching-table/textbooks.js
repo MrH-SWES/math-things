@@ -1,16 +1,16 @@
-/* Teaching Table v3 — textbooks.
+/* Teaching Table — textbooks.
  *
  * Opens the packaged i-Ready Classroom Mathematics EPUBs (K–8) or a local EPUB,
  * lists their lessons and renders one section as a self-contained, script-free
- * page. Adapted from ../curriculum.js and sharing its on-device library, so a book
- * already downloaded by the original Teaching Table opens here without a download.
- * Licensed books are served only by the access-controlled deployment (../books/).
+ * page. It keeps the on-device library of the original Teaching Table, so a book
+ * already downloaded there opens here without a download.
+ * Licensed books are served only by the access-controlled deployment (books/).
  */
 (() => {
   'use strict';
 
-  const BOOKS = new URL('../books/', location.href);
-  const COVERS = new URL('../covers/', location.href);
+  const BOOKS = new URL('books/', location.href);
+  const COVERS = new URL('covers/', location.href);
   const PACKAGED = [
     { grade: 'K', name: 'iRCM0K_NN_EN_SW.epub', size: 260866814 },
     { grade: '1', name: 'iRCM01_NN_EN_SW.epub', size: 219147927 },
@@ -101,7 +101,7 @@
     });
     return parts.join('/');
   }
-  // Verified menu-only corrections for the Grade 4/5 books (see ../curriculum.js).
+  // Verified menu-only corrections for the Grade 4/5 books.
   const NAV_FIXES = {
     4: {
       'OEBPS/xhtml/04_Unit01.xhtml': 'Unit 1: Whole Numbers: Place Value, Comparison, Addition, and Subtraction',

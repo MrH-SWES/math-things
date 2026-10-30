@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 const root=new URL('../',import.meta.url);
 const original=process.env.SCAN_TEST_BASELINE==='1';
-const source=original?execFileSync('git',['show','HEAD:apps/teaching-table/v3/index.html'],{cwd:root,encoding:'utf8'}):await readFile(new URL('apps/teaching-table/v3/index.html',root),'utf8');
+const source=original?execFileSync('git',['show','HEAD:apps/teaching-table/index.html'],{cwd:root,encoding:'utf8'}):await readFile(new URL('apps/teaching-table/index.html',root),'utf8');
 const init=`
 localStorage.clear();
 window.__calls=[];window.__responses=[];
@@ -30,7 +30,7 @@ let extra='';
 const server=createServer(async(req,res)=>{
  try{
   const path=new URL(req.url,'http://localhost').pathname;
-  if(path==='/apps/teaching-table/v3/'){
+  if(path==='/apps/teaching-table/'){
    // Keep tests offline; external libraries are mocked where relevant.
    const html=source.replace(/<script[^>]+src="https:[^"]+"[^>]*><\/script>/g,'').replace(/<link[^>]+href="https:[^>]+>/g,'');
    res.setHeader('Content-Type','text/html');res.end(html.replace('<head>','<head><script>'+init+extra+'</script>'));
@@ -55,7 +55,7 @@ const wait=async expr=>{for(let i=0;i<100;i++){if(await evaluate(expr))return;aw
 let pageNumber=0;
 async function page(script=''){
  const number=++pageNumber;extra='window.__testPage='+number+';'+script;
- await cdp('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/apps/teaching-table/v3/'});
+ await cdp('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/apps/teaching-table/'});
  await wait('window.__testPage==='+number+'&&typeof window.__table!=="undefined"');
 }
 const clickScan=()=>evaluate("document.getElementById('openPhone').click()");
