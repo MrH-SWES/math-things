@@ -128,8 +128,8 @@
     {name:'ten rod',plural:'ten rods',w:1,h:10,depth:1,value:10},
     {name:'hundred flat',plural:'hundred flats',w:10,h:10,depth:1,value:100},
     {name:'thousand cube',plural:'thousand cubes',w:10,h:10,depth:10,value:1000},
-    {name:'ten-thousand rod',plural:'ten-thousand rods',w:1,h:10,depth:10,value:10000},
-    {name:'hundred-thousand flat',plural:'hundred-thousand flats',w:10,h:10,depth:10,value:100000}
+    {name:'ten-thousand rod',plural:'ten-thousand rods',w:10,h:100,depth:10,value:10000},
+    {name:'hundred-thousand flat',plural:'hundred-thousand flats',w:100,h:100,depth:10,value:100000}
   ];
   const LABELS=['Ones','Tens','Hundreds','Thousands','Ten thousands','Hundred thousands'];
   const DS=0.354;
@@ -182,7 +182,7 @@
 
   function blockPicture(k){
     const K=KINDS[k];
-    const u=[31,5.6,6.1,6.0,5.5,5.8][k];
+    const u=[31,5.6,6.1,6.0,0.62,0.53][k];
     const d=K.depth*DS*u;
     const w=K.w*u+d+8;
     const h=K.h*u+d+8;
