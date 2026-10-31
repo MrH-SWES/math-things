@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deception Pass Field Trip</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: a full-bleed 3D scene; a park-sign field card bottom-left, a route map top-right. One committed dark look. */
+:root {
+  --night: #0e1a1b;          /* panel ground, deep channel water at dusk */
+  --panel: rgba(14, 26, 27, 0.84);
+  --paper: #edf0e6;          /* text */
+  --muted: #a8b7ae;
+  --line: rgba(237, 240, 230, 0.14);
+  --bridge: #6f9a74;         /* the bridge's green steel */
+  --madrone: #d8673a;        /* madrone bark: the one accent */
+  --kelp: #b9a45c;
+  --display: "Zilla Slab", "Rockwell", "Roboto Slab", Georgia, serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--night); color: var(--paper); font-family: var(--body); font-size: 15px; overflow: hidden; -webkit-font-smoothing: antialiased; }
+canvas#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--madrone); outline-offset: 2px; }
+
+/* ---------- labels in 3D ---------- */
+#labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.place { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); font-family: var(--display); font-weight: 500; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #f4f2e8; text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5); white-space: nowrap; transition: opacity .3s; }
+.place.water { font-style: italic; text-transform: none; letter-spacing: 0.04em; color: #cfe6e4; font-size: 14px; }
+.pin { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; transform: translate(-50%, -100%); display: grid; justify-items: center; border: 0; background: none; padding: 0; }
+.pin b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--paper); color: var(--night); font-family: var(--mono); font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.pin b span { transform: rotate(45deg); }
+.pin.on b { background: var(--madrone); color: #fff; }
+.pin:hover b { background: var(--kelp); }
+.pin i { font-style: normal; margin-top: 6px; font-family: var(--body); font-weight: 600; font-size: 12px; color: #fff; background: rgba(14,26,27,.75); padding: 2px 7px; border-radius: 3px; opacity: 0; transition: opacity .2s; white-space: nowrap; }
+.pin:hover i, .pin:focus-visible i { opacity: 1; }
+
+/* ---------- overlay UI ---------- */
+#ui { position: fixed; inset: 0; pointer-events: none; display: grid; grid-template-rows: auto 1fr auto; gap: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(14px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-bottom, 0px)); }
+#ui > * { pointer-events: auto; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; pointer-events: none; }
+.topbar > * { pointer-events: auto; }
+.brand { display: flex; align-items: baseline; gap: 10px; background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 8px 14px; border-radius: 4px; border: 1px solid var(--line); }
+.brand strong { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: 0.01em; }
+.brand small { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.tbtn { background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 4px; padding: 7px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.tbtn:hover { border-color: rgba(237,240,230,.4); }
+.tbtn[aria-pressed="true"] { background: var(--paper); color: var(--night); border-color: var(--paper); }
+
+.mid { display: flex; justify-content: flex-end; align-items: flex-start; pointer-events: none; min-height: 0; }
+.mapbox { pointer-events: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 8px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.mapbox canvas { display: block; width: 168px; height: 168px; border-radius: 2px; cursor: pointer; }
+.mapbox .cap { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.tidechip { margin-top: 8px; font-family: var(--mono); font-size: 11px; line-height: 1.45; color: var(--paper); }
+.tidechip .arrow { display: inline-block; color: var(--madrone); font-weight: 500; }
+
+.bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; pointer-events: none; min-width: 0; }
+.card { pointer-events: auto; width: min(460px, 100%); max-height: min(62vh, 620px); display: flex; flex-direction: column; background: var(--panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.card[data-collapsed="true"] .scroll { display: none; }
+.card-head { padding: 14px 18px 10px; border-bottom: 1px solid var(--line); }
+.eyebrow { display: flex; justify-content: space-between; gap: 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.card h2 { margin: 6px 0 0; font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1.1; text-wrap: balance; }
+.card .kicker { margin: 4px 0 0; color: var(--kelp); font-weight: 600; font-size: 14px; }
+.scroll { overflow-y: auto; padding: 12px 18px 4px; display: grid; gap: 12px; min-height: 0; }
+.scroll p { margin: 0; line-height: 1.55; max-width: 62ch; }
+.note { border-left: 3px solid var(--bridge); padding: 2px 0 2px 12px; }
+.note h3, .math h3 { margin: 0 0 3px; font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.note p { color: #dfe6dc; }
+.legend { background: rgba(216,103,58,.10); border: 1px solid rgba(216,103,58,.35); border-radius: 4px; padding: 10px 12px; }
+.legend h3 { color: var(--madrone); margin: 0 0 4px; font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.math { border: 1px dashed rgba(237,240,230,.3); border-radius: 4px; padding: 10px 12px; }
+.math p { font-variant-numeric: tabular-nums; }
+.math button { margin-top: 8px; background: none; border: 1px solid var(--line); border-radius: 3px; padding: 4px 9px; font-size: 13px; cursor: pointer; color: var(--paper); }
+.math .ans { margin-top: 6px; font-family: var(--mono); font-size: 13px; color: var(--kelp); }
+.control { display: grid; gap: 8px; background: rgba(237,240,230,.05); border-radius: 4px; padding: 10px 12px; }
+.control label { font-weight: 600; font-size: 13px; }
+.control input[type=range] { width: 100%; accent-color: var(--madrone); }
+.ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { background: var(--paper); color: var(--night); border: 0; border-radius: 3px; padding: 7px 12px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.pill.ghost { background: none; color: var(--paper); border: 1px solid var(--line); }
+.qs { margin: 0; padding-left: 20px; display: grid; gap: 6px; line-height: 1.45; }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.dots { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.dots button { width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: none; cursor: pointer; }
+.dots button.on { background: var(--madrone); border-color: var(--madrone); }
+.dots button.seen { background: var(--muted); }
+.nav { display: flex; gap: 6px; flex-shrink: 0; }
+.nav button { background: none; border: 1px solid var(--line); border-radius: 3px; padding: 7px 12px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.nav button.next { background: var(--madrone); border-color: var(--madrone); color: #fff; }
+.nav button:disabled { opacity: .35; cursor: default; }
+.hint { pointer-events: none; font-family: var(--mono); font-size: 11px; color: rgba(237,240,230,.75); text-shadow: 0 1px 2px #000; text-align: right; }
+
+/* ---------- start screen ---------- */
+#start { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 120%, rgba(14,26,27,.55), rgba(14,26,27,.92)); z-index: 5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px; }
+.startcard { max-width: 560px; display: grid; gap: 14px; }
+.startcard .tag { font-family: var(--mono); font-size: 12px; color: var(--kelp); letter-spacing: .1em; text-transform: uppercase; }
+.startcard h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(40px, 8vw, 72px); line-height: .95; letter-spacing: -0.01em; text-wrap: balance; }
+.startcard h1 em { font-style: normal; color: var(--madrone); }
+.startcard p { margin: 0; line-height: 1.55; color: #d8dfd5; max-width: 52ch; }
+.startcard .coords { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.begin { justify-self: start; background: var(--madrone); color: #fff; border: 0; border-radius: 4px; padding: 13px 22px; font-weight: 700; font-size: 16px; cursor: pointer; }
+.begin:disabled { opacity: .5; cursor: progress; }
+.keys { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.keys kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; color: var(--paper); }
+#loadmsg { font-family: var(--mono); font-size: 12px; color: var(--muted); min-height: 1.2em; }
+
+@media (max-width: 680px) {
+  body { font-size: 14px; }
+  .brand small { display: none; }
+  .brand strong { font-size: 17px; }
+  .mapbox canvas { width: 108px; height: 108px; }
+  .mapbox .cap { display: none; }
+  .tidechip { font-size: 10px; max-width: 108px; }
+  .card { max-height: 48vh; width: 100%; }
+  .card h2 { font-size: 21px; }
+  .hint { display: none; }
+  .bottom { justify-content: stretch; }
+  .tbtn { padding: 6px 9px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="scene" aria-label="3D view of Deception Pass"></canvas>
+<div id="labels" aria-hidden="false"></div>
+
+<div id="ui" hidden>
+  <div class="topbar">
+    <div class="brand"><strong>Deception Pass</strong><small>48°24′ N · 122°38′ W</small></div>
+    <div class="tools" role="toolbar" aria-label="View options">
+      <button class="tbtn" id="btnTour" aria-pressed="true">Guided tour</button>
+      <button class="tbtn" id="btnExplore" aria-pressed="false">Explore freely</button>
+      <button class="tbtn" id="btnNames" aria-pressed="true">Place names</button>
+      <button class="tbtn" id="btnSpin" aria-pressed="true">Slow pan</button>
+      <button class="tbtn" id="btnSound" aria-pressed="false">Sound</button>
+      <button class="tbtn" id="btnRead" aria-pressed="false">Read aloud</button>
+    </div>
+  </div>
+  <div class="mid">
+    <div class="mapbox">
+      <canvas id="map" width="336" height="336" aria-label="Map of the tour stops. Click a numbered dot to go there."></canvas>
+      <div class="cap"><span>N ↑</span><span>500 m ⟷</span></div>
+      <div class="tidechip" id="tidechip" aria-live="off"></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <section class="card" id="card" aria-live="polite">
+      <div class="card-head">
+        <div class="eyebrow"><span id="stopnum">Stop 1 of 11</span><button class="tbtn" id="btnCollapse" style="padding:2px 8px;font-size:11px" aria-expanded="true">Hide text</button></div>
+        <h2 id="stoptitle">Welcome</h2>
+        <p class="kicker" id="stopkicker"></p>
+      </div>
+      <div class="scroll" id="stopbody"></div>
+      <div class="card-foot">
+        <div class="dots" id="dots" aria-label="Tour stops"></div>
+        <div class="nav"><button id="prev">← Back</button><button id="next" class="next">Next stop →</button></div>
+      </div>
+    </section>
+    <div class="hint">drag to look · scroll or pinch to zoom · ← → for stops</div>
+  </div>
+</div>
+
+<div id="start">
+  <div class="startcard">
+    <div class="tag">A virtual field trip</div>
+    <h1>Deception <em>Pass</em></h1>
+    <p>Fly over the narrow, fast-moving channel between Whidbey and Fidalgo Islands in Washington. Ride a tidal current under a 1935 steel bridge, meet the people who have lived here for thousands of years, travel back to the ice age, and peek into a tide pool.</p>
+    <div class="coords">Skagit &amp; Island Counties, Washington · Salish Sea · 11 stops · about 20 minutes</div>
+    <div class="keys"><span><kbd>drag</kbd> look around</span><span><kbd>scroll</kbd> zoom</span><span><kbd>←</kbd> <kbd>→</kbd> change stops</span><span>tap numbered pins to jump</span></div>
+    <button class="begin" id="begin" disabled>Loading…</button>
+    <div id="loadmsg">Loading 3D tools…</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const $ = (id) => document.getElementById(id);
+const loadmsg = $('loadmsg');
+const tick = (msg) => { loadmsg.textContent = msg; return new Promise(r => setTimeout(r, 16)); };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* =========================================================
+   Math helpers + noise
+   ========================================================= */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+function hash2(x, y) { let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+function vnoise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi), b = hash2(xi + 1, yi), c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, y, oct = 4) { let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < oct; i++) { s += a * vnoise(x * f + i * 17.3, y * f - i * 9.1); n += a; f *= 2.03; a *= 0.5; } return s / n; }
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rng = mulberry32(1792);
+
+/* =========================================================
+   Geography. 1 unit = 1 meter. +x = east, -z = north.
+   The bridge runs north-south through x = 0.
+   Whidbey Island is south (+z), Fidalgo Island north (-z),
+   Pass Island sits between them. Not survey-accurate: shaped to read clearly.
+   ========================================================= */
+function ellIn(x, z, cx, cz, rx, rz) { const dx = (x - cx) / rx, dz = (z - cz) / rz; return (1 - Math.sqrt(dx * dx + dz * dz)) * Math.min(rx, rz); }
+const BEACHES = [[-905, -735, 120], [-700, -640, 150], [-1020, 650, 220], [-520, 225, 130], [820, 245, 160], [760, -560, 120]];
+function beachMask(x, z) { let m = 0; for (const [bx, bz, r] of BEACHES) { const d2 = (x - bx) ** 2 + (z - bz) ** 2; m = Math.max(m, Math.exp(-d2 / (2 * r * r))); } return m; }
+
+function landD(x, z) {
+  const ax = Math.abs(x);
+  const wig = ((fbm(x * 0.0035 + 11, z * 0.0035 + 3, 4) - 0.5) * 110 + (fbm(x * 0.013, z * 0.013, 3) - 0.5) * 34) * (0.25 + 0.75 * smooth(60, 420, ax));
+  // Whidbey Island (south)
+  let dW = z - (165 + 0.00022 * x * x) + wig;
+  dW = Math.min(dW, x + 1010 - 0.12 * z + wig * 0.8);           // west coast (West Beach)
+  dW = Math.min(dW, -ellIn(x, z, 820, 330, 290, 150));            // Cornet Bay
+  dW = Math.max(dW, ellIn(x, z, 770, 312, 72, 36));               // Ben Ure Island
+  // Fidalgo Island (north)
+  let dF = (-335 - 0.00022 * x * x) - z + wig;
+  dF = Math.min(dF, x + 930 + wig * 0.8);                          // faces Rosario Strait
+  dF = Math.min(dF, -ellIn(x, z, -760, -560, 235, 150));          // Bowman Bay
+  dF = Math.max(dF, ellIn(x, z, -990, -790, 135, 85));            // Rosario Head
+  // islands in the pass
+  const dP = ellIn(x, z, 0, -215, 175, 55);                       // Pass Island
+  const dD = ellIn(x, z, -1160, -170, 115, 78);                   // Deception Island
+  const dS = ellIn(x, z, 330, -40, 42, 26);                       // Strawberry Island (small)
+  return Math.max(dW, dF, dP, dD, dS);
+}
+function getH(x, z) {
+  const d = landD(x, z);
+  if (d < 0) return Math.max(-42, d * 0.32) - 0.6 * smooth(0, -8, d);
+  const beach = beachMask(x, z);
+  const width = 16 + 120 * beach;
+  const big = fbm(x * 0.0024 + 5, z * 0.0024 + 8, 4);
+  const cliff = (24 + 36 * big) * (1 - 0.6 * beach);
+  let h = cliff * smooth(0, width, d) + 80 * big * smooth(width, 460, d) + 7 * fbm(x * 0.03, z * 0.03, 3) * smooth(0, 30, d);
+  h += 112 * Math.exp(-((x - 380) ** 2 + (z - 560) ** 2) / (2 * 165 * 165)) * smooth(0, 60, d); // Goose Rock
+  // the highway cut along x = 0
+  const w = smooth(28, 11, Math.abs(x));
+  if (w > 0 && Math.abs(z) < 2600) h -= Math.max(0, h - 52.5) * w;
+  return h;
+}
+function gradH(x, z) { const e = 3; return [(getH(x + e, z) - getH(x - e, z)) / (2 * e), (getH(x, z + e) - getH(x, z - e)) / (2 * e)]; }
+function findSpot(cx, cz, rad, test) {
+  let best = null, bd = Infinity;
+  for (let dz = -rad; dz <= rad; dz += 5) for (let dx = -rad; dx <= rad; dx += 5) {
+    const d = dx * dx + dz * dz; if (d > rad * rad || d >= bd) continue;
+    const x = cx + dx, z = cz + dz; if (test(getH(x, z), x, z)) { best = [x, z]; bd = d; }
+  }
+  return best || [cx, cz];
+}
+
+/* =========================================================
+   Renderer, scene, sky
+   ========================================================= */
+const canvas = $('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.5, 90000);
+camera.position.set(-2600, 1300, 2400);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.target.set(0, 20, -100);
+controls.autoRotateSpeed = 0.35;
+
+const HORIZON = new THREE.Color('#c6d5d9'), ZENITH = new THREE.Color('#5f8fbd');
+const SUN = new THREE.Vector3(-0.62, 0.42, 0.66).normalize();
+scene.fog = new THREE.FogExp2(HORIZON.clone(), 0.00013);
+
+const sky = new THREE.Mesh(new THREE.SphereGeometry(40000, 32, 16), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { uH: { value: HORIZON }, uZ: { value: ZENITH }, uSun: { value: SUN } },
+  vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec3 vDir; uniform vec3 uH, uZ, uSun;
+    void main(){ float e = vDir.y; vec3 c = mix(uH, uZ, smoothstep(0.0, 0.5, e)); c = mix(c, uH*0.92, smoothstep(0.0,-0.2,e));
+      float s = max(dot(normalize(vDir), uSun), 0.0); c += vec3(1.0,0.86,0.62)*(pow(s,900.0)*14.0 + pow(s,10.0)*0.22);
+      gl_FragColor = vec4(c,1.0);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
+}));
+sky.renderOrder = -1;
+scene.add(sky);
+
+const sunLight = new THREE.DirectionalLight(0xfff0d8, 2.4); sunLight.position.copy(SUN).multiplyScalar(1000); scene.add(sunLight);
+scene.add(new THREE.HemisphereLight(0xc4dbe8, 0x37442f, 1.0));
+
+/* =========================================================
+   World state
+   ========================================================= */
+const S = {
+  tidePhase: 0.2,        // radians: height = sin, current = cos (flood flows east)
+  tideAuto: true,
+  waterY: 0,
+  era: 'now',
+  iceTarget: 0, ice: 0,
+  names: true, spin: !reduceMotion,
+  mode: 'tour', stop: 0, seen: new Set(),
+  flight: null, ride: null,
+  timeScale: 8           // drift objects move faster than life so you can see them
+};
+const tideCurrent = () => Math.cos(S.tidePhase);            // -1..1 (+ = flood, eastbound)
+const channelF = (x, z) => Math.exp(-((x / 520) ** 2)) * smooth(-470, -200, z) * smooth(430, 200, z);
+const flowAt = (x, z) => tideCurrent() * (0.25 + 3.85 * channelF(x, z)); // m/s, east positive
+
+/* =========================================================
+   Build
+   ========================================================= */
+const groups = { now: new THREE.Group(), y1792: new THREE.Group(), always: new THREE.Group() };
+Object.values(groups).forEach(g => scene.add(g));
+const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpS = new THREE.Vector3(), tmpP = new THREE.Vector3();
+const C = (hex) => new THREE.Color(hex);
+const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...extra });
+
+const TSIZE = 5000, TSEG = 360;
+let depthTex;
+function terrainColor(x, z, h, ny, out) {
+  const beach = beachMask(x, z), n = fbm(x * 0.02, z * 0.02, 2);
+  let c;
+  if (h < -0.4) { c = C('#5b5a48').lerp(C('#24322e'), smooth(-1, -16, h)); }
+  else if (h < 2.8 && beach > 0.35 && ny > 0.82) c = C('#8f8467').lerp(C('#6f6a58'), n);
+  else if (ny < 0.72 || h < 3.5) c = C('#4c4f47').lerp(C('#3a3f3a'), n).lerp(C('#5a4d3d'), 0.25 * fbm(x * 0.05, z * 0.05, 2));
+  else if (h > 150) c = C('#8a8251').lerp(C('#5d6a3a'), n);
+  else c = C('#203a22').lerp(C('#2f4a2a'), n);
+  out.copy(c); return out;
+}
+function buildTerrain() {
+  const g = new THREE.PlaneGeometry(TSIZE, TSIZE, TSEG, TSEG); g.rotateX(-Math.PI / 2);
+  const p = g.attributes.position, n = p.count;
+  const hs = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const h = getH(p.getX(i), p.getZ(i)); hs[i] = h; p.setY(i, h); }
+  g.computeVertexNormals();
+  const nor = g.attributes.normal, cols = new Float32Array(n * 3), c = new THREE.Color();
+  for (let i = 0; i < n; i++) { terrainColor(p.getX(i), p.getZ(i), hs[i], nor.getY(i), c); cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+  scene.add(mesh);
+  // depth texture for the water shader (from the same grid)
+  const R = TSEG + 1, data = new Uint8Array(R * R * 4);
+  for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
+    const h = hs[j * R + i]; // plane row j goes from z=-2500 (j=0) to +2500
+    const v = clamp((4 - h) / 34, 0, 1) * 255;
+    const k = (j * R + i) * 4; data[k] = v; data[k + 1] = v; data[k + 2] = v; data[k + 3] = 255;
+  }
+  depthTex = new THREE.DataTexture(data, R, R); depthTex.magFilter = THREE.LinearFilter; depthTex.minFilter = THREE.LinearFilter; depthTex.needsUpdate = true;
+}
+function buildOuterTerrain() {
+  const size = 26000, seg = 210;
+  const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2);
+  const p = g.attributes.position, n = p.count;
+  for (let i = 0; i < n; i++) { const x = p.getX(i), z = p.getZ(i); const inner = Math.max(Math.abs(x), Math.abs(z)) < TSIZE / 2 - 140; p.setY(i, inner ? -70 : getH(x, z) - 0.5); }
+  g.computeVertexNormals();
+  const cols = new Float32Array(n * 3), c = new THREE.Color(), nor = g.attributes.normal;
+  for (let i = 0; i < n; i++) { const h = p.getY(i); terrainColor(p.getX(i), p.getZ(i), h, nor.getY(i), c); if (h > 6) c.lerp(C('#1c3320'), 0.6); cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })));
+}
+function buildMountains() {
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false });
+  const ridge = (cx, cz, angle, len, peak, count, snowLine, seed) => {
+    const r = mulberry32(seed), geos = [];
+    for (let i = 0; i < count; i++) {
+      const t = i / (count - 1) - 0.5, h = peak * (0.45 + 0.55 * r()) * (1 - Math.abs(t) * 0.8);
+      const g = new THREE.ConeGeometry(h * (1.6 + r()), h, 7, 3); g.translate(0, h / 2 - 40, 0);
+      g.rotateY(r() * 6);
+      g.translate(cx + Math.cos(angle) * t * len + (r() - 0.5) * 600, 0, cz + Math.sin(angle) * t * len + (r() - 0.5) * 600);
+      geos.push(g);
+    }
+    const g = mergeGeometries(geos), p = g.attributes.position, cols = new Float32Array(p.count * 3);
+    const base = C('#7f97a6'), snow = C('#e9eef2');
+    for (let i = 0; i < p.count; i++) { const c = base.clone().lerp(snow, smooth(snowLine * 0.9, snowLine * 1.05, p.getY(i))); cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    scene.add(new THREE.Mesh(g, mat));
+  };
+  ridge(-19000, 15000, -0.6, 22000, 900, 26, 650, 7);      // Olympic Mountains, southwest
+  ridge(26000, -6000, 1.35, 30000, 700, 30, 640, 9);       // Cascade foothills, east
+  // Mount Baker, a lone snowy volcano to the east-northeast
+  const g = new THREE.ConeGeometry(2600, 1250, 24, 6); g.translate(0, 600, 0);
+  const p = g.attributes.position, cols = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) { const c = C('#7d93a3').lerp(C('#f1f4f6'), smooth(380, 560, p.getY(i))); cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const baker = new THREE.Mesh(g, mat); baker.position.set(24000, 0, -19000); scene.add(baker);
+}
+
+let water;
+function buildWater() {
+  const mat = new THREE.ShaderMaterial({
+    fog: false,
+    uniforms: {
+      uTime: { value: 0 }, uTide: { value: 0 }, uWaterY: { value: 0 }, uDepth: { value: depthTex },
+      uSun: { value: SUN }, uCam: { value: camera.position }, uFog: { value: HORIZON }, uFogD: { value: scene.fog.density },
+      uDeep: { value: C('#0b2b2e') }, uShallow: { value: C('#2d6b5e') }, uSky: { value: C('#b8cdd6') }, uScale: { value: S.timeScale }
+    },
+    vertexShader: `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `
+      varying vec3 vW;
+      uniform float uTime, uTide, uWaterY, uFogD, uScale; uniform sampler2D uDepth;
+      uniform vec3 uSun, uCam, uFog, uDeep, uShallow, uSky;
+      float hash(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
+      float noise(vec2 p){ vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),u.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x), u.y); }
+      float fbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*noise(p); p=p*2.03+vec2(1.7,9.2); a*=0.5; } return s; }
+      float chan(vec2 p){ return exp(-pow(p.x/520.0,2.0)) * smoothstep(-470.0,-200.0,p.y) * smoothstep(430.0,200.0,p.y); }
+      float waves(vec2 p, float t){
+        return sin(dot(p,vec2(0.043,0.031))+t*1.1)*0.5 + sin(dot(p,vec2(-0.052,0.071))+t*1.37)*0.35
+             + sin(dot(p,vec2(0.13,-0.09))+t*2.3)*0.12 + (noise(p*0.18 + t*0.25)-0.5)*0.7; }
+      void main(){
+        vec2 p = vW.xz; float t = uTime;
+        float ch = chan(p);
+        float spd = uTide * (0.25 + 3.85*ch);
+        float flowAmt = abs(spd);
+        // flow-map advection, two phases blended so the pattern never stretches forever
+        float per = 10.0;
+        float ph1 = fract(t/per), ph2 = fract(t/per + 0.5);
+        vec2 fl = vec2(spd*uScale, 0.0);
+        vec2 q1 = (p - fl*ph1*per); vec2 q2 = (p - fl*ph2*per) + vec2(37.0, 11.0);
+        float w1 = 1.0 - abs(2.0*ph1 - 1.0);
+        vec2 st = vec2(0.010, 0.045);
+        float streak = fbm(q1*st)*w1 + fbm(q2*st)*(1.0-w1);
+        float ripple = fbm(q1*0.09)*w1 + fbm(q2*0.09)*(1.0-w1);
+        float foam = smoothstep(0.58, 0.8, streak) * smoothstep(0.9, 3.4, flowAmt) * 0.75;
+        foam += smoothstep(0.62, 0.85, ripple) * smoothstep(1.6, 3.8, flowAmt) * 0.35;
+        // whirlpools form just downstream of the narrows
+        float sgn = uTide >= 0.0 ? 1.0 : -1.0;
+        float whirl = 0.0, dip = 0.0;
+        vec2 cs[4]; cs[0]=vec2(170.0*sgn, 40.0); cs[1]=vec2(330.0*sgn,-90.0); cs[2]=vec2(140.0*sgn,-305.0); cs[3]=vec2(480.0*sgn, 60.0);
+        for(int i=0;i<4;i++){
+          vec2 d = p - cs[i]; float r = length(d); float a = atan(d.y, d.x);
+          float k = exp(-r/(32.0 + float(i)*6.0)) * smoothstep(0.35, 0.9, abs(uTide));
+          float s = sin(a*3.0 + r*0.16*sgn - t*2.6*sgn + float(i));
+          whirl += smoothstep(0.55, 0.95, s) * k;
+          dip += exp(-r/10.0) * k;
+        }
+        // depth from terrain texture
+        vec2 uv = (p + 2500.0) / 5000.0;
+        float inside = step(0.0, uv.x)*step(uv.x,1.0)*step(0.0,uv.y)*step(uv.y,1.0);
+        float dm = mix(30.0, texture2D(uDepth, uv).r*34.0 - 4.0, inside) + uWaterY;
+        float shore = (1.0 - smoothstep(0.0, 1.6, dm)) * (0.55 + 0.45*sin(t*1.3 + noise(p*0.04)*8.0));
+        // normals from small waves
+        float e = 0.6, h0 = waves(p,t), hx = waves(p+vec2(e,0.0),t), hz = waves(p+vec2(0.0,e),t);
+        float rough = 0.55 + flowAmt*0.25;
+        vec3 n = normalize(vec3(-(hx-h0)/e*rough, 1.0, -(hz-h0)/e*rough));
+        vec3 v = normalize(uCam - vW);
+        float fres = pow(1.0 - max(dot(n, v), 0.0), 4.0);
+        vec3 col = mix(uShallow, uDeep, smoothstep(0.5, 14.0, dm));
+        col *= 1.0 - dip*0.5;
+        col = mix(col, uSky, fres*0.75);
+        float spec = pow(max(dot(reflect(-uSun, n), v), 0.0), 160.0);
+        col += spec * vec3(1.0, 0.9, 0.75) * 1.4;
+        float f = clamp(foam + whirl*0.85 + shore*0.8, 0.0, 1.0);
+        col = mix(col, vec3(0.86, 0.91, 0.9), f);
+        float dist = length(uCam - vW);
+        float fg = 1.0 - exp(-pow(dist*uFogD, 2.0));
+        col = mix(col, uFog, fg);
+        gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`
+  });
+  water = new THREE.Mesh(new THREE.PlaneGeometry(60000, 60000, 1, 1).rotateX(-Math.PI / 2), mat);
+  scene.add(water);
+}
+
+/* ---------- trees ---------- */
+function buildTrees() {
+  const coneParts = [
+    new THREE.CylinderGeometry(0.05, 0.08, 0.5, 5).translate(0, 0.25, 0),
+    new THREE.ConeGeometry(0.42, 0.62, 7).translate(0, 0.62, 0),
+    new THREE.ConeGeometry(0.32, 0.5, 7).translate(0, 0.95, 0),
+    new THREE.ConeGeometry(0.2, 0.42, 7).translate(0, 1.24, 0)
+  ];
+  const conifer = mergeGeometries(coneParts);
+  const crownG = new THREE.IcosahedronGeometry(0.62, 1).scale(1.1, 0.7, 1).translate(0, 1.05, 0);
+  const trunkG = new THREE.CylinderGeometry(0.06, 0.1, 0.9, 6).translate(0, 0.45, 0).rotateZ(0.12);
+  const NC = 5200, NM = 520;
+  const conM = new THREE.InstancedMesh(conifer, std(0xffffff, { flatShading: true }), NC);
+  const madC = new THREE.InstancedMesh(crownG, std(0xffffff, { flatShading: true }), NM);
+  const madT = new THREE.InstancedMesh(trunkG, std(C('#b5532c'), { roughness: 0.6 }), NM);
+  let nc = 0, nm = 0, tries = 0;
+  const col = new THREE.Color();
+  while ((nc < NC || nm < NM) && tries < 160000) {
+    tries++;
+    const x = (rng() - 0.5) * (TSIZE - 120), z = (rng() - 0.5) * (TSIZE - 120);
+    if (Math.abs(x) < 22) continue;
+    const h = getH(x, z); if (h < 4.5) continue;
+    const [gx, gz] = gradH(x, z); const slope = Math.hypot(gx, gz); if (slope > 1.25) continue;
+    if (h > 150 && rng() > 0.18) continue;
+    if (fbm(x * 0.006 + 40, z * 0.006, 3) < 0.34) continue;      // natural clearings
+    if (beachMask(x, z) > 0.5 && h < 9) continue;
+    const nearShore = landD(x, z) < 70;
+    tmpQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng() * Math.PI * 2);
+    if (nearShore && rng() < 0.33 && nm < NM) {
+      const s = 7 + rng() * 7;
+      tmpS.set(s * (0.9 + rng() * 0.5), s, s * (0.9 + rng() * 0.5)); tmpP.set(x, h - 0.4, z);
+      tmpM.compose(tmpP, tmpQ, tmpS); madC.setMatrixAt(nm, tmpM); madT.setMatrixAt(nm, tmpM);
+      col.set('#3d5a2a').lerp(C('#5b7334'), rng()); madC.setColorAt(nm, col); nm++;
+    } else if (nc < NC) {
+      const s = 15 + rng() * 22;
+      tmpS.set(s * (0.75 + rng() * 0.35), s, s * (0.75 + rng() * 0.35)); tmpP.set(x, h - 0.8, z);
+      tmpM.compose(tmpP, tmpQ, tmpS); conM.setMatrixAt(nc, tmpM);
+      if (rng() < 0.3) col.set('#2c4a26').lerp(C('#3c5a2b'), rng()); else col.set('#183320').lerp(C('#24432a'), rng());
+      conM.setColorAt(nc, col); nc++;
+    }
+  }
+  conM.count = nc; madC.count = nm; madT.count = nm;
+  [conM, madC, madT].forEach(m => { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; scene.add(m); });
+}
+
+/* ---------- the bridge ---------- */
+const DECK_Y = 55;
+let DECK_S = 175, DECK_N = -345;
+function roadY(z) {
+  if (z <= DECK_S && z >= DECK_N) return DECK_Y;
+  const dz = z > DECK_S ? z - DECK_S : DECK_N - z;
+  return lerp(DECK_Y, getH(0, z) + 0.45, smooth(0, 170, dz));
+}
+function beamGeo(a, b, t, out) {
+  const len = a.distanceTo(b); if (len < 0.01) return;
+  const g = new THREE.BoxGeometry(t, t, len);
+  const m = new THREE.Matrix4().lookAt(a, b, new THREE.Vector3(0, 1, 0));
+  if (Math.abs(a.x - b.x) < 1e-3 && Math.abs(a.z - b.z) < 1e-3) m.lookAt(a, b, new THREE.Vector3(1, 0, 0));
+  m.setPosition(a.clone().add(b).multiplyScalar(0.5));
+  g.applyMatrix4(m); out.push(g);
+}
+function buildBridge() {
+  // find where the deck meets solid ground at each end
+  for (let z = 175; z < 340; z += 2) if (getH(0, z) >= 49) { DECK_S = z + 10; break; }
+  for (let z = -345; z > -520; z -= 2) if (getH(0, z) >= 49) { DECK_N = z - 10; break; }
+  const steel = [], conc = [];
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const arch = (zA, zB, ySpring, panels) => {
+    const zc = (zA + zB) / 2, L = Math.abs(zA - zB), yc = DECK_Y - 2.4, top = DECK_Y - 1.2;
+    const yArch = (z) => ySpring + (yc - ySpring) * (1 - ((z - zc) / (L / 2)) ** 2);
+    for (const sx of [-4.2, 4.2]) {
+      let prev = null, prevTop = null;
+      for (let i = 0; i <= panels; i++) {
+        const z = lerp(zA, zB, i / panels), y = yArch(z);
+        const a = V(sx, y, z), tp = V(sx, top, z);
+        if (prev) {
+          beamGeo(prev, a, 1.3, steel);                                   // arch rib
+          beamGeo(V(sx, y - 2.2, z), V(sx, prev.y - 2.2, prev.z), 0.9, steel); // lower rib
+          beamGeo(prevTop, tp, 0.9, steel);                               // top chord
+          beamGeo(i % 2 ? prev : prevTop, i % 2 ? tp : a, 0.55, steel);   // diagonal
+        }
+        if (top - y > 0.5) beamGeo(a, tp, 0.6, steel);                     // vertical post
+        beamGeo(V(sx, y, z), V(sx, y - 2.2, z), 0.5, steel);
+        if (sx > 0 && i % 2 === 0) { beamGeo(V(-4.2, y, z), V(4.2, y, z), 0.45, steel); beamGeo(V(-4.2, top, z), V(4.2, top, z), 0.45, steel); }
+        prev = a; prevTop = tp;
+      }
+    }
+    for (const z of [zA, zB]) { const g = new THREE.BoxGeometry(12, 10, 6); g.translate(0, ySpring - 3, z); conc.push(g); }
+  };
+  arch(176, -171, 5, 28);    // Deception Pass span (976 ft)
+  arch(-263, -346, 8, 10);   // Canoe Pass span (511 ft)
+  // concrete deck slab + columns where it crosses land
+  const deck = new THREE.BoxGeometry(10, 1.4, DECK_S - DECK_N); deck.translate(0, DECK_Y - 0.9, (DECK_S + DECK_N) / 2); conc.push(deck);
+  const colAt = (z, yTop) => { const g0 = Math.max(getH(-3.6, z), getH(3.6, z), -6); if (yTop - g0 < 1.5) return;
+    for (const sx of [-3.6, 3.6]) { const g = new THREE.BoxGeometry(1.4, yTop - g0, 1.4); g.translate(sx, (yTop + g0) / 2, z); conc.push(g); }
+    const cap = new THREE.BoxGeometry(9.5, 1.2, 1.6); cap.translate(0, yTop - 0.6, z); conc.push(cap); };
+  for (let z = DECK_N; z <= DECK_S; z += 16) { if ((z < 172 && z > -168) || (z < -265 && z > -343)) continue; colAt(z, DECK_Y - 1.5); }
+  for (let z = DECK_S + 16; z < DECK_S + 170; z += 16) colAt(z, roadY(z) - 0.8);
+  for (let z = DECK_N - 16; z > DECK_N - 170; z -= 16) colAt(z, roadY(z) - 0.8);
+  // parapets
+  for (const sx of [-4.85, 4.85]) { const g = new THREE.BoxGeometry(0.35, 1.1, DECK_S - DECK_N); g.translate(sx, DECK_Y + 0.55, (DECK_S + DECK_N) / 2); conc.push(g); }
+  // light standards along the deck
+  for (let z = DECK_N + 10; z < DECK_S; z += 40) for (const sx of [-4.9, 4.9]) beamGeo(V(sx, DECK_Y, z), V(sx, DECK_Y + 6, z), 0.22, steel);
+  const steelMesh = new THREE.Mesh(mergeGeometries(steel), std(C('#557f5d'), { metalness: 0.35, roughness: 0.55 }));
+  const concMesh = new THREE.Mesh(mergeGeometries(conc), std(C('#a7a399'), { roughness: 0.9 }));
+  groups.now.add(steelMesh, concMesh);
+  // roadway ribbon (deck and approaches)
+  const pts = [], zs = [];
+  for (let z = 1500; z >= -1500; z -= 6) zs.push(z);
+  const road = new THREE.BufferGeometry(), pos = [], idx = [], line = [], lidx = [];
+  zs.forEach((z, i) => { const y = roadY(z) + 0.05; pos.push(-4.5, y, z, 4.5, y, z); line.push(-0.12, y + 0.03, z, 0.12, y + 0.03, z);
+    if (i) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); lidx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } });
+  road.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); road.setIndex(idx); road.computeVertexNormals();
+  const cl = new THREE.BufferGeometry(); cl.setAttribute('position', new THREE.Float32BufferAttribute(line, 3)); cl.setIndex(lidx); cl.computeVertexNormals();
+  groups.now.add(new THREE.Mesh(road, std(C('#3b3d3e'), { side: THREE.DoubleSide })));
+  groups.now.add(new THREE.Mesh(cl, std(C('#d9b13b'), { side: THREE.DoubleSide })));
+}
+
+/* ---------- cars ---------- */
+const cars = [];
+function buildCars() {
+  const body = new THREE.BoxGeometry(1.9, 1.0, 4.4).translate(0, 0.75, 0);
+  const cab = new THREE.BoxGeometry(1.7, 0.75, 2.3).translate(0, 1.6, -0.2);
+  const g = mergeGeometries([body, cab]);
+  const palette = ['#b23a2e', '#e5e2da', '#2c4b7a', '#1d1f22', '#7a8a8f', '#c7a23a', '#3d6b4a', '#e5e2da', '#5a2c3d', '#9aa6ad', '#1d1f22', '#b8bcc0'];
+  palette.forEach((c, i) => {
+    const m = new THREE.Mesh(g, std(C(c), { roughness: 0.35, metalness: 0.4 }));
+    const dir = i % 2 ? 1 : -1;
+    cars.push({ m, dir, z: -1400 + (i * 263) % 2800, v: 12 + (i % 4) * 1.6, lane: dir * 2.1 });
+    groups.now.add(m);
+  });
+}
+
+/* ---------- small builders ---------- */
+function buildShip() {
+  const ship = new THREE.Group();
+  const hull = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 30).translate(0, 1.5, 0), std(C('#3b2c22')));
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.8, 30.2).translate(0, 3.2, 0), std(C('#c9a646')));
+  const bow = new THREE.Mesh(new THREE.ConeGeometry(4, 9, 4).rotateX(Math.PI / 2).rotateZ(Math.PI / 4).scale(1, 0.62, 1).translate(0, 1.6, 19.4), std(C('#3b2c22')));
+  ship.add(hull, stripe, bow);
+  const sailMat = std(C('#e8e0c8'), { side: THREE.DoubleSide });
+  [[-9, 24], [1, 28], [10, 21]].forEach(([z, h]) => {
+    ship.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, h, 6).translate(0, h / 2 + 3, z), std(C('#5a4130'))));
+    for (let k = 0; k < 3; k++) {
+      const w = 13 - k * 3, sh = h * 0.24, y = 7 + k * (sh + 1.2);
+      const sg = new THREE.PlaneGeometry(w, sh, 6, 2); const sp = sg.attributes.position;
+      for (let i = 0; i < sp.count; i++) sp.setZ(i, 1.2 * (1 - (sp.getX(i) / (w / 2)) ** 2));
+      sg.computeVertexNormals(); sg.translate(0, y + sh / 2, z + 0.6);
+      ship.add(new THREE.Mesh(sg, sailMat));
+    }
+  });
+  ship.add(new THREE.Mesh(new THREE.PlaneGeometry(3, 2).translate(0, 31, -9.5), std(C('#b0283a'), { side: THREE.DoubleSide })));
+  ship.rotation.y = Math.PI * 0.5;
+  ship.position.set(-1430, 0, 170);
+  groups.y1792.add(ship);
+  return ship;
+}
+let ship, rowboat, canoe, pole, shelter, eagle, gulls = [], seals = [], logs = [], orcas = [], kelp, ice, starsGroup;
+function buildRowboat() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(1, 12, 6).scale(1.2, 0.45, 4).translate(0, 0.2, 0), std(C('#6b4a32'))));
+  const oars = [];
+  for (let i = 0; i < 4; i++) {
+    const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.6, 3, 6), std(C(i ? '#2e3b57' : '#7a1f24')));
+    p.position.set(0, 0.95, -2 + i * 1.3); g.add(p);
+    const oar = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.08, 0.18), std(C('#c8b38a')));
+    oar.position.set(0, 0.6, -2 + i * 1.3); g.add(oar); oars.push(oar);
+  }
+  g.userData.oars = oars;
+  groups.y1792.add(g);
+  return g;
+}
+function buildCanoe() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(1, 16, 6).scale(0.85, 0.42, 7).translate(0, 0.15, 0), std(C('#7a3b22'), { roughness: 0.7 })));
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.4, 0.3).translate(0, 0.8, 6.6), std(C('#1d1a18'))));
+  const paddles = [];
+  for (let i = 0; i < 5; i++) {
+    const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.5, 3, 6), std(C(['#a33a2a', '#22303a', '#c9b48a', '#22303a', '#a33a2a'][i])));
+    p.position.set(0, 0.85, -4 + i * 1.9); g.add(p);
+    const pd = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 0.28).translate(0, -0.6, 0), std(C('#8a5a34')));
+    pd.position.set(i % 2 ? 0.75 : -0.75, 1.1, -4 + i * 1.9); g.add(pd); paddles.push(pd);
+  }
+  g.userData.paddles = paddles;
+  g.visible = false; scene.add(g);
+  return g;
+}
+function buildPole(x, z) {
+  const g = new THREE.Group(), h0 = getH(x, z);
+  const cedar = std(C('#8a4f30'), { roughness: 0.8 });
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 7.5, 12).translate(0, 3.75, 0), cedar));
+  // carved bands and a face, kept simple and respectful
+  const band = (y, c) => g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.18, 12).translate(0, y, 0), std(C(c))));
+  band(2.2, '#1f2a2c'); band(4.1, '#1f2a2c'); band(5.9, '#2f6f6a');
+  const face = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10).scale(1, 1.25, 0.8).translate(0, 6.9, 0.18), cedar); g.add(face);
+  [-0.2, 0.2].forEach(ex => g.add(new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6).translate(ex, 7.05, 0.6), std(C('#141414')))));
+  g.add(new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.07, 6, 18, Math.PI).rotateZ(Math.PI).translate(0, 6.3, 0.35), std(C('#2f6f6a'))));
+  // long hair flowing down: kelp strands
+  for (let i = 0; i < 6; i++) g.add(new THREE.Mesh(new THREE.BoxGeometry(0.07, 3.2, 0.06).translate((i - 2.5) * 0.12, 4.6, 0.5 - Math.abs(i - 2.5) * 0.05), std(C('#3a3220'))));
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.4, 10).translate(0, 0.1, 0), std(C('#6d6a62'))));
+  g.position.set(x, h0 - 0.2, z);
+  scene.add(g); return g;
+}
+function buildShelter(x, z, faceAngle) {
+  const g = new THREE.Group(), h0 = getH(x, z);
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(13, 1.6, 8).translate(0, 0.2, 0), std(C('#7a776c'))));
+  const log = std(C('#6b4a30'), { roughness: 0.9 });
+  for (let i = 0; i < 6; i++) {
+    const y = 1.3 + i * 0.45;
+    [[0, -3.6, 13, 0], [0, 3.6, 13, 0]].forEach(([lx, lz, len]) => { if (lz > 0 && i > 1) return; g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, len, 7).rotateZ(Math.PI / 2).translate(lx, y, lz), log)); });
+    [-6.2, 6.2].forEach(lx => g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 7.6, 7).rotateX(Math.PI / 2).translate(lx, y, 0), log)));
+  }
+  [[-6.2, 3.6], [6.2, 3.6], [0, 3.6]].forEach(([px, pz]) => g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 3.6, 7).translate(px, 2.8, pz), log)));
+  const roof = std(C('#4a3b2e'), { roughness: 0.95 });
+  [-1, 1].forEach(s => { const r = new THREE.Mesh(new THREE.BoxGeometry(15, 0.35, 5.4), roof); r.position.set(0, 5.5, s * 2.2); r.rotation.x = -s * 0.62; g.add(r); });
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(2.2, 6.5, 2.2).translate(-4.5, 3.5, -2.2), std(C('#6e6a60'))));  // stone chimney
+  g.position.set(x, h0 - 0.4, z); g.rotation.y = faceAngle;
+  groups.now.add(g); return g;
+}
+function buildEagle() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8).scale(1, 0.8, 2.2), std(C('#3a2a1c'))));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8).translate(0, 0.15, 1.15), std(C('#f2efe6'))));
+  g.add(new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 6).rotateX(Math.PI / 2).translate(0, 0.08, 1.55), std(C('#e0a72a'))));
+  g.add(new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.9, 4).rotateX(-Math.PI / 2).scale(1, 0.25, 1).translate(0, 0, -1.4), std(C('#f2efe6'))));
+  const wingG = new THREE.BoxGeometry(3.4, 0.08, 1.1).translate(1.7, 0, 0);
+  const wm = std(C('#2e2015'));
+  const L = new THREE.Mesh(wingG, wm), R = new THREE.Mesh(wingG, wm); R.rotation.z = Math.PI; L.position.y = R.position.y = 0.1;
+  const lw = new THREE.Group(); lw.add(L); const rw = new THREE.Group(); rw.add(R);
+  g.add(lw, rw); g.userData = { lw, rw };
+  g.scale.setScalar(1.6);
+  scene.add(g); return g;
+}
+function buildGull() {
+  const g = new THREE.Group(); const m = std(C('#f2f2ee'));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6).scale(1, 0.8, 2), m));
+  const wg = new THREE.BoxGeometry(1.4, 0.04, 0.45).translate(0.7, 0, 0);
+  const lw = new THREE.Group(), rw = new THREE.Group();
+  lw.add(new THREE.Mesh(wg, m)); const r = new THREE.Mesh(wg, m); r.rotation.z = Math.PI; rw.add(r);
+  g.add(lw, rw); g.userData = { lw, rw }; scene.add(g); return g;
+}
+function buildSeal(x, z, onRock) {
+  const g = new THREE.Group(); const m = std(C(rng() < 0.5 ? '#6f6c66' : '#8b857a'), { roughness: 0.5 });
+  if (onRock) {
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8).scale(1, 0.75, 2.6), m));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8).translate(0, 0.25, 1.3), m));
+  } else {
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8).scale(1, 1.05, 1.15), m));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6).translate(0, -0.05, 0.36), std(C('#3e3a35'))));
+  }
+  g.position.set(x, onRock ? getH(x, z) + 0.35 : 0, z); g.rotation.y = rng() * 6.28;
+  g.userData = { x, z, onRock, ph: rng() * 6.28 };
+  scene.add(g); return g;
+}
+function buildOrca() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10).scale(1.1, 1, 3.6), std(C('#111315'), { roughness: 0.35 })));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8).scale(0.8, 0.45, 1.4).translate(0.55, 0.35, 2.2), std(C('#f3f3f0'))));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8).scale(0.8, 0.45, 1.4).translate(-0.55, 0.35, 2.2), std(C('#f3f3f0'))));
+  g.add(new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.6, 4).scale(0.35, 1, 1).translate(0, 1.9, -0.3), std(C('#111315'))));
+  scene.add(g); return g;
+}
+function buildIce() {
+  const g = new THREE.PlaneGeometry(8000, 8000, 100, 100).rotateX(-Math.PI / 2);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i); p.setY(i, (fbm(x * 0.003, z * 0.003, 3) - 0.5) * 30 + Math.max(0, 0.5 - Math.abs(fbm(x * 0.006 + 3, z * 0.0015, 2) - 0.5) * 8) * -14); }
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: C('#dfeef5'), roughness: 0.35, metalness: 0.0, transparent: true, opacity: 0.93, flatShading: true }));
+  m.visible = false; scene.add(m); return m;
+}
+function starGeo() {
+  const sh = new THREE.Shape();
+  for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.09 : 0.26; const x = Math.cos(a) * r, y = Math.sin(a) * r; i ? sh.lineTo(x, y) : sh.moveTo(x, y); }
+  return new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 1 }).rotateX(-Math.PI / 2);
+}
+function buildTidepool(cx, cz) {
+  const g = new THREE.Group();
+  const sg = starGeo(), purple = std(C('#6a2c73'), { roughness: 0.7 }), orange = std(C('#d9682b'), { roughness: 0.7 });
+  const anem = std(C('#5fa36a'), { roughness: 0.5 }), rock = std(C('#4d4d46'), { roughness: 1, flatShading: true });
+  const barn = std(C('#d8d2c2'));
+  let placed = 0;
+  for (let t = 0; t < 2500 && placed < 160; t++) {
+    const x = cx + (rng() - 0.5) * 34, z = cz + (rng() - 0.5) * 34, h = getH(x, z);
+    if (h < -1.05 || h > 1.2) continue;
+    placed++;
+    const kind = rng();
+    if (kind < 0.35) { const s = new THREE.Mesh(sg, rng() < 0.6 ? purple : orange); s.position.set(x, h + 0.04, z); s.rotation.y = rng() * 6; s.scale.setScalar(0.7 + rng() * 0.7); g.add(s); }
+    else if (kind < 0.55) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.12, 8), anem); a.position.set(x, h + 0.06, z); g.add(a); }
+    else if (kind < 0.8) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.4 + rng() * 1.1, 0), rock); r.position.set(x, h - 0.1, z); r.rotation.set(rng() * 3, rng() * 3, 0); r.scale.y = 0.6; g.add(r); }
+    else { for (let k = 0; k < 6; k++) { const b = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.05, 6), barn); b.position.set(x + (rng() - .5) * .4, h + 0.03, z + (rng() - .5) * .4); g.add(b); } }
+  }
+  scene.add(g); return g;
+}
+function buildKelp() {
+  const pts = [];
+  for (let t = 0; t < 30000 && pts.length < 700; t++) {
+    const x = (rng() - 0.5) * 2800 - 300, z = (rng() - 0.5) * 2200 - 200, h = getH(x, z);
+    if (h > -3 || h < -12) continue;
+    if (fbm(x * 0.01, z * 0.01, 2) < 0.5) continue;
+    pts.push([x, z]);
+  }
+  const m = new THREE.InstancedMesh(new THREE.SphereGeometry(0.32, 8, 6), std(C('#5b4a22'), { roughness: 0.5 }), pts.length);
+  m.userData.pts = pts; scene.add(m); return m;
+}
+function buildLabelsAndLogs() {
+  const lg = new THREE.CylinderGeometry(0.35, 0.4, 9, 7).rotateZ(Math.PI / 2);
+  for (let i = 0; i < 9; i++) {
+    const m = new THREE.Mesh(lg, std(C('#5a3e28'))); m.userData = { x: -1100 + rng() * 2200, z: -80 + rng() * 180 + (i % 3 === 0 ? -260 : 0) };
+    if (i % 3 === 0) m.userData.z = -300 + rng() * 20;
+    scene.add(m); logs.push(m);
+  }
+}
+
+/* =========================================================
+   Tour content
+   ========================================================= */
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+let P = {};      // computed places
+const yearsSince1792 = new Date().getFullYear() - 1792;
+const STOPS = [
+  { key: 'welcome', title: 'Welcome to Deception Pass', kicker: 'Between Whidbey Island and Fidalgo Island, Washington',
+    body: `<p>Deception Pass is a narrow, rocky channel of salt water in northwest Washington. Whidbey Island is to the south, and Fidalgo Island is to the north. Twice a day the tides push enormous amounts of seawater through this gap. A famous green steel bridge leaps across it, and forests cling to the cliffs on both sides.</p>
+      <p>On this trip you'll travel through about 160 million years of rock, thousands of years of human history, and one very fast river of seawater.</p>`,
+    look: 'The green bridge in the middle uses a small island as a stepping stone. That is Pass Island.',
+    math: ['Deception Pass is near 48° north latitude. The equator is 0° and the North Pole is 90°. About what fraction of the way from the equator to the North Pole are you?', '48 ÷ 90 ≈ 0.53, a little more than halfway.'],
+    view: () => [V3(-1500, 760, 1350), V3(-60, 10, -120)], pin: () => V3(0, 70, -215) },
+  { key: 'people', title: 'People of the Salish Sea', kicker: 'Rosario Beach · Samish and Swinomish homelands',
+    body: `<p>Long before any bridge, this was home to Coast Salish peoples, including the Samish and the Swinomish. For thousands of years they fished, gathered shellfish, harvested cedar, and traveled these waters in cedar canoes. They knew how the tides and currents changed through the day, which helped them travel safely through water that later surprised European sailors.</p>
+      <p>The Samish Indian Nation and the Swinomish Indian Tribal Community are still here today, and canoe journeys still cross these waters.</p>
+      <div class="legend"><h3>The Maiden of Deception Pass</h3><p>At Rosario Beach stands a cedar story pole of Ko-Kwal-Alwoot, carved by Samish artists. In the Samish story, a young woman gathering food at the shore was loved by a spirit of the sea. When her father refused to let her marry him, the sea's gifts of fish and fresh water disappeared. When she agreed to go with the sea spirit, plenty came back to her people. It is said that when the tide turns, you can see her long hair drifting with the kelp.</p></div>`,
+    look: 'The carved story pole on the shore, the canoe out on the water, and brown bull kelp floating near the rocks.',
+    math: ['Bull kelp can grow about 10 inches in a single day. At that rate, how many days would it take to grow 30 feet?', '30 feet = 360 inches. 360 ÷ 10 = 36 days.'],
+    view: () => [P.poleCam, P.poleTgt], pin: () => P.pole.clone().setY(P.pole.y + 12), enter() { canoe.visible = true; }, exit() { canoe.visible = false; } },
+  { key: 'name', title: 'Why "Deception"?', kicker: 'June 1792 · the scene now shows 1792: no bridge, no road',
+    body: `<p>In 1792, British Captain George Vancouver was mapping these waters with two ships, HMS <i>Discovery</i> and HMS <i>Chatham</i>. His sailing master, Joseph Whidbey, rowed small boats into what looked like a closed-off bay. It turned out to be a narrow passage with water rushing through to the other side.</p>
+      <p>That meant the land to the south was not a peninsula after all. It was an island. Vancouver named the island after Whidbey and called the channel Deception Passage, because it had fooled them.</p>`,
+    look: 'The tall ship anchored offshore and the small boat rowing toward the gap.',
+    math: [`Whidbey rowed through here in 1792. How many years ago was that?`, `${new Date().getFullYear()} − 1792 = ${yearsSince1792} years.`],
+    view: () => [V3(-1640, 38, 285), V3(-860, 12, -60)], pin: () => V3(-1430, 45, 170),
+    enter() { setEra('1792'); }, exit() { setEra('now'); } },
+  { key: 'rock', title: 'Ancient Seafloor, Carved by Ice', kicker: 'Geology · rock about 160 million years old',
+    body: `<p>The dark, greenish rock in these cliffs started out as ocean crust and mantle, deep beneath an ancient sea, roughly 160 million years ago. Moving plates later scraped it onto the edge of North America. Geologists call it the Fidalgo ophiolite.</p>
+      <p>Much later, during the last ice age, the Cordilleran Ice Sheet buried this whole region under ice more than a kilometer thick. The ice ground down the land, deepened the channels, and left scratches in the rock that you can still find today. When the ice melted, roughly 16,000 years ago, the sea flowed in and the islands appeared.</p>`,
+    control: 'ice',
+    look: 'Press the button to bring back the ice. The ice here is drawn far thinner than it really was, or it would bury the camera.',
+    math: ['Suppose the ice was 1,100 meters thick. The bridge deck is about 55 meters above the water. How many bridges stacked on top of each other would reach the top of the ice?', '1,100 ÷ 55 = 20 bridges.'],
+    view: () => [V3(1350, 640, 1500), V3(-80, 0, -120)], pin: () => V3(-420, 90, -470),
+    exit() { S.iceTarget = 0; } },
+  { key: 'current', title: 'A River in the Sea', kicker: 'Tidal currents up to about 8 knots',
+    body: `<p>As the tide rises and falls, water moves between Rosario Strait to the west and Skagit Bay to the east. Deception Pass is so narrow that the water has to speed up to get through, reaching about 8 knots (over 9 miles per hour). That makes whirlpools, boils, and standing waves.</p>
+      <p>On a <b>flood</b> tide the water pours east. On an <b>ebb</b> tide it rushes back west. In between comes <b>slack water</b>, a short calm when the current turns around. Boaters plan their trips to pass through at slack water.</p>`,
+    control: 'tide',
+    look: 'Drag the tide slider. Watch the drifting logs, the foam streaks, and the whirlpools that form downstream of the narrows. Drift is sped up so you can see it.',
+    math: ['Why so fast? The same amount of water has to fit through a narrower gap. If the channel were half as wide (and just as deep), about how much faster would the water need to move?', 'About twice as fast. Half the width × twice the speed carries the same amount of water each second.'],
+    view: () => [V3(-120, 300, 470), V3(10, 0, -40)], pin: () => V3(180, 30, 40),
+    enter() { S.tideAuto = false; S.tidePhase = 0.15; }, exit() { S.tideAuto = true; } },
+  { key: 'ride', title: 'Ride the Flood Tide', kicker: 'Low over the water, heading east',
+    body: `<p>Hold on! You're riding the flood tide east through the pass, about two meters above the water. Watch the cliffs close in on both sides as the channel narrows. Then look up as you pass under the bridge, about 180 feet overhead.</p>`,
+    control: 'ride',
+    look: 'Strawberry Island just past the bridge, and the whirlpools spinning off the rocks.',
+    math: ['This ride covers about 2.5 kilometers. If the current carried you at 4 meters per second, how long would the real trip take?', '2,500 ÷ 4 = 625 seconds, a little over 10 minutes. The tour speeds it up.'],
+    view: () => null, pin: () => V3(-900, 20, -60),
+    enter() { S.tideAuto = false; S.tidePhase = 0; startRide(); }, exit() { S.ride = null; S.tideAuto = true; } },
+  { key: 'bridge', title: 'The Deception Pass Bridge', kicker: 'Opened July 31, 1935',
+    body: `<p>Before 1935, people crossed the pass by ferry. Berte Olson ran that ferry and was one of the first women in Washington to captain one.</p>
+      <p>The bridge is really two bridges joined at Pass Island: a <b>511-foot</b> span over Canoe Pass and a <b>976-foot</b> span over Deception Pass. The roadway is about <b>180 feet</b> above the water. Workers from the Civilian Conservation Corps helped build it. Today thousands of cars cross it every day, and it is listed on the National Register of Historic Places.</p>`,
+    look: 'The arch shapes under each span and the concrete posts standing on Pass Island. Cars are crossing in both directions.',
+    math: ['The spans are 976 feet and 511 feet. How much longer is the Deception Pass span? How long are they together?', '976 − 511 = 465 feet longer. 976 + 511 = 1,487 feet, which is the whole bridge.'],
+    view: () => [V3(-235, 14, 95), V3(0, 40, -90)], pin: () => V3(0, 72, 0) },
+  { key: 'ccc', title: 'Built by the CCC', kicker: 'Bowman Bay · 1933 to 1942',
+    body: `<p>During the Great Depression, many families had no work. The Civilian Conservation Corps (CCC) hired young men for outdoor projects across the country. From 1933 to 1942, CCC crews lived in camps here and built the park's trails, roads, and log-and-stone shelters, and many of them are still in use.</p>
+      <p>The CCC Interpretive Center at Bowman Bay tells their story. Deception Pass State Park is now one of the most visited state parks in Washington, with millions of visits every year.</p>`,
+    look: 'The log-and-stone shelter near the beach, built in the CCC style.',
+    math: ['CCC workers earned $30 a month, and $25 of it was sent home to their families. What fraction of the pay went home?', '25/30 = 5/6 of the pay.'],
+    view: () => [P.shelterCam, P.shelterTgt], pin: () => P.shelter.clone().setY(P.shelter.y + 14) },
+  { key: 'forest', title: 'Forest and Wildlife', kicker: 'Goose Rock · 484 feet, the top of Whidbey Island',
+    body: `<p>You're standing on Goose Rock, the highest point on Whidbey Island. Around you grow Douglas-firs and western red cedars, and Pacific madrones, the trees with peeling red-orange bark that love sunny, rocky bluffs.</p>
+      <p>Bald eagles hunt over the pass. Harbor seals rest on rocks and bob in the water. Great blue herons stalk the shallows, and gulls ride the wind along the cliffs. Watch Rosario Strait to the west: orcas sometimes swim through.</p>`,
+    look: 'A bald eagle circling the pass, seals on the rocks of Deception Island, and the snowy Olympic Mountains far to the southwest.',
+    math: ['Goose Rock is 484 feet high. The bridge deck is about 180 feet above the water. How much higher are you than a car on the bridge?', '484 − 180 = 304 feet higher.'],
+    view: () => [P.gooseCam, V3(-500, 30, -150)], pin: () => P.goose.clone().setY(P.goose.y + 18) },
+  { key: 'pools', title: 'Tide Pools at Rosario Beach', kicker: 'Low tide · look closely',
+    body: `<p>At low tide, the rocks at Rosario Beach show a hidden world. Purple and orange ochre sea stars hold tight to the rocks. Green anemones fold up like closed flowers, and barnacles and mussels wait for the water to come back.</p>
+      <p>Tide pool animals have to survive being underwater, then out in the air and sun, twice every day. If you visit, step only on bare rock, look with your eyes, and leave everything where you found it.</p>`,
+    look: 'Sea stars of two colors, green anemones, and white barnacles. The tide is out right now.',
+    math: ['Most sea stars have 5 arms. If you counted 23 sea stars, how many arms would that be? (Sunflower sea stars can have up to 24 arms!)', '23 × 5 = 115 arms.'],
+    view: () => [P.poolCam, P.poolTgt], pin: () => P.pool.clone().setY(P.pool.y + 8),
+    enter() { S.tideAuto = false; S.tidePhase = -Math.PI / 2; }, exit() { S.tideAuto = true; } },
+  { key: 'journal', title: 'Field Journal', kicker: 'Before you leave the pass',
+    body: `<p>Answer these in your notebook, then explore on your own. Switch to <b>Explore freely</b> to fly anywhere.</p>
+      <ol class="qs"><li>Why did George Vancouver name this place "Deception"?</li><li>Why does the water move so fast through the pass?</li><li>What carved the channels and scratched the rocks?</li><li>Who has lived here for thousands of years, and what story do they tell about this place?</li><li>Sketch the bridge. Label both spans with their lengths.</li></ol>
+      <div class="row"><button class="pill" id="goExplore">Explore freely</button><button class="pill ghost" id="restart">Start the tour again</button></div>`,
+    view: () => [V3(900, 520, -1500), V3(-80, 20, -60)], pin: () => null }
+];
+
+/* =========================================================
+   Era / scene state
+   ========================================================= */
+function setEra(era) {
+  S.era = era;
+  groups.now.visible = era === 'now';
+  groups.y1792.visible = era === '1792';
+  cars.forEach(c => c.m.visible = era === 'now');
+}
+
+/* =========================================================
+   Labels
+   ========================================================= */
+const labelLayer = $('labels');
+const places = [];
+function addPlace(text, pos, water = false) { const el = document.createElement('div'); el.className = 'place' + (water ? ' water' : ''); el.textContent = text; labelLayer.appendChild(el); places.push({ el, pos }); }
+const pins = [];
+function buildPins() {
+  STOPS.forEach((s, i) => {
+    const p = s.pin(); if (!p) return;
+    const el = document.createElement('button'); el.className = 'pin'; el.type = 'button';
+    el.innerHTML = `<b><span>${i + 1}</span></b><i>${s.title}</i>`;
+    el.setAttribute('aria-label', `Go to stop ${i + 1}: ${s.title}`);
+    el.addEventListener('click', () => { setMode('tour'); goStop(i); });
+    labelLayer.appendChild(el); pins.push({ el, pos: p, i });
+  });
+}
+const pv = new THREE.Vector3();
+function updateLabels() {
+  const W = innerWidth, H = innerHeight;
+  const place = (o, isPin) => {
+    pv.copy(o.pos).project(camera);
+    const d = camera.position.distanceTo(o.pos);
+    const vis = pv.z < 1 && Math.abs(pv.x) < 1.1 && Math.abs(pv.y) < 1.1;
+    if (!vis || (!isPin && !S.names) || (!isPin && d > 4200) || (isPin && (S.ride || S.flight))) { o.el.style.display = 'none'; return; }
+    o.el.style.display = '';
+    o.el.style.transform = `translate(${(pv.x * 0.5 + 0.5) * W}px, ${(-pv.y * 0.5 + 0.5) * H}px) translate(-50%, ${isPin ? '-100%' : '-50%'})`;
+    if (!isPin) o.el.style.opacity = d < 120 ? 0 : clamp(1.4 - d / 3500, 0.25, 1);
+    else o.el.style.opacity = d < 40 ? 0.15 : 1;
+  };
+  places.forEach(o => place(o, false));
+  // keep place names from piling on top of each other: nearest wins
+  const shown = places.filter(o => o.el.style.display !== 'none').sort((a, b) => camera.position.distanceTo(a.pos) - camera.position.distanceTo(b.pos));
+  const boxes = [];
+  for (const o of shown) {
+    const r = o.el.getBoundingClientRect();
+    if (boxes.some(b => r.left < b.right + 6 && r.right > b.left - 6 && r.top < b.bottom + 2 && r.bottom > b.top - 2)) { o.el.style.display = 'none'; continue; }
+    boxes.push(r);
+  }
+  pins.forEach(o => { o.el.classList.toggle('on', o.i === S.stop && S.mode === 'tour'); place(o, true); });
+}
+
+/* =========================================================
+   Minimap
+   ========================================================= */
+const mapC = $('map'), mctx = mapC.getContext('2d');
+const MAPR = 1700;   // half-width of world shown on the map
+let mapBase;
+function buildMap() {
+  const N = 168, off = document.createElement('canvas'); off.width = off.height = N;
+  const c = off.getContext('2d'), img = c.createImageData(N, N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x = (i / N * 2 - 1) * MAPR, z = (j / N * 2 - 1) * MAPR, h = getH(x, z), k = (j * N + i) * 4;
+    let r, g, b;
+    if (h < 0) { const t = clamp(-h / 25, 0, 1); r = 40 - 20 * t; g = 92 - 30 * t; b = 96 - 20 * t; }
+    else { const t = clamp(h / 160, 0, 1); r = 52 + 90 * t; g = 74 + 60 * t; b = 46 + 30 * t; if (h < 2.5) { r = 140; g = 128; b = 98; } }
+    img.data[k] = r; img.data[k + 1] = g; img.data[k + 2] = b; img.data[k + 3] = 255;
+  }
+  c.putImageData(img, 0, 0); mapBase = off;
+}
+const w2m = (x, z) => [(x / MAPR * 0.5 + 0.5) * mapC.width, (z / MAPR * 0.5 + 0.5) * mapC.height];
+const mapStops = [];
+function drawMap() {
+  const W = mapC.width; mctx.imageSmoothingEnabled = true;
+  mctx.drawImage(mapBase, 0, 0, W, W);
+  // bridge
+  mctx.strokeStyle = '#9fd0a4'; mctx.lineWidth = 3; mctx.beginPath(); let [a, b] = w2m(0, DECK_S); mctx.moveTo(a, b); [a, b] = w2m(0, DECK_N); mctx.lineTo(a, b); mctx.stroke();
+  mapStops.length = 0;
+  STOPS.forEach((s, i) => { const p = s.pin(); if (!p) return; const [x, y] = w2m(p.x, p.z); mapStops.push([x, y, i]);
+    mctx.beginPath(); mctx.arc(x, y, 10, 0, 7); mctx.fillStyle = i === S.stop && S.mode === 'tour' ? '#d8673a' : '#edf0e6'; mctx.fill();
+    mctx.fillStyle = i === S.stop && S.mode === 'tour' ? '#fff' : '#0e1a1b'; mctx.font = '600 12px "IBM Plex Mono", monospace'; mctx.textAlign = 'center'; mctx.textBaseline = 'middle'; mctx.fillText(String(i + 1), x, y + 0.5); });
+  // camera
+  const [cx, cy] = w2m(camera.position.x, camera.position.z);
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir); const ang = Math.atan2(dir.z, dir.x);
+  mctx.save(); mctx.translate(clamp(cx, 6, W - 6), clamp(cy, 6, W - 6)); mctx.rotate(ang);
+  mctx.beginPath(); mctx.moveTo(14, 0); mctx.lineTo(-8, -8); mctx.lineTo(-4, 0); mctx.lineTo(-8, 8); mctx.closePath();
+  mctx.fillStyle = '#d8673a'; mctx.strokeStyle = '#fff'; mctx.lineWidth = 2; mctx.fill(); mctx.stroke(); mctx.restore();
+}
+mapC.addEventListener('click', (e) => {
+  const r = mapC.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * mapC.width, y = (e.clientY - r.top) / r.height * mapC.height;
+  let best = null, bd = 26 * 26; mapStops.forEach(([mx, my, i]) => { const d = (mx - x) ** 2 + (my - y) ** 2; if (d < bd) { bd = d; best = i; } });
+  if (best !== null) { setMode('tour'); goStop(best); }
+});
+
+/* =========================================================
+   Tour engine
+   ========================================================= */
+const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+let elapsed = 0;
+function flyTo(pos, tgt, dur) {
+  const p0 = camera.position.clone(), t0 = controls.target.clone();
+  const dist = p0.distanceTo(pos);
+  const mid = p0.clone().lerp(pos, 0.5); mid.y = Math.max(p0.y, pos.y) + Math.min(dist * 0.28, 900);
+  S.flight = { p0, t0, p1: pos.clone(), t1: tgt.clone(), mid, start: elapsed, dur: reduceMotion ? 0.01 : (dur ?? clamp(1.6 + dist / 1100, 2, 5)) };
+  controls.enabled = false; controls.autoRotate = false;
+}
+function stepFlight() {
+  const f = S.flight; const u = clamp((elapsed - f.start) / f.dur, 0, 1), e = ease(u);
+  const a = f.p0.clone().lerp(f.mid, e), b = f.mid.clone().lerp(f.p1, e);
+  camera.position.copy(a.lerp(b, e)); controls.target.copy(f.t0.clone().lerp(f.t1, e)); camera.lookAt(controls.target);
+  if (u >= 1) { S.flight = null; controls.enabled = true; controls.autoRotate = S.spin && S.mode === 'tour'; }
+}
+let rideCurve;
+function startRide() {
+  rideCurve = new THREE.CatmullRomCurve3([V3(-1350, 0, -150), V3(-800, 0, -60), V3(-380, 0, -10), V3(-120, 0, 5), V3(120, 0, 0), V3(330, 0, 25), V3(650, 0, -40), V3(1100, 0, -60)]);
+  const p = rideCurve.getPointAt(0); p.y = S.waterY + 2.4;
+  flyTo(p, rideCurve.getPointAt(0.03).setY(3), 2.4);
+  S.ride = { start: elapsed + 2.5, dur: reduceMotion ? 50 : 34, done: false };
+}
+function stepRide() {
+  const r = S.ride; if (S.flight || elapsed < r.start) return;
+  const u = clamp((elapsed - r.start) / r.dur, 0, 1), k = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+  const p = rideCurve.getPointAt(k), q = rideCurve.getPointAt(Math.min(k + 0.025, 1));
+  const bob = Math.sin(elapsed * 1.7) * 0.25 + Math.sin(elapsed * 2.9) * 0.12;
+  p.y = S.waterY + 2.4 + bob;
+  const lookUp = 34 * Math.exp(-(((p.x + 30) / 140) ** 2));
+  q.y = S.waterY + 2.0 + lookUp;
+  if (k >= 0.999) q.copy(p).add(V3(60, 2, -5));
+  camera.position.copy(p); controls.target.copy(q); camera.lookAt(q);
+  if (u >= 1 && !r.done) { r.done = true; controls.enabled = true; controls.target.copy(V3(0, 30, -60)); }
+}
+function goStop(i) {
+  i = clamp(i, 0, STOPS.length - 1);
+  const prev = STOPS[S.stop]; if (prev && prev.exit && (prev !== STOPS[i] || S.mode !== 'tour')) prev.exit();
+  S.stop = i; S.seen.add(i); S.spinPaused = false;
+  const s = STOPS[i];
+  if (s.enter) s.enter();
+  const v = s.view(); if (v) flyTo(v[0], v[1]);
+  renderCard(); drawMap();
+  if (S.reading) speakStop();
+}
+function setMode(m) {
+  if (m === S.mode) return;
+  S.mode = m;
+  $('btnTour').setAttribute('aria-pressed', m === 'tour'); $('btnExplore').setAttribute('aria-pressed', m === 'explore');
+  $('card').hidden = m !== 'tour'; fitView();
+  if (m === 'explore') { const s = STOPS[S.stop]; if (s.exit) s.exit(); S.ride = null; S.flight = null; controls.enabled = true; controls.autoRotate = false; controls.maxDistance = 7000; }
+  else goStop(S.stop);
+}
+
+/* ---------- card ---------- */
+function renderCard() {
+  const s = STOPS[S.stop];
+  $('stopnum').textContent = `Stop ${S.stop + 1} of ${STOPS.length}`;
+  $('stoptitle').textContent = s.title; $('stopkicker').textContent = s.kicker;
+  let html = s.body;
+  if (s.control === 'tide') html += `<div class="control"><label for="tide">Tide clock</label><input type="range" id="tide" min="0" max="1000" value="${phaseToSlider(S.tidePhase)}"><div class="ticks"><span>Low</span><span>Flooding →</span><span>High</span><span>← Ebbing</span><span>Low</span></div><div class="row"><button class="pill ghost" id="tidePlay">Play the tide</button></div></div>`;
+  if (s.control === 'ice') html += `<div class="control"><div class="row"><button class="pill" id="iceBtn">${S.iceTarget ? 'Melt the ice (today)' : 'Bring back the ice (ice age)'}</button></div></div>`;
+  if (s.control === 'ride') html += `<div class="control"><div class="row"><button class="pill" id="rideAgain">Ride again</button></div></div>`;
+  if (s.look) html += `<div class="note"><h3>Look for</h3><p>${s.look}</p></div>`;
+  if (s.math) html += `<div class="math"><h3>Field math</h3><p>${s.math[0]}</p><button type="button" id="ansBtn" aria-expanded="false">Show answer</button><div class="ans" id="ans" hidden>${s.math[1]}</div></div>`;
+  $('stopbody').innerHTML = html; $('stopbody').scrollTop = 0;
+  $('prev').disabled = S.stop === 0; $('next').disabled = S.stop === STOPS.length - 1;
+  $('next').textContent = S.stop === STOPS.length - 2 ? 'Finish →' : 'Next stop →';
+  const dots = $('dots'); dots.innerHTML = '';
+  STOPS.forEach((st, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = (i === S.stop ? 'on' : S.seen.has(i) ? 'seen' : ''); b.setAttribute('aria-label', `Stop ${i + 1}: ${st.title}`); b.onclick = () => goStop(i); dots.appendChild(b); });
+  const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+  on('ansBtn', 'click', (e) => { const a = $('ans'); a.hidden = !a.hidden; e.target.textContent = a.hidden ? 'Show answer' : 'Hide answer'; e.target.setAttribute('aria-expanded', !a.hidden); });
+  on('tide', 'input', (e) => { S.tideAuto = false; S.tidePhase = sliderToPhase(+e.target.value); $('tidePlay').textContent = 'Play the tide'; });
+  on('tidePlay', 'click', (e) => { S.tideAuto = !S.tideAuto; e.target.textContent = S.tideAuto ? 'Pause the tide' : 'Play the tide'; });
+  on('iceBtn', 'click', (e) => { S.iceTarget = S.iceTarget ? 0 : 1; e.target.textContent = S.iceTarget ? 'Melt the ice (today)' : 'Bring back the ice (ice age)'; });
+  on('rideAgain', 'click', () => startRide());
+  on('goExplore', 'click', () => setMode('explore'));
+  on('restart', 'click', () => { S.seen.clear(); goStop(0); });
+}
+const phaseToSlider = (ph) => { let u = (ph + Math.PI / 2) / (Math.PI * 2); u -= Math.floor(u); return Math.round(u * 1000); };
+const sliderToPhase = (v) => v / 1000 * Math.PI * 2 - Math.PI / 2;
+function tideText() {
+  const c = tideCurrent(), h = Math.sin(S.tidePhase) * 1.2, kn = Math.abs(c) * 8;
+  const state = kn < 0.8 ? 'Slack water' : c > 0 ? 'Flooding east' : 'Ebbing west';
+  const arrow = kn < 0.8 ? '·' : c > 0 ? '→' : '←';
+  return `<span class="arrow">${arrow}</span> ${state}<br>${kn.toFixed(1)} kn in the narrows<br>water ${h >= 0 ? '+' : '−'}${Math.abs(h).toFixed(1)} m`;
+}
+
+/* ---------- read aloud ---------- */
+S.reading = false;
+function speakStop() {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const s = STOPS[S.stop], tmp = document.createElement('div'); tmp.innerHTML = s.body;
+  const u = new SpeechSynthesisUtterance(`${s.title}. ${tmp.textContent.replace(/\s+/g, ' ')}`); u.rate = 0.95;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- ambient sound ---------- */
+let audio = null;
+function toggleSound() {
+  if (!audio) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const len = ctx.sampleRate * 4, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    let last = 0; for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600;
+    const gain = ctx.createGain(); gain.gain.value = 0;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.11; const lfoG = ctx.createGain(); lfoG.gain.value = 0.18; lfo.connect(lfoG); lfoG.connect(gain.gain);
+    const master = ctx.createGain(); master.gain.value = 0.5;
+    src.connect(lp); lp.connect(gain); gain.connect(master); master.connect(ctx.destination);
+    const wsrc = ctx.createBufferSource(); wsrc.buffer = buf; wsrc.loop = true; wsrc.playbackRate.value = 1.7;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.6;
+    const wg = ctx.createGain(); wg.gain.value = 0.05; wsrc.connect(bp); bp.connect(wg); wg.connect(master);
+    gain.gain.setValueAtTime(0.32, ctx.currentTime);
+    src.start(); wsrc.start(); lfo.start();
+    audio = { ctx, master, on: true };
+  } else { audio.on = !audio.on; audio.on ? audio.ctx.resume() : audio.ctx.suspend(); }
+  $('btnSound').setAttribute('aria-pressed', audio.on);
+}
+
+/* =========================================================
+   Animation
+   ========================================================= */
+const clock = new THREE.Clock();
+const up = new THREE.Vector3(0, 1, 0);
+function animate() {
+  const dt = Math.min(clock.getDelta(), 0.05); elapsed += dt;
+  // tide
+  if (S.tideAuto) S.tidePhase += dt * (Math.PI * 2 / 150);
+  const targetY = Math.sin(S.tidePhase) * 1.2; S.waterY += (targetY - S.waterY) * Math.min(1, dt * 2);
+  water.position.y = S.waterY;
+  const u = water.material.uniforms; u.uTime.value = elapsed; u.uTide.value = tideCurrent(); u.uWaterY.value = S.waterY; u.uCam.value.copy(camera.position);
+  // ice
+  S.ice += (S.iceTarget - S.ice) * Math.min(1, dt * 0.8);
+  ice.visible = S.ice > 0.01; ice.position.y = lerp(-40, 255, S.ice);
+  // cars
+  cars.forEach(c => { c.z += c.dir * c.v * dt; if (c.z > 1450) c.z = -1450; if (c.z < -1450) c.z = 1450;
+    const y = roadY(c.z), y2 = roadY(c.z + c.dir * 3); c.m.position.set(c.lane, y, c.z); c.m.rotation.set(-Math.atan2(y2 - y, 3) * c.dir, c.dir > 0 ? 0 : Math.PI, 0); });
+  // logs ride the current
+  logs.forEach(l => { const d = l.userData; d.x += flowAt(d.x, d.z) * S.timeScale * dt; if (d.x > 1300) d.x = -1300; if (d.x < -1300) d.x = 1300;
+    l.position.set(d.x, S.waterY + 0.1, d.z + Math.sin(elapsed * 0.3 + d.x * 0.01) * 4); l.rotation.y = Math.sin(elapsed * 0.2 + d.z) * 0.6; });
+  // kelp bobs and leans with the current
+  { const pts = kelp.userData.pts, c = tideCurrent(); for (let i = 0; i < pts.length; i++) { const [x, z] = pts[i];
+      tmpP.set(x + c * 2.5 + Math.sin(elapsed + i) * 0.3, S.waterY + 0.05 + Math.sin(elapsed * 1.3 + i) * 0.06, z); tmpM.makeTranslation(tmpP.x, tmpP.y, tmpP.z); kelp.setMatrixAt(i, tmpM); }
+    kelp.instanceMatrix.needsUpdate = true; }
+  // eagle
+  { const a = elapsed * 0.09, r = 260; eagle.position.set(Math.cos(a) * r + 60, 140 + Math.sin(elapsed * 0.4) * 12, Math.sin(a) * r * 0.8 - 80);
+    eagle.rotation.set(0, -a, 0.35); eagle.lookAt(Math.cos(a + 0.05) * r + 60, eagle.position.y, Math.sin(a + 0.05) * r * 0.8 - 80);
+    eagle.rotateZ(-0.3); const flap = Math.max(0, Math.sin(elapsed * 4)) * 0.5 * (Math.sin(elapsed * 0.25) > 0.6 ? 1 : 0.1);
+    eagle.userData.lw.rotation.z = flap; eagle.userData.rw.rotation.z = -flap; }
+  gulls.forEach((g, i) => { const a = elapsed * (0.16 + i * 0.012) + i, r = 70 + i * 13, cx = -40 + (i % 3) * 30;
+    g.position.set(Math.cos(a) * r + cx, 62 + (i % 4) * 6 + Math.sin(elapsed + i) * 3, Math.sin(a) * r - 60);
+    g.lookAt(Math.cos(a + 0.05) * r + cx, g.position.y, Math.sin(a + 0.05) * r - 60);
+    const f = Math.sin(elapsed * 7 + i) * 0.5; g.userData.lw.rotation.z = f; g.userData.rw.rotation.z = -f; });
+  seals.forEach(s => { const d = s.userData; if (d.onRock) return; s.position.y = S.waterY + Math.max(-0.5, Math.sin(elapsed * 0.35 + d.ph) * 0.6) + Math.sin(elapsed * 1.5 + d.ph) * 0.06; });
+  orcas.forEach((o, i) => { const t = elapsed * 0.045 + i * 0.03, z = 1200 - ((t * 1000) % 2600), x = -1650 + i * 22 + Math.sin(t * 3) * 30;
+    const ph = elapsed * 0.55 + i * 0.9, s = Math.sin(ph); o.position.set(x, S.waterY - 2.6 + Math.max(0, s) * 2.9, z + i * 15); o.rotation.set(-Math.cos(ph) * 0.25, Math.PI, 0); });
+  // 1792 rowboat & canoe
+  if (S.era === '1792') { const k = (elapsed * 0.012) % 1; rowboat.position.set(lerp(-1400, -520, k), S.waterY + 0.1, lerp(150, -30, k)); rowboat.rotation.y = Math.PI / 2 + 0.2;
+    rowboat.userData.oars.forEach(o => o.rotation.y = Math.sin(elapsed * 2.6) * 0.45); ship.position.y = S.waterY + Math.sin(elapsed * 0.6) * 0.15; ship.rotation.z = Math.sin(elapsed * 0.5) * 0.02; }
+  if (canoe.visible) { const a = elapsed * 0.02; canoe.position.set(P.canoeC.x + Math.cos(a) * 110, S.waterY + 0.05, P.canoeC.z + Math.sin(a) * 60); canoe.rotation.y = -a + Math.PI;
+    canoe.userData.paddles.forEach((p, i) => p.rotation.x = Math.sin(elapsed * 3 + (i % 2) * Math.PI) * 0.6); }
+  // camera
+  if (S.flight) stepFlight();
+  else if (S.ride) stepRide();
+  if (!S.flight && !(S.ride && !S.ride.done)) {
+    controls.autoRotate = S.spin && S.mode === 'tour' && !S.spinPaused;
+    controls.update();
+  }
+  // keep camera above ground and water
+  const gh = Math.max(getH(camera.position.x, camera.position.z), S.waterY) + 1.6;
+  if (camera.position.y < gh) camera.position.y = gh;
+  sky.position.copy(camera.position);
+  renderer.render(scene, camera);
+  updateLabels();
+  if ((frame++ & 3) === 0) { drawMap(); $('tidechip').innerHTML = tideText(); }
+  requestAnimationFrame(animate);
+}
+let frame = 0;
+
+/* =========================================================
+   Boot
+   ========================================================= */
+async function boot() {
+  await tick('Raising the islands…'); buildTerrain();
+  await tick('Filling Rosario Strait…'); buildOuterTerrain(); buildMountains(); buildWater();
+  await tick('Growing Douglas-firs and madrones…'); buildTrees();
+  await tick('Building the bridge (1935)…'); buildBridge(); buildCars();
+  await tick('Placing the story pole and the CCC shelter…');
+  // computed places
+  const [px, pz] = findSpot(-905, -735, 200, (h) => h > 2.6 && h < 5);
+  const [gx, gz] = gradH(px, pz); const sea = V3(-gx, 0, -gz).normalize(); const side = V3(-sea.z, 0, sea.x);
+  pole = buildPole(px, pz); P.pole = V3(px, getH(px, pz), pz);
+  P.poleCam = P.pole.clone().addScaledVector(sea, 2).addScaledVector(side, 15);
+  P.poleCam.y = Math.max(getH(P.poleCam.x, P.poleCam.z), P.pole.y) + 4;
+  P.poleTgt = P.pole.clone().addScaledVector(sea, 4).setY(P.pole.y + 4);
+  P.canoeC = P.pole.clone().addScaledVector(sea, 170);
+  const [tx, tz] = findSpot(px + sea.x * 10, pz + sea.z * 10, 80, (h) => h > -0.9 && h < 0.4);
+  P.pool = V3(tx, getH(tx, tz), tz);
+  const [g2x, g2z] = gradH(tx, tz); const sea2 = V3(-g2x, 0, -g2z).normalize();
+  P.poolCam = P.pool.clone().addScaledVector(sea2, -5).setY(P.pool.y + 2.6); P.poolTgt = P.pool.clone().addScaledVector(sea2, 3.5).setY(P.pool.y - 0.6);
+  starsGroup = buildTidepool(tx + sea2.x * 2, tz + sea2.z * 2);
+  const [sx, sz] = findSpot(-700, -680, 220, (h, x, z) => h > 3.5 && h < 6 && Math.hypot(...gradH(x, z)) < 0.25);
+  const [s3x, s3z] = gradH(sx, sz); const sea3 = V3(-s3x, 0, -s3z).normalize();
+  shelter = buildShelter(sx, sz, Math.atan2(sea3.x, sea3.z)); P.shelter = V3(sx, getH(sx, sz), sz);
+  P.shelterCam = P.shelter.clone().addScaledVector(sea3, 34).add(V3(sea3.z * 14, 0, -sea3.x * 14)).setY(P.shelter.y + 10); P.shelterTgt = P.shelter.clone().setY(P.shelter.y + 3);
+  // Goose Rock summit
+  let best = [380, 560], bh = -1; for (let z = 400; z < 720; z += 8) for (let x = 220; x < 540; x += 8) { const h = getH(x, z); if (h > bh) { bh = h; best = [x, z]; } }
+  P.goose = V3(best[0], bh, best[1]);
+  const toPass = V3(-best[0], 0, -best[1]).normalize();
+  P.gooseCam = P.goose.clone().addScaledVector(toPass, 30).setY(bh + 22);
+  await tick('Waking up the wildlife…');
+  ship = buildShip(); rowboat = buildRowboat(); canoe = buildCanoe();
+  eagle = buildEagle(); for (let i = 0; i < 9; i++) gulls.push(buildGull());
+  // seals: some bobbing near Rosario and the pass, some hauled out on Deception Island
+  for (let i = 0; i < 26 && seals.length < 6; i++) { const x = -1160 + (rng() - 0.5) * 220, z = -170 + (rng() - 0.5) * 160, h = getH(x, z); if (h > 0.6 && h < 3 && Math.hypot(...gradH(x, z)) < 0.5) seals.push(buildSeal(x, z, true)); }
+  for (let i = 0; i < 400 && seals.length < 15; i++) { const x = -1250 + rng() * 1100, z = -820 + rng() * 900, h = getH(x, z); if (h < -3 && h > -14) seals.push(buildSeal(x, z, false)); }
+  for (let i = 0; i < 3; i++) orcas.push(buildOrca());
+  kelp = buildKelp(); buildLabelsAndLogs(); ice = buildIce();
+  setEra('now');
+  // place names
+  addPlace('Whidbey Island', V3(150, 120, 980)); addPlace('Fidalgo Island', V3(80, 110, -1050));
+  addPlace('Pass Island', V3(-60, 62, -215)); addPlace('Deception Island', V3(-1160, 60, -170));
+  addPlace('Rosario Strait', V3(-1700, 5, -350), true); addPlace('Deception Pass', V3(-420, 4, -20), true);
+  addPlace('Canoe Pass', V3(-120, 4, -300), true); addPlace('Goose Rock', P.goose.clone().setY(bh + 40));
+  addPlace('Bowman Bay', V3(-760, 4, -590), true); addPlace('Rosario Beach', P.pole.clone().setY(P.pole.y + 30));
+  addPlace('Cornet Bay', V3(860, 4, 380), true); addPlace('Skagit Bay →', V3(1500, 4, -60), true);
+  addPlace('Strawberry Island', V3(330, 28, -40)); addPlace('Mount Baker', V3(24000, 1500, -19000)); addPlace('Olympic Mountains', V3(-19000, 1100, 15000));
+  buildPins(); buildMap();
+  await tick('Ready.');
+  $('begin').disabled = false; $('begin').textContent = 'Begin the field trip';
+  loadmsg.textContent = 'Ready. Turn on Sound for waves and wind.';
+  animate();
+}
+
+$('begin').addEventListener('click', () => { $('start').hidden = true; $('ui').hidden = false; fitView(); goStop(0); });
+$('prev').addEventListener('click', () => goStop(S.stop - 1));
+$('next').addEventListener('click', () => goStop(S.stop + 1));
+$('btnTour').addEventListener('click', () => setMode('tour'));
+$('btnExplore').addEventListener('click', () => setMode('explore'));
+$('btnNames').addEventListener('click', (e) => { S.names = !S.names; e.currentTarget.setAttribute('aria-pressed', S.names); });
+$('btnSpin').addEventListener('click', (e) => { S.spin = !S.spin; e.currentTarget.setAttribute('aria-pressed', S.spin); });
+$('btnSound').addEventListener('click', toggleSound);
+if (!('speechSynthesis' in window)) $('btnRead').hidden = true;
+$('btnRead').addEventListener('click', (e) => { S.reading = !S.reading; e.currentTarget.setAttribute('aria-pressed', S.reading); if (S.reading) speakStop(); else speechSynthesis.cancel(); });
+$('btnCollapse').addEventListener('click', (e) => { const c = $('card'), col = c.dataset.collapsed !== 'true'; c.dataset.collapsed = col; e.currentTarget.textContent = col ? 'Show text' : 'Hide text'; e.currentTarget.setAttribute('aria-expanded', !col); });
+addEventListener('keydown', (e) => {
+  if ($('ui').hidden || S.mode !== 'tour') return;
+  if (e.target && (e.target.type === 'range' || e.target.tagName === 'INPUT')) return;
+  if (e.key === 'ArrowRight') goStop(S.stop + 1); if (e.key === 'ArrowLeft') goStop(S.stop - 1);
+});
+controls.addEventListener('start', () => { S.spinPaused = true; controls.autoRotate = false; });
+// on wide screens, shift the picture's center right so the field card doesn't cover the subject
+function fitView() {
+  camera.aspect = innerWidth / innerHeight;
+  const shift = (innerWidth > 900 && S.mode === 'tour' && !$('ui').hidden) ? Math.min(240, innerWidth * 0.18) : 0;
+  if (shift) camera.setViewOffset(innerWidth, innerHeight, -shift, 0, innerWidth, innerHeight); else camera.clearViewOffset();
+  camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+}
+addEventListener('resize', fitView);
+boot().catch(err => { console.error(err); loadmsg.textContent = 'Something went wrong loading the 3D scene: ' + err.message; });
+</script>
+</body>
+</html>
