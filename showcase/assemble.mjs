@@ -1,5 +1,5 @@
 // Assemble the film: check every shot is on disk at its exact length, build the score from the
-// cues, and join picture and sound into one 75-second file.
+// cues, and join picture and sound into one file (84 s: the prologue, then the 75-second film).
 //   node showcase/assemble.mjs   → showcase/out/math-things-showcase.mp4
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';

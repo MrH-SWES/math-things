@@ -3,7 +3,7 @@
 no licensed music): small tactile sounds on the film's real events, read from out/cues.json, over a
 quiet original bed that starts with the rekenrek's first ten and drops away for the return.
 
-    python3 showcase/sound.py      → showcase/out/score.wav (exactly 75.000 s, 48 kHz, stereo)
+    python3 showcase/sound.py      → showcase/out/score.wav (the film's exact length, 48 kHz, stereo)
 """
 import json
 import wave
@@ -143,9 +143,67 @@ def penta(i, base=440.0):
     return base * 2 ** (o + PENTA[s] / 12)
 
 
+def jingle(stop):
+    """The clutter's soundtrack: a relentlessly cheerful 132 bpm ditty in C, cut off by a tape stop."""
+    beat = 60 / 132
+    n_eighths = int(stop / (beat / 2)) + 4
+    dur = stop + 1.0
+    out = np.zeros((2, int(dur * SR)))
+
+    def put(sig, t, g, pan=0.0):
+        i = int(t * SR)
+        a = (pan + 1) * np.pi / 4
+        m = min(len(sig), out.shape[1] - i)
+        if m > 0:
+            out[0, i:i + m] += g * np.cos(a) * np.sqrt(2) * sig[:m]
+            out[1, i:i + m] += g * np.sin(a) * np.sqrt(2) * sig[:m]
+
+    C5 = 523.25
+    semis = [0, 4, 7, 4, 12, 7, 4, 7, 5, 9, 12, 9, 7, 4, 0, 4, 2, 5, 9, 5, 7, -1, 2, 7, 0, 4, 7, 12]
+    square = ((1, 1.0), (3, 0.33), (5, 0.2), (7, 0.14), (9, 0.11))
+    for e in range(n_eighths):
+        t = e * beat / 2
+        f = C5 * 2 ** (semis[e % len(semis)] / 12)
+        put(tone(f, 0.3, 0.16, square, attack=0.004), t, 0.10, 0.15)
+        put(norm(band(rng.standard_normal(int(0.03 * SR)), 7000, 16000)) * np.exp(-time(0.03) / 0.008), t, 0.05, -0.3)   # hat
+    bass = [130.81, 196.0, 130.81, 196.0, 87.31, 130.81, 87.31, 130.81, 98.0, 146.83, 98.0, 146.83]
+    for b in range(n_eighths // 2 + 1):
+        t = b * beat
+        put(tone(bass[b % len(bass)], 0.5, 0.18, ((1, 1), (2, 0.3), (3, 0.1))), t, 0.18)
+        if b % 2 == 0:
+            put(norm(tone(130, 0.22, 0.05, glide=(0.6, 0.025))), t, 0.24)                                           # kick
+        else:
+            put(norm(band(rng.standard_normal(int(0.14 * SR)), 900, 6000)) * np.exp(-time(0.14) / 0.04), t, 0.16)  # clap
+        if b % 4 == 0:
+            put(chime([1046.5, 1396.9, 1568.0][(b // 4) % 3], 0.25), t, 0.06, 0.4)                                  # glock
+    # tape stop: the playhead slows to nothing over half a second, and the sound goes with it
+    k0, k1 = int(stop * SR), int((stop + 0.5) * SR)
+    tau = np.arange(k1 - k0) / SR
+    rate = (1 - tau / 0.5) ** 1.4
+    pos = stop * SR + np.cumsum(rate)
+    for ch in range(2):
+        out[ch, k0:k1] = np.interp(pos, np.arange(out.shape[1]), out[ch]) * (1 - tau / 0.5) ** 0.7
+    out[:, k1:] = 0
+    return out
+
+
+def flick(heavy):
+    if heavy:
+        return sweep(0.5, lambda u: 320 * 4.5 ** u, lambda u: np.sin(np.pi * min(1, u / 0.3) / 2) * (1 - u) ** 1.5, 0.5, 6)
+    return sweep(0.26, lambda u: 900 * 3.2 ** u, lambda u: np.sin(np.pi * min(1, u / 0.25) / 2) * (1 - u) ** 2, 0.45, 7)
+
+
 for c in CUES:
     t, k = c['t'], c['kind']
-    if k == 'beads':
+    if k == 'jingle':
+        pass   # mixed on its own, below
+    elif k == 'flick':
+        add(flick(c['heavy']), t - (0.07 if c['heavy'] else 0.05), 0.34 if c['heavy'] else 0.24, pan=0.6 * c['dx'])
+    elif k == 'tick':
+        add(ceramic(5200), t, 0.06, pan=0.7)
+    elif k == 'untype':
+        add(ceramic(3900 * (1 + 0.03 * ((c['k'] * 5) % 3 - 1))), t, 0.07)
+    elif k == 'beads':
         add(beads(c['n'], c.get('last', False)), t, 0.55 if not c.get('last') else 0.6)
     elif k == 'rod':
         add(wood(1700 + 40 * c['k'], 0.012, 0.2), t, 0.08 + 0.012 * c['k'], pan=-0.15)
@@ -215,9 +273,15 @@ for c in CUES:
 stems['cues'] = mix.copy()
 mix[:] = 0
 
+for c in CUES:
+    if c['kind'] == 'jingle':
+        add(jingle(c['stop'] - c['t']), c['t'])
+stems['slop'] = mix.copy()
+mix[:] = 0
+
 # ═══════ THE BED ═══════
 # 100 bpm from the rekenrek's ten; I–vi–IV–V in D, one bar each. It drops away for the return.
-BEAT, START, STOP = 0.6, 2.98, AT['ret']
+BEAT, START, STOP = 0.6, AT['rekenrek'] + 2.98, AT['ret']
 CHORDS = [(146.83, [0, 4, 7]), (123.47, [0, 3, 7]), (98.0, [0, 4, 7]), (110.0, [0, 4, 7])]   # D, Bm, G, A (roots)
 
 
@@ -286,8 +350,13 @@ active = slice(int(START * SR), int(STOP * SR))
 cue_peak = np.max(np.abs(stems['cues']))
 bed_rms = np.sqrt(np.mean(stems['bed'][:, active] ** 2))
 bed_gain = 10 ** ((db(cue_peak) - BED_UNDER - db(bed_rms)) / 20)
-mix = stems['cues'] + bed_gain * stems['bed']
-print(f'tactile peak {db(cue_peak):.1f} dB, bed {db(bed_rms):.1f} dB rms → bed gain {db(bed_gain):+.1f} dB')
+# the clutter's jingle is meant to be noticed: well above the bed, still under the tactile peaks
+SLOP_UNDER = 22
+slop_on = np.abs(stems['slop']).max(axis=0) > 0
+slop_rms = np.sqrt(np.mean(stems['slop'][:, slop_on] ** 2)) if slop_on.any() else 1
+slop_gain = 10 ** ((db(cue_peak) - SLOP_UNDER - db(slop_rms)) / 20)
+mix = stems['cues'] + bed_gain * stems['bed'] + slop_gain * stems['slop']
+print(f'tactile peak {db(cue_peak):.1f} dB, bed {db(bed_rms):.1f} dB rms → bed gain {db(bed_gain):+.1f} dB, jingle gain {db(slop_gain):+.1f} dB')
 
 # fade the last half-second to true silence, soften peaks, and leave headroom
 fade = np.ones(N)

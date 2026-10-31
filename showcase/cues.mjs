@@ -3,6 +3,8 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { OUT } from './capture.mjs';
+import { SCENES } from './scenes/index.mjs';
+import { FLINGS, COUNTDOWN, UNTYPE, DOCTRINE } from './scenes/prologue.mjs';
 import { TAPS, MEET } from './scenes/rekenrek.mjs';
 import { BEATS, LAST_PIECE } from './scenes/pattern-blocks.mjs';
 import { DRAG } from './scenes/solids.mjs';
@@ -10,8 +12,11 @@ import { PULLS } from './scenes/volume-space.mjs';
 import { FOLDS } from './scenes/nets.mjs';
 import { SLIDES } from './scenes/slicing-solids.mjs';
 
-// where each shot sits in the film
-export const AT = { rekenrek: 0, placeValue: 5, pattern: 20, solids: 32, volume: 38, nets: 50, slicing: 57, ret: 65, card: 70, end: 75 };
+// where each shot sits in the film, from the shots themselves
+const KEY = { '00-prologue': 'prologue', '01-rekenrek-open': 'rekenrek', '02-place-value': 'placeValue', '03-pattern-blocks': 'pattern',
+  '04-solids': 'solids', '05-volume-space': 'volume', '06-nets': 'nets', '07-slicing-solids': 'slicing', '08-rekenrek-return': 'ret', '09-end-card': 'card' };
+export const AT = {};
+{ let t = 0; for (const s of SCENES) { AT[KEY[s.name]] = t; t += s.seconds; } AT.end = t; }
 
 // the eased progress the scenes use, and its inverse
 const ease = u => (1 - Math.cos(Math.PI * u)) / 2;
@@ -19,6 +24,15 @@ const unease = e => Math.acos(1 - 2 * e) / Math.PI;
 
 const cues = [];
 const cue = (t, kind, extra = {}) => cues.push({ t: +t.toFixed(4), kind, ...extra });
+
+// Prologue: a cheesy jingle under the clutter, cut short when the wallpaper goes; a flick for each
+// piece (heard as the finger lets go), the timer's ticks, and a key for each character untyped
+const PRESS = heavy => (heavy ? 0.11 : 0.09);
+const wall = FLINGS.find(f => f[1] === 'slop-wall');
+cue(AT.prologue, 'jingle', { stop: wall[0] + PRESS(true) });
+for (const [t, id, dx, dy, spin, heavy = false] of FLINGS) cue(AT.prologue + t + PRESS(heavy), 'flick', { dx, heavy, id });
+for (const [t] of COUNTDOWN) cue(AT.prologue + t, 'tick');
+for (let k = 0; k < DOCTRINE.length; k++) cue(AT.prologue + UNTYPE.start + k * UNTYPE.step, 'untype', { k });
 
 // Rekenrek: each tap sends a group of beads; the sound is them meeting the others
 for (const [t, n] of TAPS.opener) cue(AT.rekenrek + t + MEET, 'beads', { n });

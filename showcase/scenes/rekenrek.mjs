@@ -1,7 +1,7 @@
-// 00:00–00:05 and 01:05–01:10: the rekenrek opens and closes the film from one frame.
+// 00:09–00:14 and 01:14–01:19: the rekenrek opens and closes the film from one frame.
 import { ORIGIN, hide } from '../capture.mjs';
 
-const CSS = `
+export const CSS = `
   header, .controls { display: none !important; }
   body { background: #F5F5F7; }
   /* a closer look at the rack: big enough to feel each bead, wide enough to read the row */
@@ -22,7 +22,7 @@ const tap = (row, i) => async page => {
   await page.mouse.up();
 };
 
-async function open(page, { rowOneFull }) {
+export async function open(page, { rowOneFull }) {
   await page.goto(ORIGIN + '/apps/rekenrek/');
   await hide(page, CSS);
   // continuity seed: the second row has nine beads across and one waiting
