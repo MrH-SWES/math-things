@@ -189,9 +189,71 @@
     { name: 'large hexagon', pts: ring(6, 2) },
     { name: 'star', pts: [...Array(12)].map((_, k) => { const r = k % 2 ? Math.sqrt(3) : 1, a = k * Math.PI / 6; return [Math.cos(a) * r, -Math.sin(a) * r]; }) },
   ];
+  // Complex silhouettes are unions of real unit blocks. Keep a known tiling with
+  // each tray, so every outline has a constructive proof, not a guessed contour.
+  const hexCells = cells => cells.flatMap(([q, r], i) => {
+    const x = q * 1.5, y = (2 * r + q) * H;
+    if (i % 4 === 0) return [{ type: 'hexagon', x, y, rot: 0 }];
+    if (i % 4 === 1) return [
+      { type: 'trapezoid', x, y: y - H / 2, rot: 0 },
+      { type: 'trapezoid', x, y: y + H / 2, rot: 180 },
+    ];
+    if (i % 4 === 2) return [...Array(3)].map((_, k) => {
+      const a = -k * 2 * Math.PI / 3, c = Math.cos(a), sn = Math.sin(a);
+      return { type: 'rhombus', x: x + 0.25 * c + H / 2 * sn,
+        y: y + 0.25 * sn - H / 2 * c, rot: 120 + k * 120 };
+    });
+    return [...Array(6)].map((_, k) => {
+      const a = k * Math.PI / 3;
+      // A triangle's centroid is 2/3 of the way to a hexagon edge midpoint.
+      return { type: 'triangle', x: x + Math.cos(a + Math.PI / 6) / Math.sqrt(3),
+        y: y - Math.sin(a + Math.PI / 6) / Math.sqrt(3), rot: k * 60 };
+    });
+  });
+  function tiledOutline(name, solution) {
+    const edges = new Map(), key = p => `${Math.round(p[0] * 1e7)},${Math.round(p[1] * 1e7)}`;
+    for (const tile of solution) {
+      const a = -tile.rot * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+      const vs = SHAPES[tile.type].local.map(v => [tile.x + v.x * c - v.y * sn, tile.y + v.x * sn + v.y * c]);
+      vs.forEach((v, i) => {
+        const w = vs[(i + 1) % vs.length], n = Math.round(Math.hypot(w[0] - v[0], w[1] - v[1]));
+        // Split the trapezoid's two-unit side before canceling shared edges.
+        for (let j = 0; j < n; j++) {
+          const u = [v[0] + (w[0] - v[0]) * j / n, v[1] + (w[1] - v[1]) * j / n];
+          const z = [v[0] + (w[0] - v[0]) * (j + 1) / n, v[1] + (w[1] - v[1]) * (j + 1) / n];
+          const forward = key(u) + ':' + key(z), reverse = key(z) + ':' + key(u);
+          if (edges.has(reverse)) edges.delete(reverse); else edges.set(forward, [u, z]);
+        }
+      });
+    }
+    const next = new Map([...edges.values()].map(([a, b]) => [key(a), b]));
+    const first = edges.values().next().value[0], pts = [first];
+    let cursor = next.get(key(first));
+    while (key(cursor) !== key(first)) {
+      pts.push(cursor); cursor = next.get(key(cursor));
+      if (!cursor || pts.length > edges.size) throw new Error('Invalid tile boundary: ' + name);
+    }
+    if (pts.length !== edges.size) throw new Error('Disconnected or holed tray: ' + name);
+    return { name, pts, solution };
+  }
+  const clusters = [
+    ['flower', [[0,0],[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]]],
+    ['butterfly', [[0,0],[-1,0],[-1,1],[-2,0],[-2,2],[1,-1],[1,0],[2,-2],[2,0]]],
+    ['comet', [[0,0],[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[-2,1],[-3,2],[-4,2]]],
+    ['crown', [[-2,1],[-1,1],[0,0],[1,0],[2,-1],[-2,0],[0,-1],[2,-2]]],
+    ['lightning', [[-2,0],[-1,0],[0,0],[1,-1],[0,1],[1,0],[2,0],[3,0]]],
+    ['branching crystal', [[0,0],[0,-1],[0,-2],[0,1],[0,2],[-1,0],[-2,0],[1,-1],[2,-2]]],
+  ];
+  for (const [name, cells] of clusters) OUTLINES.push(tiledOutline(name, hexCells(cells)));
+  const squares = rows => rows.flatMap((row, y) => [...row].flatMap((v, x) => v === '#' ? [{ type: 'square', x, y, rot: 0 }] : []));
+  OUTLINES.push(tiledOutline('staircase', squares(['#....','##...','###..','####.','#####'])));
+  OUTLINES.push(tiledOutline('bridge', squares(['#######','#######','##...##','##...##'])));
   for (const o of OUTLINES) if (o) {
-    const n = o.pts.length, cx = o.pts.reduce((a, p) => a + p[0], 0) / n, cy = o.pts.reduce((a, p) => a + p[1], 0) / n;
+    const xs = o.pts.map(p => p[0]), ys = o.pts.map(p => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
     o.local = o.pts.map(p => ({ x: p[0] - cx, y: p[1] - cy }));
+    o.width = Math.max(...xs) - Math.min(...xs); o.height = Math.max(...ys) - Math.min(...ys);
+    if (o.solution) o.solution = o.solution.map(p => ({ ...p, x: p.x - cx, y: p.y - cy }));
   }
 
   const MAX_PIECES = 120;
@@ -248,17 +310,36 @@
   function drawOutline() {
     const vs = outlineVerts();
     if (!vs.length) { outlineG.innerHTML = ''; return; }
-    const d = poly(vs), w = r2(Math.max(2, S * 0.04));
-    // a shallow recess: a darker floor, a shadowed upper edge and a lit lower edge
+    const d = poly(vs), w = r2(Math.max(3, S * 0.075));
+    // An inset ceramic tray, not a raised border. The clipped, offset strokes
+    // are inner walls: shadow on the upper/left, light on the lower/right.
     outlineG.innerHTML =
-      `<path d="${d}" fill="rgba(120,104,84,0.11)" stroke="rgba(255,255,255,0.9)" stroke-width="${r2(w * 2)}" stroke-linejoin="round" transform="translate(0 ${r2(w * 0.6)})"/>` +
-      `<path d="${d}" fill="rgba(120,104,84,0.11)" stroke="rgba(92,80,64,0.5)" stroke-width="${w}" stroke-linejoin="round"/>`;
+      `<defs><clipPath id="trayClip"><path d="${d}"/></clipPath></defs>` +
+      `<path d="${d}" fill="#D6CEC1" stroke="rgba(255,255,255,0.9)" stroke-width="${r2(w * 0.6)}" stroke-linejoin="round"/>` +
+      `<g clip-path="url(#trayClip)">` +
+      `<path d="${d}" fill="none" stroke="rgba(75,61,45,0.34)" stroke-width="${r2(w * 2)}" stroke-linejoin="round" transform="translate(${r2(w * 0.55)} ${r2(w * 0.7)})"/>` +
+      `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.62)" stroke-width="${r2(w * 1.1)}" stroke-linejoin="round" transform="translate(${-r2(w * 0.45)} ${-r2(w * 0.55)})"/>` +
+      `</g><path d="${d}" fill="none" stroke="rgba(91,76,56,0.4)" stroke-width="1" stroke-linejoin="round"/>`;
   }
 
   // ═══════ LAYOUT ═══════
   function layout() {
     const W = innerWidth, top = dockTop();
-    S = Math.max(34, Math.min(72, W / 8, top / 7.5));
+    const o = OUTLINES[outlineIx];
+    // Leave real working space outside even the widest tray for new blocks.
+    S = Math.min(72, W / Math.max(8, (o ? o.width : 0) + 4), top / Math.max(7.5, (o ? o.height : 0) + 4));
+    // Changing trays must not strand an existing construction off the mat.
+    // Scale the whole world together; never clamp individual joined blocks.
+    let occupiedX = 0, occupiedY = 0;
+    for (const p of pieces) {
+      const a = -p.rot * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+      for (const v of SHAPES[p.type].local) {
+        occupiedX = Math.max(occupiedX, Math.abs(p.x + v.x * c - v.y * sn));
+        occupiedY = Math.max(occupiedY, Math.abs(p.y + v.x * sn + v.y * c));
+      }
+    }
+    if (occupiedX) S = Math.min(S, Math.max(1, W / 2 - 8) / occupiedX);
+    if (occupiedY) S = Math.min(S, Math.max(1, top / 2 - 8) / occupiedY);
     CX = W / 2; CY = top / 2;
     drawOutline();
     defs.innerHTML =
@@ -278,6 +359,51 @@
     }
     return true;
   }
+  // A block may lie wholly in the recess or wholly on the surrounding mat,
+  // never across its rim. Clip convex blocks against a signed triangle fan:
+  // signed areas cancel the fan's outside regions even for concave trays.
+  const signedArea = vs => vs.reduce((sum, v, i) => {
+    const w = vs[(i + 1) % vs.length]; return sum + v.x * w.y - w.x * v.y;
+  }, 0) / 2;
+  function clipToConvex(subject, clip) {
+    let out = subject;
+    const sign = Math.sign(signedArea(clip));
+    for (let i = 0; i < clip.length && out.length; i++) {
+      const a = clip[i], b = clip[(i + 1) % clip.length];
+      const side = p => sign * ((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x));
+      const input = out; out = [];
+      let prev = input[input.length - 1], dp = side(prev);
+      for (const cur of input) {
+        const dc = side(cur), inPrev = dp >= 0, inCur = dc >= 0;
+        if (inPrev !== inCur) {
+          const t = dp / (dp - dc);
+          out.push({ x: prev.x + (cur.x - prev.x) * t, y: prev.y + (cur.y - prev.y) * t });
+        }
+        if (inCur) out.push(cur);
+        prev = cur; dp = dc;
+      }
+    }
+    return out;
+  }
+  function trayBlocked(vs, tray = outlineVerts()) {
+    if (!tray.length) return false;
+    let intersection = 0;
+    for (let i = 1; i < tray.length - 1; i++) {
+      intersection += signedArea(clipToConvex([tray[0], tray[i], tray[i + 1]], vs));
+    }
+    const area = Math.abs(signedArea(vs)), inside = Math.abs(intersection);
+    const tolerance = Math.max(S * S * 1e-7, area * 1e-7);
+    return inside > tolerance && area - inside > tolerance;
+  }
+  function changeOutline(index) {
+    outlineIx = index;
+    // Tray selection never moves or deletes existing work. A new rim may cross
+    // a legacy pose; only subsequent placement/rotation is validated. Refusing
+    // that action restores its start pose, even if that pose predates this tray.
+    layout();
+    pieces.forEach(draw);
+  }
+
   // blocks that share an edge or a corner belong to one design
   const touching = (A, B) => overlaps(A, B, -0.06 * S);
   function designOf(p) {
@@ -288,10 +414,10 @@
     }
     return out;
   }
-  const blocked = (p, vs) => pieces.some(o => o !== p && Math.hypot(o.x - p.x, o.y - p.y) < 3 && overlaps(vs, verts(o)));
+  const blocked = (p, vs) => trayBlocked(vs) || pieces.some(o => o !== p && Math.hypot(o.x - p.x, o.y - p.y) < 3 && overlaps(vs, verts(o)));
   function blockedAt(p, x, y, rot) {
     const vs = verts(p, x, y, rot);
-    return pieces.some(o => o !== p && overlaps(vs, verts(o)));
+    return trayBlocked(vs) || pieces.some(o => o !== p && overlaps(vs, verts(o)));
   }
 
   // ═══════ SNAP ═══════
@@ -312,7 +438,7 @@
       let score = 0;
       for (const m of mine) if (theirs.some(t => Math.hypot(m.x + dx - t.x, m.y + dy - t.y) < near)) score++;
       if (!best || score > best.score || (score === best.score && d < best.d)) {
-        const ok = shapes.every(vs => { const moved = vs.map(v => ({ x: v.x + dx, y: v.y + dy })); return !others.some(o => overlaps(moved, o.vs)); });
+        const ok = shapes.every(vs => { const moved = vs.map(v => ({ x: v.x + dx, y: v.y + dy })); return !trayBlocked(moved) && !others.some(o => overlaps(moved, o.vs)); });
         if (ok) best = { dx, dy, d, score };
       }
     }
@@ -385,12 +511,14 @@
     changed();
   }
 
-  // a new block from a bin lands beside the outline, not in it (the outline's hull is close enough)
+  // Spawn beside the tray's bounding box. This conservative test works for
+  // every concave contour; SAT itself is only valid for convex polygons.
   function onOutline(vs) {
     const o = outlineVerts();
     if (!o.length) return false;
-    const hull = OUTLINES[outlineIx].name === 'star' ? ring(6, Math.sqrt(3), Math.PI / 6).map(p => toPx(p[0], p[1])) : o;
-    return overlaps(vs, hull, -0.2 * S);
+    const xs = o.map(v => v.x), ys = o.map(v => v.y);
+    const l = Math.min(...xs), r = Math.max(...xs), t = Math.min(...ys), b = Math.max(...ys);
+    return overlaps(vs, [{x:l,y:t},{x:r,y:t},{x:r,y:b},{x:l,y:b}], -0.2 * S);
   }
 
   // a free spot near the middle of the mat for a piece from the bin
@@ -547,7 +675,7 @@
     }
     if (snapped) buzz(8);
   }
-  const groupBlocked = group => group.some(p => { const vs = verts(p); return pieces.some(o => !group.includes(o) && overlaps(vs, verts(o))); });
+  const groupBlocked = group => group.some(p => { const vs = verts(p); return trayBlocked(vs) || pieces.some(o => !group.includes(o) && overlaps(vs, verts(o))); });
 
   // pressing and holding a block lifts its whole design
   function lift(s) {
@@ -694,8 +822,7 @@
     outlineBin.setAttribute('aria-label', `Outline bin. ${o ? 'Outline: ' + o.name + '.' : 'No outline.'} Next: ${next ? next.name : 'none'}.`);
   }
   outlineBin.addEventListener('click', () => {
-    outlineIx = (outlineIx + 1) % OUTLINES.length;
-    drawOutline();
+    changeOutline((outlineIx + 1) % OUTLINES.length);
     paintOutlineBin();
     if (OUTLINES[outlineIx]) anim(outlineG, [{ opacity: 0 }, { opacity: 1 }], 240);
     buzz(6);
@@ -709,3 +836,4 @@
 <script src="../../math-things-home.js"></script>
 </body>
 </html>
+
