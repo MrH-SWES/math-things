@@ -420,8 +420,8 @@ function makeDetailTextures() {
     const k = j * N + i;
     const f = pf(i, j, 16, 5, 1), ridge = 1 - Math.abs(pf(i, j, 8, 3, 7) * 2 - 1);
     const crack = Math.pow(ridge, 10);
-    hgt[k] = f + 0.5 * Math.pow(ridge, 3) - 0.6 * crack;
-    img[k * 4] = st(f - crack * 0.5, 0.18, 0.78); img[k * 4 + 1] = st(pf(i, j, 4, 4, 3), 0.2, 0.8); img[k * 4 + 2] = st(pf(i, j, 2, 4, 5), 0.25, 0.75); img[k * 4 + 3] = 255;
+    hgt[k] = f + 0.3 * Math.pow(ridge, 3) - 0.22 * crack;
+    img[k * 4] = st(f - crack * 0.18, 0.15, 0.85); img[k * 4 + 1] = st(pf(i, j, 4, 4, 3), 0.2, 0.8); img[k * 4 + 2] = st(pf(i, j, 2, 4, 5), 0.25, 0.75); img[k * 4 + 3] = 255;
   }
   const nimg = new Uint8Array(N * N * 4);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -445,7 +445,7 @@ function makeTerrain(size, seg, hole, cast, farTint) {
 }
 function buildTerrain() {
   const { detail, normalTex } = makeDetailTextures();
-  terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, normalMap: normalTex, normalScale: new THREE.Vector2(1.2, 1.2) });
+  terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, normalMap: normalTex, normalScale: new THREE.Vector2(0.75, 0.75) });
   terrainMat.onBeforeCompile = (sh) => {
     sh.uniforms.tDetail = { value: detail }; sh.uniforms.uWaterY = terrainUniforms.uWaterY;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
@@ -455,7 +455,7 @@ function buildTerrain() {
         float d1 = texture2D(tDetail, vWPos.xz / 9.0).r;
         float d2 = texture2D(tDetail, vWPos.xz / 73.0 + 0.37).g;
         float d3 = texture2D(tDetail, vWPos.xz / 460.0 + 0.71).b;
-        diffuseColor.rgb *= (0.5 + 0.95 * d1) * (0.72 + 0.56 * d2) * (0.8 + 0.4 * d3);
+        diffuseColor.rgb *= (0.62 + 0.72 * d1) * (0.72 + 0.56 * d2) * (0.8 + 0.4 * d3);
         float wy = vWPos.y - uWaterY;
         float wet = 1.0 - smoothstep(-0.1, 1.6, wy);
         float barn = smoothstep(0.2, 0.7, vWPos.y + 1.2) * (1.0 - smoothstep(1.4, 2.0, vWPos.y + 1.2)) * smoothstep(0.35, 0.6, d1);
@@ -547,7 +547,7 @@ function buildWater() {
           vec2 d = p - cs[i]; float r = length(d); float a = atan(d.y, d.x);
           float k = exp(-r/(32.0 + float(i)*6.0)) * smoothstep(0.35, 0.9, abs(uTide));
           float s = sin(a*3.0 + r*0.16*sgn - t*2.6*sgn + float(i));
-          whirl += smoothstep(0.6, 0.97, s) * k;
+          whirl += smoothstep(0.55, 1.0, s) * k * (0.25 + 0.75 * noise(p * 0.12 + float(i) * 3.0 + t * 0.2));
           dip += exp(-r/10.0) * k;
         }
         vec2 uv = (p + 2500.0) / 5000.0;
@@ -572,7 +572,7 @@ function buildWater() {
         vec3 hv = normalize(uSun + v);
         float spec = pow(max(dot(n, hv), 0.0), 900.0) * 14.0 + pow(max(dot(n, hv), 0.0), 90.0) * 0.25;
         col += spec * vec3(1.0, 0.9, 0.75);
-        float f = clamp(foam + whirl*0.75 + shore*0.85, 0.0, 1.0);
+        float f = clamp(foam + whirl*0.45 + shore*0.85, 0.0, 1.0);
         col = mix(col, vec3(0.78, 0.83, 0.82), f);
         float fg = 1.0 - exp(-pow(dist*uFogD, 2.0));
         col = mix(col, uFog, fg);
@@ -630,6 +630,7 @@ function madroneGeometry() {
   });
   const g = mergeGeometries(parts); return shadeFoliage(g, 1.05, 0.8);
 }
+const cleared = (x, z) => (P.clear || []).some(([c, r]) => (x - c.x) ** 2 + (z - c.z) ** 2 < r * r);
 function buildTrees() {
   const conG = coniferGeometry(), madG = madroneGeometry();
   const trunkG = mergeGeometries([new THREE.CylinderGeometry(0.05, 0.09, 1.0, 6).translate(0, 0.5, 0).rotateZ(0.12),
@@ -650,6 +651,7 @@ function buildTrees() {
     if (h > 150 && rng() > 0.18) continue;
     if (fbm(x * 0.006 + 40, z * 0.006, 3) < 0.34) continue;
     if (beachMask(x, z) > 0.5 && h < 9) continue;
+    if (cleared(x, z)) continue;
     const b = B[clamp(Math.floor((z + span / 2) / cell), 0, CH - 1) * CH + clamp(Math.floor((x + span / 2) / cell), 0, CH - 1)];
     tmpQ.setFromAxisAngle(up, rng() * Math.PI * 2);
     if (landD(x, z) < 70 && rng() < 0.33 && nm < NM) {
@@ -681,17 +683,17 @@ function buildShore() {
   const rocks = [], wood = [], col = new THREE.Color();
   for (let t = 0; t < 90000 && rocks.length < 2600; t++) {
     const x = (rng() - 0.5) * 3200, z = (rng() - 0.5) * 2600 - 100, h = getH(x, z);
-    if (h < -1.4 || h > 2.4) continue;
-    const s = 0.4 + Math.pow(rng(), 3) * 3.8;
+    if (h < -1.4 || h > 2.4 || cleared(x, z)) continue;
+    const s = 0.4 + Math.pow(rng(), 3) * 2.6;
     tmpQ.setFromEuler(new THREE.Euler(rng() * 3, rng() * 3, rng() * 3)); tmpS.set(s, s * (0.55 + rng() * 0.3), s * (0.8 + rng() * 0.5)); tmpP.set(x, h - s * 0.25, z);
     col.set(['#56564f', '#4a4a45', '#635e55', '#3f423f'][Math.floor(rng() * 4)]);
     rocks.push([tmpM.compose(tmpP, tmpQ, tmpS).clone(), col.clone()]);
   }
   for (let t = 0; t < 60000 && wood.length < 320; t++) {
     const x = (rng() - 0.5) * 3200, z = (rng() - 0.5) * 2600 - 100, h = getH(x, z);
-    if (beachMask(x, z) < 0.3 || h < 1.1 || h > 3.4) continue;
+    if (beachMask(x, z) < 0.4 || h < 1.1 || h > 3.0 || cleared(x, z) || Math.hypot(...gradH(x, z)) > 0.22) continue;
     const len = 3 + rng() * 10;
-    tmpQ.setFromEuler(new THREE.Euler(0, rng() * 6.28, Math.PI / 2 + (rng() - 0.5) * 0.15)); tmpS.set(1 + rng() * 0.6, len, 1 + rng() * 0.6); tmpP.set(x, h + 0.15, z);
+    tmpQ.setFromEuler(new THREE.Euler(0, rng() * 6.28, Math.PI / 2 + (rng() - 0.5) * 0.15)); tmpS.set(1 + rng() * 0.6, len, 1 + rng() * 0.6); tmpP.set(x, h + 0.05, z);
     col.set('#b3ab9b').lerp(C('#7d7466'), rng());
     wood.push([tmpM.compose(tmpP, tmpQ, tmpS).clone(), col.clone()]);
   }
@@ -934,7 +936,7 @@ function starGeo() {
 function buildTidepool(cx, cz) {
   const g = new THREE.Group();
   const sg = starGeo(), purple = std(C('#6a2c73'), { roughness: 0.7 }), orange = std(C('#d9682b'), { roughness: 0.7 });
-  const anem = std(C('#5fa36a'), { roughness: 0.5 }), rock = std(C('#4d4d46'), { roughness: 1, flatShading: true });
+  const anem = std(C('#5fa36a'), { roughness: 0.5 }), rock = std(C('#5f5b52'), { roughness: 0.75 });
   const barn = std(C('#d8d2c2'));
   let placed = 0;
   for (let t = 0; t < 2500 && placed < 160; t++) {
@@ -944,7 +946,7 @@ function buildTidepool(cx, cz) {
     const kind = rng();
     if (kind < 0.35) { const s = new THREE.Mesh(sg, rng() < 0.6 ? purple : orange); s.position.set(x, h + 0.04, z); s.rotation.y = rng() * 6; s.scale.setScalar(0.7 + rng() * 0.7); g.add(s); }
     else if (kind < 0.55) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.12, 8), anem); a.position.set(x, h + 0.06, z); g.add(a); }
-    else if (kind < 0.8) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.4 + rng() * 1.1, 0), rock); r.position.set(x, h - 0.1, z); r.rotation.set(rng() * 3, rng() * 3, 0); r.scale.y = 0.6; g.add(r); }
+    else if (kind < 0.8) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35 + rng() * 0.8, 1), rock); r.position.set(x, h - 0.1, z); r.rotation.set(rng() * 3, rng() * 3, 0); r.scale.y = 0.6; g.add(r); }
     else { for (let k = 0; k < 6; k++) { const b = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.05, 6), barn); b.position.set(x + (rng() - .5) * .4, h + 0.03, z + (rng() - .5) * .4); g.add(b); } }
   }
   scene.add(g); return g;
@@ -1366,9 +1368,6 @@ async function boot() {
   await tick('Painting the sky…'); bakeEnvironment();
   await tick('Raising the islands…'); buildTerrain();
   await tick('Filling Rosario Strait…'); buildOuterTerrain(); buildMountains(); buildWater();
-  await tick('Growing Douglas-firs and madrones…'); buildTrees();
-  await tick('Scattering boulders and driftwood…'); buildShore();
-  await tick('Building the bridge (1935)…'); buildBridge(); buildCars();
   await tick('Placing the story pole and the CCC shelter…');
   // computed places
   const [px, pz] = findSpot(-905, -735, 200, (h) => h > 2.6 && h < 5);
@@ -1392,6 +1391,10 @@ async function boot() {
   P.goose = V3(best[0], bh, best[1]);
   const toPass = V3(-best[0], 0, -best[1]).normalize();
   P.gooseCam = P.goose.clone().addScaledVector(toPass, 30).setY(bh + 22);
+  P.clear = [[P.pool, 24], [P.poolCam, 10], [P.pole, 14], [P.shelter, 20], [P.goose, 30], [P.gooseCam, 60]];
+  await tick('Growing Douglas-firs and madrones…'); buildTrees();
+  await tick('Scattering boulders and driftwood…'); buildShore();
+  await tick('Building the bridge (1935)…'); buildBridge(); buildCars();
   await tick('Waking up the wildlife…');
   ship = buildShip(); rowboat = buildRowboat(); canoe = buildCanoe();
   eagle = buildEagle(); for (let i = 0; i < 9; i++) gulls.push(buildGull());
