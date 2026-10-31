@@ -1,4 +1,4 @@
-// Dependency-free browser regression tests for Place Value Blocks V2 mat zoom, embedded in an iframe
+// Dependency-free browser regression tests for Place Value Blocks mat zoom, embedded in an iframe
 // the way Teaching Table V3 opens it. Node 22+ and an installed Chromium required (CHROMIUM=/path to override).
 // Offline: external fonts are stripped; all input is synthetic CDP mouse/touch/keyboard events.
 import { test, after, before } from 'node:test';
@@ -12,7 +12,7 @@ const root=new URL('../',import.meta.url);
 // The frame sits away from the top-left corner so frame and page coordinates differ.
 const FX=100,FY=80,FW=900,FH=640;
 const host=`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;background:#ddd"><iframe id="app" src="/apps/place-value-blocks-v2/" title="Place Value Blocks"
+<body style="margin:0;background:#ddd"><iframe id="app" src="/apps/place-value-blocks/" title="Place Value Blocks"
 style="position:absolute;left:${FX}px;top:${FY}px;width:${FW}px;height:${FH}px;border:0"></iframe></body></html>`;
 const server=createServer(async(req,res)=>{
  try{
@@ -273,7 +273,7 @@ test('zoomed keyboard trade preserves value and units still snap into a run',asy
 });
 
 test('standalone app wheel, pinch and accessible controls zoom without scaling browser',async()=>{
- await cdp('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/apps/place-value-blocks-v2/'});await sleep(300);
+ await cdp('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/apps/place-value-blocks/'});await sleep(300);
  const read=()=>evaluate("document.getElementById('layer').getAttribute('transform')");
  const original=await hostScale();await wheel(500,250,-100,2);await sleep(60);
  assert.match(await read(),/scale\(1\.28/);assert.deepEqual(await hostScale(),original);

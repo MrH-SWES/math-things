@@ -6,35 +6,35 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Open the Teaching Table once on the private site to confirm sign-in, books and covers. Their addresses are unchanged (/apps/teaching-table/books/ and /covers/), but the page now sits one folder higher.
+- None.
 
 Notes:
 - Files changed:
-  - apps/teaching-table/: v3 moved up and the old table removed.
-  - apps/teaching-table/v3/index.html: now a redirect.
-  - tests/teaching-table-scan.test.mjs: points at the new path.
-  - index.html and more.html.
-  - harness/reviews/LATEST_REVIEW.md.
-- Teaching Table:
-  - What was v3 is now the Teaching Table, at apps/teaching-table/. Its own title was already "Teaching Table".
-  - The original "i-Ready Table" is removed, along with its support files: accessibility, curriculum, table-v2 and tts-client.
-  - apps/teaching-table/v3/ redirects to the Teaching Table and keeps any query or #fragment, so old bookmarks work.
-  - Saved boards and downloaded books are kept. Both live in browser storage shared across the site, under unchanged names (math-things-teaching-table-v3 and teaching-table-curriculum-v1); the "v3" in the first is internal only.
-  - Paths now relative to the new folder: the home page, the shared home-link script, books/ and covers/.
+  - apps/model-audition-* and auditions/: removed.
+  - apps/color-sorter/index.html and apps/division-machine/index.html: page titles.
+  - apps/place-value-blocks*: folders swapped.
+  - apps/rounding-blocks/index.html: one comment.
+  - tests/place-value-blocks-zoom*.test.mjs: new path.
+  - index.html, more.html, harness/reviews/LATEST_REVIEW.md.
+- Removed the three model-audition prototypes (Quadrilateral Jig, Scaling Wire, Share Mill) and their originals in auditions/. Nothing linked to them.
+- Page titles:
+  - Color Sorter: "The Sorter v13" is now "Math Things. | Color Sorter".
+  - Division Machine: "Division Bar | Water Focus Pass" is now "Math Things. | Division Machine".
 - Place Value Blocks:
-  - What was Place Value Blocks v2 is now just "Place Value Blocks" on the menu (Base Ten, grade 1). Its folder is still place-value-blocks-v2, so links keep working.
-  - The original Place Value Blocks (with the decimal change) moves to the More page as "Place Value Blocks (original)".
-- The menu cards no longer carry hidden family labels; only the removed table read them. Teaching Table shelves apps by the domain headings.
-- The menu has 60 apps; More has 8.
+  - The former v2 now lives at apps/place-value-blocks/.
+  - The original lives at apps/place-value-blocks-original/ and is listed on the More page.
+  - apps/place-value-blocks-v2/ redirects to apps/place-value-blocks/, keeping any query or #fragment.
+  - Old links to apps/place-value-blocks/ now open the current Place Value Blocks, including Curriculum Hub's links.
 - Checks:
-  - The 15 Teaching Table tests pass at the new path, as they did before the move.
-  - The v3 address redirects with its query and fragment.
-  - The Teaching Table's Math Things shelf lists all 60 apps by domain.
-  - All 62 menu links resolve.
-  - No console errors at 1440, 1280, 768 or 390 wide.
+  - Place Value Blocks tests pass at the new path (23/23), as they did before the rename.
+  - Teaching Table tests pass (15/15).
+  - The v2 address redirects.
+  - The original renders at its new folder.
+  - All 62 menu links resolve, and every app folder is on the menu, on More, or is the Teaching Table.
+  - No console errors.
 
 Acceptance Tests:
-- Teaching Table opens the former v3; the old table is gone; old v3 links still arrive. PASS
-- Place Value Blocks on the menu is the former v2; the original is on More. PASS
-- Teaching Table tests pass (15/15). PASS
+- Audition apps deleted; nothing references them. PASS
+- No version labels left in page titles or menu names. PASS
+- Place Value Blocks lives at apps/place-value-blocks/; old v2 links still arrive. PASS
 - No frameworks, bundlers, or package managers added. PASS
