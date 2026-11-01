@@ -1,56 +1,966 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Exponent Understander | Math Things</title>
-<style>
-:root{font-family:Lexend,system-ui,sans-serif;color:#20232b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at center,#fbfaf8,#e8e4dd);overflow:hidden}#stage{position:fixed;inset:0}header{position:fixed;z-index:5;top:0;left:0;right:0;background:#f8f7f2e8;backdrop-filter:blur(15px);display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;box-shadow:0 1px 8px #0001}.brand{font-weight:900;font-size:20px;letter-spacing:-1px;margin-right:auto}label{font-size:12px;font-weight:700}input{width:62px;padding:7px;border:1px solid #bbb;border-radius:8px;font:700 17px inherit}button{background:white;border:1px solid #c9c9cc;border-radius:9px;padding:8px 11px;cursor:pointer;font-weight:700}button[aria-pressed=true]{background:#222c42;color:white}#equations{position:fixed;z-index:4;top:95px;left:16px;background:#fffffff0;border-radius:14px;padding:16px;max-width:min(400px,85vw);box-shadow:0 6px 25px #0002;pointer-events:none}#equations[hidden]{display:none}#equations div{margin:8px 0;overflow-wrap:anywhere}#equations strong{font-size:13px;color:#657084}#equations p{margin:5px 0;font-size:18px;font-weight:800}#note{font-size:12px;color:#555;max-width:300px}footer{position:fixed;bottom:10px;left:0;right:0;text-align:center;color:#6c6d73;font-size:11px;pointer-events:none}@media(max-width:680px){header{gap:6px;padding:7px}.brand{width:100%;font-size:16px}button{padding:6px}#equations{top:125px}}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script></head>
-<body><div id="stage"></div><header><span class="brand">Math Things<span style="color:#999"> • </span>Exponent Understander</span><label>Base <input id="base" type="number" min="1" max="10" step="1" value="3"></label><label>Power / factor <input id="power" type="number" min="0" max="12" step="1" value="3"></label><button id="minus" title="Decrease exponent">−</button><button id="plus" title="Increase exponent">+</button><button id="zoomIn" title="Zoom in">＋</button><button id="zoomOut" title="Zoom out">－</button><button id="frame">Frame</button><button id="reveal" aria-pressed="true">◉ Reveal</button><button id="explode" aria-pressed="false">✳ Explode</button></header>
-<div id="equations"><div><strong>FAR • EXPONENT</strong><p id="expText"></p></div><div><strong>NEAR • MULTIPLICATION</strong><p id="mulText"></p></div><div id="note"></div></div><footer>Drag to orbit · Scroll or pinch to zoom · Two lanes, one 3D space</footer>
-<script type="module">
-import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
-const stage=document.querySelector('#stage'),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.01,1e9),renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);stage.append(renderer.domElement);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;
-scene.add(new THREE.HemisphereLight(0xffffff,0xa9a6a0,2));const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(30,80,40);scene.add(light);
-const expGroup=new THREE.Group(),mulGroup=new THREE.Group();scene.add(expGroup,mulGroup);
-const unit=new THREE.BoxGeometry(1,1,1),expMat=new THREE.MeshStandardMaterial({color:0x4576df,roughness:.7}),mulMat=new THREE.MeshStandardMaterial({color:0xe8a443,roughness:.7});
-const edgeMatE=new THREE.LineBasicMaterial({color:0x183c81,transparent:true,opacity:.55}),edgeMatM=new THREE.LineBasicMaterial({color:0x83500e,transparent:true,opacity:.55});
-const $=id=>document.getElementById(id);let currentBounds=10;
-function clear(g){while(g.children.length){const c=g.children[0];g.remove(c);if(c.geometry&&c.geometry!==unit)c.geometry.dispose();if(c.material&&c.material.isShaderMaterial)c.material.dispose();}}
-function dims(b,n){const d=[1,1,1];for(let i=0;i<n;i++)d[[2,0,1][i%3]]*=b;return d;}
-function cuboid(group,d,material,edgeMaterial){const count=d[0]*d[1]*d[2];if(count<=65000){const mesh=new THREE.InstancedMesh(unit,material,count),m=new THREE.Matrix4();let k=0;for(let y=0;y<d[1];y++)for(let x=0;x<d[0];x++)for(let z=0;z<d[2];z++){m.makeTranslation(x+.5,y+.5,z+.5);mesh.setMatrixAt(k++,m);}mesh.instanceMatrix.needsUpdate=true;group.add(mesh);return;}
-// A single GPU surface replaces a trillion meshes while keeping one-cube seams
-// visible whenever zoom makes the units large enough to distinguish.
-const surface=new THREE.ShaderMaterial({
- uniforms:{color:{value:material.color.clone()},size:{value:new THREE.Vector3(...d)},b:{value:Math.max(1,Math.round(d[0]>0?Number(document.getElementById('base').value):1))}},
- vertexShader:`varying vec3 p;varying vec3 norm;void main(){p=position;norm=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
- fragmentShader:`uniform vec3 color,size;uniform float b;varying vec3 p,norm;
- float line(float v,float step){float a=v/step;float w=max(fwidth(a)*1.25,.0001);return 1.-smoothstep(0.,w,min(fract(a),1.-fract(a)));}
- void main(){vec3 coord=(p+.5)*size;vec3 n=abs(norm);
- vec2 q=n.x>.5?coord.yz:(n.y>.5?coord.xz:coord.xy);
- float unitLine=max(line(q.x,1.),line(q.y,1.));
- float hierarchical=0.;float stepSize=b;
- for(int i=0;i<12;i++){if(stepSize>max(size.x,max(size.y,size.z))||b<=1.)break;
- hierarchical=max(hierarchical,max(line(q.x,stepSize),line(q.y,stepSize))*.35);stepSize*=b;}
- float shade=n.y>.5?1.:(n.x>.5?.85:.74);
- gl_FragColor=vec4(color*shade*(1.-max(unitLine*.28,hierarchical)),1.);
- }`,
- extensions:{derivatives:true}
-});
-const block=new THREE.Mesh(unit,surface);block.scale.set(...d);block.position.set(d[0]/2,d[1]/2,d[2]/2);group.add(block);
-const edges=new THREE.LineSegments(new THREE.EdgesGeometry(unit),edgeMaterial);edges.scale.copy(block.scale);edges.position.copy(block.position);group.add(edges);
-// At large powers show the last grouping boundaries without creating millions of lines.
-const step=Math.max(1,Math.pow(10,Math.floor(Math.log10(Math.max(...d)))-1));let segments=[];for(let axis=0;axis<3;axis++){const n=Math.min(45,Math.floor(d[axis]/step));for(let j=1;j<n;j++){const v=j*step;if(v>=d[axis])break;const a=[0,0,0],b=[...d];a[axis]=v;b[axis]=v;for(let t=0;t<3;t++)if(t!==axis){a[t]=0;b[t]=d[t];}segments.push(...a,...b);}}
-if(segments.length){const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(segments,3));group.add(new THREE.LineSegments(geom,edgeMaterial));}
-}
-function textSprite(s){const c=document.createElement('canvas');c.width=512;c.height=100;const ctx=c.getContext('2d');ctx.font='bold 44px Lexend, sans-serif';ctx.fillStyle='#293345';ctx.fillText(s,12,65);const texture=new THREE.CanvasTexture(c),sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));sprite.scale.set(9,1.75,1);return sprite;}
-function update(frame=true){const b=Math.max(1,Math.min(10,Math.round(Number($('base').value)||1))),n=Math.max(0,Math.min(12,Math.round(Number($('power').value)||0)));$('base').value=b;$('power').value=n;clear(expGroup);clear(mulGroup);
-const d=dims(b,n),m=[n,1,b],maxD=Math.max(...d,b,n,1),gap=Math.max(5,Math.min(100,maxD*.16));expGroup.position.z=gap;mulGroup.position.z=-gap;
-cuboid(expGroup,d,expMat,edgeMatE);if(n>0)cuboid(mulGroup,m,mulMat,edgeMatM);
-const labelA=textSprite('EXPONENTS'),labelB=textSprite('MULTIPLICATION');labelA.position.set(4,0,-2);labelB.position.set(5,0,-2);expGroup.add(labelA);mulGroup.add(labelB);
-const exploded=$('explode').getAttribute('aria-pressed')==='true';$('expText').textContent=exploded?(n===0?'1':Array(n).fill(b).join(' × ')+' = '+Math.pow(b,n).toLocaleString()):b+'^'+n+' = '+Math.pow(b,n).toLocaleString();$('mulText').textContent=exploded?(n===0?'0':Array(n).fill(b).join(' + ')+' = '+(b*n)) : b+' × '+n+' = '+(b*n);
-$('note').textContent=d.reduce((a,v)=>a*v,1)>65000?'Large powers use grouped geometry; individual cubes cannot all be drawn at this scale.':'';currentBounds=Math.max(maxD,gap*3);if(frame)fit(d,m,gap);}
-function fit(d,m,gap){const min=new THREE.Vector3(0,0,-gap),max=new THREE.Vector3(Math.max(d[0],m[0]),Math.max(d[1],1),gap+d[2]);const center=min.clone().add(max).multiplyScalar(.5),radius=max.clone().sub(min).length()*.5;controls.target.copy(center);const dist=Math.max(8,radius/Math.sin(camera.fov*Math.PI/360)*1.3);camera.position.copy(center).add(new THREE.Vector3(dist*.7,dist*.55,-dist));camera.near=Math.max(.01,dist/100000);camera.far=dist*100;camera.updateProjectionMatrix();controls.update();}
-for(const id of ['base','power'])$(id).addEventListener('change',()=>update());$('minus').onclick=()=>{$('power').value=Number($('power').value)-1;update()};$('plus').onclick=()=>{$('power').value=Number($('power').value)+1;update()};$('frame').onclick=()=>update();$('zoomIn').onclick=()=>{camera.position.lerp(controls.target,.25)};$('zoomOut').onclick=()=>{camera.position.sub(controls.target).multiplyScalar(1.35).add(controls.target)};
-$('reveal').onclick=()=>{const on=$('reveal').getAttribute('aria-pressed')!=='true';$('reveal').setAttribute('aria-pressed',String(on));$('equations').hidden=!on};$('explode').onclick=()=>{const on=$('explode').getAttribute('aria-pressed')!=='true';$('explode').setAttribute('aria-pressed',String(on));update(false)};
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}update();animate();
-</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <title>Exponent Understander | Math Things.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass: rgba(247,246,243,0.82);
+            --text-main: #1D1D1F;
+            --text-gray: #86868B;
+            --text-light: #AEAEB2;
+            --accent: #007AFF;
+            --border: rgba(0,0,0,0.06);
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --tens: #4169E1;
+            --ones: #DC143C;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Lexend', system-ui, sans-serif;
+            color: var(--text-main);
+            /* Warm showroom backdrop — the 3D canvas is transparent over it */
+            background: radial-gradient(130% 95% at 50% 40%, #FBFAF8 0%, #F3F1ED 55%, #E7E3DC 100%);
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none;
+        }
+
+        #stage { position: fixed; inset: 0; }
+        #stage canvas { display: block; outline: none; }
+
+        /* ── HEADER ── */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 20px;
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -0.05em;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        /* The Bead */
+        .logo-bead {
+            width: 0.22em; height: 0.22em; margin-left: 0.04em; margin-bottom: 0.08em;
+            flex-shrink: 0; border-radius: 50%; display: inline-block;
+            background: radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
+                        radial-gradient(circle at 67% 72%, rgba(0,0,0,0.15) 0%, transparent 55%),
+                        linear-gradient(135deg, #efefef 0%, #d0d0d0 25%, #a8a8a8 50%, #c0c0c0 75%, #e0e0e0 100%);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8), inset -1px -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.22);
+            transition: transform 0.35s var(--spring);
+        }
+        .logo:hover .logo-bead { transform: scale(1.4) translateY(-0.04em); }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ── WORDLESS SEGMENTED CONTROL: Line | Grid | Solid ── */
+        .seg {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .seg-btn, .tool {
+            width: 38px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            padding: 0;
+            transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, opacity 0.2s ease;
+        }
+        .seg-btn.active, .tool.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06);
+        }
+        .seg-btn svg, .tool svg { display: block; }
+        .seg-btn:focus-visible, .tool:focus-visible, .pv-pill input:focus-visible + .pv-pill-track {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .tools {
+            display: flex;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .tool:disabled { opacity: 0.35; cursor: default; }
+        .tool .digits { font-weight: 800; font-size: 12px; letter-spacing: -0.02em; }
+
+        /* ── PLACE VALUE PILL TOGGLE (same as Number Line) ── */
+        .pv-toggle-wrap { display: flex; align-items: center; }
+        .pv-icon { display: flex; align-items: center; margin-right: 6px; opacity: 0.75; flex-shrink: 0; }
+        .pv-pill { position: relative; width: 48px; height: 28px; cursor: pointer; flex-shrink: 0; }
+        .pv-pill input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .pv-pill-track {
+            position: absolute; inset: 0;
+            background: #E5E5EA;
+            border-radius: 14px;
+            transition: background 0.25s ease;
+            display: block;
+        }
+        .pv-pill-thumb {
+            position: absolute;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px; left: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+            transition: left 0.25s var(--spring);
+        }
+        .pv-pill input:checked + .pv-pill-track { background: var(--accent); }
+        .pv-pill input:checked + .pv-pill-track .pv-pill-thumb { left: 22px; }
+
+        /* ── THE RECORD (follows the object) ── */
+        .record {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .record.off { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        .record.off .f { pointer-events: none; }
+
+        .rec-expr {
+            display: flex;
+            align-items: baseline;
+            white-space: nowrap;
+            font-weight: 900;
+            font-size: clamp(2rem, 4.8vw, 3.8rem);
+            letter-spacing: -0.035em;
+            line-height: 1.05;
+        }
+        /* Line mode: one big numeral, as on the Number Line */
+        .record.single .rec-expr { font-size: clamp(2.8rem, 6.4vw, 5rem); letter-spacing: -0.04em; }
+        /* Native [hidden] must win over the explicit display on editable factors/results. */
+        .rec-expr [hidden] { display: none !important; }
+        .rec-expr .op { color: var(--text-light); font-weight: 600; margin: 0 0.2em; }
+        .rec-expr .res { display: inline-block; }
+
+        /* Every factor is typeable: enter a dimension and the object rebuilds to match */
+        .rec-expr .f {
+            display: inline-block;
+            width: 0.8em;                 /* JS sizes each factor to its digits */
+            font: inherit;
+            letter-spacing: inherit;
+            color: var(--text-main);
+            background: transparent;
+            border: 0; outline: 0;
+            margin: 0;
+            padding: 0 0.06em;
+            border-radius: 0.14em;
+            text-align: center;
+            pointer-events: auto;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+            appearance: none;
+            -webkit-appearance: none;
+            text-shadow: inherit;
+            transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .rec-expr .f:hover { background: rgba(0,0,0,0.035); }
+        .rec-expr .f:focus {
+            background: rgba(255,255,255,0.85);
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.35), 0 4px 14px rgba(0,0,0,0.06);
+        }
+        .rec-expr .f.live { color: var(--accent); }
+        .rec-pop { animation: recPop 0.3s var(--spring); }
+        @keyframes recPop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.14); }
+            100% { transform: scale(1); }
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            text-align: center;
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            pointer-events: none;
+        }
+        .footer-bead {
+            display: inline-block; width: 0.22em; height: 0.22em; border-radius: 50%;
+            margin-bottom: 0.08em;
+            background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: baseline;
+        }
+
+        .sr-only {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .rec-pop { animation: none !important; }
+        }
+
+        @media (max-width: 720px) {
+            header { padding: 0 10px; gap: 8px; }
+            .logo { font-size: 1.1rem; }
+            .header-controls { gap: 8px; }
+            .pv-icon { display: none; }
+            .seg-btn, .tool { width: 32px; height: 30px; }
+        }
+        @media (max-width: 480px) {
+            header { padding: 0 6px; gap: 6px; }
+            .header-controls { gap: 6px; }
+            .logo { font-size: 0.95rem; }
+            .seg-btn, .tool { width: 28px; }
+        }
+        @media (max-height: 500px) {
+            header { height: 48px; }
+            .record { top: 56px; }
+            .record.single .rec-expr { font-size: 2.6rem; }
+            .rec-expr { font-size: 2rem; }
+        }
+    
+        /* Exponent Understander changes only the mathematical record; the Volume Space showroom stays intact. */
+        .record .rec-expr .f {min-width:0.75em;}
+        .record .power-mark {position:relative;top:-.1em;letter-spacing:-.06em}
+        #equations {position:fixed;z-index:15;top:143px;left:18px;max-width:min(45vw,470px);pointer-events:none;display:grid;gap:17px;text-shadow:0 3px 10px #0000000a;}
+        #equations[hidden] {display:none!important}
+        #equations .equation {font-size:clamp(1.1rem,2.2vw,1.8rem);font-weight:900;letter-spacing:-.035em;overflow-wrap:anywhere;line-height:1.3}
+        #equations .equation .hint {display:block;color:var(--text-gray);font-size:.62rem;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
+        #equations .equation .sum {color:var(--text-light);font-weight:600}
+        #equations .equation + .equation {margin-top:7px}
+        #equations .equation.expanded {font-size:clamp(.85rem,1.7vw,1.25rem)}
+        .input-step {font-size:21px;font-weight:500}
+        #legend {position:fixed;z-index:11;bottom:42px;left:18px;display:grid;gap:4px;font-size:.66rem;color:var(--text-gray);font-weight:700;pointer-events:none}
+        #legend b {color:var(--text-main);font-weight:800}
+        #note {position:fixed;z-index:11;right:18px;bottom:41px;font-size:.65rem;color:var(--text-gray);font-weight:600;max-width:320px;text-align:right;pointer-events:none}
+        @media(max-width:720px){#equations{top:124px;left:10px;max-width:63vw;gap:9px}#equations .equation{font-size:1.1rem}#equations .equation.expanded{font-size:.83rem}#note{max-width:140px;right:8px;bottom:28px;font-size:.55rem}#legend{left:9px;bottom:29px;font-size:.58rem}}
+        @media(max-height:500px){#equations{top:95px}}
+</style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div id="stage" aria-label="Volume Space workspace comparing exponents and multiplication with a fixed origin" role="application"></div>
+    <header>
+        <div class="logo">Math Things<span class="logo-bead"></span></div>
+        <div class="header-controls">
+            <div class="seg" role="group" aria-label="Change power">
+                <button class="seg-btn input-step" id="minusBtn" aria-label="Decrease exponent">−</button>
+                <button class="seg-btn input-step" id="plusBtn" aria-label="Increase exponent">+</button>
+            </div>
+            <div class="tools" role="group" aria-label="View">
+                <button class="tool" id="recBtn" aria-label="Reveal equations" title="Reveal equations" aria-pressed="false">
+                    <svg width="22" height="20" viewBox="0 0 22 20" fill="none" aria-hidden="true"><path d="M2 10c3.8-6 14.2-6 18 0-3.8 6-14.2 6-18 0z" stroke="currentColor" stroke-width="1.7"/><circle cx="11" cy="10" r="3.3" stroke="currentColor" stroke-width="1.7"/></svg>
+                </button>
+                <button class="tool" id="sepBtn" aria-label="Expand equations" title="Expand equations" aria-pressed="false">
+                    <svg width="22" height="20" viewBox="0 0 22 20" fill="none" aria-hidden="true">
+                        <path d="M11 1.5l8.5 3.4L11 8.3 2.5 4.9zM2.5 10.2l8.5 3.4 8.5-3.4M2.5 15.1l8.5 3.4 8.5-3.4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="tool" id="zoomIn" aria-label="Zoom in" title="Zoom in"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.7"/><path d="M9 6v6M6 9h6M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+                <button class="tool" id="zoomOut" aria-label="Zoom out" title="Zoom out"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.7"/><path d="M6 9h6M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+                <button class="tool" id="fitBtn" aria-label="Frame everything" title="Frame everything">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 7V2h5M13 2h5v5M18 13v5h-5M7 18H2v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 6.2l3.4 1.8v4L10 13.8 6.6 12V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                </button>
+                <button class="tool" id="resetBtn" aria-label="Reset" title="Reset">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.6 10.4a5.6 5.6 0 1 0 1.7-4.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4.2 2.9v3.8H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    <div class="record" id="record"><div class="rec-expr" id="recExpr">
+        <input class="f" id="baseInput" type="text" inputmode="numeric" pattern="[0-9]*" value="3" aria-label="Base, 1 through 10" autocomplete="off" spellcheck="false">
+        <span class="op power-mark" aria-hidden="true">^</span>
+        <input class="f" id="powerInput" type="text" inputmode="numeric" pattern="[0-9]*" value="3" aria-label="Exponent, 0 through 12" autocomplete="off" spellcheck="false">
+    </div></div>
+    <div id="equations" hidden><div id="expoLine" class="equation"><span class="hint">EXPONENTS · FAR</span><span id="expoEq"></span></div><div id="multLine" class="equation"><span class="hint">MULTIPLICATION · NEAR</span><span id="multEq"></span></div></div>
+    <div id="legend" aria-hidden="true"><span><b>EXPONENTS</b> · far lane</span><span><b>MULTIPLICATION</b> · near lane</span></div>
+    <div id="note"></div>
+    <div class="sr-only" id="live" aria-live="polite"></div>
+    <footer>Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span></footer>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+        THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+        const V3 = THREE.Vector3;
+        const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+        // The source scene, original hub, original x-axis tray, studio lighting,
+        // enamel materials and SketchUp-style camera all come from Volume Space.
+        // Coordinate conversion: Volume Space Y = depth (student's Z);
+        // Volume Space Z = height (student's Y).
+        const state = {base:3,power:3,reveal:false,expand:false};
+        const GAP=0.05,TRAY_D=0.14,BAND=1.9,LANE=0.22,PX=128;
+        const REDUCED=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const FONT='Lexend, system-ui, sans-serif';
+        const ZONE=['#FFFFFF','#D1D1D6'],PLACE=[0xDC143C,0x4169E1,0xFFD700,0x4CBB17];
+        const HOME_DIR=new V3(-0.4045,-0.7006,0.5878).normalize();
+        let camTween=null,interacted=false;
+        // ── RENDERER ──
+        const stage = document.getElementById('stage');
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.NeutralToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        stage.appendChild(renderer.domElement);
+        const canvas = renderer.domElement;
+        const MAX_ANISO = renderer.capabilities.getMaxAnisotropy();
+
+        const scene = new THREE.Scene();
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environmentIntensity = 0.36;
+        scene.environmentRotation.set(Math.PI / 2, 0, 0);   // studio env is Y-up; our world is Z-up
+
+        // ── LIGHTS ── key light from upper left-front so the visible faces read as separate planes.
+        // Kept low enough that white and gray ten-zones stay distinct after tone mapping.
+        const hemi = new THREE.HemisphereLight(0xffffff, 0xd6cfc4, 0.38);
+        scene.add(hemi);
+        const sun = new THREE.DirectionalLight(0xfff8ee, 0.9);
+        const SUN_DIR = new V3(-0.55, -0.42, 1.25).normalize();
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        sun.shadow.bias = -0.0004;
+        scene.add(sun, sun.target);
+
+        // Infinite floor: only shadows show, so the canvas stays blank
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(1, 1),
+            new THREE.ShadowMaterial({ color: 0x2b2116, opacity: 0.16 })
+        );
+        ground.scale.set(8000, 8000, 1);
+        ground.position.z = -TRAY_D;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // ── CAMERA ──
+        const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.05, 6000);
+        camera.position.set(4, -24, 18);
+
+        // SketchUp-style navigation: left/middle drag orbits, shift-drag or right drag pans,
+        // wheel zooms toward the cursor. Touch: one finger orbits, two fingers pinch/pan.
+        const controls = new OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.12;
+        controls.zoomToCursor = true;
+        controls.screenSpacePanning = true;
+        controls.rotateSpeed = 0.75;
+        controls.zoomSpeed = 1.1;
+        controls.minDistance = 1.5;
+        controls.maxDistance = 1800; // dynamically expanded for large powers
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;   // stay above the floor
+        controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+        controls.addEventListener('start', () => { camTween = null; interacted = true; });
+
+        // ── MATERIALS ──
+        // Enameled cast iron. Pieces keep their unit seams (fusion never erases ancestry):
+        // a groove is drawn wherever the piece crosses a whole-unit boundary.
+        function enamelMaterial(color) {
+            const m = new THREE.MeshPhysicalMaterial({
+                color, roughness: 0.4, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.12,
+            });
+            m.onBeforeCompile = (sh) => {
+                sh.vertexShader = sh.vertexShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vSeamP;\nvarying vec3 vSeamN;')
+                    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeamP = position;\nvSeamN = normal;');
+                sh.fragmentShader = sh.fragmentShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vSeamP;\nvarying vec3 vSeamN;')
+                    .replace('#include <color_fragment>', `#include <color_fragment>
+                    {
+                        vec3 dist = abs(fract(vSeamP + 0.5) - 0.5);
+                        vec3 aa = fwidth(vSeamP) * 1.25;
+                        vec3 groove = 1.0 - smoothstep(vec3(0.02) - aa, vec3(0.02) + aa, dist);
+                        vec3 along = 1.0 - step(vec3(0.55), abs(vSeamN));
+                        float seam = max(max(groove.x * along.x, groove.y * along.y), groove.z * along.z);
+                        diffuseColor.rgb *= 1.0 - 0.42 * seam;
+                    }`);
+            };
+            return m;
+        }
+        const enamel = PLACE.map(enamelMaterial);
+        const coreMat = new THREE.MeshStandardMaterial({ color: 0x3d0610, roughness: 0.9 });
+        const trayMat = new THREE.MeshStandardMaterial({ color: 0xE5E5EA, roughness: 0.62 });
+        const metalMat = new THREE.MeshPhysicalMaterial({ color: 0xC4C6CB, metalness: 1, roughness: 0.3, anisotropy: 0.6 });
+        const beadMat = new THREE.MeshPhysicalMaterial({
+            color: 0xD8D9DD, metalness: 1, roughness: 0.24, anisotropy: 0.8, clearcoat: 0.4, clearcoatRoughness: 0.2,
+        });
+        const gripMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3f, metalness: 0.6, roughness: 0.5 });
+
+        // ── LABEL TEXTURES ──
+        const texCache = new Map();
+        function makeTex(key, w, h, draw) {
+            let t = texCache.get(key);
+            if (t) return t;
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            draw(cv.getContext('2d'), w, h);
+            t = new THREE.CanvasTexture(cv);
+            t.colorSpace = THREE.SRGBColorSpace;
+            t.anisotropy = MAX_ANISO;
+            texCache.set(key, t);
+            return t;
+        }
+
+        function drawNumber(g, text, cx, cy, rot, weight, size, color, maxW) {
+            g.save();
+            g.translate(cx, cy);
+            g.rotate(rot);
+            g.font = `${weight} ${size}px ${FONT}`;
+            const w = g.measureText(text).width;
+            if (w > maxW) g.font = `${weight} ${Math.floor(size * maxW / w)}px ${FONT}`;
+            const m = g.measureText(text);
+            g.fillStyle = color;
+            g.textAlign = 'center';
+            g.textBaseline = 'alphabetic';
+            g.fillText(text, 0, (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
+            g.restore();
+        }
+
+        // Continuous count: decades are anchors, as on the Number Line
+        function countStyle(num, scale = 1) {
+            return num % 10 === 0
+                ? { weight: 800, size: 0.56 * PX * scale, color: '#1D1D1F' }
+                : { weight: 500, size: 0.48 * PX * scale, color: '#4A4A4F' };
+        }
+
+        const gridTex = makeTex('grid', 128, 128, (g) => {
+            g.fillStyle = '#FFFFFF';
+            g.fillRect(0, 0, 128, 128);
+            g.fillStyle = 'rgba(0,0,0,0.14)';
+            g.fillRect(0, 0, 128, 2); g.fillRect(0, 126, 128, 2);
+            g.fillRect(0, 0, 2, 128); g.fillRect(126, 0, 2, 128);
+        });
+        gridTex.wrapS = gridTex.wrapT = THREE.RepeatWrapping;
+
+        // One printed band per decade: bead stop-marks, continuous count, local 1–10 count.
+        // `o` is 0 (read from the front) or 2 (numerals turned to read from behind).
+        function bandTex(d, o) {
+            const H = Math.round((BAND - 0.035) * PX);
+            return makeTex(`band:${d}:${o}`, 10 * PX, H, (g, W) => {
+                g.fillStyle = ZONE[d % 2];
+                g.fillRect(0, 0, W, H);
+                g.fillStyle = 'rgba(0,0,0,0.12)';
+                g.fillRect(0, 0, W, 3);                     // seam against the track
+                for (let i = 0; i <= 10; i++) {             // where the bead can stop
+                    const major = i === 0 || i === 10;
+                    const w = major ? 4 : 2.5;
+                    g.fillStyle = major ? 'rgba(0,0,0,0.26)' : 'rgba(0,0,0,0.15)';
+                    g.fillRect(i * PX - w / 2, 4, w, major ? 0.6 * PX : 0.42 * PX);
+                }
+                const rot = o * Math.PI / 2;
+                for (let i = 0; i < 10; i++) {
+                    const num = d * 10 + i + 1;
+                    const cx = (i + 0.5) * PX;
+                    const st = countStyle(num);
+                    drawNumber(g, String(num), cx, 0.85 * PX, rot, st.weight, st.size, st.color, 0.94 * PX);
+                    drawNumber(g, String(i + 1), cx, 1.5 * PX, rot, 600, 0.36 * PX, '#8E8E93', 0.9 * PX);
+                }
+            });
+        }
+
+        // Y scale, per decade: numbered slots on the outside, the bead lane against the rows
+        // (mirrors the x band). `o` = quarter turns so numerals read upright from where you stand.
+        function yTex(e, count, o) {
+            const W = Math.round(Y_PLATE_W * PX), H = count * PX, slotW = Math.round(Y_SLOT_W * PX);
+            return makeTex(`y:${e}:${count}:${o}`, W, H, (g) => {
+                g.fillStyle = ZONE[e % 2];
+                g.fillRect(0, 0, W, H);
+                g.fillStyle = 'rgba(0,0,0,0.12)';
+                g.fillRect(W - 3, 0, 3, H);                       // seam against the rows
+                g.fillStyle = 'rgba(0,0,0,0.10)';
+                for (let s = 0; s <= count; s++) g.fillRect(0, H - s * PX - 1, slotW, 2);
+                for (let s = 0; s <= count; s++) {                 // where the bead can stop
+                    const major = (e * 10 + s) % 10 === 0;
+                    const w = major ? 4 : 2.5;
+                    g.fillStyle = major ? 'rgba(0,0,0,0.26)' : 'rgba(0,0,0,0.15)';
+                    g.fillRect(slotW + 4, H - s * PX - w / 2, W - slotW - 8, w);
+                }
+                const rot = -o * Math.PI / 2;
+                for (let s = 0; s < count; s++) {
+                    const num = e * 10 + s + 1;
+                    const st = countStyle(num, 0.95);
+                    drawNumber(g, String(num), slotW / 2, H - (s + 0.5) * PX, rot, st.weight, st.size, st.color, 0.88 * PX);
+                }
+            });
+        }
+
+        // Z scale: one enamel tag per layer, always turned toward the viewer.
+        // Tags alternate by decade like the number line.
+        const tagMats = new Map();
+        function tagMaterial(num) {
+            let m = tagMats.get(num);
+            if (m) return m;
+            const tex = makeTex(`tag:${num}`, 128, 96, (g, W, H) => {
+                g.beginPath();
+                g.roundRect(5, 5, W - 10, H - 10, 22);
+                g.fillStyle = ZONE[Math.floor((num - 1) / 10) % 2];
+                g.fill();
+                g.lineWidth = 2.5;
+                g.strokeStyle = 'rgba(0,0,0,0.16)';
+                g.stroke();
+                const st = countStyle(num, 0.95);
+                drawNumber(g, String(num), W / 2, H / 2, 0, st.weight, st.size, st.color, W - 30);
+            });
+            m = new THREE.SpriteMaterial({ map: tex, transparent: true });
+            tagMats.set(num, m);
+            return m;
+        }
+
+        // ── INFRASTRUCTURE: number line (x), y scale, z column, origin hub ──
+        const xGroup = new THREE.Group(), yGroup = new THREE.Group(), zGroup = new THREE.Group(), hubGroup = new THREE.Group();
+        scene.add(xGroup, yGroup, zGroup, hubGroup);
+        // The y and z scales start collapsed; stepGrow raises them when their axis opens
+        yGroup.scale.y = zGroup.scale.z = 0.0001;
+        yGroup.visible = zGroup.visible = false;
+        const bandMeshes = [], yPlates = [], zTags = [];
+        let bandOrient = 0, yOrient = 0;
+        let xSig = '', ySig = '', zSig = '';
+        const grow = { y: { v: 0, target: 0 }, z: { v: 0, target: 0 } };
+
+        const decalProps = { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 };
+        const trackMats = ZONE.map(c => new THREE.MeshStandardMaterial({ color: c, map: gridTex, roughness: 0.55, ...decalProps }));
+
+        function disposeGroup(g) {
+            g.traverse(o => {
+                if (!o.isMesh) return;
+                o.geometry.dispose();
+                if (o.userData.own) o.userData.own.forEach(m => m.dispose());
+            });
+            g.clear();
+        }
+
+        function box(x0, x1, y0, y1, mat) {
+            const m = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, y1 - y0, TRAY_D, 2, 0.035), mat);
+            m.position.set((x0 + x1) / 2, (y0 + y1) / 2, -TRAY_D / 2);
+            m.castShadow = m.receiveShadow = true;
+            return m;
+        }
+
+        function plate(w, h, cx, cy, mat) {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            m.position.set(cx, cy, 0.0015);
+            m.receiveShadow = true;
+            return m;
+        }
+
+        function rail(axis, from, to) {
+            const len = to - from;
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, len, 12), metalMat);
+            m.castShadow = m.receiveShadow = true;
+            if (axis === 'x') { m.rotation.z = -Math.PI / 2; m.position.set(from + len / 2, -LANE, 0.03); }
+            else if (axis === 'y') m.position.set(-LANE, from + len / 2, 0.03);
+            else { m.rotation.x = Math.PI / 2; m.position.set(ZC, -LANE, from + len / 2); }   // on the carriage
+            return m;
+        }
+
+        function buildHub() {
+            hubGroup.add(box(-1.45, -0.02, -BAND, -0.02, trayMat));
+            // The origin: where the three rails meet
+            const node = new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 16), metalMat);
+            node.position.set(-LANE, -LANE, 0.04);
+            node.castShadow = true;
+            hubGroup.add(node);
+        }
+
+        function buildX(vx, R) {
+            disposeGroup(xGroup);
+            bandMeshes.length = 0;
+            xGroup.add(box(-0.02, vx + 0.15, -BAND, R + 0.15, trayMat));
+            gridTex.repeat.set(10, R);
+            for (let d = 0; d < vx / 10; d++) {
+                xGroup.add(plate(10, R, 10 * d + 5, R / 2, trackMats[d % 2]));
+                const mat = new THREE.MeshStandardMaterial({ map: bandTex(d, bandOrient), roughness: 0.62, ...decalProps });
+                const band = plate(10, BAND - 0.035, 10 * d + 5, -(BAND - 0.035) / 2, mat);
+                band.userData = { own: [mat], d };
+                xGroup.add(band);
+                bandMeshes.push(band);
+            }
+            xGroup.add(rail('x', -LANE, vx + 0.05));
+        }
+
+        function updateLabelOrient() {
+            const hx = camera.position.x - controls.target.x, hy = camera.position.y - controls.target.y;
+            if (hx * hx + hy * hy < 1e-6) return;
+            const phi = Math.atan2(hx, -hy);
+            const angDist = (a1, a2) => Math.abs(Math.atan2(Math.sin(a1 - a2), Math.cos(a1 - a2)));
+            if (angDist(phi, yOrient * Math.PI / 2) > Math.PI / 4 + 0.08) {
+                yOrient = ((Math.round(phi / (Math.PI / 2)) % 4) + 4) % 4;
+                yPlates.forEach(p => { p.material.map = yTex(p.userData.e, p.userData.count, yOrient); });
+            }
+            if (angDist(phi, bandOrient * Math.PI / 2) > Math.PI / 2 + 0.08) {
+                bandOrient = Math.cos(phi) >= 0 ? 0 : 2;
+                bandMeshes.forEach(m => { m.material.map = bandTex(m.userData.d, bandOrient); });
+            }
+        }
+
+
+        // Structural rules: n=0 means one exponent cube but zero multiplication cubes.
+        // Each new exponent factor multiplies one dimension, cycling depth, X, height.
+        // The bottom comparison is a depth stick of 'base' repeated 'power' times on X.
+        const $=id=>document.getElementById(id);
+        const recordEl=$('record'), live=$('live');
+        const baseInput=$('baseInput'),powerInput=$('powerInput');
+        const far=new THREE.Group(),near=new THREE.Group();
+        scene.add(far,near);
+        const unitGeometry=new RoundedBoxGeometry(1-2*GAP,1-2*GAP,1-2*GAP,3,0.1).translate(.5,.5,.5);
+        const farOffset=4;
+        const dimsOf=(b,p)=>{const d=[1,1,1];for(let i=0;i<p;i++)d[[1,0,2][i%3]]*=b;return d};
+        const comma=n=>n.toLocaleString('en-US');
+        let prev=null,activeAnimations=[],lastLayout=null,needsRender=true;
+        function requestRender(){needsRender=true}
+        controls.addEventListener('change',requestRender);
+        function clearObjects(group){
+            while(group.children.length){
+                const o=group.children[group.children.length-1];group.remove(o);
+                if(o.geometry&&o.geometry!==unitGeometry)o.geometry.dispose();
+                if(o.material&&o.material!==enamel[0]&&o.material.dispose)o.material.dispose();
+            }
+        }
+        // Preserve Volume Space's glossy enamel, with a procedural unit grid for
+        // huge structures. The shader uses *unscaled* geometry coordinates so
+        // 10^12 can be represented without constructing 10^12 meshes.
+        function largeEnamel(d,b){
+            const m=enamelMaterial(PLACE[0]);
+            m.onBeforeCompile=sh=>{
+                sh.uniforms.cubeDimensions={value:new V3(...d)};
+                sh.uniforms.cubeBase={value:b};
+                sh.vertexShader=sh.vertexShader
+                    .replace('#include <common>','#include <common>\nuniform vec3 cubeDimensions;\nvarying vec3 vUnit;\nvarying vec3 vFace;')
+                    .replace('#include <begin_vertex>','#include <begin_vertex>\nvUnit=position+0.5*cubeDimensions;\nvFace=normal;');
+                sh.fragmentShader=sh.fragmentShader
+                    .replace('#include <common>','#include <common>\nuniform float cubeBase;\nvarying vec3 vUnit;\nvarying vec3 vFace;')
+                    .replace('#include <color_fragment>','#include <color_fragment>\n'+
+                    'vec3 e=min(fract(vUnit),1.0-fract(vUnit));\n'+
+                    'vec3 width=max(fwidth(vUnit)*1.4,vec3(0.0002));\n'+
+                    'vec3 line=1.0-smoothstep(vec3(0.027),vec3(0.027)+width,e);\n'+
+                    'vec3 across=1.0-step(vec3(0.55),abs(vFace));\n'+
+                    'float unitLine=max(max(line.x*across.x,line.y*across.y),line.z*across.z);\n'+
+                    'float bands=0.0;float stepSize=cubeBase;\n'+
+                    'for(int k=0;k<12;k++){\n'+
+                    'if(cubeBase<=1.0)break;\n'+
+                    'vec3 u=vUnit/stepSize;\n'+
+                    'vec3 edge=min(fract(u),1.0-fract(u));\n'+
+                    'vec3 w=max(fwidth(u)*1.3,vec3(0.0002));\n'+
+                    'vec3 groupLine=1.0-smoothstep(vec3(0.015),vec3(0.015)+w,edge);\n'+
+                    'bands=max(bands,max(max(groupLine.x*across.x,groupLine.y*across.y),groupLine.z*across.z));\n'+
+                    'stepSize*=cubeBase;\n'+
+                    '}\n'+
+                    'diffuseColor.rgb*=1.0-max(0.42*unitLine,0.19*bands);');
+            };
+            m.customProgramCacheKey=()=> 'volume-space-exponent-grid-v1';
+            return m;
+        }
+        function makeSolid(group,d,b,prior,axis){
+            const count=d[0]*d[1]*d[2];
+            if(count<=30000){
+                const mesh=new THREE.InstancedMesh(unitGeometry,enamel[0],count);
+                mesh.castShadow=true;mesh.receiveShadow=true;
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                group.add(mesh);
+                const anim=prior&&axis>=0&&d[axis]>prior[axis];
+                if(anim)activeAnimations.push({mesh,d,prior,axis,start:performance.now()});
+                positionCubes(mesh,d,prior,axis,anim?0:1);
+            }else{
+                const geom=new RoundedBoxGeometry(d[0]-GAP*2,d[1]-GAP*2,d[2]-GAP*2,1,0.1);
+                const mesh=new THREE.Mesh(geom,largeEnamel(d,b));
+                mesh.position.set(d[0]/2,d[1]/2,d[2]/2);
+                mesh.castShadow=count<=2000000;mesh.receiveShadow=true;
+                group.add(mesh);
+            }
+        }
+        function positionCubes(mesh,d,prior,axis,t){
+            const matrix=new THREE.Matrix4();let i=0;
+            for(let z=0;z<d[2];z++)for(let y=0;y<d[1];y++)for(let x=0;x<d[0];x++){
+                const p=[x,y,z],scale=[1,1,1];
+                if(prior&&axis>=0&&p[axis]>=prior[axis]){
+                    p[axis]=prior[axis]+(p[axis]-prior[axis])*t;
+                    scale[axis]=Math.max(t,0.00001);
+                }
+                matrix.makeScale(...scale);matrix.setPosition(...p);
+                mesh.setMatrixAt(i++,matrix);
+            }
+            mesh.instanceMatrix.needsUpdate=true;
+            mesh.computeBoundingSphere();
+        }
+        function updateEquation(){
+            const b=state.base,n=state.power;
+            const expandedExp=n===0?'1':Array(n).fill(b).join(' × ');
+            const expandedMult=n===0?'0':Array(n).fill(b).join(' + ');
+            $('expoEq').textContent=state.expand?expandedExp+' = '+comma(b**n):b+' ^ '+n+' = '+comma(b**n);
+            $('multEq').textContent=state.expand?expandedMult+' = '+comma(b*n):b+' × '+n+' = '+comma(b*n);
+            $('expoLine').classList.toggle('expanded',state.expand);
+            $('multLine').classList.toggle('expanded',state.expand);
+            $('equations').hidden=!state.reveal;
+            $('recBtn').classList.toggle('active',state.reveal);
+            $('recBtn').setAttribute('aria-pressed',String(state.reveal));
+            $('sepBtn').classList.toggle('active',state.expand);
+            $('sepBtn').setAttribute('aria-pressed',String(state.expand));
+            live.textContent='Exponent '+b+' to the power '+n+' equals '+comma(b**n)+'. Multiplication '+b+' times '+n+' equals '+comma(b*n)+'.';
+        }
+        function updateRecord(){
+            baseInput.value=state.base;powerInput.value=state.power;
+            for(const el of [baseInput,powerInput]){
+                const px=parseFloat(getComputedStyle(el).fontSize);
+                el.style.width=Math.max(34,px*(String(el.value).length*.67+.22))+'px';
+            }
+        }
+        function sceneBounds(){
+            const d=dimsOf(state.base,state.power);
+            const nearY=-state.base-4;
+            const track=Math.min(60,Math.max(20,Math.ceil(Math.max(d[0],state.power)/10)*10+10));
+            return new THREE.Box3(new V3(-1.45,nearY-1,-TRAY_D),
+                new V3(Math.max(d[0],state.power,track)+.4,farOffset+d[1]+.3,Math.max(d[2],3)+.4));
+        }
+        function contentBox(){return sceneBounds()}
+        function frameAll(dir){const f=computeFit(contentBox(),dir||HOME_DIR);flyTo(f.position,f.target,REDUCED?1:650)}
+        function updateLighting(){
+            const bs=sceneBounds().getBoundingSphere(new THREE.Sphere());
+            const r=bs.radius+2;
+            sun.target.position.copy(bs.center);
+            sun.position.copy(bs.center).addScaledVector(SUN_DIR,r*2);
+            sun.target.updateMatrixWorld();
+            sun.shadow.camera.left=-r;sun.shadow.camera.right=r;sun.shadow.camera.top=r;sun.shadow.camera.bottom=-r;
+            sun.shadow.camera.near=.1;sun.shadow.camera.far=r*4;sun.shadow.camera.updateProjectionMatrix();
+            sun.shadow.normalBias=clamp(0.012*r/12,.008,.15);
+            sun.castShadow=r<=300;
+            ground.scale.set(Math.max(8000,r*5),Math.max(8000,r*5),1);
+        }
+        function renderMath(shouldFrame=true){
+            activeAnimations=[];
+            clearObjects(far);clearObjects(near);
+            const b=state.base,n=state.power,d=dimsOf(b,n);
+            const old=prev&&prev.base===b&&prev.power===n-1?prev:null;
+            const expPrior=old?dimsOf(b,old.power):null;
+            const expAxis=(n-1)%3===0?1:(n-1)%3===1?0:2;
+            far.position.set(0,farOffset,0);
+            makeSolid(far,d,b,expPrior,old?expAxis:-1);
+            near.position.set(0,-b-4,0);
+            if(n>0)makeSolid(near,[n,b,1],b,old?[n-1,b,1]:null,0);
+            prev={base:b,power:n};
+            const trackLength=Math.min(60,Math.max(20,Math.ceil(Math.max(d[0],n)/10)*10+10));
+            buildX(trackLength,1); 
+            updateRecord();updateEquation();updateLighting();
+            controls.maxDistance=Math.max(1800,sceneBounds().getBoundingSphere(new THREE.Sphere()).radius*8);
+            camera.far=Math.max(6000,controls.maxDistance*10);
+            camera.updateProjectionMatrix();
+            $('note').textContent=b**n>30000?'Unit-cube seams remain visible as you zoom in.':'';
+            if(shouldFrame)frameAll(HOME_DIR);
+            requestRender();
+        }
+        function setNumbers(b,n,frame=true){
+            state.base=clamp(Math.round(Number(b)||1),1,10);
+            state.power=clamp(Math.round(Number(n)||0),0,12);
+            renderMath(frame);
+        }
+        for(const [field,low,high] of [[baseInput,1,10],[powerInput,0,12]]){
+            field.addEventListener('focus',()=>field.select());
+            field.addEventListener('mouseup',e=>{e.preventDefault();field.select()});
+            field.addEventListener('input',()=>{
+                const digits=field.value.replace(/\D/g,'');
+                if(digits!==field.value)field.value=digits;
+                if(digits==='')return;
+                const v=clamp(Number(digits),low,high);
+                if(field===baseInput)setNumbers(v,state.power);
+                else setNumbers(state.base,v);
+            });
+            field.addEventListener('blur',updateRecord);
+            field.addEventListener('keydown',e=>{
+                if(e.key!=='Enter')return;
+                e.preventDefault();
+                if(field===baseInput)powerInput.focus();
+                else field.blur();
+            });
+        }
+        $('minusBtn').onclick=()=>setNumbers(state.base,state.power-1);
+        $('plusBtn').onclick=()=>setNumbers(state.base,state.power+1);
+        $('recBtn').onclick=()=>{state.reveal=!state.reveal;updateEquation();requestRender()};
+        $('sepBtn').onclick=()=>{state.expand=!state.expand;if(state.expand)state.reveal=true;updateEquation();requestRender()};
+        $('fitBtn').onclick=()=>frameAll(HOME_DIR);
+        $('resetBtn').onclick=()=>setNumbers(3,3);
+        function dolly(k){
+            const delta=camera.position.clone().sub(controls.target);
+            camera.position.copy(controls.target).add(delta.setLength(clamp(delta.length()*k,controls.minDistance,controls.maxDistance)));
+            requestRender();
+        }
+        $('zoomIn').onclick=()=>dolly(.82);
+        $('zoomOut').onclick=()=>dolly(1/.82);
+        canvas.addEventListener('dblclick',()=>frameAll(camera.position.clone().sub(controls.target).normalize()));
+        document.addEventListener('keydown',e=>{
+            if(e.target&&e.target.closest&&e.target.closest('input'))return;
+            switch(e.key){
+                case 'ArrowRight':setNumbers(state.base,state.power+1);break;
+                case 'ArrowLeft':setNumbers(state.base,state.power-1);break;
+                case 'f':case 'F':case 'Home':frameAll(HOME_DIR);break;
+                case '+':case '=':dolly(.85);break;
+                case '-':case '_':dolly(1/.85);break;
+                default:return;
+            }
+            e.preventDefault();
+        });
+        function updateClip(){
+            const d=camera.position.distanceTo(controls.target);
+            camera.near=clamp(d/300,0.01,Math.max(2,d/100));
+            camera.far=Math.max(300,d*30);camera.updateProjectionMatrix();
+        }
+        let lastT=performance.now();
+        function frame(now){
+            requestAnimationFrame(frame);
+            let dirty=needsRender;needsRender=false;
+            if(camTween){stepTween(now);dirty=true}
+            else if(controls.update())dirty=true;
+            const active=[];
+            for(const a of activeAnimations){
+                const t=clamp((now-a.start)/500,0,1);
+                const ease=1-Math.pow(1-t,3);
+                positionCubes(a.mesh,a.d,a.prior,a.axis,ease);
+                if(t<1)active.push(a);
+                dirty=true;
+            }
+            activeAnimations=active;
+            if(dirty){updateLabelOrient();updateClip();renderer.render(scene,camera)}
+        }
+        window.addEventListener('resize',()=>{
+            renderer.setSize(innerWidth,innerHeight);
+            camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+            updateRecord();requestRender();
+        });
+        if(document.fonts){
+            await Promise.race([
+                Promise.all(['500','600','800'].map(w=>document.fonts.load(w+' 64px Lexend'))),
+                new Promise(r=>setTimeout(r,2500))
+            ]);
+        }
+        buildHub();
+        renderMath(false);
+        const initial=computeFit(contentBox(),HOME_DIR);
+        camera.position.copy(initial.position);controls.target.copy(initial.target);controls.update();
+        requestAnimationFrame(frame);
+        window.__exponent={state,dimsOf,frameAll,camera,controls,scene,renderer};
+        function computeFit(box, dir) {
+            const W = canvas.clientWidth, H = canvas.clientHeight;
+            const recBottom = recordEl.getBoundingClientRect().bottom;
+            const topN = 1 - 2 * ((recBottom + 14) / H), botN = -1 + 2 * (40 / H);
+            const leftN = -1 + 2 * (40 / W), rightN = 1 - 2 * (40 / W);
+            const cam = camera.clone();
+            cam.aspect = W / H;
+            cam.updateProjectionMatrix();
+            const target = box.getCenter(new V3());
+            let dist = box.getBoundingSphere(new THREE.Sphere()).radius / Math.sin(THREE.MathUtils.degToRad(cam.fov) / 2);
+            const corners = [];
+            for (let i = 0; i < 8; i++) corners.push(new V3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
+            const right = new V3(), up = new V3(), p = new V3();
+            for (let it = 0; it < 8; it++) {
+                cam.position.copy(target).addScaledVector(dir, dist);
+                cam.lookAt(target);
+                cam.updateMatrixWorld();
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                for (const c of corners) {
+                    p.copy(c).project(cam);
+                    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+                }
+                const halfH = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) * dist, halfW = halfH * cam.aspect;
+                right.setFromMatrixColumn(cam.matrixWorld, 0);
+                up.setFromMatrixColumn(cam.matrixWorld, 1);
+                target.addScaledVector(right, ((minX + maxX) / 2 - (leftN + rightN) / 2) * halfW);
+                target.addScaledVector(up, ((minY + maxY) / 2 - (topN + botN) / 2) * halfH);
+                dist *= Math.max((maxX - minX) / (rightN - leftN), (maxY - minY) / (topN - botN));
+                dist = clamp(dist, controls.minDistance, controls.maxDistance);
+            }
+            return { position: target.clone().addScaledVector(dir, dist), target };
+        }
+
+        function flyTo(position, target, ms) {
+            if (REDUCED) ms = 1;
+            camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: position, t1: target, start: performance.now(), ms };
+            requestRender();
+        }
+
+        function stepTween(now) {
+            const T = camTween;
+            const t = clamp((now - T.start) / T.ms, 0, 1), e = easeInOut(t);
+            camera.position.lerpVectors(T.p0, T.p1, e);
+            controls.target.lerpVectors(T.t0, T.t1, e);
+            camera.lookAt(controls.target);
+            if (t >= 1) { camTween = null; controls.update(); }
+        }
+
+
+    </script>
+    <script src="../../math-things-home.js"></script>
+</body>
+</html>
