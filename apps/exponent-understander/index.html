@@ -277,22 +277,20 @@
             .rec-expr { font-size: 2rem; }
         }
     
-        /* Exponent Understander changes only the mathematical record; the Volume Space showroom stays intact. */
-        .record .rec-expr .f {min-width:0.75em;}
-        .record .power-mark {position:relative;top:-.1em;letter-spacing:-.06em}
-        #equations {position:fixed;z-index:15;top:143px;left:18px;max-width:min(45vw,470px);pointer-events:none;display:grid;gap:17px;text-shadow:0 3px 10px #0000000a;}
+
+        /* Same silent mathematical workspace as Volume Space. */
+        #equations {position:fixed;z-index:15;top:155px;left:20px;max-width:min(48vw,540px);pointer-events:none;display:grid;gap:18px}
         #equations[hidden] {display:none!important}
-        #equations .equation {font-size:clamp(1.1rem,2.2vw,1.8rem);font-weight:900;letter-spacing:-.035em;overflow-wrap:anywhere;line-height:1.3}
-        #equations .equation .hint {display:block;color:var(--text-gray);font-size:.62rem;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
-        #equations .equation .sum {color:var(--text-light);font-weight:600}
-        #equations .equation + .equation {margin-top:7px}
-        #equations .equation.expanded {font-size:clamp(.85rem,1.7vw,1.25rem)}
-        .input-step {font-size:21px;font-weight:500}
-        #legend {position:fixed;z-index:11;bottom:42px;left:18px;display:grid;gap:4px;font-size:.66rem;color:var(--text-gray);font-weight:700;pointer-events:none}
-        #legend b {color:var(--text-main);font-weight:800}
-        #note {position:fixed;z-index:11;right:18px;bottom:41px;font-size:.65rem;color:var(--text-gray);font-weight:600;max-width:320px;text-align:right;pointer-events:none}
-        @media(max-width:720px){#equations{top:124px;left:10px;max-width:63vw;gap:9px}#equations .equation{font-size:1.1rem}#equations .equation.expanded{font-size:.83rem}#note{max-width:140px;right:8px;bottom:28px;font-size:.55rem}#legend{left:9px;bottom:29px;font-size:.58rem}}
-        @media(max-height:500px){#equations{top:95px}}
+        #equations .equation {font-size:clamp(1.25rem,2.7vw,2rem);font-weight:900;letter-spacing:-.04em;overflow-wrap:anywhere;line-height:1.3}
+        #equations .equation.expanded {font-size:clamp(1rem,2.1vw,1.45rem)}
+        #equations .equation + .equation {margin-top:8px}
+        .input-step {font-size:21px;font-weight:600}
+        @media(max-width:720px){
+            #equations{top:135px;left:14px;max-width:72vw;gap:12px}
+            #equations .equation{font-size:1.25rem}
+            #equations .equation.expanded{font-size:1rem}
+        }
+        @media(max-height:500px){#equations{top:94px}}
 </style>
     <script type="importmap">
     {
@@ -338,9 +336,7 @@
         <span class="op power-mark" aria-hidden="true">^</span>
         <input class="f" id="powerInput" type="text" inputmode="numeric" pattern="[0-9]*" value="3" aria-label="Exponent, 0 through 12" autocomplete="off" spellcheck="false">
     </div></div>
-    <div id="equations" hidden><div id="expoLine" class="equation"><span class="hint">EXPONENTS · FAR</span><span id="expoEq"></span></div><div id="multLine" class="equation"><span class="hint">MULTIPLICATION · NEAR</span><span id="multEq"></span></div></div>
-    <div id="legend" aria-hidden="true"><span><b>EXPONENTS</b> · far lane</span><span><b>MULTIPLICATION</b> · near lane</span></div>
-    <div id="note"></div>
+    <div id="equations" hidden><div id="expoLine" class="equation"><span id="expoEq"></span></div><div id="multLine" class="equation"><span id="multEq"></span></div></div>
     <div class="sr-only" id="live" aria-live="polite"></div>
     <footer>Math Things<span class="footer-bead"></span> &nbsp;|&nbsp; Math, in your hands<span class="footer-bead"></span></footer>
     <script type="module">
@@ -683,42 +679,35 @@
             while(group.children.length){
                 const o=group.children[group.children.length-1];group.remove(o);
                 if(o.geometry&&o.geometry!==unitGeometry)o.geometry.dispose();
-                if(o.material&&o.material!==enamel[0]&&o.material.dispose)o.material.dispose();
+                for(const m of (Array.isArray(o.material)?o.material:[o.material])){
+                    if(!m||m===enamel[0])continue;
+                    if(m.userData&&m.userData.ownMap)m.userData.ownMap.dispose();
+                    if(m.dispose)m.dispose();
+                }
             }
         }
-        // Preserve Volume Space's glossy enamel, with a procedural unit grid for
-        // huge structures. The shader uses *unscaled* geometry coordinates so
-        // 10^12 can be represented without constructing 10^12 meshes.
-        function largeEnamel(d,b){
-            const m=enamelMaterial(PLACE[0]);
-            m.onBeforeCompile=sh=>{
-                sh.uniforms.cubeDimensions={value:new V3(...d)};
-                sh.uniforms.cubeBase={value:b};
-                sh.vertexShader=sh.vertexShader
-                    .replace('#include <common>','#include <common>\nuniform vec3 cubeDimensions;\nvarying vec3 vUnit;\nvarying vec3 vFace;')
-                    .replace('#include <begin_vertex>','#include <begin_vertex>\nvUnit=position+0.5*cubeDimensions;\nvFace=normal;');
-                sh.fragmentShader=sh.fragmentShader
-                    .replace('#include <common>','#include <common>\nuniform float cubeBase;\nvarying vec3 vUnit;\nvarying vec3 vFace;')
-                    .replace('#include <color_fragment>','#include <color_fragment>\n'+
-                    'vec3 e=min(fract(vUnit),1.0-fract(vUnit));\n'+
-                    'vec3 width=max(fwidth(vUnit)*1.4,vec3(0.0002));\n'+
-                    'vec3 line=1.0-smoothstep(vec3(0.027),vec3(0.027)+width,e);\n'+
-                    'vec3 across=1.0-step(vec3(0.55),abs(vFace));\n'+
-                    'float unitLine=max(max(line.x*across.x,line.y*across.y),line.z*across.z);\n'+
-                    'float bands=0.0;float stepSize=cubeBase;\n'+
-                    'for(int k=0;k<12;k++){\n'+
-                    'if(cubeBase<=1.0)break;\n'+
-                    'vec3 u=vUnit/stepSize;\n'+
-                    'vec3 edge=min(fract(u),1.0-fract(u));\n'+
-                    'vec3 w=max(fwidth(u)*1.3,vec3(0.0002));\n'+
-                    'vec3 groupLine=1.0-smoothstep(vec3(0.015),vec3(0.015)+w,edge);\n'+
-                    'bands=max(bands,max(max(groupLine.x*across.x,groupLine.y*across.y),groupLine.z*across.z));\n'+
-                    'stepSize*=cubeBase;\n'+
-                    '}\n'+
-                    'diffuseColor.rgb*=1.0-max(0.42*unitLine,0.19*bands);');
-            };
-            m.customProgramCacheKey=()=> 'volume-space-exponent-grid-v1';
-            return m;
+
+        // The same cube enamel as Volume Space with its own repeated unit grid
+        // on each face. No custom GLSL: works on desktop and mobile GPUs.
+        function largeEnamel(d){
+            const faces=[
+                [d[2],d[1]], [d[2],d[1]],
+                [d[0],d[2]], [d[0],d[2]],
+                [d[0],d[1]], [d[0],d[1]]
+            ];
+            return faces.map(([u,v])=>{
+                const texture=gridTex.clone();
+                texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+                texture.repeat.set(u,v);
+                texture.anisotropy=MAX_ANISO;
+                texture.needsUpdate=true;
+                const material=new THREE.MeshPhysicalMaterial({
+                    color:PLACE[0],map:texture,roughness:.4,metalness:0,
+                    clearcoat:1,clearcoatRoughness:.12
+                });
+                material.userData.ownMap=texture;
+                return material;
+            });
         }
         function makeSolid(group,d,b,prior,axis){
             const count=d[0]*d[1]*d[2];
@@ -731,8 +720,8 @@
                 if(anim)activeAnimations.push({mesh,d,prior,axis,start:performance.now()});
                 positionCubes(mesh,d,prior,axis,anim?0:1);
             }else{
-                const geom=new RoundedBoxGeometry(d[0]-GAP*2,d[1]-GAP*2,d[2]-GAP*2,1,0.1);
-                const mesh=new THREE.Mesh(geom,largeEnamel(d,b));
+                const geom=new THREE.BoxGeometry(d[0]-GAP*2,d[1]-GAP*2,d[2]-GAP*2);
+                const mesh=new THREE.Mesh(geom,largeEnamel(d));
                 mesh.position.set(d[0]/2,d[1]/2,d[2]/2);
                 mesh.castShadow=count<=2000000;mesh.receiveShadow=true;
                 group.add(mesh);
@@ -813,7 +802,6 @@
             controls.maxDistance=Math.max(1800,sceneBounds().getBoundingSphere(new THREE.Sphere()).radius*8);
             camera.far=Math.max(6000,controls.maxDistance*10);
             camera.updateProjectionMatrix();
-            $('note').textContent=b**n>30000?'Unit-cube seams remain visible as you zoom in.':'';
             if(shouldFrame)frameAll(HOME_DIR);
             requestRender();
         }
