@@ -24,6 +24,7 @@ Use `harness/APP_AUDIT_TEMPLATE.md` to conduct each audit.
 | Fraction Lab | `apps/fraction-lab/` | Needs audit | TBD | TBD | TBD |
 | Measure Bench | `apps/measure-bench/` | Needs audit | TBD | TBD | TBD |
 | Volume Space | `apps/volume-space/` | Recovered Claude build (live QA pending) | Three-dimensional unit-cube prism with X/Y/Z dimensions | Pull the neutral metal X, Y, and Z beads to grow lines into grids and grids into solids; enter dimension factors when needed | Line/Grid/Solid permissions, editable equation, place-value grouping, and optional unstacking into discrete unit-cube layers; Three.js renderer, touch QA outstanding |
+| Exponent Understander | `apps/exponent-understander/` | Prototype; visual QA pending | Two 3D lanes comparing base raised to a power against base multiplied by a factor | Type base 1–10 and exponent/factor 0–12; use reveal, expanded equations, orbit and frame | Exponent growth cycles Z, X, Y; multiplication extends X only; huge powers use procedural unit-cube seams rather than massive cube geometry |
 
 ## Concept Machines
 
