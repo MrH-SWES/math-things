@@ -657,10 +657,6 @@
             if (hx * hx + hy * hy < 1e-6) return;
             const phi = Math.atan2(hx, -hy);
             const angDist = (a1, a2) => Math.abs(Math.atan2(Math.sin(a1 - a2), Math.cos(a1 - a2)));
-            if (angDist(phi, yOrient * Math.PI / 2) > Math.PI / 4 + 0.08) {
-                yOrient = ((Math.round(phi / (Math.PI / 2)) % 4) + 4) % 4;
-                yPlates.forEach(p => { p.material.map = yTex(p.userData.e, p.userData.count, yOrient); });
-            }
             if (angDist(phi, bandOrient * Math.PI / 2) > Math.PI / 2 + 0.08) {
                 bandOrient = Math.cos(phi) >= 0 ? 0 : 2;
                 bandMeshes.forEach(m => { m.material.map = bandTex(m.userData.d, bandOrient); });
@@ -944,6 +940,7 @@
             return { position: target.clone().addScaledVector(dir, dist), target };
         }
 
+        const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
         function flyTo(position, target, ms) {
             if (REDUCED) ms = 1;
             camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: position, t1: target, start: performance.now(), ms };
