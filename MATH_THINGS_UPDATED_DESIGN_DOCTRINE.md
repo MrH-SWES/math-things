@@ -278,20 +278,31 @@ color. Never use opacity or saturation proportional to numerator.
 
 Use the shared source: \`math-things-fractions.js\` (exports
 \`FRACTION_DENOMINATORS\`, \`FRACTION_COLORS\`, and \`fractionColor\`).
-This is the current **revision 1 palette**, pending classroom visual testing:
+This is the current **revision 2 palette**, pending classroom visual testing.
+
+Only three fraction colors are place-value colors, because only those three
+fractions *are* place values: one whole (ones red), tenths (tenths cyan) and
+hundredths (hundredths orange). Every other part size has its **own distinct
+color**, so halves, fourths and eighths side by side in a fraction wall or a
+set of circles are told apart at a glance. Those colors are **dusty**:
+place-value enamel is fully saturated, fraction enamel is muted, so a fraction
+piece never reads as a place-value block. Revision 1 used saturated rainbow
+hues that sat next to the hundreds, thousands, tens, hundred-thousands and
+millions colors; revision 2 retires it.
 
 | Part size | Enamel color | Hex |
 |---|---|---|
-| One whole | Volume Space red | \`#DC143C\` |
-| Halves | Coral | \`#F06D6B\` |
-| Thirds | Golden ochre | \`#E4A646\` |
-| Fourths | Yellow | \`#C5AD30\` |
-| Fifths | Green | \`#58AC61\` |
-| Sixths | Teal | \`#3B9E90\` |
-| Eighths | Periwinkle | \`#7186D9\` |
+| One whole | Volume Space ones red | \`#DC143C\` |
+| Halves | Mauve | \`#B47AA3\` |
+| Thirds | Sage | \`#8DB596\` |
+| Fourths | Sand | \`#D1AE6C\` |
+| Fifths | Slate | \`#7E93C2\` |
+| Sixths | Clay | \`#CF8E70\` |
+| Eighths | Lavender | \`#A898D3\` |
+| Ninths | Cocoa | \`#8B6A58\` |
 | Tenths | Canonical decimal-tenths cyan | \`#64D2FF\` |
-| Twelfths | Violet | \`#9B6ACA\` |
-| Sixteenths | Magenta | \`#D16DAA\` |
+| Twelfths | Moss | \`#8C9A4E\` |
+| Sixteenths | Deep teal | \`#4F8A8B\` |
 | Hundredths | Canonical decimal-hundredths orange | \`#FF9F0A\` |
 
 The deliberate overlap at tenths and hundredths teaches that 1/10 = 0.1 and

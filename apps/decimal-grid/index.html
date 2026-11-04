@@ -46,6 +46,8 @@
     #board .cell.h { fill: url(#hundredths); }
     #board .cell.t { fill: url(#tenths); }
     #board .cell.w { fill: url(#ones); }
+    #board .strip, #board .lens-card { pointer-events: all; cursor: crosshair; }
+    #lensGhost { position: fixed; z-index: 20; pointer-events: none; width: 64px; height: 64px; margin: -32px 0 0 -32px; display: none; filter: drop-shadow(0 6px 8px rgba(60,40,20,0.3)); }
     #board .tab.full { fill: url(#tabDown); }
     #board .grid { outline: none; }
     #board .grid:focus-visible .frame { stroke: #007AFF; stroke-width: 3; }
@@ -122,6 +124,7 @@
 <div id="dock">
   <div id="cabinet" role="toolbar" aria-label="Bins">
     <button class="bin" data-bin="grid" aria-label="Grid bin. Adds another whole."></button>
+    <button class="bin" data-bin="lens" aria-label="Lens. Drag it onto a small square to cut it into thousandths."></button>
     <div class="hardware">
       <button class="icon-btn" id="recordBtn" aria-label="Show the values" aria-pressed="false">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
@@ -138,7 +141,8 @@
 <!-- Paints: enamel in the place-value colors for hundredths, tenths and ones -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
-    <linearGradient id="hundredths" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB547"/><stop offset="0.55" stop-color="#FF9F0A"/><stop offset="1" stop-color="#E08600"/></linearGradient>
+    <linearGradient id="thousandths" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A04DFF"/><stop offset="0.55" stop-color="#7B00FF"/><stop offset="1" stop-color="#5E00C4"/></linearGradient>
+    <linearGradient id="hundredths"x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB547"/><stop offset="0.55" stop-color="#FF9F0A"/><stop offset="1" stop-color="#E08600"/></linearGradient>
     <linearGradient id="tenths" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8FE0FF"/><stop offset="0.55" stop-color="#64D2FF"/><stop offset="1" stop-color="#3BB8EA"/></linearGradient>
     <linearGradient id="ones" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EE4466"/><stop offset="0.55" stop-color="#DC143C"/><stop offset="1" stop-color="#B50F31"/></linearGradient>
     <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EEE8"/></linearGradient>
@@ -154,6 +158,7 @@
   <g id="layer"></g>
 </svg>
 
+<svg id="lensGhost" viewBox="0 0 64 64" aria-hidden="true"></svg>
 <div id="live" class="sr-only" aria-live="polite"></div>
 
 <script>
@@ -179,9 +184,12 @@
   const board = $('board'), defs = $('defs'), layer = $('layer');
   const dock = $('dock'), footer = $('footer'), live = $('live');
   const recordBtn = $('recordBtn'), clearBtn = $('clearBtn'), gridBin = dock.querySelector('[data-bin="grid"]');
+  const lensBin = dock.querySelector('[data-bin="lens"]'), lensGhost = $('lensGhost');
 
   // ═══════ GEOMETRY ═══════
   // A grid is one whole: ten columns (tenths) of ten cells (hundredths). Cell i = column * 10 + row.
+  // Each cell holds 0–10 thousandths; 10 is a full hundredth.
+  let lens = null;                  // { g, i }: the cell opened up under the lens
   let C = 26;                       // cell size in px
   const PAD = 0.42, TAB = 0.62;     // frame width and tab height, in cells
   const grids = [];                 // { id, cells, x, y, el, fx, cellEls, tabEls, value, cursor }
@@ -239,6 +247,14 @@
         rx: r2(C * 0.08), fill: 'transparent', 'data-i': i,
       }, fx));
     }
+    // thousandths: a violet sliver growing across a cell, one tenth of its width at a time
+    g.partEls = [];
+    for (let i = 0; i < 100; i++) {
+      g.partEls.push(el('rect', {
+        x: r2(Math.floor(i / 10) * C + inset), y: r2((i % 10) * C + inset), width: 0, height: r2(C - 2 * inset),
+        fill: 'url(#thousandths)', 'pointer-events': 'none',
+      }, fx));
+    }
     // engraved lines: bold between columns (tenths), fine between cells (hundredths)
     let fine = '', bold = '';
     for (let k = 1; k < 10; k++) { fine += `M0,${r2(k * C)}H${W}`; bold += `M${r2(k * C)},0V${W}`; }
@@ -253,9 +269,10 @@
     g.decEl = el('text', { class: 'dec', y: r2(base), 'font-size': r2(C), 'dominant-baseline': 'central' }, g.valueEl);
     g.fracEl = el('g', { transform: `translate(${r2(cx + C * 1.35)} ${r2(base)})` }, g.valueEl);
     g.numEl = el('text', { class: 'frac', y: r2(-C * 0.42), 'font-size': r2(C * 0.58), 'dominant-baseline': 'central' }, g.fracEl);
-    el('line', { x1: r2(-C * 0.8), x2: r2(C * 0.8), stroke: '#86868B', 'stroke-width': r2(Math.max(1.2, C * 0.05)), 'stroke-linecap': 'round' }, g.fracEl);
+    g.barEl = el('line', { x1: r2(-C * 0.8), x2: r2(C * 0.8), stroke: '#86868B', 'stroke-width': r2(Math.max(1.2, C * 0.05)), 'stroke-linecap': 'round' }, g.fracEl);
     g.denEl = el('text', { class: 'frac', y: r2(C * 0.46), 'font-size': r2(C * 0.58), 'dominant-baseline': 'central' }, g.fracEl);
-    g.cx = cx;
+    g.cx = cx; g.base = base;
+    g.lensEl = el('g', {}, fx);
     if (old) old.replaceWith(root); else layer.appendChild(root);
     g.el = root;
     g.fx = fx;
@@ -272,24 +289,76 @@
   // Shading takes the color of what it makes: hundredths, a full column is a tenth, a full grid is one.
   function paint(g) {
     const full = [];
-    for (let c = 0; c < 10; c++) full.push(g.cells.slice(c * 10, c * 10 + 10).every(Boolean));
+    for (let c = 0; c < 10; c++) full.push(colFull(g, c));
     const whole = full.every(Boolean);
-    g.cells.forEach((on, i) => {
-      g.cellEls[i].setAttribute('class', 'cell' + (on ? (whole ? ' w' : full[Math.floor(i / 10)] ? ' t' : ' h') : ''));
+    const inner = C - 2 * Math.max(1, C * 0.06);
+    g.cells.forEach((v, i) => {
+      g.cellEls[i].setAttribute('class', 'cell' + (v === 10 ? (whole ? ' w' : full[Math.floor(i / 10)] ? ' t' : ' h') : ''));
+      g.partEls[i].setAttribute('width', v > 0 && v < 10 ? r2(inner * v / 10) : 0);
     });
     g.tabEls.forEach((t, c) => t.classList.toggle('full', full[c]));
-    const n = g.cells.reduce((a, b) => a + b, 0), tenths = full.filter(Boolean).length;
-    const dec = n === 100 ? '1' : n === 0 ? '0' : '0.' + String(n).padStart(2, '0').replace(/0$/, '');
-    const hasFrac = n > 0 && n < 100;
+    const n = g.cells.reduce((a, b) => a + b, 0), tenths = full.filter(Boolean).length;   // n in thousandths
+    const dec = n === 1000 ? '1' : n === 0 ? '0' : '0.' + String(n).padStart(3, '0').replace(/0+$/, '');
+    const hasFrac = n > 0 && n < 1000;
+    const den = n % 100 === 0 ? 10 : n % 10 === 0 ? 100 : 1000;
+    const wide = den === 1000 ? 1.2 : 1;
     g.decEl.textContent = dec;
     g.decEl.setAttribute('x', r2(hasFrac ? g.cx + C * 0.2 : g.cx));
     g.decEl.setAttribute('text-anchor', hasFrac ? 'end' : 'middle');
     g.fracEl.style.display = hasFrac ? '' : 'none';
-    g.numEl.textContent = n % 10 === 0 ? n / 10 : n;
-    g.denEl.textContent = n % 10 === 0 ? 10 : 100;
+    g.fracEl.setAttribute('transform', `translate(${r2(g.cx + C * 1.35 * wide)} ${r2(g.base)})`);
+    g.barEl.setAttribute('x1', r2(-C * 0.8 * wide)); g.barEl.setAttribute('x2', r2(C * 0.8 * wide));
+    g.numEl.textContent = n * den / 1000;
+    g.denEl.textContent = den;
     g.dec = dec;
-    g.el && g.el.setAttribute('aria-label', `Grid ${grids.indexOf(g) + 1}: ${n} of 100 shaded` + (recordOn ? `, ${dec}` : ''));
+    g.el && g.el.setAttribute('aria-label', `Grid ${grids.indexOf(g) + 1}: ${shadedWords(n)}` + (recordOn ? `, ${dec}` : ''));
+    drawLens(g);
     return { n, tenths, whole };
+  }
+  const colFull = (g, c) => g.cells.slice(c * 10, c * 10 + 10).every(v => v === 10);
+  const shadedWords = n => n % 10 ? `${n} of 1000 shaded` : `${n / 10} of 100 shaded`;
+
+  // ═══════ LENS ═══════
+  // The opened cell, drawn big beside itself and cut into ten thousandths. Shading fills from the left.
+  function drawLens(g) {
+    g.lensEl.innerHTML = '';
+    if (!lens || lens.g !== g) return;
+    const i = lens.i, c = Math.floor(i / 10), r = i % 10, v = g.cells[i];
+    const P = 5 * C, s = P / 10;
+    const px = c < 5 ? (c + 1.4) * C : (c - 0.4) * C - P;
+    const py = Math.min(Math.max(0, (r + 0.5) * C - P / 2), 10 * C - P);
+    const cx0 = c * C, cy0 = r * C, near = c < 5 ? cx0 + C : cx0, far = c < 5 ? px : px + P;
+    const L = g.lensEl;
+    el('path', { d: `M${r2(near)},${r2(cy0)}L${r2(far)},${r2(py)}M${r2(near)},${r2(cy0 + C)}L${r2(far)},${r2(py + P)}`, stroke: 'rgba(123,0,255,0.45)', 'stroke-width': '1.5', 'stroke-dasharray': '3 3', 'pointer-events': 'none' }, L);
+    el('rect', { x: r2(cx0 - 1.5), y: r2(cy0 - 1.5), width: r2(C + 3), height: r2(C + 3), rx: r2(C * 0.14), fill: 'none', stroke: '#7B00FF', 'stroke-width': '2.5', 'pointer-events': 'none' }, L);
+    const pad = C * 0.28;
+    el('rect', { class: 'lens-card', x: r2(px - pad), y: r2(py - pad), width: r2(P + 2 * pad), height: r2(P + 2 * pad), rx: r2(C * 0.4), fill: 'url(#metal)', stroke: 'rgba(60,62,68,0.3)', style: 'filter: drop-shadow(1px 5px 8px rgba(59,42,26,0.3))' }, L);
+    el('rect', { x: r2(px), y: r2(py), width: r2(P), height: r2(P), fill: 'url(#tile)', stroke: 'rgba(60,45,30,0.3)', 'pointer-events': 'none' }, L);
+    const paintId = v === 10 ? (colFull(g, c) ? (g.cells.every(x => x === 10) ? 'ones' : 'tenths') : 'hundredths') : 'thousandths';
+    for (let j = 0; j < 10; j++) {
+      el('rect', { class: 'strip', x: r2(px + j * s), y: r2(py), width: r2(s), height: r2(P), 'data-j': j,
+        fill: j < v ? `url(#${paintId})` : 'transparent' }, L);
+    }
+    let lines = '';
+    for (let j = 1; j < 10; j++) lines += `M${r2(px + j * s)},${r2(py)}V${r2(py + P)}`;
+    el('path', { d: lines, stroke: 'rgba(60,45,30,0.4)', 'stroke-width': '1', 'pointer-events': 'none' }, L);
+    el('rect', { x: r2(px), y: r2(py), width: r2(P), height: r2(P), fill: 'url(#gloss)', 'pointer-events': 'none' }, L);
+  }
+  function openLens(g, i) {
+    const was = lens && lens.g;
+    lens = g ? { g, i } : null;
+    if (was && was !== g) drawLens(was);
+    if (g) { layer.appendChild(g.el); drawLens(g); }
+  }
+  // tapping strip j shades up to it; tapping the last shaded strip takes it back
+  function setPart(g, i, v) {
+    if (g.cells[i] === v) return;
+    const c = Math.floor(i / 10), before = colFull(g, c);
+    g.cells[i] = v;
+    paint(g);
+    if (!before && colFull(g, c)) { flashColumns(g, g.cells.every(x => x === 10) ? [...Array(10).keys()] : [c]); buzz(8); }
+    else buzz(3);
+    changed();
   }
 
   function flashColumns(g, cols) {
@@ -305,13 +374,13 @@
   // Shade or clear cells, then mark any column or grid that just became complete.
   function setCells(g, idxs, on) {
     const before = [];
-    for (let c = 0; c < 10; c++) before.push(g.cells.slice(c * 10, c * 10 + 10).every(Boolean));
+    for (let c = 0; c < 10; c++) before.push(colFull(g, c));
     let changedAny = false;
-    for (const i of idxs) if (g.cells[i] !== +on) { g.cells[i] = +on; changedAny = true; }
+    for (const i of idxs) if (g.cells[i] !== (on ? 10 : 0)) { g.cells[i] = on ? 10 : 0; changedAny = true; }
     if (!changedAny) return;
     const res = paint(g);
     const completed = [];
-    for (let c = 0; c < 10; c++) if (!before[c] && g.cells.slice(c * 10, c * 10 + 10).every(Boolean)) completed.push(c);
+    for (let c = 0; c < 10; c++) if (!before[c] && colFull(g, c)) completed.push(c);
     if (res.whole && completed.length) { flashColumns(g, [...Array(10).keys()]); buzz(18); }
     else if (completed.length) { flashColumns(g, completed); buzz(8); }
     changed();
@@ -347,6 +416,7 @@
 
   function removeGrid(g) {
     if (grids.length <= 1) { place(g, 200); shake(g.fx); return; }
+    if (lens && lens.g === g) lens = null;
     grids.splice(grids.indexOf(g), 1);
     g.el.style.pointerEvents = 'none';
     g.el.removeAttribute('tabindex');
@@ -369,8 +439,7 @@
     clearTimeout(liveTimer);
     liveTimer = setTimeout(() => {
       live.textContent = grids.map((g, k) => {
-        const n = g.cells.reduce((a, b) => a + b, 0);
-        return `Grid ${k + 1}: ${n} of 100 shaded` + (recordOn ? `, ${g.dec}` : '');
+        return `Grid ${k + 1}: ${shadedWords(g.cells.reduce((a, b) => a + b, 0))}` + (recordOn ? `, ${g.dec}` : '');
       }).join('. ') + '.';
     }, 400);
   }
@@ -383,14 +452,20 @@
     const t = e.target, g = gridOf(t);
     if (!g) return;
     e.preventDefault();
-    if (t.classList.contains('cell')) {
+    if (t.classList.contains('strip')) {
+      const j = +t.dataset.j, v = g.cells[lens.i];
+      setPart(g, lens.i, v === j + 1 ? j : j + 1);
+      drags.set(e.pointerId, { kind: 'strip', g });
+    } else if (t.classList.contains('lens-card')) {
+      // the card itself is just something to hold
+    } else if (t.classList.contains('cell')) {
       // painting: the first cell decides whether this stroke shades or clears
-      const i = +t.dataset.i, mode = !g.cells[i];
+      const i = +t.dataset.i, mode = g.cells[i] !== 10;
       setCells(g, [i], mode);
       drags.set(e.pointerId, { kind: 'paint', g, mode });
     } else if (t.classList.contains('tab')) {
       const c = +t.dataset.col, col = [...Array(10).keys()].map(r => c * 10 + r);
-      const mode = !col.every(i => g.cells[i]);
+      const mode = !colFull(g, c);
       setCells(g, col, mode);
       drags.set(e.pointerId, { kind: 'tabs', g, mode });
     } else if (t.classList.contains('frame')) {
@@ -404,12 +479,31 @@
     const bin = e.target.closest('.bin');
     if (!bin) return;
     e.preventDefault();
-    drags.set(e.pointerId, { kind: 'bin', sx: e.clientX, sy: e.clientY, moved: false });
+    drags.set(e.pointerId, { kind: bin === lensBin ? 'lens' : 'bin', sx: e.clientX, sy: e.clientY, moved: false });
   });
+  // the lens closes when anything else is touched
+  addEventListener('pointerdown', e => {
+    if (lens && !(e.target.closest && e.target.closest('.strip, .lens-card, .hardware'))) openLens(null);
+  }, true);
+  const cellAt = (x, y) => {
+    const hit = document.elementFromPoint(x, y), g = hit && gridOf(hit);
+    return g && hit.classList.contains('cell') ? { g, i: +hit.dataset.i } : null;
+  };
 
   addEventListener('pointermove', e => {
     const s = drags.get(e.pointerId);
     if (!s) return;
+    if (s.kind === 'strip') {
+      const hit = document.elementFromPoint(e.clientX, e.clientY);
+      if (hit && hit.classList.contains('strip') && lens && lens.g === s.g) setPart(s.g, lens.i, +hit.dataset.j + 1);
+      return;
+    }
+    if (s.kind === 'lens') {
+      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) >= 5) s.moved = true;
+      lensGhost.style.display = s.moved ? 'block' : 'none';
+      lensGhost.style.left = e.clientX + 'px'; lensGhost.style.top = e.clientY + 'px';
+      return;
+    }
     if (s.kind === 'paint' || s.kind === 'tabs') {
       const hit = document.elementFromPoint(e.clientX, e.clientY);
       if (!hit || gridOf(hit) !== s.g) return;
@@ -439,6 +533,13 @@
     const s = drags.get(e.pointerId);
     if (!s) return;
     drags.delete(e.pointerId);
+    if (s.kind === 'lens') {
+      lensGhost.style.display = 'none';
+      // the lens opens the cell under its glass; a tap on the bin opens the first grid's cursor cell
+      const at = s.moved ? cellAt(e.clientX, e.clientY) : { g: grids[0], i: grids[0].cur || 0 };
+      if (at) { openLens(at.g, at.i); buzz(6); changed(); } else if (s.moved) shake(lensBin);
+      return;
+    }
     if (s.kind === 'bin') {
       if (!s.moved) {
         if (grids.length >= MAX_GRIDS) { shake(gridBin); return; }
@@ -469,16 +570,24 @@
     g.cur = g.cur || 0;
     const c = Math.floor(g.cur / 10), r = g.cur % 10;
     const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (mv) {
+    if (e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      // Shift+arrows open the cursor cell under the lens and shade or clear one thousandth
+      e.preventDefault();
+      if (!lens || lens.g !== g || lens.i !== g.cur) openLens(g, g.cur);
+      setPart(g, g.cur, Math.max(0, Math.min(10, g.cells[g.cur] + (e.key === 'ArrowRight' ? 1 : -1))));
+      g.el.focus({ preventScroll: true });
+      return;
+    } else if (e.key === 'Escape' && lens) { openLens(null); return; }
+    else if (mv) {
       e.preventDefault();
       g.cur = Math.min(9, Math.max(0, c + mv[0])) * 10 + Math.min(9, Math.max(0, r + mv[1]));
     } else if (e.key === ' ') {
       e.preventDefault();
-      setCells(g, [g.cur], !g.cells[g.cur]);
+      setCells(g, [g.cur], g.cells[g.cur] !== 10);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const col = [...Array(10).keys()].map(k => c * 10 + k);
-      setCells(g, col, !col.every(i => g.cells[i]));
+      setCells(g, col, !colFull(g, c));
     } else return;
     g.cursorEl.setAttribute('x', r2(Math.floor(g.cur / 10) * C));
     g.cursorEl.setAttribute('y', r2((g.cur % 10) * C));
@@ -487,6 +596,7 @@
   dock.addEventListener('keydown', e => {
     if (!e.target.closest('.bin') || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
+    if (e.target.closest('.bin') === lensBin) { openLens(grids[0], grids[0].cur || 0); grids[0].el.focus(); return; }
     if (grids.length >= MAX_GRIDS) { shake(gridBin); return; }
     addGrid(0, 0);
     relayout();
@@ -502,6 +612,7 @@
     changed();
   });
   clearBtn.addEventListener('click', () => {
+    openLens(null);
     grids.forEach(g => { g.cells.fill(0); });
     changed();
   });
@@ -524,6 +635,11 @@
     `<path d="${[...Array(9).keys()].map(k => `M${4 + (k + 1) * 6.8},12V80`).join('')}" stroke="rgba(60,45,30,0.45)" stroke-width="1"/>` +
     `<path d="${[...Array(9).keys()].map(k => `M4,${12 + (k + 1) * 6.8}H72`).join('')}" stroke="rgba(60,45,30,0.18)" stroke-width="0.6"/>` +
     `</svg>`;
+  const glass = `<circle cx="26" cy="26" r="17" fill="rgba(255,255,255,0.35)" stroke="url(#metal)" stroke-width="7"/><circle cx="26" cy="26" r="20.5" fill="none" stroke="rgba(60,62,68,0.35)"/><circle cx="26" cy="26" r="13.5" fill="none" stroke="rgba(60,62,68,0.25)"/>` +
+    `<path d="M40,40L56,56" stroke="#5A5D63" stroke-width="9" stroke-linecap="round"/><path d="M40,40L56,56" stroke="url(#metal)" stroke-width="6" stroke-linecap="round"/>`;
+  lensBin.innerHTML = `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">` +
+    [...Array(10).keys()].map(j => `<rect x="${16 + j * 2}" y="17" width="2" height="18" fill="${j < 4 ? '#7B00FF' : '#FFFFFF'}"/>`).join('') + glass + `</svg>`;
+  lensGhost.innerHTML = glass;
   setSize();
   addGrid(0, 0);
   arrange(0);

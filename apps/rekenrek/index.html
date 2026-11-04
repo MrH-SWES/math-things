@@ -53,11 +53,12 @@
         display: inline-flex; align-items: baseline;
         font-weight: 900; font-size: 1.25rem;
         letter-spacing: -0.05em; color: var(--text-main);
-        cursor: default;
+        cursor: pointer;
+        width: 44px; height: 44px; align-items: center; justify-content: center;
     }
     .logo-bead {
-        width: 0.22em; height: 0.22em;
-        margin-left: 0.04em; margin-bottom: 0.08em;
+        width: 20px; height: 20px;
+        margin: 0;
         border-radius: 50%; display: inline-block; flex-shrink: 0;
         background:
             radial-gradient(circle at 33% 28%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.3) 40%, transparent 65%),
@@ -68,7 +69,6 @@
             inset -1px -1px 2px rgba(0,0,0,0.2),
             0 2px 5px rgba(0,0,0,0.22);
     }
-    .header-label { font-size: 1rem; font-weight: 600; color: var(--text-gray); letter-spacing: -0.01em; }
 
     /* ── CONTROLS ── */
     .controls {
@@ -91,10 +91,14 @@
         font-family: 'Lexend', sans-serif;
         font-size: 0.9rem;
         font-weight: 600;
-        padding: 8px 20px;
+        padding: 8px;
+        width: 48px; height: 44px;
+        display: inline-flex; align-items: center; justify-content: center;
         cursor: pointer;
         transition: all 0.2s var(--spring);
     }
+    .btn svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .btn:focus-visible, .logo:focus-visible { outline: 3px solid #4169E1; outline-offset: 3px; }
     .btn:active {
         transform: scale(0.97);
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 1px 1px rgba(0,0,0,0.05);
@@ -219,39 +223,19 @@
         box-shadow: 1px 0 1px rgba(255,255,255,1);
     }
 
-    /* ── FOOTER ── */
-    footer {
-        flex-shrink: 0;
-        position: relative; z-index: 10;
-        text-align: center; padding: 8px 16px;
-        font-size: 0.56rem; font-weight: 700;
-        letter-spacing: 1.8px; text-transform: uppercase;
-        color: var(--text-light);
-        border-top: 1px solid var(--border);
-        background: rgba(245,245,247,0.7);
-    }
-    .fbead {
-        display: inline-block; width: 0.22em; height: 0.22em;
-        border-radius: 50%; vertical-align: baseline;
-        margin-left: 0.03em; margin-bottom: 0.07em;
-        background: linear-gradient(135deg, #d8d8d8, #a0a0a0, #d0d0d0);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
 </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">Math Things<span class="logo-bead"></span></div>
-    <div class="header-label">Arithmetic Rack</div>
-    <div style="width:80px"></div>
+    <a class="logo" href="../../" aria-label="Back to Math Things app menu"><span class="logo-bead" aria-hidden="true"></span></a>
 </header>
 
 <div class="controls">
-    <button class="btn" id="addRowBtn">Add Row</button>
-    <button class="btn" id="removeRowBtn">Remove Row</button>
-    <button class="btn" id="resetBtn">Reset All</button>
-    <button class="btn" id="toggleShadeBtn">Show Shade</button>
+    <button class="btn" id="addRowBtn" aria-label="Add row"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 8h20M2 15h11M18 12v8M14 16h8"/><circle cx="6" cy="8" r="2"/><circle cx="11" cy="8" r="2"/></svg></button>
+    <button class="btn" id="removeRowBtn" aria-label="Remove row"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 8h20M2 15h11M14 16h8"/><circle cx="6" cy="8" r="2"/><circle cx="11" cy="8" r="2"/></svg></button>
+    <button class="btn" id="resetBtn" aria-label="Reset all beads"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg></button>
+    <button class="btn" id="toggleShadeBtn" aria-label="Show shade" aria-pressed="false" aria-controls="shade"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M13 4v16M16 9v6"/></svg></button>
 </div>
 
 <div class="workspace" id="workspace">
@@ -260,9 +244,6 @@
         </div>
 </div>
 
-<footer>
-    Math Things<span class="fbead"></span>&nbsp;&nbsp;|&nbsp;&nbsp;Math, in your hands<span class="fbead"></span>
-</footer>
 
 <script>
     const rack = document.getElementById('rack');
@@ -401,12 +382,13 @@
     const toggleBtn = document.getElementById('toggleShadeBtn');
     toggleBtn.addEventListener('click', () => {
         const isVisible = shade.classList.toggle('visible');
+        toggleBtn.setAttribute('aria-pressed', String(isVisible));
         if (isVisible) {
             toggleBtn.classList.add('active-toggle');
-            toggleBtn.textContent = 'Hide Shade';
+            toggleBtn.setAttribute('aria-label', 'Hide shade');
         } else {
             toggleBtn.classList.remove('active-toggle');
-            toggleBtn.textContent = 'Show Shade';
+            toggleBtn.setAttribute('aria-label', 'Show shade');
         }
     });
 
@@ -414,6 +396,6 @@
     init();
 
 </script>
-  <script src="../../math-things-home.js"></script>
+  <!-- Native icon home link above keeps this wordless app independent of text-brand injection. -->
 </body>
 </html>

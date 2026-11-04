@@ -293,22 +293,14 @@
       .header-inner { align-items: flex-start; }
       h1 { font-size: 1.25rem; }
     }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <h1>Equivalent Fractions</h1>
-      <a class="home-link" href="../../">← Math Things</a>
-    </div>
-  </header>
 
   <main>
     <section class="dashboard">
-      <div id="narration">Pick the numerator row, then pick the denominator row.</div>
-      <div class="instructions">
-        Pick two rows. Once both are chosen, the table locks so every column reads as an equivalent fraction: numerator and denominator are multiplied by the same number.
-      </div>
+      <div id="narration" class="sr-only" aria-live="polite">Pick the numerator row, then pick the denominator row.</div>
       <button type="button" id="reset-btn">Choose New Rows</button>
     </section>
 

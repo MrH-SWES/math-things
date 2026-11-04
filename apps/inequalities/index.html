@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Math Things. | Inequalities</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --text-main: #1D1D1F; --text-gray: #86868B; --text-light: #AEAEB2; --surface: #FFFFFF;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-raised: 6px 6px 14px rgba(166,171,189,0.45), -6px -6px 14px rgba(255,255,255,0.9);
+      --shadow-milled: inset 3px 3px 6px rgba(166,171,189,0.9), inset -3px -3px 6px rgba(255,255,255,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Lexend', sans-serif; color: var(--text-main); height: 100dvh; overflow: hidden;
+      display: flex; flex-direction: column; user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; touch-action: none;
+      background: radial-gradient(ellipse at 50% 38%, #FBF9F6 0%, #F2EFEA 58%, #E8E4DD 100%);
+    }
+    #surface { flex: 1; min-height: 0; }
+    #board { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: visible; }
+    #board text { font-family: 'Lexend', sans-serif; text-anchor: middle; dominant-baseline: central; }
+    #plot { pointer-events: all; cursor: pointer; outline: none; }
+    #cursor { opacity: 0; }
+    #plot:focus-visible #cursor { opacity: 1; }
+    #board .step { pointer-events: all; cursor: pointer; outline: none; }
+    #board .step:focus-visible circle { stroke: #007AFF; stroke-width: 2.5; }
+    #record { opacity: 0; transition: opacity 0.3s; }
+    #board.recon #record { opacity: 1; }
+    #bead, #ray { pointer-events: all; cursor: pointer; outline: none; }
+    #bead { cursor: ew-resize; }
+    #bead:focus-visible circle.ring, #ray:focus-visible path.shaft { stroke: #007AFF; }
+    .hardware { position: fixed; top: 14px; right: 16px; z-index: 20; display: flex; gap: 10px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 2px solid transparent;
+      box-shadow: var(--shadow-raised); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s var(--spring); outline: none; color: var(--text-gray); padding: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.active { box-shadow: var(--shadow-milled); color: var(--text-main); }
+    .icon-btn:focus-visible { border-color: #007AFF; }
+    #footer {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--text-light); letter-spacing: 0.5px; background: linear-gradient(180deg, #DADCE1 0%, #E4E6EA 100%);
+    }
+    .footer-bead { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--text-light); margin: 0 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+<main id="surface" aria-label="Inequality on a number line"></main>
+
+<div class="hardware">
+  <button class="icon-btn" id="rangeBtn" aria-label="Line from 0 to 20" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M1.5 9h13M3 7v4M8 6v6M13 7v4"/></svg>
+  </button>
+  <button class="icon-btn" id="recordBtn" aria-label="Show the inequality" aria-pressed="false">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z"/><circle cx="8" cy="8" r="2.3"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" aria-label="Back to the start">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 6.2A5.6 5.6 0 1 1 2.4 9.6"/><path d="M2.2 2.6v3.8h3.8"/></svg>
+  </button>
+</div>
+
+<div id="footer">Math Things <span class="footer-bead"></span> | Math, in your hands <span class="footer-bead"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F5F7"/><stop offset="1" stop-color="#C9CCD1"/></linearGradient>
+  </defs>
+</svg>
+
+<svg id="board">
+  <g id="line"></g>
+  <g id="ray" tabindex="0" role="button" aria-label="The shaded side. Tap to point it the other way."></g>
+  <g id="bead" tabindex="0" role="slider" aria-label="The boundary point. Drag it, or use Left and Right; tap or Space to fill or empty it."></g>
+  <g id="record"></g>
+</svg>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  // One boundary point on the line, open or filled, and a shaded ray running from it to one end.
+  const COLOR = '#4169E1';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const buzz = n => { if (reduceMotion || !navigator.vibrate) return; try { navigator.vibrate(n); } catch (e) {} };
+  const r2 = v => Math.round(v * 100) / 100;
+  const $ = id => document.getElementById(id);
+  const board = $('board'), lineG = $('line'), rayG = $('ray'), beadG = $('bead'), recordG = $('record'), live = $('live');
+  const START = { v: 3, closed: false, right: true };
+  let st = { ...START }, LO = -10, HI = 10, recordOn = false;
+  let X0 = 0, L = 0, Y = 0;
+  const step = () => L / (HI - LO);
+  const px = v => X0 + (v - LO) * step();
+  const num = v => v < 0 ? '−' + -v : String(v);
+
+  function layout() {
+    const W = innerWidth, H = innerHeight - 30;
+    L = Math.min(W - 70, 1000); X0 = Math.round((W - L) / 2); Y = Math.round(H * 0.55);
+    draw();
+  }
+  function draw() {
+    const fs = Math.max(10, Math.min(16, step() * 0.45)), every = step() < 24 ? 2 : 1;
+    let s = `<rect x="${r2(X0 - 22)}" y="${Y - 4}" width="${r2(L + 44)}" height="8" rx="4" fill="url(#rail)" stroke="rgba(60,62,68,0.3)"/>` +
+      `<path d="M${r2(X0 - 26)},${Y}l10,-8v16zM${r2(X0 + L + 26)},${Y}l-10,-8v16z" fill="#3A3D42"/>`;
+    for (let v = LO; v <= HI; v++) {
+      s += `<path d="M${r2(px(v))},${Y - (v ? 10 : 14)}v${v ? 20 : 28}" stroke="#3A3D42" stroke-width="${v ? 1.6 : 2.6}"/>`;
+      if (v % every === 0) s += `<text x="${r2(px(v))}" y="${Y + 34}" font-size="${r2(fs)}" font-weight="${v ? 600 : 800}" fill="#3A3D42">${num(v)}</text>`;
+    }
+    lineG.innerHTML = s;
+    // the ray: from the bead to the end of the line, with an arrowhead that says "and on forever"
+    const x = px(st.v), xe = st.right ? X0 + L + 30 : X0 - 30, dir = st.right ? 1 : -1;
+    rayG.innerHTML = `<path d="M${r2(x + dir * 16)},${Y}H${r2(xe)}" stroke="transparent" stroke-width="40"/>` +
+      `<path class="shaft" d="M${r2(x)},${Y}H${r2(xe - dir * 14)}" stroke="${COLOR}" stroke-width="8" stroke-linecap="round" opacity="0.85"/>` +
+      `<path d="M${r2(xe)},${Y}l${-dir * 18},-11v22z" fill="${COLOR}"/>`;
+    // the bead: a filled bead includes its number; an open ring leaves it out
+    beadG.innerHTML = `<rect x="${r2(x - 20)}" y="${Y - 26}" width="40" height="52" fill="transparent"/>` +
+      `<circle class="ring" cx="${r2(x)}" cy="${Y}" r="12" fill="${st.closed ? COLOR : '#FBF9F6'}" stroke="${COLOR}" stroke-width="4"/>`;
+    beadG.setAttribute('aria-valuenow', st.v); beadG.setAttribute('aria-valuetext', `${num(st.v)}, ${st.closed ? 'filled' : 'open'}`);
+    const sign = st.right ? (st.closed ? '≥' : '>') : (st.closed ? '≤' : '<');
+    recordG.innerHTML = `<text x="${r2(X0 + L / 2)}" y="${Y - 110}" font-size="34" font-weight="900" fill="#1D1D1F"><tspan font-style="italic" font-weight="700">x</tspan> <tspan fill="${COLOR}">${sign}</tspan> ${num(st.v)}</text>`;
+  }
+  const said = () => `${st.closed ? 'Filled' : 'Open'} at ${st.v}, shaded to the ${st.right ? 'right' : 'left'}.` + (recordOn ? ` x is ${st.right ? 'greater' : 'less'} than ${st.closed ? 'or equal to ' : ''}${st.v}.` : '');
+
+  // drag the bead along the line; a tap fills or empties it. A tap on the ray turns it around.
+  let drag = null;
+  beadG.addEventListener('pointerdown', e => { e.preventDefault(); drag = { id: e.pointerId, sx: e.clientX, moved: false }; try { beadG.setPointerCapture(e.pointerId); } catch (err) {} });
+  beadG.addEventListener('pointermove', e => {
+    if (!drag || drag.id !== e.pointerId) return;
+    if (!drag.moved && Math.abs(e.clientX - drag.sx) < 6) return;
+    drag.moved = true;
+    const v = Math.max(LO, Math.min(HI, Math.round((e.clientX - X0) / step()) + LO));
+    if (v !== st.v) { st.v = v; buzz(2); draw(); }
+  });
+  const end = e => {
+    if (!drag || drag.id !== e.pointerId) return;
+    if (!drag.moved) { st.closed = !st.closed; buzz(6); draw(); }
+    drag = null; live.textContent = said();
+  };
+  beadG.addEventListener('pointerup', end); beadG.addEventListener('pointercancel', end);
+  rayG.addEventListener('pointerdown', e => { e.preventDefault(); st.right = !st.right; buzz(8); draw(); live.textContent = said(); });
+  board.addEventListener('keydown', e => {
+    if (e.target === beadG) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); st.v = Math.max(LO, Math.min(HI, st.v + (e.key === 'ArrowRight' ? 1 : -1))); draw(); beadG.focus(); live.textContent = said(); }
+      else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); st.closed = !st.closed; draw(); beadG.focus(); live.textContent = said(); }
+    } else if (e.target === rayG && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); st.right = !st.right; draw(); rayG.focus(); live.textContent = said(); }
+  });
+
+  const press = (b, on) => { b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); };
+  $('rangeBtn').addEventListener('click', () => {
+    // −10 to 10, or 0 to 20; the bead stays where it is if it fits, or moves to the nearest end
+    [LO, HI] = LO ? [0, 20] : [-10, 10];
+    st.v = Math.max(LO, Math.min(HI, st.v));
+    press($('rangeBtn'), !LO); $('rangeBtn').setAttribute('aria-label', LO ? 'Line from 0 to 20' : 'Line from −10 to 10');
+    buzz(6); draw();
+  });
+  $('recordBtn').addEventListener('click', () => { recordOn = !recordOn; board.classList.toggle('recon', recordOn); press($('recordBtn'), recordOn); live.textContent = said(); });
+  $('clearBtn').addEventListener('click', () => { st = { ...START }; draw(); buzz(8); });
+  let frame = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(layout); });
+  addEventListener('contextmenu', e => e.preventDefault());
+  layout();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>
