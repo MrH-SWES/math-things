@@ -10,7 +10,7 @@ Should Fix Soon:
 - Pre-existing, original bank only: after *a/an* correction, the preview updates right away, but the bank tile shows the corrected article only on the next render. The order in `render()` is unchanged from before.
 
 Notes:
-- Files changed: `apps/sentences/index.html`, `apps/sentences/README.md` (new, teacher-facing), `harness/reviews/LATEST_REVIEW.md`.
+- Files changed: `apps/sentences/index.html`, `apps/sentences/README.md` (new, teacher-facing), `tests/sentences-word-packs.test.mjs` (new), `harness/reviews/LATEST_REVIEW.md`.
 - Behavior changed:
   - Teachers can make reusable **word packs** in a "Word packs" dialog. Each pack has a name, optional lesson, reading level, and skill labels, and lists of nouns, verbs, and helpers. Words can be pasted (commas or new lines) or removed one at a time. Packs can be saved, edited, duplicated, deleted, and undone back to the last save.
   - Packs are saved in `localStorage` (`mathThings.sentences.wordPacks.v1`), so they last through a refresh. The panel says plainly that packs do not sync. JSON export (all packs or one) and import are validated all-or-nothing, show a preview before anything changes, and never overwrite: a name already in use gets a number. **Download example file** gives a sample. If storage is blocked or full, the app keeps working and says so. If saved data can't be read, it is backed up instead of deleted.
@@ -25,7 +25,10 @@ Notes:
 - Accessibility notes: Every control has an accessible name (checked by script). The panel is a modal `<dialog>`, and Escape closes it. Tile help is linked with `aria-describedby`. All user text is rendered as text, never HTML.
 - Remaining risks: Not tested on real WebKit or iPadOS. Speech is checked by capturing `speechSynthesis.speak` text, not by listening. Real file pickers and downloads on iPad were not tested.
 
-Acceptance Tests (Playwright + Chromium, 171 checks, all PASS):
+Regression tests: `tests/sentences-word-packs.test.mjs` runs the checks below with no dependencies, in the same style as the other files in `tests/`. It has 16 tests, all PASS on three runs. It uses real CDP mouse, keyboard and touch input and the real file chooser. Four deliberately planted bugs were each caught: *a/an* rewriting pack words, partial imports, lost keyboard focus, and switching packs clearing the sentence. Run it with:
+`CHROMIUM=/path/to/chrome node --test tests/sentences-word-packs.test.mjs`
+
+Acceptance Tests (171 checks, first run with Playwright + Chromium, all PASS):
 - Create, name, edit, remove a word, undo changes, duplicate, load into the editor, delete (confirm and cancel), alphabetical menus. PASS
 - Name required; duplicate names (any capitalization) refused; empty lists and a pack with no words save; repeated pasted words skipped; over-long words rejected. PASS
 - Refresh keeps the packs and the selected pack. PASS

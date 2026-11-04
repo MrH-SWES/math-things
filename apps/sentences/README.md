@@ -91,3 +91,11 @@ The file is plain JSON in UTF-8:
 | `nouns`, `verbs`, `helpers` | at least one | A list of up to 300 words. Each word is text of up to 40 characters, with no commas or line breaks. A list can be empty. |
 
 You can also import a single pack object, such as `{"name": "…", "nouns": […]}`, or a bare list of packs. Spaces at the start and end of a word are trimmed. Runs of spaces inside a word become one space. Apostrophes (`can't`, `Sam’s`) and characters such as `<`, `>`, and `&` are kept and shown as plain text. A word repeated inside one list is kept once. Unknown fields are ignored. The largest file you can import is 1 MB.
+
+## Tests (for developers)
+
+`tests/sentences-word-packs.test.mjs` covers packs, import and export, exact spelling, touch and keyboard controls, storage failures, and the original word bank. Like the other files in `tests/`, it has no dependencies. It needs Node 22+ and Chromium:
+
+```bash
+CHROMIUM=/path/to/chrome node --test tests/sentences-word-packs.test.mjs
+```
