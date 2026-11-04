@@ -30,7 +30,8 @@
     padding: 2px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
   }
   .sentence-cards { display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; align-items: flex-start; padding-top: 4px; }
-  .sentence-cards .card { cursor: grab; animation: popIn 0.2s ease-out; margin-bottom: 4px; }
+  .sentence-cards .card { cursor: grab; margin-bottom: 4px; }
+  .sentence-cards .card.just-added { animation: popIn 0.2s ease-out; }
   .sentence-cards .card:active { cursor: grabbing; }
   .sentence-cards .card.dragging { opacity: 0.4; transform: scale(0.95); }
   .sentence-cards .card .remove-btn {
@@ -505,13 +506,157 @@
   }
   /* ===== end visual cleanup ===== */
 
+  /* ===== word packs, touch + keyboard ===== */
+  [hidden] { display: none !important; }
+  dialog:not([open]) { display: none; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+  button.card { font: inherit; color: inherit; text-align: center; }
+  .card { min-height: 44px; justify-content: center; }
+  .card[data-cat="helper"] { background: #ebe7f1; }
+  .card:focus-visible, .tile-pick:focus-visible, .tile-tool:focus-visible,
+  .btn:focus-visible, .stype-btn:focus-visible, .cat-tab:focus-visible,
+  .filter-btn:focus-visible, .advanced-toggle:focus-visible, .label-auto:focus-visible,
+  .teacher-btn:focus-visible, .source-select:focus-visible, .pack-panel :focus-visible,
+  .custom-word-entry :focus-visible {
+    outline: 3px solid #2d9cdb; outline-offset: 2px;
+  }
+  .sentence-cards:focus { outline: none; }
+
+  /* sentence tiles: tap to select, then ← ✕ → */
+  .tile-pick { display: flex; flex-direction: column; align-items: center; border-radius: 6px; cursor: inherit; }
+  .sentence-cards .card.selected { box-shadow: 0 0 0 3px rgba(45,156,219,.85); }
+  .sentence-cards .card .remove-btn { width: 22px; height: 22px; top: -9px; right: -9px; font-size: .7rem; }
+  .sentence-cards .card.selected .remove-btn,
+  .sentence-cards .card:focus-within .remove-btn { opacity: 1; }
+  .tile-tools { display: flex; gap: 6px; margin-top: 6px; }
+  .tile-tool {
+    min-width: 44px; min-height: 44px; padding: 0 8px; border-radius: 9px;
+    border: 1px solid rgba(0,0,0,.18); background: #fff; color: #384c5b;
+    font-family: 'Fredoka', sans-serif; font-size: 1.1rem; font-weight: 600; cursor: pointer;
+  }
+  .tile-tool:disabled { opacity: .3; cursor: default; }
+  .tile-tool-remove { color: #8a4743; }
+  @media (hover: none) {
+    /* Touch: no hover-only controls. Tap a tile to get ← ✕ →. */
+    .sentence-cards .card .remove-btn { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sentence-cards .card.just-added { animation: none; }
+  }
+
+  /* word source bar */
+  .source-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin: 0 0 10px; padding-bottom: 9px; border-bottom: 1px solid #eceff1;
+  }
+  .source-label { font-size: .66rem; font-weight: 600; color: #7b8188; letter-spacing: .12em; text-transform: uppercase; }
+  .source-select {
+    min-height: 44px; max-width: 100%; padding: 6px 10px; border: 1px solid #cfd5da; border-radius: 8px;
+    background: #fff; color: #232629; font-family: 'Fredoka', sans-serif; font-size: .88rem; font-weight: 500;
+  }
+  .pack-meta { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .pack-chip { font-size: .74rem; padding: 3px 9px; border-radius: 999px; background: #f1f3f5; color: #4b535b; }
+  .pack-chip-k { font-size: .58rem; text-transform: uppercase; letter-spacing: .08em; color: #8a9097; margin-right: 4px; }
+  .teacher-btn {
+    margin-left: auto; min-height: 44px; padding: 6px 13px; border-radius: 8px;
+    border: 1px solid rgba(0,0,0,.14); background: #fff; color: #384c5b; cursor: pointer;
+    font-family: 'Fredoka', sans-serif; font-size: .76rem; font-weight: 600;
+  }
+  .custom-word-entry select {
+    min-height: 36px; padding: 6px 8px; border: 1px solid #cfd5da; border-radius: 8px; background: #fff;
+    font-family: 'Fredoka', sans-serif; font-size: .78rem; color: #333;
+  }
+
+  /* pack word bank: all three lists at once, larger tiles */
+  .word-grid.pack-mode { display: block; }
+  .pack-group + .pack-group { margin-top: 10px; }
+  .pack-group-label { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #8a9097; margin: 0 0 5px; }
+  .pack-group-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pack-mode .card { padding: 6px 14px 7px; }
+  .pack-mode .card .card-word { font-size: 1.4rem; }
+  .pack-empty { color: #a0a6ad; font-size: .82rem; font-style: italic; }
+
+  /* teacher panel */
+  .pack-panel {
+    width: min(780px, calc(100vw - 24px)); max-height: calc(100vh - 24px); margin: auto;
+    padding: 0; border: 1px solid rgba(0,0,0,.12); border-radius: 18px; background: #fff; color: #232629;
+    box-shadow: 0 18px 50px rgba(0,0,0,.18); font-family: 'Fredoka', sans-serif; overflow: auto;
+  }
+  .pack-panel::backdrop { background: rgba(30,34,40,.35); }
+  .pack-panel.pp-fallback { position: fixed; inset: 12px; z-index: 50; display: block; }
+  .pp-inner { padding: 14px 18px 18px; }
+  .pp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .pp-head h2 { font-size: 1.1rem; font-weight: 600; }
+  .pp-close { margin-left: auto; width: 44px; height: 44px; border-radius: 10px; border: 1px solid rgba(0,0,0,.12); background: #fff; font-size: 1rem; cursor: pointer; color: #555; }
+  .pp-note { font-size: .74rem; color: #6b737b; line-height: 1.4; margin-bottom: 8px; }
+  .pp-warn { font-size: .78rem; line-height: 1.4; color: #7a3e12; background: #fff4e5; border: 1px solid #f3d3a8; border-radius: 9px; padding: 7px 10px; margin-bottom: 8px; }
+  .pp-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .pp-row > label, .pp-section-title { font-size: .72rem; font-weight: 600; color: #6b737b; }
+  .pp-section-title { margin: 14px 0 6px; padding-top: 10px; border-top: 1px solid #eceff1; text-transform: uppercase; letter-spacing: .1em; font-size: .64rem; }
+  .pp-btn {
+    min-height: 40px; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,.14);
+    background: #fff; color: #384c5b; font-family: 'Fredoka', sans-serif; font-size: .78rem; font-weight: 600; cursor: pointer;
+  }
+  .pp-btn:disabled { opacity: .4; cursor: default; }
+  .pp-primary { background: #384c5b; border-color: #384c5b; color: #fff; }
+  .pp-danger { color: #8a4743; }
+  .pack-panel select, .pack-panel input, .pack-panel textarea {
+    min-height: 40px; padding: 7px 9px; border: 1px solid #cfd5da; border-radius: 8px; background: #fff;
+    color: #232629; font-family: 'Fredoka', sans-serif; font-size: .88rem;
+  }
+  .pack-panel select { max-width: 100%; }
+  .pp-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 10px 0 4px; }
+  .pp-fields label { display: flex; flex-direction: column; gap: 3px; font-size: .72rem; font-weight: 600; color: #6b737b; }
+  .pp-opt { font-weight: 400; color: #9aa0a6; }
+  .pp-list { border: 1px solid #e3e7ea; border-radius: 12px; padding: 8px 10px 10px; margin-top: 8px; }
+  .pp-list legend { padding: 0 5px; font-size: .78rem; font-weight: 600; color: #4b535b; }
+  .pp-count { font-weight: 400; color: #9aa0a6; }
+  .pp-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+  .pp-chip {
+    display: inline-flex; align-items: center; gap: 2px; padding: 2px 2px 2px 10px; border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.12); font-family: 'Patrick Hand', cursive; font-size: 1.05rem;
+  }
+  .pp-chip[data-cat="noun"] { background: #f8dddd; }
+  .pp-chip[data-cat="verb"] { background: #dcecf5; }
+  .pp-chip[data-cat="helper"] { background: #ebe7f1; }
+  .pp-chip button {
+    width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: #6b4a4a;
+    font-size: .8rem; cursor: pointer;
+  }
+  .pp-chip button:hover { background: rgba(0,0,0,.07); }
+  .pp-empty { font-size: .76rem; color: #9aa0a6; font-style: italic; margin-bottom: 7px; }
+  .pp-add { display: flex; gap: 6px; align-items: stretch; }
+  .pp-add textarea { flex: 1; min-width: 0; resize: vertical; line-height: 1.3; }
+  .pp-msg { font-size: .74rem; color: #6b737b; margin-top: 4px; min-height: 1em; }
+  .pp-msg.pp-bad, .pp-status.pp-bad, .pp-io-status.pp-bad { color: #9b3b30; }
+  .pp-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .pp-status, .pp-io-status { font-size: .76rem; color: #537a63; }
+  .pp-io-status { display: block; margin-top: 6px; }
+  .pp-import { margin-top: 8px; padding: 9px 11px; border-radius: 10px; background: #f5f7f9; border: 1px solid #e3e7ea; font-size: .78rem; line-height: 1.45; }
+  .pp-import ul { margin: 4px 0 6px 18px; }
+  .pp-import .pp-row { margin-top: 6px; }
+  @media (max-width: 600px) {
+    .pp-inner { padding: 12px; }
+    .teacher-btn { margin-left: 0; }
+  }
+  @media (pointer: coarse) {
+    /* Finger-sized controls on tablets/touchscreens; desktop look unchanged. */
+    .btn, .stype-btn, .cat-tab, .filter-btn, .advanced-toggle, .label-auto { min-height: 40px; }
+    .custom-word-entry input, .custom-word-entry button, .custom-word-entry select { min-height: 44px; }
+    .verb-tense-toggle button, .noun-plural-toggle button { font-size: .62rem; padding: 4px 7px; min-height: 30px; min-width: 34px; }
+  }
+  /* ===== end word packs ===== */
+
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>Build-A-Sentence</h1>
-  <p>Click words to add · Drag to reorder · ✕ to remove</p>
+  <p>Tap words to add · Drag tiles, or tap a tile for ← ✕ →</p>
 </div>
 
 <div class="main-layout">
@@ -525,9 +670,10 @@
 
   <div class="sentence-zone">
     <div class="sentence-zone-label">YOUR SENTENCE</div>
-    <div class="sentence-cards" id="sentenceCards">
+    <div class="sentence-cards" id="sentenceCards" tabindex="-1" aria-label="Your sentence">
       <span class="empty-prompt">Click words below to start building!</span>
     </div>
+    <p id="tileHelp" class="sr-only">Press Enter to select this word. When it is selected, the left and right arrow keys move it. Delete removes it. Escape lets go.</p>
     
     <div class="sentence-type-bar">
       <span class="stype-label">Type:</span>
@@ -550,6 +696,12 @@
   </div>
 
   <div class="word-bank">
+    <div class="source-bar">
+      <label class="source-label" for="sourceSelect">Words</label>
+      <select class="source-select" id="sourceSelect"></select>
+      <span class="pack-meta" id="packMeta"></span>
+      <button type="button" class="teacher-btn" id="teacherBtn" aria-haspopup="dialog" aria-controls="packPanel">Word packs</button>
+    </div>
     <div class="category-tabs" id="catTabs"></div>
     
     <div id="tenseBar" class="filter-bar" style="display:none;">
@@ -581,7 +733,12 @@
     </div>
     
     <div class="custom-word-entry" id="customWordEntry">
-      <input id="customWordInput" type="text" maxlength="80" autocomplete="off" spellcheck="true" />
+      <input id="customWordInput" type="text" maxlength="80" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="true" />
+      <select id="customWordCat" aria-label="Kind of word" hidden>
+        <option value="noun">Noun</option>
+        <option value="verb">Verb</option>
+        <option value="helper" selected>Helper</option>
+      </select>
       <button id="customWordAdd" type="button">Add</button>
     </div>
 
@@ -589,6 +746,55 @@
   </div>
 
 </div>
+
+<div id="liveRegion" class="sr-only" aria-live="polite"></div>
+
+<!-- Teacher panel: word packs live here so the student workspace stays quiet. -->
+<dialog id="packPanel" class="pack-panel" aria-labelledby="packPanelTitle">
+  <div class="pp-inner">
+    <div class="pp-head">
+      <h2 id="packPanelTitle">Word packs</h2>
+      <button type="button" class="pp-close" id="packPanelClose" aria-label="Close word packs">✕</button>
+    </div>
+    <p class="pp-note">Packs are saved in <strong>this browser on this device only</strong>. They do not sync to other devices, browsers, or accounts, and clearing browser data deletes them. To back up or move packs, use <strong>Export</strong>, then <strong>Import</strong> the file on the other device.</p>
+    <p class="pp-warn" id="storageWarn" role="alert" hidden></p>
+
+    <div class="pp-row">
+      <label for="editPackSelect">Editing</label>
+      <select id="editPackSelect"></select>
+      <button type="button" class="pp-btn" id="packNewBtn">New pack</button>
+      <button type="button" class="pp-btn" id="packDupBtn">Duplicate</button>
+      <button type="button" class="pp-btn pp-danger" id="packDeleteBtn">Delete</button>
+    </div>
+
+    <form id="packForm" novalidate>
+      <div class="pp-fields">
+        <label><span>Pack name</span><input id="pfName" maxlength="60" autocomplete="off" required></label>
+        <label><span>Lesson <span class="pp-opt">(optional)</span></span><input id="pfLesson" maxlength="60" autocomplete="off"></label>
+        <label><span>Reading level <span class="pp-opt">(optional)</span></span><input id="pfLevel" maxlength="60" autocomplete="off"></label>
+        <label><span>Skill <span class="pp-opt">(optional)</span></span><input id="pfSkill" maxlength="60" autocomplete="off"></label>
+      </div>
+      <div id="pfLists"></div>
+      <div class="pp-actions">
+        <button type="submit" class="pp-btn pp-primary" id="packSaveBtn">Save pack</button>
+        <button type="button" class="pp-btn" id="packRevertBtn">Undo changes</button>
+        <button type="button" class="pp-btn" id="packUseBtn">Use on board</button>
+        <span class="pp-status" id="packStatus" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+
+    <div class="pp-section-title">Back up &amp; move</div>
+    <div class="pp-row">
+      <button type="button" class="pp-btn" id="exportAllBtn">Export all packs</button>
+      <button type="button" class="pp-btn" id="exportOneBtn">Export this pack</button>
+      <button type="button" class="pp-btn" id="importBtn">Import file…</button>
+      <button type="button" class="pp-btn" id="exampleBtn">Download example file</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <div class="pp-import" id="importPreview" hidden></div>
+    <span class="pp-io-status" id="ioStatus" role="status" aria-live="polite"></span>
+  </div>
+</dialog>
 
 <script>
 // === VERB DATA ===
@@ -692,7 +898,8 @@ function applyAgreement() {
   if (hasConjunction) subjectNumber = 'plural';
 
   sentence.forEach(item => {
-    if (item.cat === 'verb' && item.verbIndex !== undefined) {
+    // Only original-bank verbs (which carry verbIndex) are re-conjugated; pack words never change.
+    if (item.cat === 'verb' && item.verbIndex !== undefined && !item.exact) {
       item.number = subjectNumber;
       let word = getVerbWord(item.verbIndex, item.tense, subjectNumber);
       
@@ -771,11 +978,13 @@ const WORDS = {
 
 const CAT_LABELS = {
   article:"Articles", determiner:"Determiners", noun:"Nouns", pronoun:"Pronouns", verb:"Verbs",
-  preposition:"Prepositions", adjective:"Adjectives", adverb:"Adverbs", conjunction:"Conjunctions"
+  preposition:"Prepositions", adjective:"Adjectives", adverb:"Adverbs", conjunction:"Conjunctions",
+  helper:"Helpers"
 };
 const CAT_SINGULAR = {
   article:"Article", determiner:"Determiner", noun:"Noun", pronoun:"Pronoun", verb:"Verb",
-  preposition:"Preposition", adjective:"Adjective", adverb:"Adverb", conjunction:"Conjunction"
+  preposition:"Preposition", adjective:"Adjective", adverb:"Adverb", conjunction:"Conjunction",
+  helper:"Helper"
 };
 
 function escapeHtml(value) {
@@ -794,6 +1003,9 @@ let advancedTenses = false;
 let sentenceType = "statement";
 let dragIndex = null, dragOverIndex = null, touchStartX = 0, touchStartY = 0, isDragging = false;
 let autoLabelOn = false;
+let selectedId = null;    // sentence tile picked up for ← ✕ → / arrow keys
+let pendingFocus = null;  // where keyboard focus goes after the next render()
+let renderedIds = new Set();  // only tiles new since the last render get the pop-in animation
 
 // === SENTENCE TYPE ===
 function setSentenceType(type) {
@@ -811,19 +1023,26 @@ function getEndPunctuation() {
 // === TABS & GRID ===
 function buildTabs() {
   const tabs = document.getElementById('catTabs');
+  const bank = !activePack();  // a word pack replaces the original bank's tabs and filters
   tabs.innerHTML = '';
-  for (const cat of Object.keys(WORDS)) {
-    const t = document.createElement('button');
-    t.className = 'cat-tab' + (cat === activeCat ? ' active' : '');
-    t.dataset.cat = cat;
-    t.textContent = CAT_LABELS[cat];
-    t.onclick = () => { activeCat = cat; buildTabs(); buildGrid(); };
-    tabs.appendChild(t);
+  tabs.hidden = !bank;
+  if (bank) {
+    for (const cat of Object.keys(WORDS)) {
+      const t = document.createElement('button');
+      t.type = 'button';
+      t.className = 'cat-tab' + (cat === activeCat ? ' active' : '');
+      t.dataset.cat = cat;
+      t.setAttribute('aria-pressed', String(cat === activeCat));
+      t.textContent = CAT_LABELS[cat];
+      t.onclick = () => { activeCat = cat; buildTabs(); buildGrid(); };
+      tabs.appendChild(t);
+    }
   }
-  document.getElementById('tenseBar').style.display = activeCat === 'verb' ? 'flex' : 'none';
-  document.getElementById('advancedTenseBar').style.display = (activeCat === 'verb' && advancedTenses) ? 'flex' : 'none';
-  document.getElementById('nounBar').style.display = activeCat === 'noun' ? 'flex' : 'none';
-  document.getElementById('nounTypeBar').style.display = activeCat === 'noun' ? 'flex' : 'none';
+  document.getElementById('tenseBar').style.display = bank && activeCat === 'verb' ? 'flex' : 'none';
+  document.getElementById('advancedTenseBar').style.display = (bank && activeCat === 'verb' && advancedTenses) ? 'flex' : 'none';
+  document.getElementById('nounBar').style.display = bank && activeCat === 'noun' ? 'flex' : 'none';
+  document.getElementById('nounTypeBar').style.display = bank && activeCat === 'noun' ? 'flex' : 'none';
+  document.getElementById('stepsBar').hidden = !bank;
   updateCustomEntry();
 }
 
@@ -855,6 +1074,13 @@ function toggleAdvancedTenses() {
 function updateCustomEntry() {
   const input = document.getElementById('customWordInput');
   if (!input) return;
+  const pack = activePack();
+  document.getElementById('customWordCat').hidden = !pack;
+  if (pack) {
+    input.placeholder = 'Type a word…';
+    input.setAttribute('aria-label', 'Type your own word');
+    return;
+  }
   const name = (CAT_SINGULAR[activeCat] || activeCat).toLowerCase();
   input.placeholder = 'Custom ' + name + '…';
   input.setAttribute('aria-label', 'Custom ' + name);
@@ -865,21 +1091,32 @@ function addCustomWord() {
   if (!input) return;
   const word = input.value.trim().replace(/\s+/g, ' ');
   if (!word) return;
-  const id = 'custom_' + activeCat + '_' + Date.now() + '_' + Math.random();
-  const item = { cat: activeCat, word: word, id: id, originalId: id, custom: true };
-  if (activeCat === 'noun') item.number = activeNounNum;
+  const pack = activePack();
+  const cat = pack ? document.getElementById('customWordCat').value : activeCat;
+  const id = 'custom_' + cat + '_' + Date.now() + '_' + Math.random();
+  const item = { cat: cat, word: word, id: id, originalId: id, custom: true };
+  if (pack) item.exact = true;              // pack mode: keep exactly what was typed
+  else if (cat === 'noun') item.number = activeNounNum;
   sentence.push(item);
   input.value = '';
   if (autoLabelOn) applyAutoLabels();
   applyAgreement();
   render();
+  announce('Added ' + word + '.');
   input.focus();
 }
 
 function buildGrid() {
   const grid = document.getElementById('wordGrid');
+  // Rebuilding the grid would drop keyboard focus; remember which word had it.
+  const focused = document.activeElement;
+  const focusKey = focused && grid.contains(focused) ? focused.dataset.key : null;
   grid.innerHTML = '';
-  if (activeCat === 'verb') {
+  const pack = activePack();
+  grid.classList.toggle('pack-mode', !!pack);
+  if (pack) {
+    buildPackGrid(grid, pack);
+  } else if (activeCat === 'verb') {
     VERB_DATA.forEach((v, i) => {
       const word = getVerbWord(i, activeTense, 'singular');
       const id = 'verb_' + i;
@@ -905,23 +1142,66 @@ function buildGrid() {
       grid.appendChild(card);
     });
   }
+  if (focusKey) {
+    const again = Array.from(grid.querySelectorAll('[data-key]')).find(el => el.dataset.key === focusKey);
+    if (again) again.focus();
+  }
+}
+
+// Pack mode: show the pack's own three lists together, nothing from the original bank.
+function buildPackGrid(grid, pack) {
+  let any = false;
+  PACK_LISTS.forEach(([key, cat]) => {
+    const words = pack[key];
+    if (!words.length) return;
+    any = true;
+    const group = document.createElement('div');
+    group.className = 'pack-group';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', CAT_LABELS[cat]);
+    const label = document.createElement('div');
+    label.className = 'pack-group-label';
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = CAT_LABELS[cat];
+    const row = document.createElement('div');
+    row.className = 'pack-group-row';
+    words.forEach((word, i) => {
+      const key2 = 'pack_' + cat + '_' + i;
+      const card = mkCard(key2, cat, CAT_SINGULAR[cat], word);
+      card.onclick = () => addWord(cat, word, key2, { exact: true });
+      row.appendChild(card);
+    });
+    group.append(label, row);
+    grid.appendChild(group);
+  });
+  if (!any) {
+    const empty = document.createElement('p');
+    empty.className = 'pack-empty';
+    empty.textContent = 'This pack has no words yet.';
+    grid.appendChild(empty);
+  }
 }
 
 function mkCard(id, cat, label, word) {
-  const card = document.createElement('div');
+  const card = document.createElement('button');
+  card.type = 'button';
   card.className = 'card';
   card.dataset.cat = cat;
+  card.dataset.key = id;
+  card.setAttribute('aria-label', 'Add ' + word + ' (' + label + ')');
   card.innerHTML = `<span class="card-label">${escapeHtml(label)}</span><span class="card-word">${escapeHtml(word)}</span>`;
   return card;
 }
 
 // === ADD / REMOVE ===
-function addWord(cat, word, id) {
+// extra.exact = true marks a pack word: its spelling is never changed by agreement or a/an.
+function addWord(cat, word, id, extra) {
   // Assign a unique instance ID so multiple instances don't break dragging/removal
-  sentence.push({ cat, word, id: id + '_' + Math.random(), originalId: id });
+  sentence.push(Object.assign({ cat, word, id: id + '_' + Math.random(), originalId: id }, extra));
   if (autoLabelOn) applyAutoLabels();
   applyAgreement();
   render();
+  announce('Added ' + word + '.');
 }
 
 function addVerb(vi, id) {
@@ -960,7 +1240,8 @@ function undoLast() {
 }
 
 function clearSentence() {
-  sentence = []; 
+  sentence = [];
+  selectedId = null;
   render();
 }
 
@@ -969,6 +1250,86 @@ function removeFromSentence(idx) {
   if (autoLabelOn) applyAutoLabels();
   applyAgreement();
   render();
+}
+
+// --- Non-drag tile controls (tap/click a tile, then ← ✕ →; or keyboard) ---
+function toggleSelect(id) {
+  selectedId = selectedId === id ? null : id;
+  pendingFocus = { id: id, part: 'pick' };
+  render();
+}
+
+function moveTile(i, delta, part) {
+  const to = i + delta;
+  if (to < 0 || to >= sentence.length) return;
+  const item = sentence[i];
+  pendingFocus = { id: item.id, part: part || 'pick' };
+  reorder(i, to);
+  announce(item.word + ' moved to place ' + (to + 1) + ' of ' + sentence.length + '.');
+}
+
+function removeTile(i) {
+  const item = sentence[i];
+  if (!item) return;
+  const neighbor = sentence[i + 1] || sentence[i - 1];
+  pendingFocus = neighbor ? { id: neighbor.id, part: 'pick' } : { container: true };
+  removeFromSentence(i);
+  announce(item.word + ' removed.');
+}
+
+function onTileClick(e, i) {
+  const item = sentence[i];
+  if (!item) return;
+  if (e.target.closest('.tile-tools')) {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn || btn.disabled) return;
+    if (btn.dataset.act === 'remove') removeTile(i);
+    else moveTile(i, btn.dataset.act === 'left' ? -1 : 1, btn.dataset.act);
+    return;
+  }
+  if (e.target.closest('.remove-btn')) { removeTile(i); return; }
+  if (e.target.closest('button')) return;  // tense / number toggles handle themselves
+  toggleSelect(item.id);
+}
+
+function onTileKey(e, i) {
+  const item = sentence[i];
+  if (!item) return;
+  const picked = selectedId === item.id;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault(); toggleSelect(item.id);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+    const d = e.key === 'ArrowLeft' ? -1 : 1;
+    if (picked) moveTile(i, d, 'pick');
+    else if (sentence[i + d]) { pendingFocus = { id: sentence[i + d].id, part: 'pick' }; restoreFocus(); }
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault(); removeTile(i);
+  } else if (e.key === 'Escape' && picked) {
+    e.preventDefault(); toggleSelect(item.id);
+  }
+}
+
+function restoreFocus() {
+  const pf = pendingFocus;
+  pendingFocus = null;
+  if (!pf) return;
+  const sc = document.getElementById('sentenceCards');
+  if (pf.container) { sc.focus(); return; }
+  const card = Array.from(sc.children).find(c => c.dataset && c.dataset.id === pf.id);
+  if (!card) return;
+  let target = null;
+  if (pf.part === 'left' || pf.part === 'right') {
+    const b = card.querySelector('.tile-tools [data-act="' + pf.part + '"]');
+    if (b && !b.disabled) target = b;
+  }
+  (target || card.querySelector('.tile-pick')).focus();
+}
+
+function announce(msg) {
+  const live = document.getElementById('liveRegion');
+  live.textContent = '';
+  setTimeout(() => { live.textContent = msg; }, 30);
 }
 
 // === SMART AUTO-LABELING ===
@@ -1035,16 +1396,23 @@ function applyAutoLabels() {
 // === RENDER ===
 function render() {
   const sc = document.getElementById('sentenceCards');
-  
+  if (selectedId && !sentence.some(s => s.id === selectedId)) selectedId = null;
+
   if (!sentence.length) {
+    sc.removeAttribute('role');
     sc.innerHTML = '<span class="empty-prompt">Click words below to start building!</span>';
   } else {
+    sc.setAttribute('role', 'list');
     sc.innerHTML = '';
     const allTenses = Object.keys(TENSE_NAMES);
+    const n = sentence.length;
 
     sentence.forEach((item, i) => {
       const card = document.createElement('div');
-      card.className = 'card'; card.dataset.cat = item.cat; card.dataset.index = i;
+      const picked = item.id === selectedId;
+      card.className = 'card' + (picked ? ' selected' : '') + (renderedIds.has(item.id) ? '' : ' just-added');
+      card.dataset.cat = item.cat; card.dataset.index = i; card.dataset.id = item.id;
+      card.setAttribute('role', 'listitem');
       card.draggable = true;
 
       let labelText = CAT_SINGULAR[item.cat] || item.cat;
@@ -1054,27 +1422,40 @@ function render() {
       }
       if (item.cat === 'noun' && item.number) labelText += ' · ' + item.number;
 
-      let inner = `<span class="card-label">${escapeHtml(labelText)}</span><span class="card-word">${escapeHtml(item.word)}</span>`;
-      inner += `<button class="remove-btn" onclick="event.stopPropagation(); removeFromSentence(${i})">✕</button>`;
-      
+      const w = escapeHtml(item.word);
+      const pickName = escapeHtml(item.word + ', ' + labelText + ', word ' + (i + 1) + ' of ' + n);
+      let inner = `<div class="tile-pick" role="button" tabindex="0" aria-pressed="${picked}" aria-describedby="tileHelp" aria-label="${pickName}">`
+        + `<span class="card-label">${escapeHtml(labelText)}</span><span class="card-word">${w}</span></div>`;
+      inner += `<button type="button" class="remove-btn" tabindex="-1" aria-label="Remove ${w}">✕</button>`;
+
       // Verb tense toggles
       if (item.cat === 'verb' && item.verbIndex !== undefined) {
         const tenses = advancedTenses ? allTenses : ['present','past','future'];
         const labels = advancedTenses ? ['Pres','Past','Fut','P.Pg','Pt.Pg','P.Pf','Pt.Pf'] : ['Pres','Past','Fut'];
         inner += '<div class="verb-tense-toggle">';
-        tenses.forEach((t, ti) => { inner += `<button class="${item.tense===t?'active':''}" onclick="event.stopPropagation();setVerbTenseInSentence(${i},'${t}')">${labels[ti]}</button>`; });
+        tenses.forEach((t, ti) => { inner += `<button type="button" class="${item.tense===t?'active':''}" onclick="event.stopPropagation();setVerbTenseInSentence(${i},'${t}')">${labels[ti]}</button>`; });
         inner += '</div>';
       }
       // Noun number toggle
       if (item.cat === 'noun' && item.number) {
         inner += `<div class="noun-plural-toggle">
-          <button class="${item.number==='singular'?'active':''}" onclick="event.stopPropagation();setNounNumberInSentence(${i},'singular')">Sing</button>
-          <button class="${item.number!=='singular'?'active':''}" onclick="event.stopPropagation();setNounNumberInSentence(${i},'plural')">Plur</button>
+          <button type="button" class="${item.number==='singular'?'active':''}" onclick="event.stopPropagation();setNounNumberInSentence(${i},'singular')">Sing</button>
+          <button type="button" class="${item.number!=='singular'?'active':''}" onclick="event.stopPropagation();setNounNumberInSentence(${i},'plural')">Plur</button>
         </div>`;
+      }
+      // Picked-up tile: move left, remove, move right (no drag or hover needed)
+      if (picked) {
+        inner += `<div class="tile-tools">`
+          + `<button type="button" class="tile-tool" data-act="left" ${i === 0 ? 'disabled' : ''} aria-label="Move ${w} left">←</button>`
+          + `<button type="button" class="tile-tool tile-tool-remove" data-act="remove" aria-label="Remove ${w}">✕</button>`
+          + `<button type="button" class="tile-tool" data-act="right" ${i === n - 1 ? 'disabled' : ''} aria-label="Move ${w} right">→</button>`
+          + `</div>`;
       }
 
       card.innerHTML = inner;
-      
+      card.addEventListener('click', e => onTileClick(e, i));
+      card.querySelector('.tile-pick').addEventListener('keydown', e => onTileKey(e, i));
+
       // Drag events
       card.addEventListener('dragstart', e => { dragIndex = i; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
       card.addEventListener('dragend', () => { card.classList.remove('dragging'); clearDI(); dragIndex = null; dragOverIndex = null; });
@@ -1092,9 +1473,24 @@ function render() {
       sc.appendChild(card);
     });
   }
+  renderedIds = new Set(sentence.map(s => s.id));
   renderPreview();
-  buildGrid(); 
+  buildGrid();
   updateSteps();
+  restoreFocus();
+}
+
+// Sentence-initial capital. Pack words keep any mixed case they were taught with (e.g. "iPad").
+function capFirst(item) {
+  const w = item.word;
+  if (item.exact && w !== w.toLowerCase()) return w;
+  return w.charAt(0).toUpperCase() + w.slice(1);
+}
+
+function sentenceText() {
+  let text = sentence.map((s, i) => i === 0 ? capFirst(s) : s.word).join(' ');
+  if (!/[.!?]$/.test(text)) text += getEndPunctuation();
+  return text;
 }
 
 function renderPreview() {
@@ -1106,8 +1502,10 @@ function renderPreview() {
     return;
   }
 
-  // Pre-pass to fix 'a' vs 'an' in the sentence array before generating HTML
+  // Pre-pass to fix 'a' vs 'an' in the sentence array before generating HTML.
+  // Pack words (exact) are never rewritten.
   for (let i = 0; i < sentence.length - 1; i++) {
+    if (sentence[i].exact) continue;
     let w = sentence[i].word.toLowerCase();
     if (w === 'a' || w === 'an') {
       let nextWord = sentence[i+1].word;
@@ -1117,10 +1515,7 @@ function renderPreview() {
   }
 
   if (!autoLabelOn) {
-    let text = sentence.map(s => s.word).join(' ');
-    text = text.charAt(0).toUpperCase() + text.slice(1);
-    if (!/[.!?]$/.test(text)) text += punct;
-    preview.textContent = text;
+    preview.textContent = sentenceText();
     return;
   }
 
@@ -1134,7 +1529,7 @@ function renderPreview() {
 
   sentence.forEach((s, i) => {
     let w = s.word;
-    if (i === 0) w = w.charAt(0).toUpperCase() + w.slice(1);
+    if (i === 0) w = capFirst(s);
     
     // Base classes
     let classes = ['pw'];
@@ -1245,11 +1640,688 @@ function updateSteps() {
 // === READ ===
 function readAloud() {
   if (!sentence.length) return;
-  let text = sentence.map(s => s.word).join(' ');
-  text = text.charAt(0).toUpperCase() + text.slice(1);
-  if (!/[.!?]$/.test(text)) text += getEndPunctuation();
-  const u = new SpeechSynthesisUtterance(text); u.rate = 0.85;
+  if (!('speechSynthesis' in window)) { announce('Read aloud is not available in this browser.'); return; }
+  const u = new SpeechSynthesisUtterance(sentenceText()); u.rate = 0.85;
   speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+// =====================================================================
+// === WORD PACKS: teacher-made word lists, saved in this browser    ===
+// =====================================================================
+// A pack's words are shown exactly as typed. They are never pluralized,
+// re-conjugated, or a/an-corrected, and helper words get no guessed
+// part of speech. Packs live in localStorage on this device only.
+const PACK_FORMAT = 'build-a-sentence-word-packs';
+const PACK_VERSION = 1;
+const PACK_LISTS = [['nouns', 'noun'], ['verbs', 'verb'], ['helpers', 'helper']];
+const PACK_LABELS = [['lesson', 'Lesson'], ['readingLevel', 'Reading level'], ['skill', 'Skill']];
+const PACK_LIMITS = { name: 60, label: 60, word: 40, words: 300, packs: 200, fileBytes: 1000000 };
+const PACK_STORE_KEY = 'mathThings.sentences.wordPacks.v1';
+const SOURCE_STORE_KEY = 'mathThings.sentences.wordSource.v1';
+
+const EXAMPLE_PACK_FILE = {
+  format: PACK_FORMAT,
+  version: PACK_VERSION,
+  packs: [
+    { name: 'Example: short a', lesson: 'Example only', readingLevel: '', skill: 'short a',
+      nouns: ['cat', 'hat', 'map', 'van', 'Sam'], verbs: ['sat', 'ran', 'has', 'can'],
+      helpers: ['the', 'a', 'and', 'is', 'on', 'I'] },
+    { name: 'Example: sh and ch', lesson: 'Example only', readingLevel: '', skill: 'sh, ch',
+      nouns: ['ship', 'fish', 'chin', 'shop', "Sam's"], verbs: ['chop', 'wish', 'shut'],
+      helpers: ['the', 'a', "can't", 'with', 'is'] }
+  ]
+};
+
+let packs = [];
+let activeSource = 'bank';
+let unreadableRaw = null;   // stored data we could not read: never destroyed, backed up on next save
+let pendingImport = null;
+const editor = { id: null, lists: { nouns: [], verbs: [], helpers: [] }, baseline: '' };
+
+function byId(id) { return document.getElementById(id); }
+function quoteName(s) { return '“' + s + '”'; }
+function setMsg(el, msg, bad) { el.textContent = msg || ''; el.classList.toggle('pp-bad', !!bad); }
+function setStatus(msg, bad) { setMsg(byId('packStatus'), msg, bad); }
+function setIoStatus(msg, bad) { setMsg(byId('ioStatus'), msg, bad); }
+
+// --- Storage: localStorage may be missing, blocked (private mode), or full. ---
+const packStore = (function () {
+  try {
+    const s = window.localStorage, k = '__bas_probe__';
+    s.setItem(k, '1'); s.removeItem(k);
+    return s;
+  } catch (e) { return null; }
+})();
+function storeGet(key) { if (!packStore) return null; try { return packStore.getItem(key); } catch (e) { return null; } }
+function storeSet(key, value) { if (!packStore) return false; try { packStore.setItem(key, value); return true; } catch (e) { return false; } }
+
+function activePack() { return activeSource === 'bank' ? null : (packs.find(p => p.id === activeSource) || null); }
+function sortedPacks() { return packs.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })); }
+function newPackId() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function nameKey(name) { return name.toLocaleLowerCase(); }
+function uniqueName(base, taken) {
+  if (!taken.has(nameKey(base))) return base;
+  for (let k = 2; ; k++) {
+    const suffix = ' (' + k + ')';
+    const candidate = base.slice(0, PACK_LIMITS.name - suffix.length).trimEnd() + suffix;
+    if (!taken.has(nameKey(candidate))) return candidate;
+  }
+}
+
+// --- Validation (shared by the editor, saved data, and imported files) ---
+function cleanLabel(v) { return String(v).replace(/\s+/g, ' ').trim(); }
+
+function checkWord(raw) {
+  if (typeof raw !== 'string') return { error: 'is not text' };
+  if (/[,\r\n]/.test(raw)) return { error: 'contains a comma or line break' };
+  const w = raw.replace(/\s+/g, ' ').trim();
+  if (!w) return { error: 'is blank' };
+  if (/[\u0000-\u001f\u007f]/.test(w)) return { error: 'contains a hidden control character' };
+  if (w.length > PACK_LIMITS.word) return { error: 'is longer than ' + PACK_LIMITS.word + ' characters' };
+  return { word: w };
+}
+
+function validatePack(p, where) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return { errors: [where + ' is not a word pack.'], merged: 0 };
+  if (!PACK_LISTS.some(([key]) => key in p)) return { errors: [where + ' has no "nouns", "verbs", or "helpers" list.'], merged: 0 };
+  const errors = [];
+  let merged = 0;
+  const name = typeof p.name === 'string' ? cleanLabel(p.name) : '';
+  const label = name ? where + ' (' + quoteName(name.slice(0, 40)) + ')' : where;
+  if (!name) errors.push(where + ' needs a "name".');
+  else if (name.length > PACK_LIMITS.name) errors.push(label + ': the name is longer than ' + PACK_LIMITS.name + ' characters.');
+  const pack = { name: name };
+  PACK_LABELS.forEach(([key, title]) => {
+    const v = p[key];
+    pack[key] = '';
+    if (v === undefined || v === null) return;
+    if (typeof v !== 'string') { errors.push(label + ': "' + key + '" must be text.'); return; }
+    pack[key] = cleanLabel(v);
+    if (pack[key].length > PACK_LIMITS.label) errors.push(label + ': ' + title.toLowerCase() + ' is longer than ' + PACK_LIMITS.label + ' characters.');
+  });
+  PACK_LISTS.forEach(([key]) => {
+    const v = p[key];
+    pack[key] = [];
+    if (v === undefined || v === null) return;
+    if (!Array.isArray(v)) { errors.push(label + ': "' + key + '" must be a list of words.'); return; }
+    if (v.length > PACK_LIMITS.words) { errors.push(label + ': "' + key + '" has more than ' + PACK_LIMITS.words + ' words.'); return; }
+    v.forEach((raw, j) => {
+      const r = checkWord(raw);
+      if (r.error) {
+        const shown = typeof raw === 'string' && raw.trim() ? ' ' + quoteName(raw.trim().slice(0, 30)) : '';
+        errors.push(label + ': ' + key + ' word ' + (j + 1) + shown + ' ' + r.error + '.');
+      } else if (pack[key].includes(r.word)) merged++;
+      else pack[key].push(r.word);
+    });
+  });
+  if (typeof p.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(p.id)) pack.id = p.id;
+  return { pack: pack, errors: errors, merged: merged };
+}
+
+// Accepts {format, version, packs:[...]}, a bare [...] of packs, or one pack object.
+// All-or-nothing: any problem means no packs are returned.
+function validatePackFile(data) {
+  const fail = msg => ({ packs: [], errors: [msg], merged: 0 });
+  let list;
+  if (Array.isArray(data)) list = data;
+  else if (data && typeof data === 'object' && 'packs' in data) {
+    if (data.format !== undefined && data.format !== PACK_FORMAT) return fail('This is not a Build-A-Sentence word pack file.');
+    if (data.version !== undefined && data.version !== PACK_VERSION) {
+      return fail(typeof data.version === 'number' && data.version > PACK_VERSION
+        ? 'This file was made by a newer version of Build-A-Sentence (format version ' + data.version + ').'
+        : '"version" should be ' + PACK_VERSION + '.');
+    }
+    if (!Array.isArray(data.packs)) return fail('"packs" should be a list of packs.');
+    list = data.packs;
+  } else if (data && typeof data === 'object' && PACK_LISTS.some(([key]) => key in data)) list = [data];
+  else return fail("This file doesn't contain word packs. Download the example file to see the expected format.");
+  if (!list.length) return fail('The file has no packs in it.');
+  if (list.length > PACK_LIMITS.packs) return fail('The file has more than ' + PACK_LIMITS.packs + ' packs.');
+  const out = [];
+  let errors = [], merged = 0;
+  list.forEach((p, i) => {
+    const r = validatePack(p, 'Pack ' + (i + 1));
+    errors = errors.concat(r.errors);
+    merged += r.merged;
+    if (!r.errors.length) out.push(r.pack);
+  });
+  return { packs: errors.length ? [] : out, errors: errors, merged: merged };
+}
+
+function packFileData(list, forStorage) {
+  const data = { format: PACK_FORMAT, version: PACK_VERSION };
+  if (!forStorage) data.exportedAt = new Date().toISOString();
+  data.packs = list.map(p => {
+    const o = forStorage ? { id: p.id } : {};
+    o.name = p.name; o.lesson = p.lesson; o.readingLevel = p.readingLevel; o.skill = p.skill;
+    o.nouns = p.nouns.slice(); o.verbs = p.verbs.slice(); o.helpers = p.helpers.slice();
+    return o;
+  });
+  return data;
+}
+
+function loadPacks() {
+  packs = [];
+  unreadableRaw = null;
+  const raw = storeGet(PACK_STORE_KEY);
+  if (raw == null) return;
+  let data = null;
+  try { data = JSON.parse(raw); } catch (e) { data = null; }
+  if (data && data.format === PACK_FORMAT && Array.isArray(data.packs) && !data.packs.length) return;  // all deleted
+  const r = data ? validatePackFile(data) : null;
+  if (!r || r.errors.length) { unreadableRaw = raw; return; }
+  const names = new Set(), ids = new Set();
+  packs = r.packs.map(p => {
+    const name = uniqueName(p.name, names);
+    names.add(nameKey(name));
+    const id = p.id && !ids.has(p.id) ? p.id : newPackId();
+    ids.add(id);
+    return Object.assign({}, p, { id: id, name: name });
+  });
+}
+
+// Writes the whole list; on failure nothing in memory changes. Returns 'saved' | 'memory' | 'error'.
+function persistPacks(next) {
+  if (!packStore) { packs = next; return 'memory'; }
+  if (unreadableRaw !== null) {
+    if (!storeSet(PACK_STORE_KEY + '.unreadable-backup', unreadableRaw)) return 'error';
+    unreadableRaw = null;
+  }
+  if (!storeSet(PACK_STORE_KEY, JSON.stringify(packFileData(next, true)))) return 'error';
+  packs = next;
+  return 'saved';
+}
+
+function updateStorageWarn() {
+  let msg = '';
+  if (!packStore) msg = 'This browser is not allowing saved data (for example, private browsing or strict privacy settings). Packs made now will be lost when this page is refreshed or closed. Use “Export all packs” to keep a copy.';
+  else if (unreadableRaw !== null) msg = 'Saved word packs in this browser could not be read, so none are shown. That data has not been deleted; a backup copy is kept when you next save.';
+  const warn = byId('storageWarn');
+  warn.textContent = msg;
+  warn.hidden = !msg;
+}
+
+// --- Student-side: which words are on the board ---
+function refreshSourceSelect() {
+  const sel = byId('sourceSelect');
+  sel.innerHTML = '';
+  sel.appendChild(new Option('Original word bank', 'bank'));
+  if (packs.length) {
+    const group = document.createElement('optgroup');
+    group.label = 'Word packs';
+    sortedPacks().forEach(p => group.appendChild(new Option(p.name, p.id)));
+    sel.appendChild(group);
+  }
+  sel.value = activeSource;
+}
+
+function renderPackMeta() {
+  const meta = byId('packMeta');
+  meta.innerHTML = '';
+  const pack = activePack();
+  if (!pack) return;
+  PACK_LABELS.forEach(([key, title]) => {
+    if (!pack[key]) return;
+    const chip = document.createElement('span');
+    chip.className = 'pack-chip';
+    const k = document.createElement('span');
+    k.className = 'pack-chip-k';
+    k.textContent = title;
+    chip.append(k, document.createTextNode(pack[key]));
+    meta.appendChild(chip);
+  });
+}
+
+// Switching never touches the sentence already on the board.
+function setSource(id) {
+  if (id !== 'bank' && !packs.some(p => p.id === id)) id = 'bank';
+  const changed = id !== activeSource;
+  activeSource = id;
+  storeSet(SOURCE_STORE_KEY, id);
+  refreshSourceSelect();
+  renderPackMeta();
+  buildTabs(); buildGrid(); updateSteps();
+  if (changed) {
+    const pack = activePack();
+    announce((pack ? 'Showing words from ' + pack.name : 'Showing the original word bank')
+      + (sentence.length ? '. Your sentence is still on the board.' : '.'));
+  }
+}
+
+// --- Teacher panel: pack editor ---
+function editorValues() {
+  return {
+    name: cleanLabel(byId('pfName').value),
+    lesson: cleanLabel(byId('pfLesson').value),
+    readingLevel: cleanLabel(byId('pfLevel').value),
+    skill: cleanLabel(byId('pfSkill').value),
+    nouns: editor.lists.nouns.slice(), verbs: editor.lists.verbs.slice(), helpers: editor.lists.helpers.slice()
+  };
+}
+function editorHasTypedWords() { return PACK_LISTS.some(([key]) => byId('pfAdd-' + key).value.trim() !== ''); }
+function editorDirty() { return JSON.stringify(editorValues()) !== editor.baseline || editorHasTypedWords(); }
+
+function buildListEditors() {
+  const host = byId('pfLists');
+  PACK_LISTS.forEach(([key, cat]) => {
+    const title = CAT_LABELS[cat], lower = title.toLowerCase();
+    const fs = document.createElement('fieldset');
+    fs.className = 'pp-list';
+    fs.innerHTML = `<legend>${title} <span class="pp-count" id="pfCount-${key}"></span></legend>
+      <ul class="pp-chips" id="pfChips-${key}" aria-label="${title} in this pack"></ul>
+      <p class="pp-empty" id="pfEmpty-${key}">No ${lower} yet.</p>
+      <div class="pp-add">
+        <textarea id="pfAdd-${key}" rows="2" aria-label="Add ${lower}" placeholder="Type or paste ${lower}, separated by commas or new lines" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
+        <button type="button" class="pp-btn" id="pfAddBtn-${key}" aria-label="Add these ${lower}">Add</button>
+      </div>
+      <p class="pp-msg" id="pfMsg-${key}" role="status" aria-live="polite"></p>`;
+    host.appendChild(fs);
+    byId('pfAddBtn-' + key).addEventListener('click', () => addListWords(key));
+    byId('pfAdd-' + key).addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); addListWords(key); }
+    });
+  });
+}
+
+function renderList(key) {
+  const cat = PACK_LISTS.find(l => l[0] === key)[1];
+  const title = CAT_LABELS[cat];
+  const words = editor.lists[key];
+  const ul = byId('pfChips-' + key);
+  ul.innerHTML = '';
+  words.forEach((w, i) => {
+    const li = document.createElement('li');
+    li.className = 'pp-chip';
+    li.dataset.cat = cat;
+    const span = document.createElement('span');
+    span.textContent = w;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '✕';
+    b.setAttribute('aria-label', 'Remove ' + w + ' from ' + title);
+    b.addEventListener('click', () => removeListWord(key, i));
+    li.append(span, b);
+    ul.appendChild(li);
+  });
+  ul.hidden = !words.length;
+  byId('pfEmpty-' + key).hidden = words.length > 0;
+  byId('pfCount-' + key).textContent = words.length ? '(' + words.length + ')' : '';
+}
+
+function addListWords(key, quiet) {
+  const ta = byId('pfAdd-' + key);
+  const list = editor.lists[key];
+  const added = [], repeats = [], problems = [], leftover = [];
+  let full = false;
+  ta.value.split(/[,\r\n]+/).forEach(part => {
+    if (!part.trim()) return;
+    const r = checkWord(part);
+    if (r.error) { problems.push(quoteName(part.trim().slice(0, 30)) + ' ' + r.error); leftover.push(part.trim()); return; }
+    if (list.includes(r.word) || added.includes(r.word)) { repeats.push(r.word); return; }
+    if (list.length + added.length >= PACK_LIMITS.words) { full = true; leftover.push(r.word); return; }
+    added.push(r.word);
+  });
+  if (full) problems.push('the list is full (' + PACK_LIMITS.words + ' words)');
+  list.push(...added);
+  ta.value = leftover.join(', ');
+  const msg = [];
+  if (added.length) msg.push('Added ' + added.length + '.');
+  if (repeats.length) msg.push('Already in the list: ' + repeats.join(', ') + '.');
+  if (problems.length) msg.push('Not added: ' + problems.join('; ') + '.');
+  if (!msg.length) msg.push('Type or paste some words first.');
+  setMsg(byId('pfMsg-' + key), msg.join(' '), problems.length > 0);
+  renderList(key);
+  updateEditorButtons();
+  if (!quiet) ta.focus();
+}
+
+function removeListWord(key, i) {
+  const w = editor.lists[key].splice(i, 1)[0];
+  renderList(key);
+  updateEditorButtons();
+  setMsg(byId('pfMsg-' + key), 'Removed ' + w + '.');
+  const btns = byId('pfChips-' + key).querySelectorAll('button');
+  (btns[i] || btns[i - 1] || byId('pfAdd-' + key)).focus();
+}
+
+function loadEditor(pack) {
+  editor.id = pack ? pack.id : null;
+  byId('pfName').value = pack ? pack.name : '';
+  byId('pfLesson').value = pack ? pack.lesson : '';
+  byId('pfLevel').value = pack ? pack.readingLevel : '';
+  byId('pfSkill').value = pack ? pack.skill : '';
+  PACK_LISTS.forEach(([key]) => {
+    editor.lists[key] = pack ? pack[key].slice() : [];
+    byId('pfAdd-' + key).value = '';
+    setMsg(byId('pfMsg-' + key), '');
+  });
+  editor.baseline = JSON.stringify(editorValues());
+  setStatus('');
+  renderEditor();
+}
+
+function renderEditor() {
+  if (editor.id && !packs.some(p => p.id === editor.id)) editor.id = null;  // deleted in another tab
+  const sel = byId('editPackSelect');
+  sel.innerHTML = '';
+  if (!editor.id) sel.appendChild(new Option('New pack (not saved yet)', ''));
+  sortedPacks().forEach(p => sel.appendChild(new Option(p.name, p.id)));
+  sel.value = editor.id || '';
+  PACK_LISTS.forEach(([key]) => renderList(key));
+  updateEditorButtons();
+}
+
+function updateEditorButtons() {
+  const saved = !!editor.id, dirty = editorDirty();
+  byId('packDupBtn').disabled = !saved;
+  byId('packDeleteBtn').disabled = !saved;
+  byId('exportOneBtn').disabled = !saved;
+  byId('exportAllBtn').disabled = !packs.length;
+  byId('packRevertBtn').disabled = !dirty;
+  // Editing replaces any earlier message (e.g. "Give the pack a name") with the current state.
+  if (dirty) setStatus('Unsaved changes.');
+  else if (byId('packStatus').textContent === 'Unsaved changes.') setStatus('');
+}
+
+function savePack() {
+  // Words typed but not yet added count as part of the save.
+  PACK_LISTS.forEach(([key]) => { if (byId('pfAdd-' + key).value.trim()) addListWords(key, true); });
+  if (editorHasTypedWords()) { setStatus('Some typed words could not be added (see the notes above). Fix or clear them, then save.', true); return false; }
+  const v = editorValues();
+  if (!v.name) { setStatus('Give the pack a name before saving.', true); byId('pfName').focus(); return false; }
+  const clash = packs.find(p => p.id !== editor.id && nameKey(p.name) === nameKey(v.name));
+  if (clash) {
+    setStatus('Another pack is already named ' + quoteName(clash.name) + '. Choose a different name.', true);
+    byId('pfName').focus();
+    return false;
+  }
+  const check = validatePack(v, 'This pack');
+  if (check.errors.length) { setStatus(check.errors[0], true); return false; }
+  const exists = packs.some(p => p.id === editor.id);
+  const pack = Object.assign(check.pack, { id: exists ? editor.id : newPackId() });
+  const next = exists ? packs.map(p => p.id === pack.id ? pack : p) : packs.concat([pack]);
+  const result = persistPacks(next);
+  if (result === 'error') {
+    setStatus('Could not save: this browser’s storage may be full or blocked. Nothing was changed.', true);
+    return false;
+  }
+  loadEditor(pack);
+  refreshSourceSelect();
+  if (activeSource === pack.id) { renderPackMeta(); buildGrid(); }
+  const empty = !(pack.nouns.length + pack.verbs.length + pack.helpers.length);
+  if (result === 'memory') setStatus('Saved for now only. This browser will not keep it after a refresh, so export a copy.', true);
+  else setStatus('Saved.' + (empty ? ' This pack has no words yet.' : ''));
+  return true;
+}
+
+function confirmDiscard(what) {
+  return !editorDirty() || window.confirm('Discard unsaved changes to ' + what + '?');
+}
+function editorName() { return editor.id ? quoteName(byId('pfName').value.trim() || 'this pack') : 'the new pack'; }
+
+function newPack() {
+  if (!confirmDiscard(editorName())) return;
+  loadEditor(null);
+  byId('pfName').focus();
+}
+
+function duplicatePack() {
+  const src = packs.find(p => p.id === editor.id);
+  if (!src) return;
+  if (editorDirty() && !window.confirm('Duplicate the last saved version of ' + quoteName(src.name) + '? Your unsaved changes will be discarded.')) return;
+  const taken = new Set(packs.map(p => nameKey(p.name)));
+  const copy = Object.assign({}, src, {
+    id: newPackId(),
+    name: uniqueName(src.name.slice(0, PACK_LIMITS.name - 5).trimEnd() + ' copy', taken),
+    nouns: src.nouns.slice(), verbs: src.verbs.slice(), helpers: src.helpers.slice()
+  });
+  const result = persistPacks(packs.concat([copy]));
+  if (result === 'error') { setStatus('Could not save the copy: this browser’s storage may be full or blocked.', true); return; }
+  refreshSourceSelect();
+  loadEditor(copy);
+  setStatus('Saved a copy named ' + quoteName(copy.name) + '. You can rename it now.', result === 'memory');
+  byId('pfName').focus();
+  byId('pfName').select();
+}
+
+function deletePack() {
+  const src = packs.find(p => p.id === editor.id);
+  if (!src) return;
+  if (!window.confirm('Delete the pack ' + quoteName(src.name) + ' from this browser? This cannot be undone unless you have an exported copy. Any sentence on the board stays.')) return;
+  const result = persistPacks(packs.filter(p => p.id !== src.id));
+  if (result === 'error') { setStatus('Could not delete: this browser’s storage may be blocked.', true); return; }
+  if (activeSource === src.id) setSource('bank'); else refreshSourceSelect();
+  loadEditor(sortedPacks()[0] || null);
+  setStatus('Deleted ' + quoteName(src.name) + '.');
+}
+
+function revertPack() {
+  loadEditor(packs.find(p => p.id === editor.id) || null);
+  setStatus('Changes undone.');
+}
+
+function usePackOnBoard() {
+  if ((editorDirty() || !editor.id) && !savePack()) return;
+  setSource(editor.id);
+  closePackPanel();
+}
+
+function openPackPanel() {
+  const dlg = byId('packPanel');
+  if (!editorDirty()) loadEditor(activePack() || packs.find(p => p.id === editor.id) || sortedPacks()[0] || null);
+  else renderEditor();
+  updateStorageWarn();
+  pendingImport = null;
+  byId('importPreview').hidden = true;
+  setIoStatus('');
+  if (typeof dlg.showModal === 'function') { if (!dlg.open) dlg.showModal(); }
+  else { dlg.setAttribute('open', ''); dlg.classList.add('pp-fallback'); byId('packPanelClose').focus(); }
+}
+
+function closePackPanel() {
+  const dlg = byId('packPanel');
+  if (typeof dlg.showModal === 'function') { if (dlg.open) dlg.close(); }
+  else { dlg.removeAttribute('open'); dlg.classList.remove('pp-fallback'); }
+  byId('teacherBtn').focus();
+}
+
+// --- Export / import ---
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2) + '\n'], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+function fileSlug(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'pack'; }
+function todayStamp() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+function exportAll() {
+  if (!packs.length) return;
+  downloadJson('word-packs-' + todayStamp() + '.json', packFileData(sortedPacks(), false));
+  setIoStatus('Exported ' + plural(packs.length, 'pack') + '. Look in Downloads (on iPad, the Files app).');
+}
+function exportOne() {
+  const p = packs.find(x => x.id === editor.id);
+  if (!p) return;
+  downloadJson('word-pack-' + fileSlug(p.name) + '.json', packFileData([p], false));
+  setIoStatus('Exported ' + quoteName(p.name) + (editorDirty() ? ' as last saved. Unsaved changes are not in the file.' : '.'));
+}
+function downloadExample() {
+  downloadJson('word-packs-example.json', EXAMPLE_PACK_FILE);
+  setIoStatus('Downloaded an example file. Open it in a text editor to see the format, or import it to try it.');
+}
+
+function readFileText(file) {
+  if (typeof file.text === 'function') return file.text();
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsText(file);
+  });
+}
+
+async function onImportFile(e) {
+  const input = e.target;
+  const file = input.files && input.files[0];
+  input.value = '';  // lets the same file be chosen again
+  if (!file) return;
+  if (file.size > PACK_LIMITS.fileBytes) { showImportErrors(file.name, ['The file is larger than 1 MB. Word pack files are small, so this is probably not one.']); return; }
+  let text;
+  try { text = await readFileText(file); }
+  catch (err) { showImportErrors(file.name, ['The file could not be read.']); return; }
+  previewImport(text, file.name);
+}
+
+function importBox() {
+  const box = byId('importPreview');
+  box.innerHTML = '';
+  box.hidden = false;
+  return box;
+}
+function addPara(parent, text, cls) {
+  const p = document.createElement('p');
+  if (cls) p.className = cls;
+  p.textContent = text;
+  parent.appendChild(p);
+  return p;
+}
+function addButton(parent, text, cls, onClick) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'pp-btn' + (cls ? ' ' + cls : '');
+  b.textContent = text;
+  b.addEventListener('click', onClick);
+  parent.appendChild(b);
+  return b;
+}
+
+function showImportErrors(fileName, errors) {
+  pendingImport = null;
+  const box = importBox();
+  addPara(box, 'Nothing was imported from ' + quoteName(fileName) + '.', 'pp-bad');
+  const ul = document.createElement('ul');
+  errors.slice(0, 8).forEach(msg => { const li = document.createElement('li'); li.textContent = msg; ul.appendChild(li); });
+  if (errors.length > 8) { const li = document.createElement('li'); li.textContent = '…and ' + (errors.length - 8) + ' more.'; ul.appendChild(li); }
+  box.appendChild(ul);
+  addPara(box, 'Your existing packs were not changed. Fix the file and try again, or download the example file to compare.');
+  const row = document.createElement('div');
+  row.className = 'pp-row';
+  addButton(row, 'OK', '', () => { box.hidden = true; byId('importBtn').focus(); });
+  box.appendChild(row);
+  row.querySelector('button').focus();
+  setIoStatus('Nothing was imported.', true);
+}
+
+function previewImport(text, fileName) {
+  pendingImport = null;
+  let data;
+  try { data = JSON.parse(String(text).replace(/^﻿/, '')); }
+  catch (e) { showImportErrors(fileName, ['This file is not valid JSON, so it could not be read as word packs.']); return; }
+  const r = validatePackFile(data);
+  if (r.errors.length) { showImportErrors(fileName, r.errors); return; }
+  if (packs.length + r.packs.length > PACK_LIMITS.packs) {
+    showImportErrors(fileName, ['Importing these would make more than ' + PACK_LIMITS.packs + ' packs on this device. Delete some packs first.']);
+    return;
+  }
+  // Never overwrite: a name already in use gets a numbered name instead.
+  const taken = new Set(packs.map(p => nameKey(p.name)));
+  const incoming = r.packs.map(p => {
+    const name = uniqueName(p.name, taken);
+    taken.add(nameKey(name));
+    return { original: p.name, pack: Object.assign({}, p, { id: newPackId(), name: name }) };
+  });
+  pendingImport = incoming.map(x => x.pack);
+  const box = importBox();
+  addPara(box, 'Ready to import ' + plural(incoming.length, 'pack') + ' from ' + quoteName(fileName) + ':');
+  const ul = document.createElement('ul');
+  incoming.forEach(x => {
+    const p = x.pack;
+    const li = document.createElement('li');
+    li.textContent = p.name + ' — ' + plural(p.nouns.length, 'noun') + ', ' + plural(p.verbs.length, 'verb') + ', ' + plural(p.helpers.length, 'helper')
+      + (x.original !== p.name ? ' (the name ' + quoteName(x.original) + ' is already used, so it will be added as ' + quoteName(p.name) + ')' : '');
+    ul.appendChild(li);
+  });
+  box.appendChild(ul);
+  if (r.merged) addPara(box, plural(r.merged, 'repeated word') + ' inside a list will be kept once.');
+  addPara(box, 'Your existing packs will not be changed.');
+  const row = document.createElement('div');
+  row.className = 'pp-row';
+  addButton(row, 'Import ' + plural(incoming.length, 'pack'), 'pp-primary', confirmImport);
+  addButton(row, 'Cancel', '', () => { pendingImport = null; box.hidden = true; setIoStatus('Import cancelled. Nothing was changed.'); byId('importBtn').focus(); });
+  box.appendChild(row);
+  row.querySelector('button').focus();
+  setIoStatus('');
+}
+
+function confirmImport() {
+  if (!pendingImport) return;
+  const add = pendingImport;
+  pendingImport = null;
+  const result = persistPacks(packs.concat(add));
+  byId('importPreview').hidden = true;
+  if (result === 'error') { setIoStatus('Import failed: this browser could not save (storage may be full or blocked). Nothing was imported.', true); return; }
+  refreshSourceSelect();
+  renderEditor();
+  setIoStatus('Imported ' + plural(add.length, 'pack') + '. Choose one from the Words menu, or pick it under Editing.'
+    + (result === 'memory' ? ' This browser will not keep them after a refresh.' : ''));
+  byId('importBtn').focus();
+}
+
+// Another tab saved packs: pick up its list so this tab doesn't write over it.
+function onStorageChange(e) {
+  if (e.key !== PACK_STORE_KEY) return;
+  loadPacks();
+  if (activeSource !== 'bank' && !activePack()) setSource('bank');
+  else { refreshSourceSelect(); renderPackMeta(); buildGrid(); }
+  if (editorDirty()) renderEditor();
+  else loadEditor(packs.find(p => p.id === editor.id) || activePack() || sortedPacks()[0] || null);
+  updateStorageWarn();
+}
+
+function initPacks() {
+  loadPacks();
+  const savedSource = storeGet(SOURCE_STORE_KEY);
+  activeSource = savedSource && packs.some(p => p.id === savedSource) ? savedSource : 'bank';
+  refreshSourceSelect();
+  renderPackMeta();
+  buildListEditors();
+  loadEditor(activePack() || sortedPacks()[0] || null);
+  updateStorageWarn();
+
+  byId('sourceSelect').addEventListener('change', e => setSource(e.target.value));
+  byId('teacherBtn').addEventListener('click', openPackPanel);
+  byId('packPanelClose').addEventListener('click', closePackPanel);
+  byId('editPackSelect').addEventListener('change', e => {
+    const id = e.target.value;
+    if (id === (editor.id || '')) return;
+    if (!confirmDiscard(editorName())) { e.target.value = editor.id || ''; return; }
+    loadEditor(packs.find(p => p.id === id) || null);
+  });
+  byId('packNewBtn').addEventListener('click', newPack);
+  byId('packDupBtn').addEventListener('click', duplicatePack);
+  byId('packDeleteBtn').addEventListener('click', deletePack);
+  byId('packRevertBtn').addEventListener('click', revertPack);
+  byId('packUseBtn').addEventListener('click', usePackOnBoard);
+  byId('packForm').addEventListener('submit', e => { e.preventDefault(); savePack(); });
+  ['pfName', 'pfLesson', 'pfLevel', 'pfSkill'].forEach(id => byId(id).addEventListener('input', updateEditorButtons));
+  byId('pfLists').addEventListener('input', updateEditorButtons);
+  byId('exportAllBtn').addEventListener('click', exportAll);
+  byId('exportOneBtn').addEventListener('click', exportOne);
+  byId('exampleBtn').addEventListener('click', downloadExample);
+  byId('importBtn').addEventListener('click', () => byId('importFile').click());
+  byId('importFile').addEventListener('change', onImportFile);
+  window.addEventListener('storage', onStorageChange);
+  window.addEventListener('beforeunload', e => { if (editorDirty()) { e.preventDefault(); e.returnValue = ''; } });
 }
 
 document.getElementById('customWordAdd').addEventListener('click', addCustomWord);
@@ -1260,6 +2332,7 @@ document.getElementById('customWordInput').addEventListener('keydown', function(
   }
 });
 
+initPacks();
 buildTabs(); buildGrid(); updateSteps();
 </script>
   <script src="../../math-things-home.js"></script>
