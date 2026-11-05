@@ -20,6 +20,7 @@ Notes:
   - Tiles that are dragged out as copies, snap onto the nearest rail at a visible marker, rearrange within and between rails, and are removed by dragging them off the canvas.
   - A capital on the first word of each rail, for display only.
   - A Clear button that needs two taps.
+  - Bank drawers that fold shut or open when you tap the bank's name. A closed drawer shows its word count, and the device remembers which drawers are closed across lessons and refreshes.
 - Word packs follow the Reading & Spelling lesson sequence (133 lessons, 15 stages). A pack is the words printed in the chosen lesson plus every tricky word taught so far.
   - Printed words come only from the fields the lessons' own author guide requires to be decodable. Spoken-only text is excluded.
   - Tricky words show a faint heart.
@@ -37,7 +38,7 @@ Notes:
 - Accessibility: bank words are buttons, and Enter adds a word. On a placed word, ←/→ move it, ↑/↓ change sentence and Delete removes it. Changes are announced through a live region, and every control has a name.
 - Remaining risks: there is no real-device iPad/WebKit test, and the part-of-speech tags still need a teacher's spot-check (see above).
 
-Acceptance Tests (`tests/sentence-builder.test.mjs`, 10 tests, Chromium, all PASS on four consecutive runs; four planted bugs each caught):
+Acceptance Tests (`tests/sentence-builder.test.mjs`, 11 tests, Chromium, all PASS on repeated runs; five planted bugs each caught):
 - 133 lessons in 15 stages. Lesson 1's pack is exactly its printed words. Spoken-only words are excluded. Tricky words carry forward. `packs.js` matches the word list. PASS
 - The lesson picker lists all lessons by stage and remembers the choice. Only banks with words are shown. PASS
 - Hearts on tricky words; two-job words appear in both banks, each with its own faint color; the canvas is creamy. PASS
@@ -46,6 +47,7 @@ Acceptance Tests (`tests/sentence-builder.test.mjs`, 10 tests, Chromium, all PAS
 - Touch: a flick scrolls without placing anything, a sideways pull drags, a hold-then-vertical drag works, touch-drag rearranges, targets are at least 44 px, and a portrait sentence fits on one line. PASS
 - Tap adds a word to the current rail; keyboard add, move and remove work. PASS
 - Clear needs two taps within 3 s; changing lessons keeps the sentences. PASS
+- Bank drawers open and close by tap and by keyboard, show a word count when closed, stay closed across lesson changes and refreshes, still accept tiles dragged off the board, and have 44 px targets. PASS
 - Blocked storage still works; a missing `packs.js` shows a plain message. PASS
 - No uncaught page errors. PASS
-- Whole `tests/` folder: 63 of 64 pass. The one failure is the existing Place Value Blocks zoom test, which fails the same way on upstream `main`. PASS (no new failures)
+- Whole `tests/` folder: 64 of 65 pass. The one failure is the existing Place Value Blocks zoom test, which fails the same way on upstream `main`. PASS (no new failures)

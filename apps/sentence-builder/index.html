@@ -62,8 +62,22 @@
     flex: 0 0 clamp(300px, 36vw, 460px); overflow-y: auto; overscroll-behavior: contain;
     background: var(--panel); border-left: 1px solid var(--line); padding: 12px 12px 28px;
   }
-  .bank { background: var(--wash); border-radius: 14px; padding: 8px 8px 10px; margin-bottom: 10px; }
-  .bank-label { font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--ink); margin: 2px 4px 7px; }
+  .bank { background: var(--wash); border-radius: 14px; padding: 4px 8px 10px; margin-bottom: 10px; }
+  .bank.collapsed { padding-bottom: 4px; }
+  .bank-label { font-size: inherit; margin: 0; }
+  /* the bank's name opens and closes its drawer */
+  .bank-toggle {
+    display: flex; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 0 4px;
+    border: 0; border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer; text-align: left;
+    font-family: 'Lexend', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+    touch-action: manipulation;
+  }
+  .bank-toggle:focus-visible { outline: 3px solid #4A90D9; outline-offset: 2px; }
+  .bank-toggle .chev { width: 8px; height: 8px; margin: -4px 1px 0 3px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    opacity: .7; transform: rotate(45deg); transition: transform .15s; }
+  .bank.collapsed .chev { transform: rotate(-45deg); margin-top: 0; }
+  .bank-count { font-weight: 400; letter-spacing: .02em; text-transform: none; opacity: .65; }
+  .bank:not(.collapsed) .bank-count { display: none; }
   .bank-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
   .banks-empty { color: #8C8475; font-size: 14px; padding: 12px; }
 
@@ -153,6 +167,7 @@
     interjection: 'interjection', punct: 'punctuation' };
   const PUNCT = ['.', '?', '!', ','];
   const STORE_KEY = 'mathThings.sentenceBuilder.lesson';
+  const FOLD_KEY = 'mathThings.sentenceBuilder.closedBanks';
   const DRAG_START = 8;  // px a finger or mouse must travel before a press becomes a drag
   const HOLD_MS = 160;   // on touch, a bank word held this long is picked up and can then go any direction
 
@@ -170,9 +185,13 @@
   const capital = w => w.charAt(0).toUpperCase() + w.slice(1);
   const announce = msg => { const live = document.getElementById('live'); live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
   const store = {
-    get() { try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; } },
-    set(v) { try { localStorage.setItem(STORE_KEY, v); } catch (e) { /* storage blocked: just don't remember */ } }
+    get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
+    set(key, v) { try { localStorage.setItem(key, v); } catch (e) { /* storage blocked: just don't remember */ } }
   };
+  // Which bank drawers are closed (by part of speech); kept across lessons and refreshes.
+  const closedBanks = new Set((() => {
+    try { const v = JSON.parse(store.get(FOLD_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  })());
 
   // ---------- packs: this lesson's printed words + every tricky word taught so far ----------
   function packFor(i) {
@@ -232,14 +251,41 @@
     sec.className = 'bank';
     sec.dataset.pos = pos;
     sec.setAttribute('aria-label', LABELS[pos]);
-    const h = document.createElement('h2');
-    h.className = 'bank-label';
-    h.textContent = LABELS[pos];
     const box = document.createElement('div');
     box.className = 'bank-tiles';
+    box.id = 'bank-' + pos;
     items.forEach(it => box.appendChild(makeTile(it.word, pos, it.heart, false)));
+    const h = document.createElement('h2');
+    h.className = 'bank-label';
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'bank-toggle';
+    toggle.setAttribute('aria-controls', box.id);
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span');
+    name.textContent = LABELS[pos];
+    const count = document.createElement('span');
+    count.className = 'bank-count';
+    count.textContent = String(items.length);
+    toggle.append(chev, name, count);
+    toggle.addEventListener('click', () => {
+      const close = !sec.classList.contains('collapsed');
+      setDrawer(sec, close);
+      if (close) closedBanks.add(pos); else closedBanks.delete(pos);
+      store.set(FOLD_KEY, JSON.stringify(Array.from(closedBanks)));
+    });
+    h.appendChild(toggle);
     sec.append(h, box);
+    setDrawer(sec, closedBanks.has(pos));
     return sec;
+  }
+
+  function setDrawer(sec, closed) {
+    sec.classList.toggle('collapsed', closed);
+    sec.querySelector('.bank-toggle').setAttribute('aria-expanded', String(!closed));
+    sec.querySelector('.bank-tiles').hidden = closed;
   }
 
   // ---------- rails ----------
@@ -504,13 +550,13 @@
       }
       group.appendChild(new Option('Lesson ' + Number(L.id.slice(1)) + ' · ' + L.title, String(i)));
     });
-    const saved = DATA.lessons.findIndex(L => L.id === store.get());
+    const saved = DATA.lessons.findIndex(L => L.id === store.get(STORE_KEY));
     lessonIndex = saved >= 0 ? saved : 0;
     lessonSelect.value = String(lessonIndex);
   }
   lessonSelect.addEventListener('change', () => {
     lessonIndex = Number(lessonSelect.value);
-    store.set(DATA.lessons[lessonIndex].id);
+    store.set(STORE_KEY, DATA.lessons[lessonIndex].id);
     renderBanks();  // the sentences on the board stay
   });
 

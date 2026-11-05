@@ -208,6 +208,8 @@ test('touch: a flick scrolls the banks, a sideways pull or a short hold drags, t
   await touchDrag({x:t.x,y:t.y},{x:t.x,y:t.y-220});
   assert.deepEqual(await all(),[[],[],[]],'a quick up/down flick places nothing');
   assert.ok(await evaluate("document.getElementById('banks').scrollTop")!==before,'the banks scrolled');
+  // let the flick's glide finish before touching a word, as a person would
+  for(let last=-1,i=0;i<50;i++){const now=await evaluate("document.getElementById('banks').scrollTop");if(now===last)break;last=now;await sleep(80)}
   // a sideways pull drags straight away
   const a1=await point(bankTile('article','the')),end=await railEnd(0);
   await touchPath([{x:a1.x,y:a1.y},{x:a1.x-60,y:a1.y},end]);
@@ -223,7 +225,7 @@ test('touch: a flick scrolls the banks, a sideways pull or a short hold drags, t
   const first=await point(placed(0,0),{scroll:false}),last=await point(placed(0,2),{scroll:false});
   await touchDrag({x:last.x,y:last.y},{x:first.l+3,y:first.y});
   assert.deepEqual(await rail(0),['Came','the','cake'],'touch-drag rearranges');
-  const small=await evaluate(`[...document.querySelectorAll('#banks .tile,.rail .tile,#lessonSelect,#clearBtn')].map(el=>el.getBoundingClientRect()).filter(r=>r.width<44||r.height<44).length`);
+  const small=await evaluate(`[...document.querySelectorAll('#banks .tile,.rail .tile,#lessonSelect,#clearBtn,.bank-toggle')].map(el=>el.getBoundingClientRect()).filter(r=>r.width<44||r.height<44).length`);
   assert.equal(small,0,'every tile and control is at least 44×44');
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'no sideways page scroll');
   await cdp('Emulation.setDeviceMetricsOverride',{width:768,height:1024,deviceScaleFactor:2,mobile:true});
@@ -268,10 +270,50 @@ test('Clear needs a second tap within 3 seconds; changing lessons keeps the sent
  assert.deepEqual(await all(),[[],[],[]]);
 });
 
+const drawer=pos=>`document.querySelector('#banks .bank[data-pos="${pos}"]')`;
+const drawerState=pos=>evaluate(`(b=>({closed:b.classList.contains('collapsed'),expanded:b.querySelector('.bank-toggle').getAttribute('aria-expanded'),
+ tilesHidden:b.querySelector('.bank-tiles').hidden,visibleTiles:[...b.querySelectorAll('.tile')].filter(t=>t.getBoundingClientRect().height>0).length,
+ countShown:getComputedStyle(b.querySelector('.bank-count')).display!=='none',count:b.querySelector('.bank-count').textContent}))(${drawer(pos)})`);
+
+test('bank drawers fold shut and open, and stay that way across lessons and refreshes',async()=>{
+ await open({lesson:'L003'});
+ let noun=await drawerState('noun');
+ assert.deepEqual([noun.closed,noun.expanded,noun.tilesHidden],[false,'true',false],'drawers start open');
+ assert.equal(noun.countShown,false,'no count while open');
+ await click(drawer('noun')+".querySelector('.bank-toggle')");
+ noun=await drawerState('noun');
+ assert.deepEqual([noun.closed,noun.expanded,noun.tilesHidden,noun.visibleTiles],[true,'false',true,0],'tap the name to close the drawer');
+ assert.deepEqual([noun.countShown,noun.count],[true,String((await bankWords('noun')).length)],'a closed drawer shows how many words are inside');
+ assert.equal((await drawerState('verb')).closed,false,'other drawers stay open');
+ assert.deepEqual(await all(),[[],[],[]],'tapping a drawer adds no word');
+ const box=await point(drawer('noun')+".querySelector('.bank-toggle')");
+ assert.ok(box.h>=44,'the drawer name is a 44px target');
+ // keyboard
+ await evaluate(drawer('verb')+".querySelector('.bank-toggle').focus()");await press('Enter');
+ assert.equal((await drawerState('verb')).closed,true,'Enter closes a drawer');
+ // kept when the lesson changes and after a refresh
+ await evaluate("(s=>{s.value='41';s.dispatchEvent(new Event('change'))})(document.getElementById('lessonSelect'))");
+ assert.equal((await drawerState('noun')).closed,true);assert.equal((await drawerState('verb')).closed,true);
+ assert.equal((await drawerState('adjective')).closed,false);
+ await open({keep:true});
+ assert.equal((await drawerState('noun')).closed,true,'still closed after a refresh');
+ // a closed drawer still accepts a tile dragged off the board
+ await click(drawer('article')+".querySelector('.tile')");
+ assert.equal((await all())[0].length,1);
+ const shut=await point(drawer('noun'));
+ await drag(placed(0,0),{x:shut.x,y:shut.y});
+ assert.deepEqual(await all(),[[],[],[]]);
+ await click(drawer('noun')+".querySelector('.bank-toggle')");
+ const reopened=await drawerState('noun');
+ assert.deepEqual([reopened.closed,reopened.expanded,reopened.visibleTiles>0],[false,'true',true],'tap again to open');
+});
+
 test('blocked browser storage and a missing word list are handled',async()=>{
  await open({script:"Object.defineProperty(window,'localStorage',{get(){throw new DOMException('blocked','SecurityError')}});"});
  await evaluate("(s=>{s.value='5';s.dispatchEvent(new Event('change'))})(document.getElementById('lessonSelect'))");
  assert.ok((await bankWords('noun')).length>0,'works without storage');
+ await click(drawer('noun')+".querySelector('.bank-toggle')");
+ assert.equal((await drawerState('noun')).closed,true,'drawers still fold without storage');
  dropData=true;
  try{
   await open();

@@ -12,6 +12,7 @@ Sentence Builder is a blank, creamy canvas with three sentence rails, plus color
 - **Remove a tile** by dragging it off the canvas (for example, back over the banks).
 - **The first word on each rail always shows a capital letter.** The word itself is unchanged: drag it later in the sentence and it shows lowercase again. Names (Sam, Pam) and "I" are always capitalized.
 - **Punctuation:** the last bank has `.` `?` `!` `,`.
+- **Fold a bank's drawer shut** by tapping its name (Nouns, Verbs, and so on), and tap the name again to open it. A closed drawer shows how many words are inside. The device remembers which drawers are closed, even after you change lessons or refresh.
 - **Clear** empties all three rails. Tap it, then tap **Clear all?** within 3 seconds, so one stray tap can't wipe the board.
 - Changing the lesson leaves the sentences on the board.
 
