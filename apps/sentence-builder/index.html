@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Math Things. | Sentence Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Lexend:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --cream: #FBF7EC;
+    --panel: #FFFDF8;
+    --ink: #2A2722;
+    --line: #E4DCCB;
+    --rail: #D9CEB7;
+    --tile-h: 52px;
+    --bank-tile-h: 46px;
+    --row-gap: 14px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+    background: var(--cream); color: var(--ink);
+    font-family: 'Lexend', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+  /* top bar: leaves room for the Math Things. home link on the left */
+  .bar { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 10px 16px 4px 170px; }
+  .bar select, .bar button {
+    min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink);
+    font-family: 'Lexend', system-ui, sans-serif; font-size: 15px;
+  }
+  .bar select { flex: 0 1 auto; min-width: 0; max-width: min(460px, 58vw); padding: 6px 10px; }
+  .bar button { min-width: 96px; padding: 0 16px; font-weight: 600; color: #7A6F5E; cursor: pointer; touch-action: manipulation; }
+  .bar button.armed { background: #F6E0DC; border-color: #D9A69C; color: #8E3B2E; }
+  .bar :focus-visible { outline: 3px solid #4A90D9; outline-offset: 2px; }
+
+  .stage { flex: 1 1 auto; min-height: 0; display: flex; }
+
+  /* the canvas: three discreet rails */
+  .canvas {
+    flex: 1 1 auto; min-width: 0; position: relative; overflow-y: auto;
+    display: flex; flex-direction: column; justify-content: space-evenly; gap: 28px;
+    padding: 16px 32px 28px; touch-action: none;
+  }
+  .rail {
+    position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--row-gap) 10px;
+    min-height: calc(var(--tile-h) + 2px);
+    /* a thin line under every row of tiles */
+    background: repeating-linear-gradient(to bottom,
+      transparent 0, transparent var(--tile-h),
+      var(--rail) var(--tile-h), var(--rail) calc(var(--tile-h) + 2px),
+      transparent calc(var(--tile-h) + 2px), transparent calc(var(--tile-h) + var(--row-gap)));
+  }
+  .caret { position: absolute; z-index: 5; width: 3px; height: var(--tile-h); border-radius: 2px; background: #7C9CC4; pointer-events: none; }
+
+  /* word banks */
+  .banks {
+    flex: 0 0 clamp(300px, 36vw, 460px); overflow-y: auto; overscroll-behavior: contain;
+    background: var(--panel); border-left: 1px solid var(--line); padding: 12px 12px 28px;
+  }
+  .bank { background: var(--wash); border-radius: 14px; padding: 8px 8px 10px; margin-bottom: 10px; }
+  .bank-label { font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--ink); margin: 2px 4px 7px; }
+  .bank-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+  .banks-empty { color: #8C8475; font-size: 14px; padding: 12px; }
+
+  /* tiles */
+  .tile {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    height: var(--tile-h); min-width: 44px; padding: 0 14px; border-radius: 10px;
+    background: var(--fill); border: 1px solid var(--edge); box-shadow: 0 1px 0 rgba(60,50,30,.05);
+    font-family: 'Andika', system-ui, sans-serif; font-size: 25px; line-height: 1; color: #2A2722;
+    cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    touch-action: pan-y;  /* banks scroll up/down; a sideways drag pulls a tile out */
+  }
+  .bank .tile { height: var(--bank-tile-h); font-size: 22px; padding: 0 12px; }
+  .tile.placed { touch-action: none; }
+  .tile[data-pos="punct"] { min-width: 44px; padding: 0 12px; font-weight: 700; }
+  .rail .tile[data-pos="punct"] { margin-left: -6px; }  /* punctuation sits close to the word before it */
+  .tile .heart { position: absolute; top: 3px; right: 4px; font-size: 10px; line-height: 1; color: var(--ink); opacity: .6; }
+  .tile:focus-visible { outline: 3px solid #4A90D9; outline-offset: 2px; }
+  .tile.ghost { position: fixed; left: 0; top: 0; z-index: 50; margin: 0; pointer-events: none; cursor: grabbing;
+    box-shadow: 0 12px 26px rgba(60,50,30,.20); }
+  .tile.ghost.leaving { opacity: .5; }
+  .tile.held { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 14px rgba(60,50,30,.16); }
+  body.dragging, body.dragging * { cursor: grabbing !important; }
+  @media (prefers-reduced-motion: no-preference) {
+    .tile.placed.settle { animation: settle .18s ease-out; }
+    @keyframes settle { from { transform: translateY(-4px); } to { transform: none; } }
+  }
+
+  /* faint part-of-speech colors: tile fill / tile edge / label ink / bank wash */
+  [data-pos="noun"]         { --fill: #F8DEDC; --edge: #E4B6B0; --ink: #93453C; --wash: #FCF1EF; }
+  [data-pos="verb"]         { --fill: #DCE9F7; --edge: #B2CAE7; --ink: #335E8E; --wash: #F0F5FB; }
+  [data-pos="adjective"]    { --fill: #F8EECB; --edge: #E3CF8E; --ink: #7E6318; --wash: #FCF8E9; }
+  [data-pos="article"]      { --fill: #EFEBE3; --edge: #D4CBBB; --ink: #6C6253; --wash: #F7F5F0; }
+  [data-pos="determiner"]   { --fill: #E8E3F4; --edge: #C9BFE3; --ink: #5C4D8D; --wash: #F4F2FA; }
+  [data-pos="conjunction"]  { --fill: #F9E4D3; --edge: #E6C0A1; --ink: #8A5530; --wash: #FCF3EB; }
+  [data-pos="adverb"]       { --fill: #DEF0E4; --edge: #B3D8BF; --ink: #3A714E; --wash: #F0F8F2; }
+  [data-pos="pronoun"]      { --fill: #F6E1EC; --edge: #E0B7CD; --ink: #844469; --wash: #FBF1F6; }
+  [data-pos="preposition"]  { --fill: #DAEFF0; --edge: #ABD4D7; --ink: #2D6A6F; --wash: #EFF8F8; }
+  [data-pos="interjection"] { --fill: #ECEFD7; --edge: #CBD1A0; --ink: #5B6629; --wash: #F6F7EC; }
+  [data-pos="punct"]        { --fill: #FFFFFF; --edge: #D8D1C3; --ink: #5E574B; --wash: #F6F3EC; }
+
+  @media (max-width: 900px) {
+    :root { --tile-h: 48px; }
+    .canvas { padding: 14px 18px 22px; }
+    .rail { column-gap: 8px; }
+    .rail .tile { font-size: 23px; padding: 0 11px; }
+  }
+  @media (max-width: 700px) {
+    .bar { padding-left: 136px; }
+    .bar select { max-width: none; }
+    .bar button { min-width: 72px; padding: 0 10px; }
+    .stage { flex-direction: column; }
+    .canvas { flex: 0 0 auto; max-height: 52%; padding: 12px 14px 18px; gap: 18px; }
+    .banks { flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--line); }
+    .bank .tile { touch-action: none; }  /* stacked: banks scroll from the gaps and labels */
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <select id="lessonSelect" aria-label="Lesson"></select>
+  <button type="button" id="clearBtn">Clear</button>
+</header>
+<main class="stage">
+  <section class="canvas" id="canvas" aria-label="Sentences">
+    <div class="rail" role="list" aria-label="Sentence 1"></div>
+    <div class="rail" role="list" aria-label="Sentence 2"></div>
+    <div class="rail" role="list" aria-label="Sentence 3"></div>
+    <div class="caret" id="caret" hidden></div>
+  </section>
+  <aside class="banks" id="banks" aria-label="Word banks"></aside>
+</main>
+<p class="sr-only" id="tileHelp">Arrow keys move this word. Up and down move it to another sentence. Delete removes it.</p>
+<div class="sr-only" id="live" aria-live="polite"></div>
+
+<script src="packs.js"></script>
+<script>
+(() => {
+  'use strict';
+  const DATA = window.SENTENCE_BUILDER_DATA;
+  const BANK_ORDER = ['noun', 'verb', 'adjective', 'article', 'determiner', 'conjunction', 'adverb', 'pronoun', 'preposition', 'interjection'];
+  const LABELS = { noun: 'Nouns', verb: 'Verbs', adjective: 'Adjectives', article: 'Articles', determiner: 'Determiners',
+    conjunction: 'Conjunctions', adverb: 'Adverbs', pronoun: 'Pronouns', preposition: 'Prepositions',
+    interjection: 'Interjections', punct: 'Punctuation' };
+  const KIND = { noun: 'noun', verb: 'verb', adjective: 'adjective', article: 'article', determiner: 'determiner',
+    conjunction: 'conjunction', adverb: 'adverb', pronoun: 'pronoun', preposition: 'preposition',
+    interjection: 'interjection', punct: 'punctuation' };
+  const PUNCT = ['.', '?', '!', ','];
+  const STORE_KEY = 'mathThings.sentenceBuilder.lesson';
+  const DRAG_START = 8;  // px a finger or mouse must travel before a press becomes a drag
+  const HOLD_MS = 160;   // on touch, a bank word held this long is picked up and can then go any direction
+
+  const canvas = document.getElementById('canvas');
+  const railEls = Array.from(canvas.querySelectorAll('.rail'));
+  const banksEl = document.getElementById('banks');
+  const caret = document.getElementById('caret');
+  const lessonSelect = document.getElementById('lessonSelect');
+  const clearBtn = document.getElementById('clearBtn');
+
+  const rails = railEls.map(() => []);  // each tile: {id, word, pos, heart}
+  let activeRail = 0, nextId = 1, lessonIndex = 0;
+  let drag = null, justDragged = false, clearTimer = null;
+
+  const capital = w => w.charAt(0).toUpperCase() + w.slice(1);
+  const announce = msg => { const live = document.getElementById('live'); live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
+  const store = {
+    get() { try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; } },
+    set(v) { try { localStorage.setItem(STORE_KEY, v); } catch (e) { /* storage blocked: just don't remember */ } }
+  };
+
+  // ---------- packs: this lesson's printed words + every tricky word taught so far ----------
+  function packFor(i) {
+    const tricky = new Set();
+    for (let k = 0; k <= i; k++) DATA.lessons[k].tricky.forEach(w => tricky.add(w));
+    const words = new Set(DATA.lessons[i].words);
+    tricky.forEach(w => words.add(w));
+    const banks = {};
+    BANK_ORDER.forEach(b => { banks[b] = []; });
+    words.forEach(wi => {
+      const [word, parts] = DATA.words[wi];
+      parts.forEach(pi => banks[DATA.banks[pi]].push({ word, heart: tricky.has(wi) }));
+    });
+    BANK_ORDER.forEach(b => banks[b].sort((x, y) => x.word.localeCompare(y.word, 'en', { sensitivity: 'base' }) || (x.word < y.word ? -1 : 1)));
+    return banks;
+  }
+
+  function makeTile(word, pos, heart, placed, shown) {
+    const t = document.createElement(placed ? 'div' : 'button');
+    if (!placed) t.type = 'button';
+    t.className = 'tile' + (placed ? ' placed' : '');
+    t.dataset.pos = pos;
+    t.dataset.word = word;
+    if (heart) t.dataset.heart = '1';
+    const w = document.createElement('span');
+    w.className = 'w';
+    w.textContent = shown || word;
+    t.appendChild(w);
+    if (heart) {
+      const h = document.createElement('span');
+      h.className = 'heart';
+      h.textContent = '♥';
+      h.setAttribute('aria-hidden', 'true');
+      t.appendChild(h);
+    }
+    t.setAttribute('aria-label', (shown || word) + ', ' + KIND[pos] + (heart ? ', heart word' : ''));
+    return t;
+  }
+
+  function renderBanks() {
+    banksEl.textContent = '';
+    if (!DATA) {
+      const p = document.createElement('p');
+      p.className = 'banks-empty';
+      p.textContent = 'The word lists did not load.';
+      banksEl.appendChild(p);
+      return;
+    }
+    const banks = packFor(lessonIndex);
+    BANK_ORDER.filter(b => banks[b].length).forEach(b => banksEl.appendChild(bankSection(b, banks[b])));
+    banksEl.appendChild(bankSection('punct', PUNCT.map(p => ({ word: p, heart: false }))));
+    banksEl.scrollTop = 0;
+  }
+
+  function bankSection(pos, items) {
+    const sec = document.createElement('section');
+    sec.className = 'bank';
+    sec.dataset.pos = pos;
+    sec.setAttribute('aria-label', LABELS[pos]);
+    const h = document.createElement('h2');
+    h.className = 'bank-label';
+    h.textContent = LABELS[pos];
+    const box = document.createElement('div');
+    box.className = 'bank-tiles';
+    items.forEach(it => box.appendChild(makeTile(it.word, pos, it.heart, false)));
+    sec.append(h, box);
+    return sec;
+  }
+
+  // ---------- rails ----------
+  function renderRails(focusId, settleId) {
+    rails.forEach((rail, r) => {
+      const host = railEls[r];
+      host.textContent = '';
+      const first = rail.findIndex(t => t.pos !== 'punct');  // the first word always starts with a capital
+      rail.forEach((t, i) => {
+        const shown = i === first ? capital(t.word) : t.word;
+        const el = makeTile(t.word, t.pos, t.heart, true, shown);
+        el.dataset.id = t.id;
+        el.tabIndex = 0;
+        el.setAttribute('role', 'listitem');
+        el.setAttribute('aria-describedby', 'tileHelp');
+        el.setAttribute('aria-label', shown + ', ' + KIND[t.pos] + (t.heart ? ', heart word' : '') + ', word ' + (i + 1) + ' of ' + rail.length + ' in sentence ' + (r + 1));
+        if (t.id === settleId) el.classList.add('settle');
+        host.appendChild(el);
+      });
+    });
+    if (focusId != null) {
+      const el = canvas.querySelector('.tile.placed[data-id="' + focusId + '"]');
+      if (el) el.focus();
+    }
+  }
+
+  function locate(id) {
+    for (let r = 0; r < rails.length; r++) {
+      const i = rails[r].findIndex(t => String(t.id) === String(id));
+      if (i >= 0) return { rail: r, index: i };
+    }
+    return null;
+  }
+
+  function place(item, r, index) {
+    const tile = item.id ? item : { id: nextId++, word: item.word, pos: item.pos, heart: item.heart };
+    rails[r].splice(Math.min(index, rails[r].length), 0, tile);
+    activeRail = r;
+    renderRails(null, tile.id);
+    return tile;
+  }
+
+  // ---------- dragging (mouse, touch and pen through pointer events) ----------
+  document.addEventListener('pointerdown', e => {
+    justDragged = false;
+    if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const tile = e.target.closest('.tile');
+    if (!tile || tile.classList.contains('ghost')) return;
+    const box = tile.getBoundingClientRect();
+    const placed = tile.classList.contains('placed');
+    drag = {
+      pointer: e.pointerId, x0: e.clientX, y0: e.clientY, started: false, placed, tile,
+      dx: e.clientX - box.left, dy: e.clientY - box.top,
+      item: placed ? rails.flat().find(t => String(t.id) === tile.dataset.id)
+                   : { word: tile.dataset.word, pos: tile.dataset.pos, heart: !!tile.dataset.heart }
+    };
+    // Touch on a bank word: a quick up/down flick scrolls the banks, a sideways pull drags at once,
+    // and a short hold picks the word up so it can be dragged in any direction.
+    if (e.pointerType !== 'mouse' && !placed) {
+      drag.touchBank = true;
+      const d = drag;
+      d.holdTimer = setTimeout(() => { if (drag === d && !d.started) { d.held = true; tile.classList.add('held'); } }, HOLD_MS);
+    }
+  });
+
+  // Once a word is held (or already dragging), the finger moves the word, not the banks.
+  document.addEventListener('touchmove', e => {
+    if (drag && (drag.held || drag.started) && e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pointer) return;
+    if (!drag.started) {
+      const mx = e.clientX - drag.x0, my = e.clientY - drag.y0;
+      if (Math.hypot(mx, my) < DRAG_START) return;
+      if (drag.touchBank && !drag.held && Math.abs(mx) < Math.abs(my)) return;  // an up/down flick: let the banks scroll
+      startDrag();
+    }
+    e.preventDefault();
+    drag.ghost.style.transform = 'translate(' + (e.clientX - drag.dx) + 'px,' + (e.clientY - drag.dy) + 'px) scale(1.04)';
+    aim(e.clientX, e.clientY);
+  }, { passive: false });
+
+  document.addEventListener('pointerup', e => {
+    if (!drag || e.pointerId !== drag.pointer) return;
+    if (!drag.started) { endDrag(); return; }  // a tap: the click handler takes it
+    justDragged = true;
+    const d = drag;
+    endDrag();
+    if (d.target) {
+      const t = place(d.item, d.target.rail, d.target.index);
+      announce((d.placed ? 'Moved ' : 'Added ') + t.word + ' to sentence ' + (d.target.rail + 1) + '.');
+    } else if (d.placed) {
+      renderRails();
+      announce('Removed ' + d.item.word + '.');
+    }
+  });
+
+  document.addEventListener('pointercancel', e => {
+    if (!drag || e.pointerId !== drag.pointer) return;
+    cancelDrag();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && drag && drag.started) cancelDrag(); });
+  document.addEventListener('dragstart', e => e.preventDefault());
+  document.addEventListener('contextmenu', e => { if (e.target.closest('.tile')) e.preventDefault(); });
+
+  function startDrag() {
+    drag.started = true;
+    document.body.classList.add('dragging');
+    const g = makeTile(drag.item.word, drag.item.pos, drag.item.heart, true);
+    g.classList.add('ghost');
+    g.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(g);
+    drag.ghost = g;
+    if (drag.placed) {  // lift it off its rail so the others close up
+      drag.origin = locate(drag.item.id);
+      rails[drag.origin.rail].splice(drag.origin.index, 1);
+      renderRails();
+    }
+  }
+
+  function endDrag() {
+    if (drag) {
+      clearTimeout(drag.holdTimer);
+      if (drag.tile) drag.tile.classList.remove('held');
+    }
+    if (drag && drag.ghost) drag.ghost.remove();
+    document.body.classList.remove('dragging');
+    caret.hidden = true;
+    drag = null;
+  }
+
+  function cancelDrag() {
+    const d = drag;
+    endDrag();
+    if (d && d.started && d.placed && d.origin) {
+      rails[d.origin.rail].splice(d.origin.index, 0, d.item);
+      renderRails();
+    }
+  }
+
+  // Where would the tile land? Any drop on the canvas snaps to the nearest rail.
+  function aim(x, y) {
+    const c = canvas.getBoundingClientRect();
+    const inside = x >= c.left && x <= c.right && y >= c.top && y <= c.bottom;
+    drag.ghost.classList.toggle('leaving', !inside && drag.placed);
+    if (!inside) { drag.target = null; caret.hidden = true; return; }
+    let rail = 0, best = Infinity;
+    railEls.forEach((el, r) => {
+      const b = el.getBoundingClientRect();
+      const dist = y < b.top ? b.top - y : y > b.bottom ? y - b.bottom : 0;
+      if (dist < best) { best = dist; rail = r; }
+    });
+    const index = insertionIndex(rail, x, y);
+    drag.target = { rail, index };
+    showCaret(rail, index);
+  }
+
+  function insertionIndex(r, x, y) {
+    const rects = Array.from(railEls[r].children).map(el => el.getBoundingClientRect());
+    if (!rects.length) return 0;
+    const tops = Array.from(new Set(rects.map(b => Math.round(b.top)))).sort((a, b) => a - b);
+    let row = tops[0];
+    tops.forEach(t => { if (y >= t - 8) row = t; });
+    const inRow = rects.map((b, i) => ({ b, i })).filter(o => Math.round(o.b.top) === row);
+    for (const o of inRow) if (x < o.b.left + o.b.width / 2) return o.i;
+    return inRow[inRow.length - 1].i + 1;
+  }
+
+  function showCaret(r, index) {
+    const c = canvas.getBoundingClientRect();
+    const tiles = railEls[r].children;
+    let left, top;
+    if (!tiles.length) {
+      const b = railEls[r].getBoundingClientRect();
+      left = b.left; top = b.top;
+    } else if (index < tiles.length) {
+      const b = tiles[index].getBoundingClientRect();
+      left = b.left - 7; top = b.top;
+    } else {
+      const b = tiles[tiles.length - 1].getBoundingClientRect();
+      left = b.right + 4; top = b.top;
+    }
+    caret.style.left = (left - c.left + canvas.scrollLeft) + 'px';
+    caret.style.top = (top - c.top + canvas.scrollTop) + 'px';
+    caret.hidden = false;
+  }
+
+  // ---------- tap or Enter on a bank word: add it to the end of the current sentence ----------
+  banksEl.addEventListener('click', e => {
+    if (justDragged) { justDragged = false; return; }
+    const tile = e.target.closest('.tile');
+    if (!tile) return;
+    const t = place({ word: tile.dataset.word, pos: tile.dataset.pos, heart: !!tile.dataset.heart }, activeRail, Infinity);
+    announce('Added ' + t.word + ' to sentence ' + (activeRail + 1) + '.');
+  });
+
+  // ---------- keyboard on placed words ----------
+  canvas.addEventListener('focusin', e => {
+    const tile = e.target.closest('.tile.placed');
+    if (tile) activeRail = locate(tile.dataset.id).rail;
+  });
+  canvas.addEventListener('keydown', e => {
+    const tile = e.target.closest('.tile.placed');
+    if (!tile) return;
+    const at = locate(tile.dataset.id);
+    const item = rails[at.rail][at.index];
+    let to = null;
+    if (e.key === 'ArrowLeft' && at.index > 0) to = { rail: at.rail, index: at.index - 1 };
+    else if (e.key === 'ArrowRight' && at.index < rails[at.rail].length - 1) to = { rail: at.rail, index: at.index + 1 };
+    else if (e.key === 'ArrowUp' && at.rail > 0) to = { rail: at.rail - 1, index: Math.min(at.index, rails[at.rail - 1].length) };
+    else if (e.key === 'ArrowDown' && at.rail < rails.length - 1) to = { rail: at.rail + 1, index: Math.min(at.index, rails[at.rail + 1].length) };
+    else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      rails[at.rail].splice(at.index, 1);
+      const next = rails[at.rail][at.index] || rails[at.rail][at.index - 1];
+      renderRails(next ? next.id : null);
+      if (!next) canvas.focus();
+      announce('Removed ' + item.word + '.');
+      return;
+    } else if (!e.key.startsWith('Arrow')) return;
+    e.preventDefault();
+    if (!to) return;
+    rails[at.rail].splice(at.index, 1);
+    rails[to.rail].splice(to.index, 0, item);
+    activeRail = to.rail;
+    renderRails(item.id);
+    announce(item.word + ': sentence ' + (to.rail + 1) + ', word ' + (to.index + 1) + '.');
+  });
+  canvas.tabIndex = -1;
+
+  // ---------- clear: tap twice so one stray tap can't wipe the board ----------
+  function disarm() {
+    clearTimeout(clearTimer);
+    clearBtn.classList.remove('armed');
+    clearBtn.textContent = 'Clear';
+  }
+  clearBtn.addEventListener('click', () => {
+    if (!clearBtn.classList.contains('armed')) {
+      if (!rails.some(r => r.length)) return;
+      clearBtn.classList.add('armed');
+      clearBtn.textContent = 'Clear all?';
+      clearTimer = setTimeout(disarm, 3000);
+      return;
+    }
+    rails.forEach(r => { r.length = 0; });
+    activeRail = 0;
+    renderRails();
+    disarm();
+    announce('All sentences cleared.');
+  });
+
+  // ---------- lesson picker ----------
+  function buildLessonSelect() {
+    let group = null, stage = null;
+    DATA.lessons.forEach((L, i) => {
+      if (L.stage !== stage) {
+        stage = L.stage;
+        group = document.createElement('optgroup');
+        group.label = stage;
+        lessonSelect.appendChild(group);
+      }
+      group.appendChild(new Option('Lesson ' + Number(L.id.slice(1)) + ' · ' + L.title, String(i)));
+    });
+    const saved = DATA.lessons.findIndex(L => L.id === store.get());
+    lessonIndex = saved >= 0 ? saved : 0;
+    lessonSelect.value = String(lessonIndex);
+  }
+  lessonSelect.addEventListener('change', () => {
+    lessonIndex = Number(lessonSelect.value);
+    store.set(DATA.lessons[lessonIndex].id);
+    renderBanks();  // the sentences on the board stay
+  });
+
+  if (DATA) buildLessonSelect(); else lessonSelect.disabled = true;
+  renderBanks();
+  renderRails();
+})();
+</script>
+<script src="../../math-things-home.js"></script>
+</body>
+</html>

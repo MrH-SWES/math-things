@@ -65,6 +65,7 @@ Use `harness/APP_AUDIT_TEMPLATE.md` to conduct each audit.
 | Geo Lab | `apps/geo-lab/` | Needs audit | TBD | TBD | TBD |
 | Euclid's Playground | `apps/euclids-playground/` | Needs audit | TBD | TBD | TBD |
 | Sentences | `apps/sentences/` | Needs audit | TBD | TBD | TBD |
+| Sentence Builder | `apps/sentence-builder/` | New | Decodable word tiles on three sentence rails | Drag lesson words onto a rail and rearrange them | Word packs follow the Reading & Spelling lesson sequence; see `apps/sentence-builder/README.md` |
 
 ## Reference / Legacy
 

@@ -6,38 +6,46 @@ Must Fix:
 - None.
 
 Should Fix Soon:
-- Test on a physical iPad (Safari/WebKit). Automated touch tests ran in Chromium with touch emulation only.
-- Pre-existing, original bank only: after *a/an* correction, the preview updates right away, but the bank tile shows the corrected article only on the next render. The order in `render()` is unchanged from before.
+- A teacher should spot-check `apps/sentence-builder/tools/parts-of-speech.tsv`. Tags were drafted by a dictionary (WordNet) and a part-of-speech tagger, then reviewed and corrected by hand, but some may still be debatable.
+- Test on a physical iPad (Safari/WebKit). Touch was tested only in Chromium with touch emulation.
 
 Notes:
-- Files changed: `apps/sentences/index.html`, `apps/sentences/README.md` (new, teacher-facing), `tests/sentences-word-packs.test.mjs` (new), `harness/reviews/LATEST_REVIEW.md`.
-- Behavior changed:
-  - Teachers can make reusable **word packs** in a "Word packs" dialog. Each pack has a name, optional lesson, reading level, and skill labels, and lists of nouns, verbs, and helpers. Words can be pasted (commas or new lines) or removed one at a time. Packs can be saved, edited, duplicated, deleted, and undone back to the last save.
-  - Packs are saved in `localStorage` (`mathThings.sentences.wordPacks.v1`), so they last through a refresh. The panel says plainly that packs do not sync. JSON export (all packs or one) and import are validated all-or-nothing, show a preview before anything changes, and never overwrite: a name already in use gets a number. **Download example file** gives a sample. If storage is blocked or full, the app keeps working and says so. If saved data can't be read, it is backed up instead of deleted.
-  - A **Words** selector shows either the original bank or one pack, plus the pack's labels. In pack mode, students see only the pack's words, and the tabs, filters, and step pills are hidden. Switching never clears the sentence.
-  - Pack words (and words typed while a pack is active) are marked `exact`. They are never pluralized, conjugated, made to agree, or changed between *a* and *an*. The only change is a capital letter on the first word of the sentence, in the preview and read-aloud, and only when that word is all lowercase. Helper words get no guessed part of speech. The original bank behaves as before.
-  - Tiles can be moved without dragging: tap or click a tile to show ← ✕ →. Keyboard: Enter selects a tile, ←/→ move it, Delete removes it, Escape lets go. Word-bank cards are now `<button>`s. Focus is kept after each change, and changes are announced through a polite live region.
-  - Only newly added tiles play the pop-in animation (before, every tile re-animated on every change). The animation is off when the user prefers reduced motion.
-  - Touch: hover-only ✕ is hidden on `hover: none` devices. Word tiles are ≥44px tall, the ← ✕ → buttons are ≥44×44, and other controls are ≥40px on coarse pointers. The desktop look is unchanged.
-- Doctrine principles applied: Teacher-facing text (the storage explanation, the editor, import/export) lives in a closed dialog and `README.md`, not on the student surface. No dashboards, points, or new dependencies. Single-file app.
-- Desktop behavior: Same as before, plus the Words selector, the Word packs button, and click-to-select tiles. Mouse drag-and-drop still works.
-- Mobile behavior: Tested at iPad size (1024×768, touch emulation): tap to add, tap a tile for ← ✕ →, touch-drag reorder. At phone width (375px) there is no horizontal scroll with the panel open.
-- Accessibility notes: Every control has an accessible name (checked by script). The panel is a modal `<dialog>`, and Escape closes it. Tile help is linked with `aria-describedby`. All user text is rendered as text, never HTML.
-- Remaining risks: Not tested on real WebKit or iPadOS. Speech is checked by capturing `speechSynthesis.speak` text, not by listening. Real file pickers and downloads on iPad were not tested.
+- Files changed:
+  - New: `apps/sentence-builder/index.html`, `packs.js` (generated), `README.md`, `tools/build_packs.py` and `tools/parts-of-speech.tsv`.
+  - New: `tests/sentence-builder.test.mjs`.
+  - Changed: `more.html` (a card under Sentences), `docs/05_APP_CATALOG.md` (one row) and `harness/reviews/LATEST_REVIEW.md`.
+- Behavior: Sentence Builder is a new, separate app. Build-A-Sentence (`apps/sentences/`) is unchanged. The app has:
+  - A creamy off-white canvas with three discreet rails.
+  - Faintly color-coded banks: Nouns, Verbs, Adjectives, Articles, Determiners, Conjunctions, Adverbs, Pronouns, Prepositions, Interjections and Punctuation.
+  - Tiles that are dragged out as copies, snap onto the nearest rail at a visible marker, rearrange within and between rails, and are removed by dragging them off the canvas.
+  - A capital on the first word of each rail, for display only.
+  - A Clear button that needs two taps.
+- Word packs follow the Reading & Spelling lesson sequence (133 lessons, 15 stages). A pack is the words printed in the chosen lesson plus every tricky word taught so far.
+  - Printed words come only from the fields the lessons' own author guide requires to be decodable. Spoken-only text is excluded.
+  - Tricky words show a faint heart.
+  - A word that can do two jobs (such as *fan*) appears in every bank it fits.
+- Data pipeline: `tools/build_packs.py` uses the Python standard library only. It reads the lesson source ZIP and the reviewed word list and writes `packs.js`. The build is reproducible (the rebuilt file is byte-identical), and the script stops on any printed word that isn't in the word list. There are 4,298 words in total; 872 of them are in more than one bank.
+- Doctrine applied: the student surface stays quiet (a lesson menu and Clear only). Teacher-facing material lives in the README. No frameworks, packages or build tools were added.
+- Desktop: mouse drag-and-drop, plus tap to add a word to the current rail.
+- Touch (iPad):
+  - A quick up/down swipe scrolls the banks.
+  - A sideways pull drags at once.
+  - A short press (0.16 s) picks a word up so it can be dragged in any direction.
+  - On the canvas, tiles drag freely.
+  - Every tile and control is at least 44×44 px.
+- Layout: banks are on the right at tablet and desktop widths and stack under the canvas below 700 px. There is no sideways page scroll.
+- Accessibility: bank words are buttons, and Enter adds a word. On a placed word, ←/→ move it, ↑/↓ change sentence and Delete removes it. Changes are announced through a live region, and every control has a name.
+- Remaining risks: there is no real-device iPad/WebKit test, and the part-of-speech tags still need a teacher's spot-check (see above).
 
-Regression tests: `tests/sentences-word-packs.test.mjs` runs the checks below with no dependencies, in the same style as the other files in `tests/`. It has 16 tests, all PASS on three runs. It uses real CDP mouse, keyboard and touch input and the real file chooser. Four deliberately planted bugs were each caught: *a/an* rewriting pack words, partial imports, lost keyboard focus, and switching packs clearing the sentence. Run it with:
-`CHROMIUM=/path/to/chrome node --test tests/sentences-word-packs.test.mjs`
-
-Acceptance Tests (171 checks, first run with Playwright + Chromium, all PASS):
-- Create, name, edit, remove a word, undo changes, duplicate, load into the editor, delete (confirm and cancel), alphabetical menus. PASS
-- Name required; duplicate names (any capitalization) refused; empty lists and a pack with no words save; repeated pasted words skipped; over-long words rejected. PASS
-- Refresh keeps the packs and the selected pack. PASS
-- Export all and export one; re-import into a clean browser gives identical packs; re-import on the same device adds numbered copies and leaves existing packs untouched; Cancel imports nothing. PASS
-- Invalid files rejected with nothing imported (16 cases: not JSON, unrelated JSON, wrong format, newer version, empty/non-list packs, one good plus one bad pack, missing name, non-list list, non-text/blank/too-long/control-character words, non-text label, long name, file over 1 MB). PASS
-- BOM, single-pack, and bare-array files import; the example file downloads, imports, and matches the README. PASS
-- Exact spelling: "a owl", "an cat", "cats/I + runs/is", "iPad", "can't", "Sam’s", `<b>on</b>`, `&amp;`, and `<img onerror>` survive the tiles, preview, read-aloud, export, and diagram; no HTML is injected. PASS
-- Switching packs or back to the bank keeps the sentence. PASS
-- Mouse, keyboard, and touch reorder and remove; focus kept; touch target sizes. PASS
-- Storage blocked, storage full (save and import), unreadable saved data, and two tabs. PASS
-- Original bank regression: tabs, filters, agreement, I→am, tense and plural toggles, advanced tenses, a/an, steps, diagram (Verb / Ind. Object / Direct Object), punctuation, read aloud, undo, custom word, mouse drag. PASS
-- No page errors in any run. PASS
+Acceptance Tests (`tests/sentence-builder.test.mjs`, 10 tests, Chromium, all PASS on four consecutive runs; four planted bugs each caught):
+- 133 lessons in 15 stages. Lesson 1's pack is exactly its printed words. Spoken-only words are excluded. Tricky words carry forward. `packs.js` matches the word list. PASS
+- The lesson picker lists all lessons by stage and remembers the choice. Only banks with words are shown. PASS
+- Hearts on tricky words; two-job words appear in both banks, each with its own faint color; the canvas is creamy. PASS
+- Mouse drag: snaps to the nearest rail, inserts at the marker, the bank keeps its copy, and a drop outside the canvas places nothing. PASS
+- Rearranging within and between rails, capitalizing any first word (display only), punctuation-first sentences, keeping capitals on names and "I", and dragging off to remove. PASS
+- Touch: a flick scrolls without placing anything, a sideways pull drags, a hold-then-vertical drag works, touch-drag rearranges, targets are at least 44 px, and a portrait sentence fits on one line. PASS
+- Tap adds a word to the current rail; keyboard add, move and remove work. PASS
+- Clear needs two taps within 3 s; changing lessons keeps the sentences. PASS
+- Blocked storage still works; a missing `packs.js` shows a plain message. PASS
+- No uncaught page errors. PASS
+- Whole `tests/` folder: 63 of 64 pass. The one failure is the existing Place Value Blocks zoom test, which fails the same way on upstream `main`. PASS (no new failures)
