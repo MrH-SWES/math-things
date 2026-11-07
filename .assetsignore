@@ -16,3 +16,6 @@
 !*.ttf
 !*.otf
 !*.webmanifest
+
+# Production tooling for the showcase film is not part of the site.
+showcase/
